@@ -1,0 +1,1567 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Artemis 2.0 — Professional Exam Review</title>
+        <meta
+            name="description"
+            content="Prepare for professional licensure, eligibility, and certification exams through structured lessons, quizzes, and course assessments."
+        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
+            rel="stylesheet"
+        />
+        <link rel="stylesheet" href="style.css?v=26" />
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    </head>
+    <body class="light-mode">
+        <div id="toast-container" class="toast-container"></div>
+
+        <!-- ══════════════════════════════════════════════════════
+     MODAL OVERLAY
+══════════════════════════════════════════════════════ -->
+        <div id="modal-overlay" class="modal-overlay hidden">
+            <!-- ─── Sign Up Modal ─── -->
+            <div id="modal-signup" class="modal modal-wide hidden">
+                <button class="modal-close" data-close>
+                    <i data-lucide="x"></i>
+                </button>
+                <div class="auth-logo">Artemis 2.0</div>
+                <h2>Create Account</h2>
+                <p class="auth-sub">Fill in your details to get started.</p>
+
+                <div class="signup-grid">
+                    <div class="field">
+                        <label for="su-fname">First Name</label>
+                        <input
+                            type="text"
+                            id="su-fname"
+                            placeholder="Juan"
+                            autocomplete="given-name"
+                        />
+                    </div>
+                    <div class="field">
+                        <label for="su-lname">Last Name</label>
+                        <input
+                            type="text"
+                            id="su-lname"
+                            placeholder="dela Cruz"
+                            autocomplete="family-name"
+                        />
+                    </div>
+                    <div class="field">
+                        <label for="su-email">Email Address</label>
+                        <input
+                            type="email"
+                            id="su-email"
+                            placeholder="juan@email.com"
+                            autocomplete="email"
+                        />
+                    </div>
+                    <div class="field">
+                        <label for="su-phone">Contact Number</label>
+                        <input
+                            type="tel"
+                            id="su-phone"
+                            placeholder="+63 9XX XXX XXXX"
+                            autocomplete="tel"
+                        />
+                    </div>
+                    <div class="field">
+                        <label for="su-bdate">Birthdate</label>
+                        <input
+                            type="text"
+                            id="su-bdate"
+                            placeholder="MM/DD/YYYY"
+                            maxlength="10"
+                            autocomplete="bday"
+                            inputmode="numeric"
+                        />
+                    </div>
+                    <div class="field">
+                        <label for="su-country">Country / Pricing Region</label>
+                        <select id="su-country" autocomplete="country" required>
+                            <option value="PH" selected>Philippines (PHP)</option>
+                            <option value="INTL">Outside the Philippines (USD)</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="su-affname"
+                            >Organization / University</label
+                        >
+                        <input
+                            type="text"
+                            id="su-affname"
+                            placeholder="e.g. University of the Philippines"
+                        />
+                    </div>
+                    <div class="field">
+                        <label for="su-password">Password</label>
+                        <div class="input-wrap">
+                            <input
+                                type="password"
+                                id="su-password"
+                                placeholder="Min. 8 characters"
+                                autocomplete="new-password"
+                            />
+                            <button
+                                class="toggle-pw"
+                                type="button"
+                                data-target="su-password"
+                            >
+                                Show
+                            </button>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label for="su-confirm">Confirm Password</label>
+                        <div class="input-wrap">
+                            <input
+                                type="password"
+                                id="su-confirm"
+                                placeholder="Repeat password"
+                                autocomplete="new-password"
+                            />
+                            <button
+                                class="toggle-pw"
+                                type="button"
+                                data-target="su-confirm"
+                            >
+                                Show
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button
+                    id="signup-btn"
+                    class="btn-primary btn-full"
+                    style="margin-top: 1.1rem"
+                >
+                    Create Account
+                </button>
+                <p class="auth-switch">
+                    Already have an account?
+                    <a href="#" id="go-login">Sign in</a>
+                </p>
+            </div>
+
+            <div id="modal-registration-code" class="modal hidden">
+                <button class="modal-close" data-close><i data-lucide="x"></i></button>
+                <div class="auth-logo">Artemis 2.0</div>
+                <h2>Verify Your Email</h2>
+                <p class="auth-sub">Enter the six-digit code sent to <strong id="registration-code-email"></strong>.</p>
+                <div class="field"><label for="registration-code">Verification Code</label><input id="registration-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000" style="font-size:1.5rem;letter-spacing:.45rem;text-align:center"></div>
+                <button id="verify-registration-btn" class="btn-primary btn-full" style="margin-top:1rem">Verify and Create Account</button>
+                <button id="resend-registration-btn" class="btn-ghost btn-full" style="margin-top:.75rem">Resend Code</button>
+            </div>
+
+            <!-- ─── Login Modal ─── -->
+            <div id="modal-login" class="modal hidden">
+                <button class="modal-close" data-close>
+                    <i data-lucide="x"></i>
+                </button>
+                <div class="auth-logo">Artemis 2.0</div>
+                <h2>Welcome back</h2>
+                <p class="auth-sub">Sign in to continue your progress.</p>
+                <div class="field">
+                    <label for="li-email">Email Address</label>
+                    <input
+                        type="email"
+                        id="li-email"
+                        placeholder="juan@email.com"
+                        autocomplete="email"
+                    />
+                </div>
+                <div class="field">
+                    <label for="li-password">Password</label>
+                    <div class="input-wrap">
+                        <input
+                            type="password"
+                            id="li-password"
+                            placeholder="Your password"
+                            autocomplete="current-password"
+                        />
+                        <button
+                            class="toggle-pw"
+                            type="button"
+                            data-target="li-password"
+                        >
+                            Show
+                        </button>
+                    </div>
+                </div>
+                <div style="text-align: right; margin-bottom: 1.1rem">
+                    <a href="#" id="go-forgot" class="auth-link"
+                        >Forgot password?</a
+                    >
+                </div>
+                <button id="login-btn" class="btn-primary btn-full">
+                    Sign In
+                </button>
+                <p class="auth-switch">
+                    Don't have an account?
+                    <a href="#" id="go-signup-2">Create one</a>
+                </p>
+            </div>
+
+            <!-- ─── Forgot Password Modal ─── -->
+            <div id="modal-forgot" class="modal hidden">
+                <button class="modal-close" data-close>
+                    <i data-lucide="x"></i>
+                </button>
+                <div class="auth-logo">Artemis 2.0</div>
+                <h2>Reset Password</h2>
+                <p class="auth-sub">We'll help you recover your account.</p>
+                <div class="field">
+                    <label for="fp-email">Email Address</label>
+                    <input
+                        type="email"
+                        id="fp-email"
+                        placeholder="juan@email.com"
+                    />
+                </div>
+                <button id="forgot-btn" class="btn-primary btn-full">
+                    Find Account
+                </button>
+                <p class="auth-switch">
+                    <a href="#" id="go-login-2">Back to Sign In</a>
+                </p>
+            </div>
+
+            <!-- ─── Buy Voucher Modal ─── -->
+            <div id="modal-buy-voucher" class="modal hidden">
+                <button class="modal-close" data-close>
+                    <i data-lucide="x"></i>
+                </button>
+                <div class="auth-logo">Artemis 2.0</div>
+                <h2>Enroll in Batch</h2>
+                <p class="auth-sub">
+                    Payment unlocks only the selected review course and its assessments.
+                </p>
+
+                <div class="voucher-product-card">
+                    <div class="vpc-info">
+                        <div class="vpc-icon"><i data-lucide="calendar"></i></div>
+                        <div>
+                            <p class="vpc-name" id="purchase-course-name">Selected Course</p>
+                            <p class="vpc-desc">
+                            Enrollment unlocks the course bank assigned to this batch.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="vpc-price" id="purchase-course-price">—</div>
+                </div>
+                <div class="field" id="purchase-batch-field" style="margin-top:1rem;display:none">
+                    <label for="purchase-batch-select">Selected Batch</label>
+                    <select id="purchase-batch-select"></select>
+                    <small style="display:block;margin-top:.4rem;color:var(--text-muted)">Your course content is shared, while schedules, classmates, rankings, and announcements follow your selected batch.</small>
+                </div>
+
+                <div id="buy-step-1">
+                    <div class="voucher-promo">
+                        <p class="promo-text">
+                            <strong>Unlock Your Professional Potential.</strong><br />
+                            Invest in your future with Artemis 2.0. This subscription provides exclusive
+                            access to your selected review course and its assessments.
+                        </p>
+                        <ul class="promo-features">
+                            <li>Full access to the selected course</li>
+                            <li>Official Industry-Recognized Certificates</li>
+                            <li id="purchase-access-until">Access until the administrator-set course end date</li>
+                        </ul>
+                        <p class="promo-price" id="purchase-price-summary">Price: —</p>
+                        <p id="purchase-billing-notice" class="auth-sub hidden" style="margin-top: 0.75rem">
+                            Your payment provider will bill <strong id="purchase-billing-price">—</strong>.
+                            The USD amount is for regional price display only.
+                        </p>
+                    </div>
+                    <button
+                        id="buy-confirm-btn"
+                        class="btn-primary btn-full"
+                        style="margin-top: 1.5rem"
+                    >
+                        Continue to Payment
+                    </button>
+                </div>
+
+                <div id="buy-step-2" class="hidden">
+                    <div class="voucher-success">
+                        <div class="vs-icon">
+                            <i data-lucide="check-circle"></i>
+                        </div>
+                        <p>Payment successful! Here is your course access code:</p>
+                        <div
+                            class="voucher-code-display"
+                            id="generated-code"
+                        ></div>
+                        <p class="vs-note">
+                            Keep this code as your payment reference. It unlocks the selected review course only.
+                        </p>
+                    </div>
+                    <button id="done-buying-btn" class="btn-primary btn-full">
+                        Done
+                    </button>
+                </div>
+            </div>
+
+            <!-- ─── Voucher Code Entry Modal ─── -->
+            <div id="modal-enter-voucher" class="modal hidden">
+                <button class="modal-close" data-close>
+                    <i data-lucide="x"></i>
+                </button>
+                <div class="auth-logo">Artemis 2.0</div>
+                <h2>Enter Subscription Code</h2>
+                <p class="auth-sub">
+                    Select an available batch and enter a valid enrollment code.
+                </p>
+                <div class="field">
+                    <label for="voucher-course-select">Available Batch</label>
+                    <select id="voucher-course-select"></select>
+                </div>
+                <div class="field" id="voucher-batch-field" style="display:none">
+                    <label for="voucher-batch-select">Available Batch</label>
+                    <select id="voucher-batch-select"></select>
+                </div>
+                <div class="field">
+                    <label for="voucher-input">Subscription Code</label>
+                    <input
+                        type="text"
+                        id="voucher-input"
+                        placeholder="e.g. ART2-XXXX-XXXX"
+                        autocomplete="off"
+                        style="
+                            text-transform: uppercase;
+                            letter-spacing: 0.08em;
+                        "
+                    />
+                </div>
+                <div class="voucher-hint">
+                    Don't have a subscription?
+                    <a href="#" id="go-buy-voucher">Purchase one</a>
+                </div>
+                <button
+                    id="redeem-voucher-btn"
+                    class="btn-primary btn-full"
+                    style="margin-top: 1rem"
+                >
+                    Activate Subscription
+                </button>
+            </div>
+
+            <div id="modal-mock-exam-instructions" class="modal hidden">
+                <button class="modal-close" data-close>&times;</button>
+                <p class="section-label">Mock Exam Instructions</p>
+                <h2>Before you begin</h2>
+                <div class="mock-instruction-list">
+                    <p>This comprehensive Mock Exam covers all completed subjects.</p>
+                    <p><strong id="mock-instruction-question-count">0</strong> approved questions will be included.</p>
+                    <p>You will have 40 minutes. Answers may be reviewed and changed before final submission.</p>
+                    <p>A score of 80% is required to pass.</p>
+                </div>
+                <button type="button" id="confirm-start-mock-exam" class="btn-primary" style="width:100%">Start Mock Exam</button>
+            </div>
+
+            <div id="modal-learner-settings" class="modal hidden">
+                <button class="modal-close" data-close><i data-lucide="x"></i></button>
+                <div class="auth-logo">Artemis 2.0</div>
+                <h2>Account Settings</h2>
+                <p class="auth-sub">Update your contact information or account password.</p>
+                <div class="field"><label for="settings-email">Email Address</label><input type="email" id="settings-email" autocomplete="email"></div>
+                <div class="field"><label for="settings-phone">Contact Number</label><input type="tel" id="settings-phone" autocomplete="tel"></div>
+                <div class="field"><label for="settings-current-password">Current Password</label><input type="password" id="settings-current-password" autocomplete="current-password"><small>Required when changing your email or password.</small></div>
+                <div class="field"><label for="settings-new-password">New Password</label><input type="password" id="settings-new-password" minlength="8" autocomplete="new-password" placeholder="Leave blank to keep your password"></div>
+                <div class="field"><label for="settings-password-confirmation">Confirm New Password</label><input type="password" id="settings-password-confirmation" minlength="8" autocomplete="new-password"></div>
+                <button type="button" id="save-learner-settings" class="btn-primary btn-full" style="margin-top:1rem">Save Settings</button>
+            </div>
+            <div id="modal-email-change-code" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="email-change-code-title">
+                <button class="modal-close" data-close><i data-lucide="x"></i></button>
+                <div class="auth-logo">Artemis 2.0</div>
+                <h2 id="email-change-code-title">Verify New Email</h2>
+                <p class="auth-sub">Enter the six-digit code sent to <strong id="email-change-pending-address"></strong>. Your current email remains active until verification is complete.</p>
+                <div class="field"><label for="email-change-code">Verification Code</label><input type="text" id="email-change-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="000000"></div>
+                <button type="button" id="verify-email-change" class="btn-primary btn-full" style="margin-top:1rem">Verify Email</button>
+                <button type="button" id="resend-email-change" class="btn-ghost btn-full" style="margin-top:.65rem">Resend Code</button>
+            </div>
+            <div id="modal-system-alert" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="system-alert-title">
+                <button class="modal-close" data-close><i data-lucide="x"></i></button>
+                <div class="auth-logo">Artemis 2.0</div>
+                <h2 id="system-alert-title">Notice</h2>
+                <p id="system-alert-message" class="auth-sub" style="line-height:1.65"></p>
+                <button type="button" id="system-alert-ok" class="btn-primary btn-full">OK</button>
+            </div>
+            <div id="modal-assessment-rationale" class="modal modal-wide rationale-review-modal hidden" role="dialog" aria-modal="true" aria-labelledby="assessment-rationale-title">
+                <button class="modal-close" data-close><i data-lucide="x"></i></button>
+                <p class="section-label">Answer Rationale</p>
+                <h2 id="assessment-rationale-title">Question rationale</h2>
+                <div id="assessment-rationale-content" class="assessment-rationale-content"></div>
+                <button type="button" class="btn-primary btn-full" data-close>Close</button>
+            </div>
+            <div id="modal-course-profile" class="modal modal-wide course-profile-modal hidden" role="dialog" aria-modal="true" aria-labelledby="course-profile-title">
+                <button class="modal-close" data-close><i data-lucide="x"></i></button>
+                <p class="section-label">Batch Course Profile</p>
+                <h2 id="course-profile-title">Course Profile</h2>
+                <p id="course-profile-subtitle" class="auth-sub"></p>
+                <div id="course-profile-content" class="course-profile-content"></div>
+                <button type="button" class="btn-primary btn-full" data-close>Close</button>
+            </div>
+        </div>
+        <!-- end modal-overlay -->
+
+        <!-- ══════════════════════════════════════════════════════
+     APP SCREENS
+══════════════════════════════════════════════════════ -->
+        <div id="app">
+            <!-- ─── Landing ─────────────────────────────────── -->
+            <section id="landing-screen" class="screen active">
+                <nav class="landing-nav">
+                    <div class="nav-logo">Artemis 2.0</div>
+                    <button
+                        id="landing-menu-btn"
+                        class="mobile-menu-btn"
+                        aria-label="Toggle menu"
+                    >
+                        <div class="burger-bars">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </button>
+                    <div class="nav-actions" id="landing-nav-actions">
+                        <button class="btn-ghost" id="nav-login-btn">
+                            Sign In
+                        </button>
+                        <button class="btn-primary" id="nav-signup-btn">
+                            Get Started
+                        </button>
+                        <button
+                            id="landing-theme-toggle"
+                            class="btn-icon-round"
+                            title="Toggle light/dark mode"
+                            aria-label="Toggle theme"
+                        >
+                            <i id="landing-theme-icon" data-lucide="moon"></i>
+                        </button>
+                    </div>
+                </nav>
+
+                <div class="hero">
+                    <div class="hero-content">
+                        <h1>
+                            Master<br />Essential Skills.<br /><span
+                                class="gradient-text"
+                                >Get Certified Today.</span
+                            >
+                        </h1>
+                        <p class="hero-desc">
+                            Prepare for licensure, eligibility, and certification
+                            exams through structured review courses. Complete each
+                            module, pass its quiz, and build your readiness for the
+                            examination that matters to you.
+                        </p>
+                        <div class="hero-cta">
+                            <button
+                                class="btn-primary btn-lg"
+                                id="hero-signup-btn"
+                            >
+                                Start Learning
+                            </button>
+                            <button
+                                class="btn-ghost btn-lg"
+                                id="hero-login-btn"
+                            >
+                                I Have an Account
+                            </button>
+                        </div>
+                    </div>
+                    <div class="hero-visual">
+                        <div class="hero-certificate cert-light">
+                            <div class="cert-paper-logo">Artemis 2.0</div>
+                            <div class="cert-accent"></div>
+                            <p class="cert-eyebrow" style="font-size: 0.65rem">
+                                Certificate of Completion
+                            </p>
+                            <p
+                                class="cert-desc"
+                                style="
+                                    font-size: 0.88rem;
+                                    margin-bottom: 0.75rem;
+                                "
+                            >
+                                This certifies that
+                            </p>
+                            <h2
+                                style="
+                                    font-size: 2.1rem;
+                                    margin: 0.25rem 0 0.75rem;
+                                    color: #1e293b;
+                                    font-family: &quot;Outfit&quot;, sans-serif;
+                                    font-weight: 700;
+                                "
+                            >
+                                Juan Dela Cruz
+                            </h2>
+                            <p
+                                class="cert-desc"
+                                style="
+                                    font-size: 0.88rem;
+                                    line-height: 1.4;
+                                    margin-bottom: 0.75rem;
+                                "
+                            >
+                                has successfully completed the review course and
+                                passed the Mock Exam in<br /><strong
+                                    id="li-cert-course-name-top"
+                                    style="
+                                        font-family:
+                                            &quot;Outfit&quot;, sans-serif;
+                                        font-weight: 800;
+                                        font-size: 1.1em;
+                                    "
+                                    >Selected Review Course</strong
+                                >
+                            </p>
+                            <hr class="cert-divider" style="margin: 1.1rem 0" />
+                            <div
+                                class="cert-meta-grid"
+                                style="font-size: 0.72rem"
+                            >
+                                <div class="cert-meta-item">
+                                    <span class="meta-label"
+                                        >Credential ID</span
+                                    >
+                                    <span class="meta-val" id="li-cert-cred-id">XXXX-XXXX-XXXX</span>
+                                </div>
+                                <div class="cert-meta-item">
+                                    <span class="meta-label">Issued Date</span>
+                                    <span class="meta-val">June 2, 2026</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Why This Course -->
+                <div class="why-section reveal">
+                    <p class="section-eyebrow">Why Artemis 2.0</p>
+                    <h2>
+                        A focused path from review<br />to exam readiness.
+                    </h2>
+
+                    <div class="why-grid">
+                        <div class="why-card">
+                            <div class="why-icon">
+                                <i data-lucide="play-circle"></i>
+                            </div>
+                            <h3>Flexible learning materials</h3>
+                            <p>
+                                Study through instructor-provided videos, PDF
+                                references, discussions, and assessments.
+                            </p>
+                        </div>
+                        <div class="why-card">
+                            <div class="why-icon">
+                                <i data-lucide="pencil-line"></i>
+                            </div>
+                            <h3>Quizzes that actually check</h3>
+                            <p>
+                                Every assessment follows the passing rule set
+                                for that course, subject, or review activity.
+                            </p>
+                        </div>
+                        <div class="why-card">
+                            <div class="why-icon">
+                                <i data-lucide="target"></i>
+                            </div>
+                            <h3>Structured, not scattered</h3>
+                            <p>
+                                Course modules follow a deliberate sequence, so
+                                every lesson builds on the one before it.
+                            </p>
+                        </div>
+                        <div class="why-card">
+                            <div class="why-icon">
+                                <i data-lucide="award"></i>
+                            </div>
+                            <h3>A certificate you earned</h3>
+                            <p>
+                                Complete the required learning activities and
+                                pass the course Mock Exam to receive a
+                                verifiable certificate.
+                            </p>
+                        </div>
+                        <div class="why-card">
+                            <div class="why-icon">
+                                <i data-lucide="save"></i>
+                            </div>
+                            <h3>Your progress is saved</h3>
+                            <p>
+                                Close the tab, come back tomorrow. Your
+                                completed topics stay completed. No starting
+                                over.
+                            </p>
+                        </div>
+                        <div class="why-card">
+                            <div class="why-icon">
+                                <i data-lucide="badge-check"></i>
+                            </div>
+                            <h3>Access built around your course</h3>
+                            <p>
+                                Your enrollment keeps learning materials,
+                                assessments, progress, and certificates together
+                                in one place.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <footer class="landing-footer">
+                    <span>© 2026 Artemis 2.0, All rights reserved</span>
+                    <span>Built with passion for learning</span>
+                </footer>
+            </section>
+
+            <!-- ─── Dashboard ───────────────────────────────── -->
+            <section id="dashboard-screen" class="screen">
+                <nav class="landing-nav">
+                    <div class="nav-logo">Artemis 2.0</div>
+                    <button
+                        id="dashboard-menu-btn"
+                        class="mobile-menu-btn"
+                        aria-label="Toggle menu"
+                    >
+                        <div class="burger-bars">
+                            <span></span><span></span><span></span>
+                        </div>
+                    </button>
+                    <div class="nav-actions" id="dashboard-nav-actions">
+                        <button id="learner-settings-btn" class="btn-ghost" type="button">Settings</button>
+                        <button id="logout-btn" class="btn-ghost">
+                            Log out
+                        </button>
+                        <button
+                            id="theme-toggle-btn"
+                            class="btn-icon-round"
+                            title="Toggle light/dark mode"
+                            aria-label="Toggle theme"
+                        >
+                            <i id="theme-icon" data-lucide="moon"></i>
+                        </button>
+                    </div>
+                </nav>
+                <div class="dashboard-body">
+                    <section class="dashboard-hero">
+                        <div class="dashboard-hero-copy">
+                            <p class="section-eyebrow">Learning dashboard</p>
+                            <h1>
+                                Welcome back,
+                                <span id="dashboard-hero-name">User</span>.
+                            </h1>
+                            <p class="dashboard-hero-text">
+                                Choose from our library of courses. Track your
+                                progress, master each topic, and earn your
+                                verified certification when you're ready.
+                            </p>
+                            <div class="dashboard-hero-actions">
+                                <button
+                                    id="explore-courses-btn"
+                                    class="btn-primary"
+                                >
+                                    Continue Learning
+                                </button>
+                                <button
+                                    id="resume-module-btn"
+                                    class="btn-primary hidden"
+                                >
+                                    Resume Module
+                                </button>
+                            </div>
+                        </div>
+                        <div class="dashboard-hero-panel">
+                            <div class="dashboard-user-info">
+                                <div class="user-info-row">
+                                    <div class="info-icon">
+                                        <i data-lucide="user"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <span class="info-label">Name</span>
+                                        <strong id="panel-name"></strong>
+                                    </div>
+                                </div>
+                                <div class="user-info-row">
+                                    <div class="info-icon">
+                                        <i data-lucide="mail"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <span class="info-label">Email</span>
+                                        <strong id="panel-email"></strong>
+                                    </div>
+                                </div>
+                                <div class="user-info-row">
+                                    <div class="info-icon">
+                                        <i data-lucide="building"></i>
+                                    </div>
+                                    <div class="info-content">
+                                        <span class="info-label"
+                                            >Organization / University</span
+                                        >
+                                        <strong id="panel-org"></strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="dashboard-metrics">
+                                <div class="hero-metric">
+                                    <span class="metric-label" id="metric-1-label">Progress</span>
+                                    <strong id="dashboard-progress-summary"
+                                        >0%</strong
+                                    >
+                                </div>
+                                <div class="hero-metric">
+                                    <span class="metric-label" id="metric-2-label"
+                                        >Modules Completed</span
+                                    >
+                                    <strong id="dashboard-modules-completed"
+                                        >0</strong
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div
+                        class="dashboard-section-head"
+                        id="dashboard-courses-head"
+                    >
+                        <div class="course-section-title-row">
+                            <p class="section-label">Available Batches</p>
+                            <label class="course-filter-toggle" for="enrolled-only-toggle">
+                                <input type="checkbox" id="enrolled-only-toggle" />
+                                <span class="course-filter-switch" aria-hidden="true"></span>
+                                <span>Enrolled batches only</span>
+                            </label>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <p class="section-subtitle" style="margin: 0;">
+                                Enroll in a batch to access its assigned course and learning content.
+                            </p>
+                            <div class="layout-toggle" style="display:flex; gap:0.25rem; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 8px;">
+                                <button class="btn-icon-round view-grid-btn" title="Tiles View"><i data-lucide="layout-grid"></i></button>
+                                <button class="btn-icon-round view-list-btn active-layout" title="Column View" style="color: var(--accent);"><i data-lucide="list"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="topics-grid" id="courses-container"></div>
+
+                    <div id="course-details-area" style="display: none">
+                        <div class="learner-course-back-actions">
+                            <button class="btn-ghost" id="back-to-courses-btn">Back to Courses</button>
+                            <button type="button" id="course-profile-btn" class="btn-ghost"><i data-lucide="clipboard-list"></i> Course Profile</button>
+                            <button type="button" id="back-to-subjects-btn" class="btn-ghost hidden">Back to Subjects</button>
+                        </div>
+                        <nav class="learner-course-tabs" aria-label="Course details">
+                            <button type="button" id="course-subjects-tab" class="learner-course-tab active">Subjects</button>
+                            <button type="button" id="course-progress-tab" class="learner-course-tab">Progress Report</button>
+                        </nav>
+                        <div id="subjects-list-area">
+                            <div class="dashboard-section-head">
+                                <div><h2 id="course-details-title" style="margin:0 0 .35rem">Course</h2><p class="section-label">Approved Subjects</p><p class="section-subtitle">Open a subject to view its topics and continue learning.</p></div>
+                            </div>
+                            <div id="subjects-container" class="learner-subject-list"></div>
+                            <div id="course-mock-exams-container" class="course-mock-exams-container"></div>
+                        </div>
+                        <div id="subject-topics-area" style="display:none">
+                        <div class="dashboard-section-head">
+                            <h2
+                                id="subject-details-title"
+                                style="margin-bottom: 0"
+                            >
+                                Subject
+                            </h2>
+                            <p class="section-label" style="display: none;">Course Topics</p>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <p class="section-subtitle" style="margin: 0;">
+                                    Select a topic card to continue the lesson flow.
+                                </p>
+                                <div class="layout-toggle" style="display:flex; gap:0.25rem; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 8px;">
+                                    <button class="btn-icon-round view-grid-btn" title="Tiles View"><i data-lucide="layout-grid"></i></button>
+                                    <button class="btn-icon-round view-list-btn active-layout" title="Column View" style="color: var(--accent);"><i data-lucide="list"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="topics-grid" id="topics-container"></div>
+                        </div>
+                        <div id="course-progress-report-area" style="display:none">
+                            <div class="dashboard-section-head"><div><h2 style="margin:0 0 .35rem">Progress Report</h2><p id="learner-progress-report-context" class="section-subtitle">Assessment history for this course.</p></div></div>
+                            <div id="learner-progress-report-content" class="learner-progress-report-content"><p class="progress-report-empty">Select the Progress Report tab to load assessment history.</p></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ─── Lesson ───────────────────────────────────── -->
+            <section id="lesson-screen" class="screen">
+                <div class="lesson-wrapper">
+                    <!-- ═══ LEFT SIDEBAR: Topic + Subtopics List ═══ -->
+                    <aside class="lesson-sidebar">
+                        <button
+                            class="btn-ghost btn-sm lesson-back-link"
+                            id="lesson-back-btn"
+                            style="margin-bottom: 1rem"
+                        >
+                            <i
+                                data-lucide="arrow-left"
+                                style="width: 14px; height: 14px"
+                            ></i>
+                            Back
+                        </button>
+
+                        <div class="lesson-brand" aria-label="Artemis 2.0 learning workspace">
+                            <span class="lesson-brand-mark" aria-hidden="true">A</span>
+                            <span class="lesson-brand-copy">
+                                <strong>Artemis 2.0</strong>
+                                <small>Learning Workspace</small>
+                            </span>
+                        </div>
+
+                        <div class="lesson-sidebar-topic">
+                            <p class="sidebar-topic-eyebrow">Current Topic</p>
+                            <p
+                                class="sidebar-topic-title"
+                                id="current-topic-title"
+                            >
+                                Topic
+                            </p>
+                        </div>
+
+                        <div class="subtopics-nav" id="subtopics-nav-list">
+                            <!-- Dynamically filled by renderLesson() -->
+                        </div>
+
+                    </aside>
+
+                    <!-- ═══ MAIN CONTENT AREA ═══ -->
+                    <main class="lesson-main">
+                        <!-- Subtopic header bar -->
+                        <div class="subtopic-header" id="subtopic-header">
+                            <div class="subtopic-header-info">
+                                <span
+                                    class="subtopic-header-num"
+                                    id="subtopic-header-num"
+                                    >Subtopic 1</span
+                                >
+                                <h2
+                                    class="subtopic-header-title"
+                                    id="subtopic-header-title"
+                                >
+                                    Loading...
+                                </h2>
+                            </div>
+                        </div>
+
+                        <!-- No subtopics placeholder -->
+                        <div
+                            id="no-subtopics-msg"
+                            style="
+                                display: none;
+                                flex: 1;
+                                align-items: center;
+                                justify-content: center;
+                                flex-direction: column;
+                                gap: 1rem;
+                                padding: 3rem;
+                                text-align: center;
+                            "
+                        >
+                            <i
+                                data-lucide="inbox"
+                                style="
+                                    width: 48px;
+                                    height: 48px;
+                                    color: var(--text-muted);
+                                "
+                            ></i>
+                            <p
+                                style="
+                                    color: var(--text-muted);
+                                    font-size: 1rem;
+                                "
+                            >
+                                This topic has no subtopics yet. Check back
+                                later.
+                            </p>
+                        </div>
+
+                        <!-- ─── DOCS PANEL ─── -->
+                        <div
+                            class="docs-wrap"
+                            id="docs-container"
+                            style="display: none; flex-direction: column"
+                        >
+                            <div class="docs-toolbar">
+                                <div
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.75rem;
+                                    "
+                                >
+                                    <div
+                                        style="
+                                            width: 32px;
+                                            height: 32px;
+                                            border-radius: 8px;
+                                            background: var(--gradient);
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            color: #fff;
+                                            flex-shrink: 0;
+                                        "
+                                    >
+                                        <i
+                                            data-lucide="file-text"
+                                            style="width: 16px; height: 16px"
+                                        ></i>
+                                    </div>
+                                    <div>
+                                        <p
+                                            style="
+                                                margin: 0;
+                                                font-size: 0.8rem;
+                                                color: var(--text-muted);
+                                            "
+                                        >
+                                            Lesson Material
+                                        </p>
+                                        <p
+                                            style="
+                                                margin: 0;
+                                                font-size: 0.9rem;
+                                                font-weight: 600;
+                                                color: var(--text);
+                                            "
+                                            id="docs-filename-label"
+                                        >
+                                            Document
+                                        </p>
+                                    </div>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:.5rem">
+                                <button type="button" id="docs-fullscreen-btn" class="btn-ghost" style="padding:.4rem .9rem;font-size:.82rem;border-radius:8px;display:flex;align-items:center;gap:.35rem">
+                                    <i data-lucide="maximize-2" style="width:14px;height:14px"></i>
+                                    View Full Screen
+                                </button>
+                                <a
+                                    href="#"
+                                    id="docs-download-btn"
+                                    target="_blank"
+                                    class="btn-primary"
+                                    style="
+                                        padding: 0.4rem 0.9rem;
+                                        font-size: 0.82rem;
+                                        text-decoration: none;
+                                        border-radius: 8px;
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.35rem;
+                                    "
+                                >
+                                    <i
+                                        data-lucide="download"
+                                        style="width: 14px; height: 14px"
+                                    ></i>
+                                    Download
+                                </a>
+                                </div>
+                            </div>
+
+                            <!-- PDF iframe viewer -->
+                            <div
+                                id="docs-iframe-wrap"
+                                style="
+                                    flex: 1;
+                                    display: none;
+                                    overflow: auto;
+                                    margin: 1.5rem;
+                                    border-radius: 12px;
+                                    border: 1px solid var(--border);
+                                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                                "
+                            >
+                                <iframe
+                                    id="docs-iframe"
+                                    style="
+                                        width: 100%;
+                                        height: 100%;
+                                        border: none;
+                                        background: #fff;
+                                    display: block;
+                                    "
+                                ></iframe>
+                                <div id="pdf-pages-container" class="pdf-pages-container" style="display:none"></div>
+                                <div id="pdf-completion-sentinel" style="height:1px"></div>
+                            </div>
+                            <!-- Image viewer -->
+                            <div
+                                id="docs-img-wrap"
+                                style="
+                                    flex: 1;
+                                    display: none;
+                                    align-items: center;
+                                    justify-content: center;
+                                    padding: 1.5rem;
+                                    margin: 1.5rem;
+                                    border-radius: 12px;
+                                    border: 1px solid var(--border);
+                                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                                    background: var(--bg2);
+                                "
+                            >
+                                <img
+                                    id="docs-img"
+                                    src=""
+                                    style="
+                                        max-width: 100%;
+                                        max-height: 100%;
+                                        object-fit: contain;
+                                        border-radius: 12px;
+                                    "
+                                />
+                            </div>
+                            <!-- Fallback / No doc -->
+                            <div
+                                id="docs-fallback"
+                                style="
+                                    flex: 1;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    flex-direction: column;
+                                    gap: 1rem;
+                                    padding: 3rem;
+                                    margin: 1.5rem;
+                                    border-radius: 12px;
+                                    border: 1px solid var(--border);
+                                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                                    background: var(--bg2);
+                                    text-align: center;
+                                "
+                            >
+                                <div
+                                    style="
+                                        width: 64px;
+                                        height: 64px;
+                                        border-radius: 16px;
+                                        background: rgba(255, 255, 255, 0.05);
+                                        border: 1px dashed var(--border);
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        color: var(--text-muted);
+                                    "
+                                >
+                                    <i
+                                        data-lucide="file-x"
+                                        style="width: 32px; height: 32px"
+                                    ></i>
+                                </div>
+                                <p style="color: var(--text); font-weight: 600">
+                                    No Document
+                                </p>
+                                <p
+                                    style="
+                                        color: var(--text-muted);
+                                        font-size: 0.9rem;
+                                    "
+                                >
+                                    No PDF or slides uploaded for this subtopic.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- ─── VIDEO PANEL ─── -->
+                        <div id="subtopic-assessment-container" class="subtopic-assessment-panel" style="display:none">
+                            <div class="subtopic-assessment-card">
+                                <span id="subtopic-assessment-label" class="status info">Assessment</span>
+                                <h2 id="subtopic-assessment-title">Assessment</h2>
+                                <p id="subtopic-assessment-instructions"></p>
+                                <p id="subtopic-assessment-attempts" class="subtopic-assessment-attempts"></p>
+                                <p id="subtopic-assessment-result" class="subtopic-assessment-result" style="display:none"></p>
+                                <div class="assessment-action-buttons">
+                                    <button type="button" id="start-subtopic-assessment" class="btn-primary">Start Assessment</button>
+                                    <button type="button" id="view-subtopic-assessment-summary" class="btn-ghost" style="display:none">View Summary</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="zoom-session-container" class="subtopic-assessment-panel" style="display:none">
+                            <div class="subtopic-assessment-card">
+                                <span class="status info">Live via Zoom</span>
+                                <h2 id="zoom-session-title">Live Review Session</h2>
+                                <p id="zoom-session-schedule" class="subtopic-assessment-attempts"></p>
+                                <p id="zoom-session-description" style="white-space:pre-line"></p>
+                                <a id="zoom-session-join" class="btn-primary" target="_blank" rel="noopener noreferrer" style="display:inline-flex;text-decoration:none">Join Zoom Session</a>
+                            </div>
+                        </div>
+
+                        <div
+                            class="docs-wrap"
+                            id="video-container"
+                            style="display: none; flex-direction: column"
+                        >
+                            <div class="docs-toolbar">
+                                <div
+                                    style="
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 0.75rem;
+                                    "
+                                >
+                                    <div
+                                        style="
+                                            width: 32px;
+                                            height: 32px;
+                                            border-radius: 8px;
+                                            background: var(--gradient);
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            color: #fff;
+                                            flex-shrink: 0;
+                                        "
+                                    >
+                                        <i
+                                            data-lucide="play-circle"
+                                            style="width: 16px; height: 16px"
+                                        ></i>
+                                    </div>
+                                    <div>
+                                        <p
+                                            style="
+                                                margin: 0;
+                                                font-size: 0.8rem;
+                                                color: var(--text-muted);
+                                            "
+                                        >
+                                            Lesson Video
+                                        </p>
+                                        <p
+                                            style="
+                                                margin: 0;
+                                                font-size: 0.9rem;
+                                                font-weight: 600;
+                                                color: var(--text);
+                                            "
+                                            id="video-title-label"
+                                        >
+                                            Video
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Video iframe viewer -->
+                            <div
+                                id="video-iframe-wrap"
+                                style="
+                                    flex: 1;
+                                    display: none;
+                                    overflow: hidden;
+                                    margin: 1.5rem;
+                                    border-radius: 12px;
+                                    border: 1px solid var(--border);
+                                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                                "
+                            >
+                                <iframe
+                                    id="video-player"
+                                    src=""
+                                    frameborder="0"
+                                    allowfullscreen
+                                    style="
+                                        width: 100%;
+                                        height: 100%;
+                                        border: none;
+                                        background: #000;
+                                        display: block;
+                                    "
+                                ></iframe>
+                                <video id="uploaded-video-player" controls playsinline disablepictureinpicture disableremoteplayback controlslist="nodownload noremoteplayback" preload="metadata" style="display:none;width:100%;height:100%;background:#000"></video>
+                            </div>
+                            <!-- Video unavailable -->
+                            <div
+                                id="video-unavailable"
+                                style="
+                                    flex: 1;
+                                    display: none;
+                                    align-items: center;
+                                    justify-content: center;
+                                    flex-direction: column;
+                                    gap: 1rem;
+                                    padding: 3rem;
+                                    margin: 1.5rem;
+                                    border-radius: 12px;
+                                    border: 1px solid var(--border);
+                                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                                    background: var(--bg2);
+                                    text-align: center;
+                                "
+                            >
+                                <div
+                                    style="
+                                        width: 64px;
+                                        height: 64px;
+                                        border-radius: 16px;
+                                        background: rgba(255, 255, 255, 0.05);
+                                        border: 1px dashed var(--border);
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        color: var(--text-muted);
+                                    "
+                                >
+                                    <i
+                                        data-lucide="video-off"
+                                        style="width: 32px; height: 32px"
+                                    ></i>
+                                </div>
+                                <p style="color: var(--text); font-weight: 600">
+                                    No Video
+                                </p>
+                                <p
+                                    style="
+                                        color: var(--text-muted);
+                                        font-size: 0.9rem;
+                                    "
+                                >
+                                    No video uploaded for this subtopic.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- ─── COMPLETION BAR ─── -->
+                        <div
+                            id="mark-complete-bar"
+                            style="
+                                display: none;
+                                padding: 1rem 1.5rem;
+                                border-top: 1px solid var(--border);
+                                background: var(--surface);
+                                justify-content: flex-end;
+                                align-items: center;
+                            "
+                        >
+                            <button
+                                id="mark-complete-btn"
+                                class="btn-primary"
+                                style="
+                                    padding: 0.6rem 1.25rem;
+                                    border-radius: 8px;
+                                    font-size: 0.9rem;
+                                    font-weight: 600;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 0.5rem;
+                                "
+                            >
+                                Continue
+                                <i
+                                    data-lucide="check-circle"
+                                    style="width: 16px; height: 16px"
+                                ></i>
+                            </button>
+                        </div>
+                    </main>
+                </div>
+            </section>
+
+            <section id="assessment-summary-screen" class="screen assessment-summary-screen">
+                <header class="exam-environment-header assessment-summary-navbar">
+                    <div class="exam-brand"><span class="exam-brand-mark">A2</span><strong>Artemis 2.0</strong><span id="assessment-summary-assessment-title">Assessment Summary</span></div>
+                </header>
+                <main class="exam-environment-body assessment-summary-body">
+                <div class="assessment-summary-shell">
+                    <div class="assessment-summary-header"><span>Assessment Summary</span><h2 id="assessment-summary-title">Your Result</h2><p id="assessment-summary-score"></p></div>
+                    <div id="assessment-summary-perfect" class="assessment-summary-perfect" style="display:none">Excellent—there are no incorrect answers to review.</div>
+                    <div class="assessment-result-legend"><span class="summary-correct">Correct</span><span class="summary-wrong">Incorrect</span></div>
+                    <div class="assessment-result-review">
+                        <nav id="assessment-summary-question-list" class="assessment-summary-question-list" aria-label="Assessment questions"></nav>
+                        <article id="assessment-summary-question-detail" class="assessment-summary-question-detail"></article>
+                    </div>
+                </div>
+                </main>
+                <footer class="exam-environment-footer assessment-summary-footer">
+                    <span class="assessment-summary-footer-note">Review the incorrect answers and rationales before continuing.</span>
+                    <button type="button" id="assessment-summary-continue" class="btn-primary exam-submit-btn">Continue</button>
+                </footer>
+            </section>
+
+            <!-- ─── Quiz ─────────────────────────────────────── -->
+            <section id="quiz-screen" class="screen">
+                <header class="exam-environment-header">
+                    <div class="exam-brand"><span class="exam-brand-mark">A2</span><strong>Artemis 2.0</strong><span id="quiz-assessment-title">Topic Quiz</span></div>
+                    <div class="exam-header-progress">
+                        <div class="exam-progress-meta">
+                            <strong>Question <span id="current-q">1</span> of <span id="total-q">2</span></strong>
+                            <span><span id="quiz-progress-percent">0</span>%</span>
+                        </div>
+                        <div class="quiz-progress"><div class="quiz-progress-bar" id="quiz-progress-bar" style="width:0%"></div></div>
+                    </div>
+                    <div class="exam-header-actions">
+                        <div id="quiz-timer" class="hidden">20:00</div>
+                        <button type="button" id="quiz-close-btn" class="exam-close-btn" aria-label="Close assessment">&times;</button>
+                    </div>
+                </header>
+                <main class="exam-environment-body">
+                    <article id="quiz-question-panel" class="quiz-question-card">
+                        <span id="quiz-response-label" class="quiz-response-label">Multiple Choice</span>
+                        <div id="question-image-container" style="display:none; margin:0 0 1.5rem; text-align:center;">
+                            <img id="question-image" alt="Question reference image" style="max-width:100%; max-height:420px; object-fit:contain; border-radius:10px; border:1px solid var(--border);">
+                        </div>
+                        <h3 id="question-text">Question</h3>
+                        <p id="quiz-answer-instruction" class="quiz-answer-instruction">Select the best answer.</p>
+                        <div class="options-list" id="options-container"></div>
+                        <div id="question-rationale" class="question-rationale" style="display:none"></div>
+                    </article>
+                    <section id="assessment-review-panel" class="assessment-review-panel" style="display:none">
+                        <div class="assessment-review-heading"><span>Review Assessment</span><h2>Check your answers before submitting</h2><p>Select any question to review or update your answer.</p></div>
+                        <div class="assessment-review-legend"><span class="review-orange">Marked for review</span><span class="review-red">No answer</span><span class="review-blue">Answered</span></div>
+                        <div id="assessment-review-list" class="assessment-review-list"></div>
+                    </section>
+                </main>
+                <footer class="exam-environment-footer">
+                    <div class="exam-footer-controls">
+                        <button type="button" id="previous-q-btn" class="exam-previous-btn" disabled>
+                            <span aria-hidden="true">&#8249;</span> Previous
+                        </button>
+                        <label class="exam-review-toggle">
+                            <input type="checkbox" id="mark-review-checkbox">
+                            <span>Mark for Review</span>
+                        </label>
+                    </div>
+                    <button id="next-q-btn" class="btn-primary exam-submit-btn" disabled>Submit Answer</button>
+                </footer>
+            </section>
+
+            <!-- ─── Certificate ───────────────────────────────── -->
+            <section id="certificate-screen" class="screen">
+                <div class="cert-split-layout">
+                    <!-- Left Side: Certificate Preview -->
+                    <div class="cert-preview-col">
+                        <div
+                            id="certificate"
+                            class="certificate-paper cert-light"
+                        >
+                            <div class="cert-paper-logo">Artemis 2.0</div>
+                            <div class="cert-accent"></div>
+                            <p class="cert-eyebrow" style="font-size: 0.65rem">
+                                Certificate of Completion
+                            </p>
+                            <p
+                                class="cert-desc"
+                                style="
+                                    font-size: 0.88rem;
+                                    margin-bottom: 0.75rem;
+                                "
+                            >
+                                This certifies that
+                            </p>
+                            <h2
+                                id="cert-user-name"
+                                style="
+                                    font-size: 2.1rem;
+                                    margin: 0.25rem 0 0.75rem;
+                                    color: #1e293b;
+                                    font-family: &quot;Outfit&quot;, sans-serif;
+                                    font-weight: 700;
+                                "
+                            >
+                                Juan Dela Cruz
+                            </h2>
+                            <p
+                                class="cert-desc"
+                                style="
+                                    font-size: 0.88rem;
+                                    line-height: 1.4;
+                                    margin-bottom: 0.75rem;
+                                "
+                            >
+                                has successfully completed the review course and
+                                passed the Mock Exam in<br /><strong
+                                    id="cert-course-name-large"
+                                    style="
+                                        font-family:
+                                            &quot;Outfit&quot;, sans-serif;
+                                        font-weight: 800;
+                                        font-size: 1.1em;
+                                    "
+                                    >Selected Review Course</strong
+                                >
+                            </p>
+                            <hr class="cert-divider" style="margin: 1.1rem 0" />
+                            <div
+                                class="cert-meta-grid"
+                                style="font-size: 0.72rem"
+                            >
+                                <div class="cert-meta-item">
+                                    <span class="meta-label"
+                                        >Credential ID</span
+                                    >
+                                    <span
+                                        class="meta-val"
+                                        id="cert-credential-id"
+                                        >ART2-XXXX-XXXX</span
+                                    >
+                                </div>
+                                <div class="cert-meta-item">
+                                    <span class="meta-label">Issued Date</span>
+                                    <span
+                                        class="meta-val"
+                                        id="current-date"
+                                    ></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Side: Details & Actions -->
+                    <div class="cert-details-col">
+                        <div class="cert-screen-header">
+                            <h2>Your Certificate</h2>
+                            <p>
+                                You've successfully completed all required
+                                courses.
+                            </p>
+                        </div>
+
+                        <div class="cert-actions">
+                            <button onclick="copyCertId()" class="btn-ghost">
+                                Copy Certificate ID
+                            </button>
+                            <button
+                                onclick="shareOnLinkedIn()"
+                                class="btn-ghost"
+                            >
+                                Share on LinkedIn
+                            </button>
+                            <button
+                                onclick="downloadCertificate()"
+                                class="btn-ghost"
+                            >
+                                Download Image
+                            </button>
+                        </div>
+                        <div
+                            style="
+                                margin-top: auto;
+                                display: flex;
+                                flex-direction: column;
+                                gap: 0.75rem;
+                            "
+                        >
+                            <div
+                                class="linkedin-instructions"
+                                style="cursor: pointer; display: inline-block"
+                                onclick="
+                                    document
+                                        .getElementById('linkedin-modal')
+                                        .classList.remove('hidden')
+                                "
+                            >
+                                <h3 style="margin: 0">
+                                    How to add the certification to a LinkedIn
+                                    profile
+                                </h3>
+                            </div>
+
+                            <div
+                                class="cert-extra-info"
+                                style="
+                                    font-size: 0.85rem;
+                                    color: var(--text-muted);
+                                    line-height: 1.6;
+                                "
+                            >
+                                This official credential verifies your completion of <span id="cert-course-name-text">the selected course</span>. Add it to your records to showcase your achievement.
+                            </div>
+
+                            <div
+                                class="cert-nav-back"
+                                style="text-align: left; margin-top: 0"
+                            >
+                                <button
+                                    onclick="showScreen('dashboard-screen')"
+                                    class="btn-ghost"
+                                    style="border: none; padding: 0"
+                                >
+                                    Back to Dashboard
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <!-- end #app -->
+
+        <!-- LinkedIn Instructions Modal -->
+        <div
+            id="linkedin-modal"
+            class="modal-overlay hidden"
+            onclick="if (event.target === this) this.classList.add('hidden');"
+        >
+            <div class="modal">
+                <button
+                    class="modal-close"
+                    onclick="
+                        document
+                            .getElementById('linkedin-modal')
+                            .classList.add('hidden')
+                    "
+                >
+                    <i data-lucide="x"></i>
+                </button>
+                <h2>LinkedIn Instructions</h2>
+                <div
+                    class="linkedin-instructions-modal"
+                    style="margin-top: 1.5rem; text-align: left"
+                >
+                    <div class="li-step">
+                        <strong>Step 1: Navigate</strong>
+                        <p>
+                            Me &gt; View Profile &gt; Licenses & Certifications
+                            &gt; click '+' and add your Artemis 2.0 certificate.
+                        </p>
+                    </div>
+                    <div class="li-step">
+                        <strong>Step 2: Enter details</strong>
+                        <p>
+                            Fill in the form with the following details and
+                            click save:
+                        </p>
+                    </div>
+                    <div class="li-fields">
+                        <div class="li-field">
+                            <span>Course:</span> <strong id="cert-course-name-bottom">Selected Review Course</strong>
+                        </div>
+                        <div class="li-field">
+                            <span>Issuing Organization:</span>
+                            <strong>Artemis 2.0</strong>
+                        </div>
+                        <div class="li-field">
+                            <span>Credential ID:</span>
+                            <strong id="li-cred-id-modal">XXXX-XXXX</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="script.js?v=43"></script>
+        <script>
+            lucide.createIcons();
+        </script>
+    </body>
+</html>
