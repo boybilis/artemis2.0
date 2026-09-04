@@ -418,9 +418,7 @@ class CourseController extends Controller
         $path = $this->publicStorageRelativePath($storedPath);
         abort_unless($path, 404, 'The requested document was not found.');
 
-        $configuredPath = Storage::disk('public')->path($path);
-        $legacyPath = storage_path('app/public/' . str_replace('/', DIRECTORY_SEPARATOR, $path));
-        $physicalPath = is_file($configuredPath) ? $configuredPath : (is_file($legacyPath) ? $legacyPath : null);
+        $physicalPath = $this->resolveDocumentFile($path, $filename);
         abort_unless($physicalPath, 404, 'The requested document was not found on the Artemis server.');
 
         $mimeType = function_exists('mime_content_type') ? mime_content_type($physicalPath) : null;
@@ -435,6 +433,43 @@ class CourseController extends Controller
         $response->headers->addCacheControlDirective('no-store');
 
         return $response;
+    }
+
+    private function resolveDocumentFile(string $relativePath, ?string $originalFilename): ?string
+    {
+        $roots = array_values(array_unique([
+            rtrim((string) config('filesystems.disks.public.root'), '/\\'),
+            rtrim(storage_path('app/public'), '/\\'),
+        ]));
+        $relativeNativePath = str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+
+        foreach ($roots as $root) {
+            if ($root === '') continue;
+            $exactPath = $root . DIRECTORY_SEPARATOR . $relativeNativePath;
+            if (is_file($exactPath) && is_readable($exactPath)) return $exactPath;
+        }
+
+        // A manually restored file may use its original name instead of the
+        // timestamped storage name recorded in the database.
+        $safeOriginalName = is_string($originalFilename) ? basename(str_replace('\\', '/', $originalFilename)) : '';
+        if ($safeOriginalName === '') return null;
+
+        $matches = [];
+        foreach ($roots as $root) {
+            $directory = $root . DIRECTORY_SEPARATOR . 'documentation';
+            if (! is_dir($directory) || ! is_readable($directory)) continue;
+            foreach (new \DirectoryIterator($directory) as $file) {
+                if (! $file->isFile() || ! $file->isReadable()) continue;
+                $name = $file->getFilename();
+                if ($name === $safeOriginalName || str_ends_with($name, '_' . $safeOriginalName)) {
+                    $matches[$file->getPathname()] = $file->getMTime();
+                }
+            }
+        }
+        if ($matches === []) return null;
+        arsort($matches);
+
+        return array_key_first($matches);
     }
 
     private function publicStorageRelativePath(?string $path): ?string

@@ -149,6 +149,27 @@ class LearnerSubjectNavigationTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_pdf_preview_recovers_a_manually_restored_original_filename(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('documentation/Policy.pdf', '%PDF-1.4 restored document');
+        $learner = User::factory()->create();
+        $course = Course::create(['title'=>'NCLEX','approval_status'=>'approved','is_published'=>true]);
+        $batch = CourseBatch::create(['course_id'=>$course->id,'name'=>'Batch 1','code'=>'B1','status'=>'open','created_by'=>$learner->id]);
+        CourseEnrollment::create(['user_id'=>$learner->id,'course_id'=>$course->id,'batch_id'=>$batch->id,'status'=>'active','enrolled_at'=>now()]);
+        $subject = Subject::create(['course_id'=>$course->id,'subject_code'=>'N1','title'=>'Nursing','status'=>'approved']);
+        $topic = Topic::create(['course_id'=>$course->id,'subject_id'=>$subject->id,'title'=>'Policy','status'=>'approved']);
+        \App\Models\Subtopic::create([
+            'topic_id'=>$topic->id,'title'=>'Policy','content_type'=>'subtopic','status'=>'approved',
+            'documentation_path'=>'/storage/documentation/1700000000_Policy.pdf',
+            'documentation_filename'=>'Policy.pdf',
+        ]);
+
+        $response = $this->actingAs($learner)->getJson("/api/courses/{$course->id}/topics")->assertOk();
+        $parts = parse_url($response->json('topics.0.subtopics.0.documentationPath'));
+        $this->get($parts['path'].'?'.$parts['query'])->assertOk()->assertHeader('Content-Type', 'application/pdf');
+    }
+
     public function test_enrolled_learner_sees_their_mock_exam_rank_on_the_course_card_data(): void
     {
         $course = Course::create(['title'=>'NCLEX','approval_status'=>'approved','is_published'=>true]);
