@@ -49,6 +49,19 @@ GOOGLE_DRIVE_FOLDER_ID=your-approved-folder-id
 The production credentials JSON must never be committed to Git or stored under
 Laravel's `public` directory.
 
+On Git-based shared-hosting deployments, keep learner uploads outside the Git
+working tree so deployments cannot remove them. Create a persistent directory
+and set its absolute path in production:
+
+```env
+PUBLIC_STORAGE_ROOT=/home/account/artemis-uploads
+```
+
+After changing this path, copy or restore the existing `documentation` and
+`subtopic-videos` folders into that directory, then clear Laravel's cached
+configuration. Protected learner routes read the files directly from this
+location and do not require the files to be committed to Git.
+
 ## Production deployment
 
 For Hostinger deployment:
