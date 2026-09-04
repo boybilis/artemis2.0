@@ -1940,6 +1940,8 @@ function renderSubtopicAssessment(sub) {
 
 const lessonVideoSessionPositions = new Map();
 let activeLessonVideoKey = null;
+let videoLoadingProgressTimer = null;
+let videoLoadingReadiness = 0;
 
 function getLessonVideoKey(sub) {
     return `${currentCourseId || 'course'}:${sub.id || sub.title}:${sub.videoUploadUrl || sub.videoUrl || ''}`;
@@ -1977,11 +1979,31 @@ function loadVideoForSubtopic(sub) {
     const loadingBar = $('video-loading-bar');
     const loadingPercentage = $('video-loading-percentage');
 
+    const setVideoLoadingPercentage = (percentage) => {
+        videoLoadingReadiness = Math.max(0, Math.min(100, Math.round(percentage)));
+        if (loadingBar) loadingBar.style.width = `${videoLoadingReadiness}%`;
+        if (loadingPercentage) loadingPercentage.textContent = `${videoLoadingReadiness}%`;
+    };
+    const stopVideoLoadingProgress = () => {
+        if (videoLoadingProgressTimer) clearInterval(videoLoadingProgressTimer);
+        videoLoadingProgressTimer = null;
+    };
+    const startVideoLoadingProgress = (minimum = 5) => {
+        stopVideoLoadingProgress();
+        setVideoLoadingPercentage(Math.max(videoLoadingReadiness, minimum));
+        videoLoadingProgressTimer = setInterval(() => {
+            if (videoLoadingReadiness >= 90) return;
+            const step = videoLoadingReadiness < 40 ? 4 : (videoLoadingReadiness < 70 ? 2 : 1);
+            setVideoLoadingPercentage(Math.min(90, videoLoadingReadiness + step));
+        }, 450);
+    };
+
     const showVideoLoading = (label = 'Preparing secure video…') => {
         if (loadingLabel) loadingLabel.textContent = label;
         if (loadingOverlay) loadingOverlay.style.display = 'flex';
     };
     const hideVideoLoading = () => {
+        stopVideoLoadingProgress();
         if (loadingOverlay) loadingOverlay.style.display = 'none';
     };
     const updateVideoLoadingProgress = () => {
@@ -1990,9 +2012,8 @@ function loadVideoForSubtopic(sub) {
         for (let index = 0; index < uploadedPlayer.buffered.length; index++) {
             bufferedEnd = Math.max(bufferedEnd, uploadedPlayer.buffered.end(index));
         }
-        const percentage = Math.max(0, Math.min(100, Math.round((bufferedEnd / uploadedPlayer.duration) * 100)));
-        if (loadingBar) loadingBar.style.width = `${percentage}%`;
-        if (loadingPercentage) loadingPercentage.textContent = `${percentage}%`;
+        const percentage = Math.max(0, Math.min(99, Math.round((bufferedEnd / uploadedPlayer.duration) * 100)));
+        setVideoLoadingPercentage(Math.max(videoLoadingReadiness, percentage));
     };
 
     // Reset
@@ -2001,8 +2022,7 @@ function loadVideoForSubtopic(sub) {
     if (uploadedPlayer) { uploadedPlayer.pause(); uploadedPlayer.onended = null; uploadedPlayer.ontimeupdate = null; uploadedPlayer.onloadedmetadata = null; uploadedPlayer.onloadstart = null; uploadedPlayer.onprogress = null; uploadedPlayer.onwaiting = null; uploadedPlayer.oncanplay = null; uploadedPlayer.onplaying = null; uploadedPlayer.onerror = null; uploadedPlayer.removeAttribute('src'); uploadedPlayer.style.display = 'none'; }
     if (unavailable)     unavailable.style.display     = 'none';
     hideVideoLoading();
-    if (loadingBar) loadingBar.style.width = '0%';
-    if (loadingPercentage) loadingPercentage.textContent = '0%';
+    setVideoLoadingPercentage(0);
 
     if (titleLabel) titleLabel.textContent = sub.title || 'Video';
 
@@ -2036,23 +2056,33 @@ function loadVideoForSubtopic(sub) {
         activeLessonVideoKey = getLessonVideoKey(sub);
         uploadedPlayer.disablePictureInPicture = true;
         uploadedPlayer.disableRemotePlayback = true;
-        uploadedPlayer.src = sub.videoUploadUrl;
         uploadedPlayer.style.display = 'block';
         showVideoLoading();
+        startVideoLoadingProgress(5);
         const learningItemIndex = window.currentLearningItemIndex;
-        uploadedPlayer.onloadstart = () => showVideoLoading('Preparing secure video…');
+        uploadedPlayer.onloadstart = () => {
+            showVideoLoading('Preparing secure video…');
+            startVideoLoadingProgress(5);
+        };
         uploadedPlayer.onprogress = updateVideoLoadingProgress;
         uploadedPlayer.onwaiting = () => {
             updateVideoLoadingProgress();
             showVideoLoading('Buffering video…');
+            startVideoLoadingProgress(Math.max(10, videoLoadingReadiness));
         };
-        uploadedPlayer.oncanplay = hideVideoLoading;
+        uploadedPlayer.oncanplay = () => {
+            setVideoLoadingPercentage(100);
+            stopVideoLoadingProgress();
+            setTimeout(hideVideoLoading, 300);
+        };
         uploadedPlayer.onplaying = hideVideoLoading;
         uploadedPlayer.onerror = () => {
+            stopVideoLoadingProgress();
             showVideoLoading('Unable to load video. Please refresh and try again.');
             if (loadingPercentage) loadingPercentage.textContent = '';
         };
         uploadedPlayer.onloadedmetadata = () => {
+            setVideoLoadingPercentage(Math.max(55, videoLoadingReadiness));
             updateVideoLoadingProgress();
             const savedPosition = lessonVideoSessionPositions.get(activeLessonVideoKey);
             if (Number.isFinite(savedPosition) && savedPosition > 0 && savedPosition < uploadedPlayer.duration) {
@@ -2065,6 +2095,8 @@ function loadVideoForSubtopic(sub) {
             }
         };
         uploadedPlayer.onended = () => markCurrentLearningItemComplete(learningItemIndex);
+        uploadedPlayer.src = sub.videoUploadUrl;
+        uploadedPlayer.load();
         if (titleLabel) titleLabel.textContent = sub.videoFilename || sub.title || 'Video';
     } else if (player) {
         hideVideoLoading();
