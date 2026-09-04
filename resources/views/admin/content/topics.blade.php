@@ -487,7 +487,7 @@
                     <div class="field" style="margin-top:1rem">
                         <label for="add_sub_video">Video URL (YouTube or Google Drive)</label>
                         <input type="text" id="add_sub_video" name="video_url" placeholder="Paste a YouTube or Google Drive sharing link">
-                        <p class="muted" style="font-size: 0.78rem; margin-top: 0.3rem;">For Google Drive, set access to “Anyone with the link” as Viewer.</p>
+                        <p class="muted" style="font-size: 0.78rem; margin-top: 0.3rem;">Private Drive videos must be inside the approved Artemis folder shared with the Artemis service account.</p>
                     </div>
                     <div class="field" style="border:1px dashed var(--border);padding:1rem;border-radius:8px;margin-top:1rem">
                         <label for="add_sub_video_file">Or upload a video file</label>
@@ -549,7 +549,7 @@
                 <div class="field">
                     <label for="edit_sub_video">Video URL (YouTube or Google Drive)</label>
                     <input type="text" id="edit_sub_video" name="video_url" placeholder="Paste a YouTube or Google Drive sharing link">
-                    <p class="muted" style="font-size:.78rem;margin-top:.3rem">Google Drive files must allow “Anyone with the link” viewing access.</p>
+                    <p class="muted" style="font-size:.78rem;margin-top:.3rem">Private Drive videos must be inside the approved Artemis folder shared with the Artemis service account.</p>
                 </div>
                 <div class="field" style="border:1px dashed var(--border);padding:1rem;border-radius:8px;margin-top:1rem">
                     <label for="edit_sub_video_file">Replace with uploaded video</label>

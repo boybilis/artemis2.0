@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\UserProgress;
 use App\Models\QuizAttempt;
 use App\Models\Certificate;
+use App\Models\CourseBatch;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -40,7 +41,14 @@ class LearnerSubjectNavigationTest extends TestCase
         Storage::disk('public')->put('subtopic-videos/lesson.mp4', 'test-video-content');
         $learner = User::factory()->create();
         $course = Course::create(['title'=>'NCLEX','approval_status'=>'approved','is_published'=>true]);
-        CourseEnrollment::create(['user_id'=>$learner->id,'course_id'=>$course->id,'status'=>'active','enrolled_at'=>now()]);
+        $batch = CourseBatch::create([
+            'course_id'=>$course->id,
+            'name'=>'NCLEX Batch 1',
+            'code'=>'NCLEX-B1',
+            'status'=>'open',
+            'created_by'=>$learner->id,
+        ]);
+        CourseEnrollment::create(['user_id'=>$learner->id,'course_id'=>$course->id,'batch_id'=>$batch->id,'status'=>'active','enrolled_at'=>now()]);
         $subject = Subject::create(['course_id'=>$course->id,'subject_code'=>'N1','title'=>'Nursing','status'=>'approved']);
         $topic = Topic::create(['course_id'=>$course->id,'subject_id'=>$subject->id,'title'=>'Safety','status'=>'approved']);
         \App\Models\Subtopic::create(['topic_id'=>$topic->id,'title'=>'Lesson Video','content_type'=>'subtopic','status'=>'approved','video_path'=>'subtopic-videos/lesson.mp4','video_filename'=>'lesson.mp4']);
@@ -57,6 +65,47 @@ class LearnerSubjectNavigationTest extends TestCase
         $this->assertStringContainsString('no-store', $videoResponse->headers->get('Cache-Control'));
         $this->withSession(['video_access_token' => 'a-different-browser-session'])
             ->get($parts['path'] . '?' . $parts['query'])->assertForbidden();
+    }
+
+    public function test_private_drive_video_hides_its_original_url_and_uses_an_artemis_signed_url(): void
+    {
+        config()->set('services.google_drive.streaming_enabled', true);
+        config()->set('services.google_drive.folder_id', 'approved-folder-id');
+
+        $learner = User::factory()->create();
+        $course = Course::create(['title'=>'NCLEX','approval_status'=>'approved','is_published'=>true]);
+        $batch = CourseBatch::create([
+            'course_id'=>$course->id,
+            'name'=>'NCLEX Batch 1',
+            'code'=>'NCLEX-B1',
+            'status'=>'open',
+            'created_by'=>$learner->id,
+        ]);
+        CourseEnrollment::create([
+            'user_id'=>$learner->id,
+            'course_id'=>$course->id,
+            'batch_id'=>$batch->id,
+            'status'=>'active',
+            'enrolled_at'=>now(),
+        ]);
+        $subject = Subject::create(['course_id'=>$course->id,'subject_code'=>'N1','title'=>'Nursing','status'=>'approved']);
+        $topic = Topic::create(['course_id'=>$course->id,'subject_id'=>$subject->id,'title'=>'Policy','status'=>'approved']);
+        $driveFileId = '1AbCdEfGhIjKlMnOpQrStUvWxYz';
+        \App\Models\Subtopic::create([
+            'topic_id'=>$topic->id,
+            'title'=>'Private Video',
+            'content_type'=>'subtopic',
+            'status'=>'approved',
+            'video_url'=>"https://drive.google.com/file/d/{$driveFileId}/view",
+        ]);
+
+        $response = $this->actingAs($learner)->getJson("/api/courses/{$course->id}/topics")->assertOk();
+        $response->assertJsonPath('topics.0.subtopics.0.videoUrl', null);
+        $protectedUrl = $response->json('topics.0.subtopics.0.videoUploadUrl');
+        $this->assertStringContainsString('/api/learning/videos/', $protectedUrl);
+        $this->assertStringContainsString('signature=', $protectedUrl);
+        $this->assertStringNotContainsString('drive.google.com', $protectedUrl);
+        $this->assertStringNotContainsString($driveFileId, $protectedUrl);
     }
 
     public function test_enrolled_learner_sees_their_mock_exam_rank_on_the_course_card_data(): void

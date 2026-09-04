@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'google_drive' => [
+        'streaming_enabled' => env('GOOGLE_DRIVE_STREAMING_ENABLED', false),
+        'credentials' => env('GOOGLE_DRIVE_CREDENTIALS', storage_path('app/private/google-drive-service-account.json')),
+        'folder_id' => env('GOOGLE_DRIVE_FOLDER_ID'),
+    ],
+
 ];

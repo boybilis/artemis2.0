@@ -20,6 +20,7 @@ use App\Models\CourseEnrollment;
 use App\Models\Subtopic;
 use App\Models\CourseBatch;
 use App\Services\AssessmentQuestionSelector;
+use App\Services\GoogleDriveVideoService;
 
 class CourseController extends Controller
 {
@@ -148,6 +149,13 @@ class CourseController extends Controller
 
         $formattedTopics = $topics->map(function ($topic) use ($user, $activeBatch, $completedPreTestSubjectIds) {
             $subtopics = $topic->subtopics()->where('status', 'approved')->get()->map(function ($sub) use ($user, $activeBatch) {
+                $driveFileId = app(GoogleDriveVideoService::class)->fileIdFromUrl($sub->video_url);
+                $protectedVideoUrl = ($sub->video_path || ($driveFileId && app(GoogleDriveVideoService::class)->enabled()))
+                    ? URL::temporarySignedRoute(
+                        'learning.video',
+                        now()->addMinutes((int) config('session.lifetime', 120)),
+                        ['subtopic' => $sub->id, 'session_key' => $this->videoSessionKey()]
+                    ) : null;
                 $assessmentAttempts = $sub->content_type === 'subtopic'
                     ? collect()
                     : QuizAttempt::where('user_id', $user->id)
@@ -162,12 +170,8 @@ class CourseController extends Controller
                     'id'                    => $sub->id,
                     'title'                 => $sub->title,
                     'sort_order'            => $sub->sort_order,
-                    'videoUrl'              => $sub->video_url,
-                    'videoUploadUrl'        => $sub->video_path ? URL::temporarySignedRoute(
-                        'learning.video',
-                        now()->addMinutes((int) config('session.lifetime', 120)),
-                        ['subtopic' => $sub->id, 'session_key' => $this->videoSessionKey()]
-                    ) : null,
+                    'videoUrl'              => $driveFileId && $protectedVideoUrl ? null : $sub->video_url,
+                    'videoUploadUrl'        => $protectedVideoUrl,
                     'videoFilename'         => $sub->video_filename,
                     'documentationPath'     => $sub->documentation_path,
                     'documentationFilename' => $sub->documentation_filename,
@@ -330,14 +334,34 @@ class CourseController extends Controller
         ]);
     }
 
-    public function streamSubtopicVideo(Request $request, Subtopic $subtopic)
+    public function streamSubtopicVideo(Request $request, Subtopic $subtopic, GoogleDriveVideoService $drive)
     {
         abort_unless(hash_equals($this->videoSessionKey(), (string) $request->query('session_key')), 403, 'This video link belongs to a different or expired session.');
 
         $subtopic->loadMissing('topic');
         abort_unless($subtopic->status === 'approved' && $subtopic->topic?->status === 'approved', 404);
         abort_unless(Auth::user()->hasActiveEnrollment((int) $subtopic->topic->course_id), 403, 'An active enrollment is required to view this video.');
-        abort_unless($subtopic->video_path && Storage::disk('public')->exists($subtopic->video_path), 404);
+        if (! $subtopic->video_path) {
+            $fileId = $drive->fileIdFromUrl($subtopic->video_url);
+            abort_unless($fileId, 404);
+            $file = $drive->authorizedVideo($fileId);
+            $size = (int) $file['size'];
+            [$start, $end, $partial] = $this->requestedVideoRange($request, $size);
+            $length = $end - $start + 1;
+            $headers = [
+                'Content-Type' => $file['mimeType'] ?: 'video/mp4',
+                'Content-Length' => (string) $length,
+                'Accept-Ranges' => 'bytes',
+                'Content-Disposition' => 'inline; filename="' . addcslashes(basename((string) $file['name']), '"\\') . '"',
+                'Cache-Control' => 'private, no-store, max-age=0, must-revalidate',
+                'Pragma' => 'no-cache',
+                'X-Content-Type-Options' => 'nosniff',
+            ];
+            if ($partial) $headers['Content-Range'] = "bytes {$start}-{$end}/{$size}";
+            return response()->stream(fn () => $drive->stream($fileId, $start, $end), $partial ? 206 : 200, $headers);
+        }
+
+        abort_unless(Storage::disk('public')->exists($subtopic->video_path), 404);
 
         $response = response()->file(Storage::disk('public')->path($subtopic->video_path), [
             'Content-Type' => Storage::disk('public')->mimeType($subtopic->video_path) ?: 'video/mp4',
@@ -349,6 +373,24 @@ class CourseController extends Controller
         $response->headers->addCacheControlDirective('no-store');
         $response->headers->addCacheControlDirective('must-revalidate');
         return $response;
+    }
+
+    private function requestedVideoRange(Request $request, int $size): array
+    {
+        $range = $request->header('Range');
+        if (! $range) return [0, $size - 1, false];
+        if (! preg_match('/^bytes=(\d*)-(\d*)$/', trim($range), $matches) || ($matches[1] === '' && $matches[2] === '')) {
+            abort(416, 'Invalid video range.', ['Content-Range' => "bytes */{$size}"]);
+        }
+        if ($matches[1] === '') {
+            $suffix = min((int) $matches[2], $size);
+            return [$size - $suffix, $size - 1, true];
+        }
+        $start = (int) $matches[1];
+        if ($start >= $size) abort(416, 'Video range is outside the file.', ['Content-Range' => "bytes */{$size}"]);
+        $end = $matches[2] === '' ? $size - 1 : min((int) $matches[2], $size - 1);
+        if ($end < $start) abort(416, 'Invalid video range.', ['Content-Range' => "bytes */{$size}"]);
+        return [$start, $end, true];
     }
 
     private function videoSessionKey(): string

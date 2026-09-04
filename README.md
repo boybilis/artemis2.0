@@ -35,6 +35,20 @@ On macOS or Linux, use `cp .env.example .env` instead of `copy`.
 
 Configure the database and Hostinger SMTP mailbox in `.env`. Never commit `.env` or production credentials.
 
+Private Google Drive videos can be served through Artemis without exposing their
+original Drive links. Enable the Google Drive API in the service-account project,
+keep the credentials JSON outside the public web directory, share the approved
+video folder with the service-account email as Viewer, and configure:
+
+```env
+GOOGLE_DRIVE_STREAMING_ENABLED=true
+GOOGLE_DRIVE_CREDENTIALS=/home/account/private/artemis-video-reader.json
+GOOGLE_DRIVE_FOLDER_ID=your-approved-folder-id
+```
+
+The production credentials JSON must never be committed to Git or stored under
+Laravel's `public` directory.
+
 ## Production deployment
 
 For Hostinger deployment:
