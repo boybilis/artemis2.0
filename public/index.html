@@ -1189,6 +1189,14 @@
                                     "
                                 ></iframe>
                                 <video id="uploaded-video-player" controls playsinline disablepictureinpicture disableremoteplayback controlslist="nodownload noremoteplayback" preload="metadata" style="display:none;width:100%;height:100%;background:#000"></video>
+                                <div id="video-loading-overlay" class="video-loading-overlay" role="status" aria-live="polite" style="display:none">
+                                    <div class="video-loading-spinner" aria-hidden="true"></div>
+                                    <strong id="video-loading-label">Preparing secure video…</strong>
+                                    <div class="video-loading-track" aria-hidden="true">
+                                        <span id="video-loading-bar"></span>
+                                    </div>
+                                    <span id="video-loading-percentage">0%</span>
+                                </div>
                             </div>
                             <!-- Video unavailable -->
                             <div

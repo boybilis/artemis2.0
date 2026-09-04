@@ -1972,12 +1972,37 @@ function loadVideoForSubtopic(sub) {
     const videoIframeWrap = $('video-iframe-wrap');
     const unavailable  = $('video-unavailable');
     const titleLabel   = $('video-title-label');
+    const loadingOverlay = $('video-loading-overlay');
+    const loadingLabel = $('video-loading-label');
+    const loadingBar = $('video-loading-bar');
+    const loadingPercentage = $('video-loading-percentage');
+
+    const showVideoLoading = (label = 'Preparing secure video…') => {
+        if (loadingLabel) loadingLabel.textContent = label;
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
+    };
+    const hideVideoLoading = () => {
+        if (loadingOverlay) loadingOverlay.style.display = 'none';
+    };
+    const updateVideoLoadingProgress = () => {
+        if (!uploadedPlayer || !Number.isFinite(uploadedPlayer.duration) || uploadedPlayer.duration <= 0 || uploadedPlayer.buffered.length === 0) return;
+        let bufferedEnd = 0;
+        for (let index = 0; index < uploadedPlayer.buffered.length; index++) {
+            bufferedEnd = Math.max(bufferedEnd, uploadedPlayer.buffered.end(index));
+        }
+        const percentage = Math.max(0, Math.min(100, Math.round((bufferedEnd / uploadedPlayer.duration) * 100)));
+        if (loadingBar) loadingBar.style.width = `${percentage}%`;
+        if (loadingPercentage) loadingPercentage.textContent = `${percentage}%`;
+    };
 
     // Reset
     if (videoIframeWrap) videoIframeWrap.style.display = 'none';
     if (player) player.style.display = 'none';
-    if (uploadedPlayer) { uploadedPlayer.pause(); uploadedPlayer.onended = null; uploadedPlayer.ontimeupdate = null; uploadedPlayer.onloadedmetadata = null; uploadedPlayer.removeAttribute('src'); uploadedPlayer.style.display = 'none'; }
+    if (uploadedPlayer) { uploadedPlayer.pause(); uploadedPlayer.onended = null; uploadedPlayer.ontimeupdate = null; uploadedPlayer.onloadedmetadata = null; uploadedPlayer.onloadstart = null; uploadedPlayer.onprogress = null; uploadedPlayer.onwaiting = null; uploadedPlayer.oncanplay = null; uploadedPlayer.onplaying = null; uploadedPlayer.onerror = null; uploadedPlayer.removeAttribute('src'); uploadedPlayer.style.display = 'none'; }
     if (unavailable)     unavailable.style.display     = 'none';
+    hideVideoLoading();
+    if (loadingBar) loadingBar.style.width = '0%';
+    if (loadingPercentage) loadingPercentage.textContent = '0%';
 
     if (titleLabel) titleLabel.textContent = sub.title || 'Video';
 
@@ -2013,8 +2038,22 @@ function loadVideoForSubtopic(sub) {
         uploadedPlayer.disableRemotePlayback = true;
         uploadedPlayer.src = sub.videoUploadUrl;
         uploadedPlayer.style.display = 'block';
+        showVideoLoading();
         const learningItemIndex = window.currentLearningItemIndex;
+        uploadedPlayer.onloadstart = () => showVideoLoading('Preparing secure video…');
+        uploadedPlayer.onprogress = updateVideoLoadingProgress;
+        uploadedPlayer.onwaiting = () => {
+            updateVideoLoadingProgress();
+            showVideoLoading('Buffering video…');
+        };
+        uploadedPlayer.oncanplay = hideVideoLoading;
+        uploadedPlayer.onplaying = hideVideoLoading;
+        uploadedPlayer.onerror = () => {
+            showVideoLoading('Unable to load video. Please refresh and try again.');
+            if (loadingPercentage) loadingPercentage.textContent = '';
+        };
         uploadedPlayer.onloadedmetadata = () => {
+            updateVideoLoadingProgress();
             const savedPosition = lessonVideoSessionPositions.get(activeLessonVideoKey);
             if (Number.isFinite(savedPosition) && savedPosition > 0 && savedPosition < uploadedPlayer.duration) {
                 uploadedPlayer.currentTime = savedPosition;
@@ -2028,6 +2067,7 @@ function loadVideoForSubtopic(sub) {
         uploadedPlayer.onended = () => markCurrentLearningItemComplete(learningItemIndex);
         if (titleLabel) titleLabel.textContent = sub.videoFilename || sub.title || 'Video';
     } else if (player) {
+        hideVideoLoading();
         activeLessonVideoKey = getLessonVideoKey(sub);
         const embedUrl = getEmbedUrl(sub.videoUrl);
         if (player.getAttribute('src') !== embedUrl) player.src = embedUrl;
