@@ -1504,7 +1504,7 @@ function renderLesson(openIdx = 0) {
                 if (ttlEl) ttlEl.textContent = topic.title;
             }
             loadVideoForSubtopic({ videoUrl: topic.videoUrl });
-            loadDocsForSubtopic({ documentationPath: topic.documentationPath, documentationFilename: topic.documentationFilename });
+            loadDocsForSubtopic({ documentationPath: topic.documentationPath, documentationFilename: topic.documentationFilename, documentationType: topic.documentationType });
             
             if (videoWrap) videoWrap.style.display = 'block';
             if (docsWrap)  docsWrap.style.display  = 'flex';
@@ -2117,8 +2117,8 @@ function loadDocsForSubtopic(sub) {
 
     const path  = sub.documentationPath.toLowerCase();
     const documentName = String(sub.documentationFilename || '').toLowerCase();
-    const isPdf = path.endsWith('.pdf') || documentName.endsWith('.pdf');
-    const isImg = /\.(jpeg|jpg|gif|png|webp)$/.test(path) || /\.(jpeg|jpg|gif|png|webp)$/.test(documentName);
+    const isPdf = sub.documentationType === 'pdf' || path.endsWith('.pdf') || documentName.endsWith('.pdf');
+    const isImg = sub.documentationType === 'image' || /\.(jpeg|jpg|gif|png|webp)$/.test(path) || /\.(jpeg|jpg|gif|png|webp)$/.test(documentName);
 
     if (isImg) {
         if (docsImg) docsImg.src = sub.documentationPath;

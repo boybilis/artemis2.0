@@ -181,6 +181,7 @@ class CourseController extends Controller
                     'videoFilename'         => $sub->video_filename,
                     'documentationPath'     => $protectedDocumentUrl,
                     'documentationFilename' => $sub->documentation_filename,
+                    'documentationType'     => $this->documentType($sub->documentation_path, $sub->documentation_filename),
                     'contentType'           => $sub->content_type,
                     'instructions'          => $sub->instructions,
                     'zoomUrl'               => $sub->zoom_url,
@@ -222,6 +223,7 @@ class CourseController extends Controller
                         ['topic' => $topic->id, 'session_key' => $this->documentSessionKey()]
                     ) : $topic->documentation_path,
                 'documentationFilename' => $topic->documentation_filename,
+                'documentationType'     => $this->documentType($topic->documentation_path, $topic->documentation_filename),
                 'quizTimeLimitMinutes' => $topic->assessment_time_limit_minutes ? (int) $topic->assessment_time_limit_minutes : null,
                 'quiz' => $quizQuestions->map(function ($q) {
                     return [
@@ -434,6 +436,17 @@ class CourseController extends Controller
         $relative = ltrim(substr($path, strlen('/storage/')), '/');
 
         return $relative !== '' && ! str_contains($relative, '..') ? $relative : null;
+    }
+
+    private function documentType(?string $path, ?string $filename): ?string
+    {
+        $extension = strtolower((string) pathinfo($filename ?: (parse_url((string) $path, PHP_URL_PATH) ?: ''), PATHINFO_EXTENSION));
+
+        return match ($extension) {
+            'pdf' => 'pdf',
+            'jpg', 'jpeg', 'png', 'gif', 'webp' => 'image',
+            default => null,
+        };
     }
 
     private function requestedVideoRange(Request $request, int $size): array

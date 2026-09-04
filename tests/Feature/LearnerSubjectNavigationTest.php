@@ -135,6 +135,7 @@ class LearnerSubjectNavigationTest extends TestCase
 
         $response = $this->actingAs($learner)->getJson("/api/courses/{$course->id}/topics")->assertOk();
         $documentUrl = $response->json('topics.0.subtopics.0.documentationPath');
+        $response->assertJsonPath('topics.0.subtopics.0.documentationType', 'pdf');
         $this->assertStringContainsString('/api/learning/documents/subtopics/', $documentUrl);
         $this->assertStringContainsString('signature=', $documentUrl);
         $this->assertStringNotContainsString('/storage/documentation/', $documentUrl);
