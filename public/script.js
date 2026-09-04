@@ -2116,8 +2116,9 @@ function loadDocsForSubtopic(sub) {
     if (filenameLabel) filenameLabel.textContent = sub.documentationFilename || 'Document';
 
     const path  = sub.documentationPath.toLowerCase();
-    const isPdf = path.endsWith('.pdf');
-    const isImg = /\.(jpeg|jpg|gif|png|webp)$/.test(path);
+    const documentName = String(sub.documentationFilename || '').toLowerCase();
+    const isPdf = path.endsWith('.pdf') || documentName.endsWith('.pdf');
+    const isImg = /\.(jpeg|jpg|gif|png|webp)$/.test(path) || /\.(jpeg|jpg|gif|png|webp)$/.test(documentName);
 
     if (isImg) {
         if (docsImg) docsImg.src = sub.documentationPath;

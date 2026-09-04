@@ -156,6 +156,12 @@ class CourseController extends Controller
                         now()->addMinutes((int) config('session.lifetime', 120)),
                         ['subtopic' => $sub->id, 'session_key' => $this->videoSessionKey()]
                     ) : null;
+                $protectedDocumentUrl = $this->publicStorageRelativePath($sub->documentation_path)
+                    ? URL::temporarySignedRoute(
+                        'learning.document.subtopic',
+                        now()->addMinutes((int) config('session.lifetime', 120)),
+                        ['subtopic' => $sub->id, 'session_key' => $this->documentSessionKey()]
+                    ) : $sub->documentation_path;
                 $assessmentAttempts = $sub->content_type === 'subtopic'
                     ? collect()
                     : QuizAttempt::where('user_id', $user->id)
@@ -173,7 +179,7 @@ class CourseController extends Controller
                     'videoUrl'              => $driveFileId && $protectedVideoUrl ? null : $sub->video_url,
                     'videoUploadUrl'        => $protectedVideoUrl,
                     'videoFilename'         => $sub->video_filename,
-                    'documentationPath'     => $sub->documentation_path,
+                    'documentationPath'     => $protectedDocumentUrl,
                     'documentationFilename' => $sub->documentation_filename,
                     'contentType'           => $sub->content_type,
                     'instructions'          => $sub->instructions,
@@ -209,7 +215,12 @@ class CourseController extends Controller
                 'subtopics'  => $subtopics,
                 'videoUrl'              => $topic->video_url,
                 'videos'                => $topic->videos,
-                'documentationPath'     => $topic->documentation_path,
+                'documentationPath'     => $this->publicStorageRelativePath($topic->documentation_path)
+                    ? URL::temporarySignedRoute(
+                        'learning.document.topic',
+                        now()->addMinutes((int) config('session.lifetime', 120)),
+                        ['topic' => $topic->id, 'session_key' => $this->documentSessionKey()]
+                    ) : $topic->documentation_path,
                 'documentationFilename' => $topic->documentation_filename,
                 'quizTimeLimitMinutes' => $topic->assessment_time_limit_minutes ? (int) $topic->assessment_time_limit_minutes : null,
                 'quiz' => $quizQuestions->map(function ($q) {
@@ -376,6 +387,55 @@ class CourseController extends Controller
         return $response;
     }
 
+    public function streamSubtopicDocument(Request $request, Subtopic $subtopic)
+    {
+        $this->authorizeDocumentSession($request);
+        $subtopic->loadMissing('topic');
+        abort_unless($subtopic->status === 'approved' && $subtopic->topic?->status === 'approved', 404);
+        abort_unless(Auth::user()->hasActiveEnrollment((int) $subtopic->topic->course_id), 403, 'An active enrollment is required to view this document.');
+
+        return $this->privateDocumentResponse($subtopic->documentation_path, $subtopic->documentation_filename);
+    }
+
+    public function streamTopicDocument(Request $request, Topic $topic)
+    {
+        $this->authorizeDocumentSession($request);
+        abort_unless($topic->status === 'approved', 404);
+        abort_unless(Auth::user()->hasActiveEnrollment((int) $topic->course_id), 403, 'An active enrollment is required to view this document.');
+
+        return $this->privateDocumentResponse($topic->documentation_path, $topic->documentation_filename);
+    }
+
+    private function authorizeDocumentSession(Request $request): void
+    {
+        abort_unless(hash_equals($this->documentSessionKey(), (string) $request->query('session_key')), 403, 'This document link belongs to a different or expired session.');
+    }
+
+    private function privateDocumentResponse(?string $storedPath, ?string $filename)
+    {
+        $path = $this->publicStorageRelativePath($storedPath);
+        abort_unless($path && Storage::disk('public')->exists($path), 404, 'The requested document was not found.');
+
+        $response = response()->file(Storage::disk('public')->path($path), [
+            'Content-Type' => Storage::disk('public')->mimeType($path) ?: 'application/octet-stream',
+            'Content-Disposition' => 'inline; filename="' . addcslashes($filename ?: basename($path), '"\\') . '"',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+        $response->setPrivate();
+        $response->setMaxAge(0);
+        $response->headers->addCacheControlDirective('no-store');
+
+        return $response;
+    }
+
+    private function publicStorageRelativePath(?string $path): ?string
+    {
+        if (! is_string($path) || ! str_starts_with($path, '/storage/')) return null;
+        $relative = ltrim(substr($path, strlen('/storage/')), '/');
+
+        return $relative !== '' && ! str_contains($relative, '..') ? $relative : null;
+    }
+
     private function requestedVideoRange(Request $request, int $size): array
     {
         // Start with a small segment so playback can begin quickly, then use
@@ -408,6 +468,18 @@ class CourseController extends Controller
             $token = bin2hex(random_bytes(32));
             $session->put('video_access_token', $token);
         }
+        return hash_hmac('sha256', $token, (string) config('app.key'));
+    }
+
+    private function documentSessionKey(): string
+    {
+        $session = request()->session();
+        $token = $session->get('document_access_token');
+        if (! is_string($token) || $token === '') {
+            $token = bin2hex(random_bytes(32));
+            $session->put('document_access_token', $token);
+        }
+
         return hash_hmac('sha256', $token, (string) config('app.key'));
     }
 

@@ -42,6 +42,10 @@ Route::prefix('api')->group(function () {
         Route::get('/courses/{course}/progress-report', [CourseController::class, 'assessmentProgressReport']);
         Route::get('/learning/videos/{subtopic}', [CourseController::class, 'streamSubtopicVideo'])
             ->middleware('signed')->name('learning.video');
+        Route::get('/learning/documents/subtopics/{subtopic}', [CourseController::class, 'streamSubtopicDocument'])
+            ->middleware('signed')->name('learning.document.subtopic');
+        Route::get('/learning/documents/topics/{topic}', [CourseController::class, 'streamTopicDocument'])
+            ->middleware('signed')->name('learning.document.topic');
         Route::get('/progress', [CourseController::class, 'getProgress']);
         Route::post('/progress/start', [CourseController::class, 'startTopic']);
         Route::post('/progress/unlock', [CourseController::class, 'unlockProgress']);

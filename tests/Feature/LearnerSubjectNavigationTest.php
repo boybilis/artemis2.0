@@ -108,6 +108,46 @@ class LearnerSubjectNavigationTest extends TestCase
         $this->assertStringNotContainsString($driveFileId, $protectedUrl);
     }
 
+    public function test_pdf_uses_a_session_bound_url_that_does_not_require_the_public_storage_link(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('documentation/policy.pdf', '%PDF-1.4 test document');
+        $learner = User::factory()->create();
+        $course = Course::create(['title'=>'NCLEX','approval_status'=>'approved','is_published'=>true]);
+        $batch = CourseBatch::create([
+            'course_id'=>$course->id,
+            'name'=>'NCLEX Batch 1',
+            'code'=>'NCLEX-B1',
+            'status'=>'open',
+            'created_by'=>$learner->id,
+        ]);
+        CourseEnrollment::create(['user_id'=>$learner->id,'course_id'=>$course->id,'batch_id'=>$batch->id,'status'=>'active','enrolled_at'=>now()]);
+        $subject = Subject::create(['course_id'=>$course->id,'subject_code'=>'N1','title'=>'Nursing','status'=>'approved']);
+        $topic = Topic::create(['course_id'=>$course->id,'subject_id'=>$subject->id,'title'=>'Policy','status'=>'approved']);
+        \App\Models\Subtopic::create([
+            'topic_id'=>$topic->id,
+            'title'=>'Review Policy',
+            'content_type'=>'subtopic',
+            'status'=>'approved',
+            'documentation_path'=>'/storage/documentation/policy.pdf',
+            'documentation_filename'=>'Policy.pdf',
+        ]);
+
+        $response = $this->actingAs($learner)->getJson("/api/courses/{$course->id}/topics")->assertOk();
+        $documentUrl = $response->json('topics.0.subtopics.0.documentationPath');
+        $this->assertStringContainsString('/api/learning/documents/subtopics/', $documentUrl);
+        $this->assertStringContainsString('signature=', $documentUrl);
+        $this->assertStringNotContainsString('/storage/documentation/', $documentUrl);
+
+        $parts = parse_url($documentUrl);
+        $this->get($parts['path'].'?'.$parts['query'])
+            ->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf');
+        $this->withSession(['document_access_token' => 'another-session'])
+            ->get($parts['path'].'?'.$parts['query'])
+            ->assertForbidden();
+    }
+
     public function test_enrolled_learner_sees_their_mock_exam_rank_on_the_course_card_data(): void
     {
         $course = Course::create(['title'=>'NCLEX','approval_status'=>'approved','is_published'=>true]);
