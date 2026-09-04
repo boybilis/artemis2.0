@@ -416,10 +416,17 @@ class CourseController extends Controller
     private function privateDocumentResponse(?string $storedPath, ?string $filename)
     {
         $path = $this->publicStorageRelativePath($storedPath);
-        abort_unless($path && Storage::disk('public')->exists($path), 404, 'The requested document was not found.');
+        abort_unless($path, 404, 'The requested document was not found.');
 
-        $response = response()->file(Storage::disk('public')->path($path), [
-            'Content-Type' => Storage::disk('public')->mimeType($path) ?: 'application/octet-stream',
+        $configuredPath = Storage::disk('public')->path($path);
+        $legacyPath = storage_path('app/public/' . str_replace('/', DIRECTORY_SEPARATOR, $path));
+        $physicalPath = is_file($configuredPath) ? $configuredPath : (is_file($legacyPath) ? $legacyPath : null);
+        abort_unless($physicalPath, 404, 'The requested document was not found on the Artemis server.');
+
+        $mimeType = function_exists('mime_content_type') ? mime_content_type($physicalPath) : null;
+
+        $response = response()->file($physicalPath, [
+            'Content-Type' => $mimeType ?: 'application/octet-stream',
             'Content-Disposition' => 'inline; filename="' . addcslashes($filename ?: basename($path), '"\\') . '"',
             'X-Content-Type-Options' => 'nosniff',
         ]);

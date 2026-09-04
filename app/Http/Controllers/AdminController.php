@@ -1058,6 +1058,7 @@ class AdminController extends Controller
             'maximum_attempts' => 'nullable|in:1,2,3,4,5',
             'video_url'   => 'nullable|string|max:500',
             'video_file'  => 'nullable|file|mimes:mp4,webm,mov,m4v|max:38912',
+            'documentation' => 'nullable|file|mimes:pdf,ppt,pptx,doc,docx,jpg,jpeg,png,gif,webp|max:51200',
             'sort_order'  => 'nullable|integer|min:1',
             'zoom_url' => 'required_if:content_type,zoom_link|nullable|url|max:1000',
             'zoom_description' => 'required_if:content_type,zoom_link|nullable|string|max:5000',
@@ -1086,11 +1087,9 @@ class AdminController extends Controller
         ];
 
         if ($contentType === 'subtopic' && $request->hasFile('documentation')) {
-            $file     = $request->file('documentation');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path     = $file->storeAs('documentation', $filename, 'public');
+            [$path, $originalName] = $this->storeDocumentationUpload($request->file('documentation'));
             $data['documentation_path']     = '/storage/' . $path;
-            $data['documentation_filename'] = $file->getClientOriginalName();
+            $data['documentation_filename'] = $originalName;
         }
         if ($contentType === 'subtopic' && $request->hasFile('video_file')) {
             $file = $request->file('video_file');
@@ -1122,6 +1121,7 @@ class AdminController extends Controller
             'maximum_attempts' => 'nullable|in:1,2,3,4,5',
             'video_url'  => 'nullable|string|max:500',
             'video_file' => 'nullable|file|mimes:mp4,webm,mov,m4v|max:38912',
+            'documentation' => 'nullable|file|mimes:pdf,ppt,pptx,doc,docx,jpg,jpeg,png,gif,webp|max:51200',
             'remove_video_file' => 'nullable|boolean',
             'sort_order' => 'nullable|integer|min:1',
             'zoom_url' => 'required_if:content_type,zoom_link|nullable|url|max:1000',
@@ -1149,11 +1149,9 @@ class AdminController extends Controller
             $data['documentation_path'] = null;
             $data['documentation_filename'] = null;
         } elseif ($request->hasFile('documentation')) {
-            $file     = $request->file('documentation');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $path     = $file->storeAs('documentation', $filename, 'public');
+            [$path, $originalName] = $this->storeDocumentationUpload($request->file('documentation'));
             $data['documentation_path']     = '/storage/' . $path;
-            $data['documentation_filename'] = $file->getClientOriginalName();
+            $data['documentation_filename'] = $originalName;
         } elseif ($request->input('remove_documentation') === '1') {
             $data['documentation_path']     = null;
             $data['documentation_filename'] = null;
@@ -1185,6 +1183,21 @@ class AdminController extends Controller
         ]);
 
         return back()->with('success', 'Subtopic updated successfully.');
+    }
+
+    private function storeDocumentationUpload(\Illuminate\Http\UploadedFile $file): array
+    {
+        $originalName = $file->getClientOriginalName();
+        $safeName = preg_replace('/[^A-Za-z0-9._-]+/', '_', $originalName) ?: 'document.pdf';
+        $path = $file->storeAs('documentation', now()->format('YmdHis') . '_' . bin2hex(random_bytes(4)) . '_' . $safeName, 'public');
+
+        if (! is_string($path) || $path === '' || ! Storage::disk('public')->exists($path)) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'documentation' => 'The document could not be saved. Check the server upload directory and permissions.',
+            ]);
+        }
+
+        return [$path, $originalName];
     }
 
     public function destroySubtopic(Request $request, $course_id, $id)
