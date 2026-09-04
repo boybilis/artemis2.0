@@ -30,3 +30,4 @@ Thumbs.db
 /test_videos.php
 /test_videos.json
 /database/dumps/*.sql
+/storage
