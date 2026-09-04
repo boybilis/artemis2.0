@@ -351,6 +351,12 @@ class CourseController extends Controller
     {
         abort_unless(hash_equals($this->videoSessionKey(), (string) $request->query('session_key')), 403, 'This video link belongs to a different or expired session.');
 
+        // Modern browsers identify media-element requests as video. Reject an
+        // ordinary page navigation to the temporary URL while allowing older
+        // browsers that omit Sec-Fetch-Dest entirely.
+        $fetchDestination = strtolower((string) $request->header('Sec-Fetch-Dest'));
+        abort_if($fetchDestination !== '' && ! in_array($fetchDestination, ['video', 'audio'], true), 403, 'Open this protected video from the Artemis learning workspace.');
+
         $subtopic->loadMissing('topic');
         abort_unless($subtopic->status === 'approved' && $subtopic->topic?->status === 'approved', 404);
         abort_unless(Auth::user()->hasActiveEnrollment((int) $subtopic->topic->course_id), 403, 'An active enrollment is required to view this video.');

@@ -67,6 +67,25 @@ class LearnerSubjectNavigationTest extends TestCase
             ->get($parts['path'] . '?' . $parts['query'])->assertForbidden();
     }
 
+    public function test_protected_video_rejects_direct_browser_navigation(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('subtopic-videos/lesson.mp4', 'test-video-content');
+        $learner = User::factory()->create();
+        $course = Course::create(['title'=>'NCLEX','approval_status'=>'approved','is_published'=>true]);
+        $batch = CourseBatch::create(['course_id'=>$course->id,'name'=>'Batch 1','code'=>'B1','status'=>'open','created_by'=>$learner->id]);
+        CourseEnrollment::create(['user_id'=>$learner->id,'course_id'=>$course->id,'batch_id'=>$batch->id,'status'=>'active','enrolled_at'=>now()]);
+        $subject = Subject::create(['course_id'=>$course->id,'subject_code'=>'N1','title'=>'Nursing','status'=>'approved']);
+        $topic = Topic::create(['course_id'=>$course->id,'subject_id'=>$subject->id,'title'=>'Policy','status'=>'approved']);
+        \App\Models\Subtopic::create(['topic_id'=>$topic->id,'title'=>'Video','content_type'=>'subtopic','status'=>'approved','video_path'=>'subtopic-videos/lesson.mp4']);
+
+        $response = $this->actingAs($learner)->getJson("/api/courses/{$course->id}/topics")->assertOk();
+        $parts = parse_url($response->json('topics.0.subtopics.0.videoUploadUrl'));
+        $this->withHeader('Sec-Fetch-Dest', 'document')
+            ->get($parts['path'].'?'.$parts['query'])
+            ->assertForbidden();
+    }
+
     public function test_private_drive_video_hides_its_original_url_and_uses_an_artemis_signed_url(): void
     {
         config()->set('services.google_drive.streaming_enabled', true);

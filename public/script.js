@@ -2056,6 +2056,10 @@ function loadVideoForSubtopic(sub) {
         activeLessonVideoKey = getLessonVideoKey(sub);
         uploadedPlayer.disablePictureInPicture = true;
         uploadedPlayer.disableRemotePlayback = true;
+        uploadedPlayer.controlsList?.add('nodownload');
+        uploadedPlayer.controlsList?.add('noremoteplayback');
+        uploadedPlayer.oncontextmenu = event => event.preventDefault();
+        uploadedPlayer.ondragstart = event => event.preventDefault();
         uploadedPlayer.style.display = 'block';
         showVideoLoading();
         startVideoLoadingProgress(5);

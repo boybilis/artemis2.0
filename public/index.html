@@ -1188,7 +1188,7 @@
                                         display: block;
                                     "
                                 ></iframe>
-                                <video id="uploaded-video-player" controls playsinline disablepictureinpicture disableremoteplayback controlslist="nodownload noremoteplayback" preload="metadata" style="display:none;width:100%;height:100%;background:#000"></video>
+                                <video id="uploaded-video-player" controls playsinline disablepictureinpicture disableremoteplayback controlslist="nodownload noremoteplayback" preload="metadata" draggable="false" oncontextmenu="return false" style="display:none;width:100%;height:100%;background:#000"></video>
                                 <div id="video-loading-overlay" class="video-loading-overlay" role="status" aria-live="polite" style="display:none">
                                     <div class="video-loading-spinner" aria-hidden="true"></div>
                                     <strong id="video-loading-label">Preparing secure video…</strong>
@@ -1567,7 +1567,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=45"></script>
+        <script src="script.js?v=46"></script>
         <script>
             lucide.createIcons();
         </script>
