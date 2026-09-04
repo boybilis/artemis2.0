@@ -356,6 +356,7 @@ class CourseController extends Controller
                 'Cache-Control' => 'private, no-store, max-age=0, must-revalidate',
                 'Pragma' => 'no-cache',
                 'X-Content-Type-Options' => 'nosniff',
+                'X-Accel-Buffering' => 'no',
             ];
             if ($partial) $headers['Content-Range'] = "bytes {$start}-{$end}/{$size}";
             return response()->stream(fn () => $drive->stream($fileId, $start, $end), $partial ? 206 : 200, $headers);
@@ -377,19 +378,23 @@ class CourseController extends Controller
 
     private function requestedVideoRange(Request $request, int $size): array
     {
+        // Keep each response small enough that shared-hosting proxies do not
+        // buffer the whole video before the browser can begin playback.
+        $maximumChunkSize = 4 * 1024 * 1024;
         $range = $request->header('Range');
         if (! $range) return [0, $size - 1, false];
         if (! preg_match('/^bytes=(\d*)-(\d*)$/', trim($range), $matches) || ($matches[1] === '' && $matches[2] === '')) {
             abort(416, 'Invalid video range.', ['Content-Range' => "bytes */{$size}"]);
         }
         if ($matches[1] === '') {
-            $suffix = min((int) $matches[2], $size);
+            $suffix = min((int) $matches[2], $size, $maximumChunkSize);
             return [$size - $suffix, $size - 1, true];
         }
         $start = (int) $matches[1];
         if ($start >= $size) abort(416, 'Video range is outside the file.', ['Content-Range' => "bytes */{$size}"]);
         $end = $matches[2] === '' ? $size - 1 : min((int) $matches[2], $size - 1);
         if ($end < $start) abort(416, 'Invalid video range.', ['Content-Range' => "bytes */{$size}"]);
+        $end = min($end, $start + $maximumChunkSize - 1);
         return [$start, $end, true];
     }
 

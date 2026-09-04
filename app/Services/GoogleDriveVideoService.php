@@ -41,6 +41,9 @@ class GoogleDriveVideoService
 
     public function stream(string $fileId, int $start, int $end): void
     {
+        if (function_exists('set_time_limit')) @set_time_limit(0);
+        while (ob_get_level() > 0) @ob_end_flush();
+
         $handle = curl_init('https://www.googleapis.com/drive/v3/files/' . rawurlencode($fileId) . '?alt=media&supportsAllDrives=true');
         curl_setopt_array($handle, [
             CURLOPT_HTTPHEADER => [
