@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css?v=44" />
+        <link rel="stylesheet" href="style.css?v=45" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -935,85 +935,6 @@
                             id="docs-container"
                             style="display: none; flex-direction: column"
                         >
-                            <div class="docs-toolbar">
-                                <div
-                                    class="docs-toolbar-info"
-                                    style="
-                                        display: flex;
-                                        align-items: center;
-                                        gap: 0.75rem;
-                                    "
-                                >
-                                    <div
-                                        style="
-                                            width: 32px;
-                                            height: 32px;
-                                            border-radius: 8px;
-                                            background: var(--gradient);
-                                            display: flex;
-                                            align-items: center;
-                                            justify-content: center;
-                                            color: #fff;
-                                            flex-shrink: 0;
-                                        "
-                                    >
-                                        <i
-                                            data-lucide="file-text"
-                                            style="width: 16px; height: 16px"
-                                        ></i>
-                                    </div>
-                                    <div>
-                                        <p
-                                            style="
-                                                margin: 0;
-                                                font-size: 0.8rem;
-                                                color: var(--text-muted);
-                                            "
-                                        >
-                                            Lesson Material
-                                        </p>
-                                        <p
-                                            style="
-                                                margin: 0;
-                                                font-size: 0.9rem;
-                                                font-weight: 600;
-                                                color: var(--text);
-                                            "
-                                            id="docs-filename-label"
-                                        >
-                                            Document
-                                        </p>
-                                    </div>
-                                </div>
-                                <div class="docs-toolbar-actions" style="display:flex;align-items:center;gap:.5rem">
-                                <button type="button" id="docs-fullscreen-btn" class="btn-ghost" style="padding:.4rem .9rem;font-size:.82rem;border-radius:8px;display:flex;align-items:center;gap:.35rem">
-                                    <i data-lucide="maximize-2" style="width:14px;height:14px"></i>
-                                    View Full Screen
-                                </button>
-                                <a
-                                    href="#"
-                                    id="docs-download-btn"
-                                    target="_blank"
-                                    class="btn-primary"
-                                    style="
-                                        padding: 0.4rem 0.9rem;
-                                        font-size: 0.82rem;
-                                        text-decoration: none;
-                                        border-radius: 8px;
-                                        display: flex;
-                                        align-items: center;
-                                        gap: 0.35rem;
-                                    "
-                                >
-                                    <i
-                                        data-lucide="download"
-                                        style="width: 14px; height: 14px"
-                                    ></i>
-                                    Download
-                                </a>
-                                </div>
-                            </div>
-
                             <!-- PDF iframe viewer -->
                             <div
                                 id="docs-iframe-wrap"
@@ -1034,6 +955,9 @@
                                     <span id="pdf-zoom-level">100%</span>
                                     <button type="button" id="pdf-zoom-in" aria-label="Zoom in"><i data-lucide="plus"></i></button>
                                     <button type="button" id="pdf-zoom-reset" class="pdf-zoom-reset">Fit</button>
+                                    <span class="pdf-toolbar-divider" aria-hidden="true"></span>
+                                    <a href="#" id="docs-download-btn" target="_blank" title="Download PDF" aria-label="Download PDF"><i data-lucide="download"></i></a>
+                                    <button type="button" id="docs-fullscreen-btn" title="View full screen" aria-label="View full screen"><i data-lucide="maximize-2"></i></button>
                                 </div>
                                 <iframe
                                     id="docs-iframe"
@@ -1612,7 +1536,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=62"></script>
+        <script src="script.js?v=63"></script>
         <script>
             lucide.createIcons();
         </script>

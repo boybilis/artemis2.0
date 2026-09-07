@@ -2343,7 +2343,9 @@ if (docsFullscreenBtn) {
     const updateDocsFullscreenButton = () => {
         const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
         const isFullscreen = fullscreenElement === $('docs-container');
-        docsFullscreenBtn.innerHTML = `<i data-lucide="${isFullscreen ? 'minimize-2' : 'maximize-2'}" style="width:14px;height:14px"></i>${isFullscreen ? 'Exit Full Screen' : 'View Full Screen'}`;
+        docsFullscreenBtn.innerHTML = `<i data-lucide="${isFullscreen ? 'minimize-2' : 'maximize-2'}"></i>`;
+        docsFullscreenBtn.title = isFullscreen ? 'Exit full screen' : 'View full screen';
+        docsFullscreenBtn.setAttribute('aria-label', docsFullscreenBtn.title);
         if (window.lucide) lucide.createIcons({root: docsFullscreenBtn});
     };
     document.addEventListener('fullscreenchange', updateDocsFullscreenButton);
