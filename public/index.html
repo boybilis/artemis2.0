@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css?v=28" />
+        <link rel="stylesheet" href="style.css?v=29" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -625,6 +625,35 @@
 
             <!-- ─── Dashboard ───────────────────────────────── -->
             <section id="dashboard-screen" class="screen">
+                <div class="learner-dashboard-shell">
+                <aside class="learner-dashboard-sidebar" aria-label="Learner dashboard navigation">
+                    <div class="learner-sidebar-brand">
+                        <span class="learner-sidebar-logo" aria-hidden="true">A</span>
+                        <span class="learner-sidebar-brand-copy">
+                            <strong>Artemis 2.0</strong>
+                            <small>Learning Portal</small>
+                        </span>
+                    </div>
+                    <div class="learner-sidebar-nav" aria-label="Dashboard sections">
+                        <div class="learner-sidebar-item active">
+                            <i data-lucide="layout-dashboard"></i>
+                            <span>Dashboard</span>
+                        </div>
+                        <div class="learner-sidebar-item">
+                            <i data-lucide="graduation-cap"></i>
+                            <span>Review Batches</span>
+                        </div>
+                        <div class="learner-sidebar-item">
+                            <i data-lucide="award"></i>
+                            <span>Certificates</span>
+                        </div>
+                    </div>
+                    <div class="learner-sidebar-footer">
+                        <span>Professional Exam Review</span>
+                        <small>Learn. Practice. Succeed.</small>
+                    </div>
+                </aside>
+                <div class="learner-dashboard-content">
                 <nav class="landing-nav">
                     <div class="nav-logo">Artemis 2.0</div>
                     <button
@@ -797,6 +826,8 @@
                             <div id="learner-progress-report-content" class="learner-progress-report-content"><p class="progress-report-empty">Select the Progress Report tab to load assessment history.</p></div>
                         </div>
                     </div>
+                </div>
+                </div>
                 </div>
             </section>
 
