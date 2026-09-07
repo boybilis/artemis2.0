@@ -216,6 +216,7 @@ body.light-mode select:disabled { color:#64748b; background-color:#e5e7eb; opaci
 .why-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.25rem; }
 .why-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:1.5rem; }
 .why-icon { width:42px; height:42px; border-radius:10px; background:var(--gradient); display:flex; align-items:center; justify-content:center; margin-bottom:.75rem; color:#fff; }
+#landing-screen .why-icon { background:linear-gradient(135deg,#f4510b,#ff7a2f); box-shadow:0 6px 14px rgba(244,81,11,.2); }
 .why-icon svg { width:20px; height:20px; }
 .why-card h3 { font-size:.88rem; font-weight:700; margin-bottom:.35rem; line-height:1.35; }
 .why-card p { font-size:.8rem; color:var(--text-muted); line-height:1.6; }
