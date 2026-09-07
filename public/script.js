@@ -2170,6 +2170,7 @@ function loadDocsForSubtopic(sub) {
     const docsFallback  = $('docs-fallback');
     const filenameLabel = $('docs-filename-label');
     const pdfPages = $('pdf-pages-container');
+    const pdfZoomControls = $('pdf-zoom-controls');
 
     // Reset
     if (docsIframeWrap) {
@@ -2179,6 +2180,7 @@ function loadDocsForSubtopic(sub) {
     }
     if (docsIframe) { docsIframe.style.display = 'none'; docsIframe.removeAttribute('src'); }
     if (pdfPages) { pdfPages.style.display = 'none'; pdfPages.innerHTML = ''; }
+    if (pdfZoomControls) pdfZoomControls.style.display = 'none';
     if (docsImgWrap)    docsImgWrap.style.display    = 'none';
     if (docsFallback)   docsFallback.style.display   = 'none';
 
@@ -2207,6 +2209,8 @@ function loadDocsForSubtopic(sub) {
         if (docsImgWrap) docsImgWrap.style.display = 'flex';
     } else if (isPdf) {
         if (docsIframeWrap) { docsIframeWrap.style.display = 'block'; docsIframeWrap.style.overflowY = 'auto'; }
+        if (pdfZoomControls) pdfZoomControls.style.display = 'flex';
+        setPdfZoom(1);
         const learningItemIndex = Number(window.currentLearningItemIndex || 0);
         const shouldTrackCompletion = learningItemIndex >= Number(window.currentUnlockedIdx || 0);
         renderTrackedPdf(sub.documentationPath, shouldTrackCompletion);
@@ -2227,6 +2231,19 @@ function loadDocsForSubtopic(sub) {
 
 let pdfRenderSequence = 0;
 let pdfJsLoader = null;
+let currentPdfZoom = 1;
+function setPdfZoom(value) {
+    currentPdfZoom = Math.max(.6, Math.min(2.5, Math.round(value * 10) / 10));
+    document.querySelectorAll('#pdf-pages-container canvas[data-base-width]').forEach(canvas => {
+        canvas.style.width = `${Number(canvas.dataset.baseWidth) * currentPdfZoom}px`;
+    });
+    const level = $('pdf-zoom-level');
+    if (level) level.textContent = `${Math.round(currentPdfZoom * 100)}%`;
+    const zoomOut = $('pdf-zoom-out');
+    const zoomIn = $('pdf-zoom-in');
+    if (zoomOut) zoomOut.disabled = currentPdfZoom <= .6;
+    if (zoomIn) zoomIn.disabled = currentPdfZoom >= 2.5;
+}
 async function renderTrackedPdf(path, shouldTrackCompletion = true) {
     const sequence = ++pdfRenderSequence;
     const learningItemIndex = window.currentLearningItemIndex;
@@ -2247,14 +2264,18 @@ async function renderTrackedPdf(path, shouldTrackCompletion = true) {
         const pdf = await pdfjs.getDocument(path).promise;
         if (sequence !== pdfRenderSequence) return;
         pages.innerHTML = '';
-        const targetWidth = Math.max(320, Math.min(1000, wrap.clientWidth - 32));
+        const targetWidth = Math.max(280, Math.min(1000, wrap.clientWidth - 32));
+        const renderDensity = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
             const page = await pdf.getPage(pageNumber);
             if (sequence !== pdfRenderSequence) return;
             const base = page.getViewport({scale: 1});
-            const viewport = page.getViewport({scale: targetWidth / base.width});
+            const displayScale = targetWidth / base.width;
+            const viewport = page.getViewport({scale: displayScale * renderDensity});
             const canvas = document.createElement('canvas');
             canvas.width = Math.floor(viewport.width); canvas.height = Math.floor(viewport.height);
+            canvas.dataset.baseWidth = String(Math.floor(base.width * displayScale));
+            canvas.style.width = `${Math.floor(base.width * displayScale) * currentPdfZoom}px`;
             canvas.setAttribute('aria-label', `PDF page ${pageNumber} of ${pdf.numPages}`);
             pages.appendChild(canvas);
             await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
@@ -2279,6 +2300,13 @@ async function renderTrackedPdf(path, shouldTrackCompletion = true) {
         pages.innerHTML = '<div class="pdf-render-status">The PDF preview could not be loaded. Use Download to open the document.</div>';
     }
 }
+
+const pdfZoomOut = $('pdf-zoom-out');
+const pdfZoomIn = $('pdf-zoom-in');
+const pdfZoomReset = $('pdf-zoom-reset');
+if (pdfZoomOut) pdfZoomOut.addEventListener('click', () => setPdfZoom(currentPdfZoom - .2));
+if (pdfZoomIn) pdfZoomIn.addEventListener('click', () => setPdfZoom(currentPdfZoom + .2));
+if (pdfZoomReset) pdfZoomReset.addEventListener('click', () => setPdfZoom(1));
 
 const docsFullscreenBtn = $('docs-fullscreen-btn');
 if (docsFullscreenBtn) {
