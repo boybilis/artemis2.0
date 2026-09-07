@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css?v=33" />
+        <link rel="stylesheet" href="style.css?v=34" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -676,6 +676,15 @@
                     <i data-lucide="menu"></i>
                     <span>Menu</span>
                 </button>
+                <nav id="learner-course-context-nav" class="learner-course-context-nav hidden" aria-label="Current course">
+                    <div class="learner-course-context-brand">
+                        <span class="learner-course-context-mark" aria-hidden="true">A</span>
+                        <span class="learner-course-context-copy">
+                            <small>Currently Exploring</small>
+                            <strong id="learner-course-context-name">Course</strong>
+                        </span>
+                    </div>
+                </nav>
                 <div class="dashboard-body">
                     <section id="dashboard-hero" class="dashboard-hero">
                         <div class="dashboard-hero-copy">
@@ -1589,7 +1598,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=52"></script>
+        <script src="script.js?v=53"></script>
         <script>
             lucide.createIcons();
         </script>

@@ -807,8 +807,10 @@ function renderDashboard() {
     const dcHead = $('dashboard-courses-head');
     const cCont = $('courses-container');
     const dashboardHero = $('dashboard-hero');
+    const courseContextNav = $('learner-course-context-nav');
     const isDashboardOverview = state.courseListFilter === 'dashboard';
     if (cdArea) { cdArea.style.display = 'none'; cdArea.style.opacity = '0'; }
+    if (courseContextNav) courseContextNav.classList.add('hidden');
     if (dashboardHero) dashboardHero.style.display = isDashboardOverview ? 'grid' : 'none';
     if (dcHead) { dcHead.style.display = isDashboardOverview ? 'none' : ''; dcHead.style.opacity = '1'; dcHead.style.transform = 'none'; }
     if (cCont) { cCont.style.display = isDashboardOverview ? 'none' : ''; cCont.style.opacity = '1'; cCont.style.transform = 'none'; }
@@ -923,6 +925,10 @@ function renderDashboard() {
                 localStorage.setItem('last_course_id', course.id);
                 const titleEl = $('course-details-title');
                 if (titleEl) titleEl.textContent = course.title;
+                const contextName = $('learner-course-context-name');
+                const contextNav = $('learner-course-context-nav');
+                if (contextName) contextName.textContent = course.title;
+                if (contextNav) contextNav.classList.remove('hidden');
                 fadeTransition(
                     [$('dashboard-hero'), $('dashboard-courses-head'), cContainer],
                     [$('course-details-area')],
@@ -948,6 +954,8 @@ function renderDashboard() {
         const backBtn = $('back-to-courses-btn');
         if (backBtn) {
             backBtn.onclick = () => {
+                const contextNav = $('learner-course-context-nav');
+                if (contextNav) contextNav.classList.add('hidden');
                 fadeTransition(
                     [$('course-details-area')],
                     [$('dashboard-courses-head'), cContainer],
