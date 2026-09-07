@@ -2232,18 +2232,6 @@ function loadDocsForSubtopic(sub) {
 let pdfRenderSequence = 0;
 let pdfJsLoader = null;
 let currentPdfZoom = 1;
-let pdfZoomIdleTimer = null;
-function wakePdfZoomControls() {
-    const controls = $('pdf-zoom-controls');
-    if (!controls) return;
-    controls.classList.remove('is-idle');
-    controls.classList.add('is-active');
-    if (pdfZoomIdleTimer) clearTimeout(pdfZoomIdleTimer);
-    pdfZoomIdleTimer = setTimeout(() => {
-        controls.classList.remove('is-active');
-        controls.classList.add('is-idle');
-    }, 1200);
-}
 function setPdfZoom(value) {
     currentPdfZoom = Math.max(.6, Math.min(2.5, Math.round(value * 10) / 10));
     document.querySelectorAll('#pdf-pages-container canvas[data-base-width]').forEach(canvas => {
@@ -2255,7 +2243,17 @@ function setPdfZoom(value) {
     const zoomIn = $('pdf-zoom-in');
     if (zoomOut) zoomOut.disabled = currentPdfZoom <= .6;
     if (zoomIn) zoomIn.disabled = currentPdfZoom >= 2.5;
-    wakePdfZoomControls();
+}
+function updatePdfPageIndicator(wrap) {
+    const canvases = [...document.querySelectorAll('#pdf-pages-container canvas[data-page-number]')];
+    if (!wrap || !canvases.length) return;
+    const readingLine = wrap.scrollTop + Math.min(120, wrap.clientHeight * .25);
+    let current = canvases[0];
+    canvases.forEach(canvas => {
+        if (canvas.offsetTop <= readingLine) current = canvas;
+    });
+    const currentPage = $('pdf-current-page');
+    if (currentPage) currentPage.textContent = current.dataset.pageNumber || '1';
 }
 async function renderTrackedPdf(path, shouldTrackCompletion = true) {
     const sequence = ++pdfRenderSequence;
@@ -2276,6 +2274,10 @@ async function renderTrackedPdf(path, shouldTrackCompletion = true) {
         const pdfjs = await pdfJsLoader;
         const pdf = await pdfjs.getDocument(path).promise;
         if (sequence !== pdfRenderSequence) return;
+        const totalPages = $('pdf-total-pages');
+        const currentPage = $('pdf-current-page');
+        if (totalPages) totalPages.textContent = String(pdf.numPages);
+        if (currentPage) currentPage.textContent = '1';
         pages.innerHTML = '';
         const targetWidth = Math.max(280, Math.min(1000, wrap.clientWidth - 32));
         const renderDensity = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
@@ -2288,18 +2290,16 @@ async function renderTrackedPdf(path, shouldTrackCompletion = true) {
             const canvas = document.createElement('canvas');
             canvas.width = Math.floor(viewport.width); canvas.height = Math.floor(viewport.height);
             canvas.dataset.baseWidth = String(Math.floor(base.width * displayScale));
+            canvas.dataset.pageNumber = String(pageNumber);
             canvas.style.width = `${Math.floor(base.width * displayScale) * currentPdfZoom}px`;
             canvas.setAttribute('aria-label', `PDF page ${pageNumber} of ${pdf.numPages}`);
             pages.appendChild(canvas);
             await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
         }
-        if (!shouldTrackCompletion) {
-            wrap.onscroll = null;
-            return;
-        }
-
         let completed = false;
         wrap.onscroll = () => {
+            updatePdfPageIndicator(wrap);
+            if (!shouldTrackCompletion) return;
             if (completed || sequence !== pdfRenderSequence) return;
             const atBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 24;
             if (!atBottom) return;

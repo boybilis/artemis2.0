@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css?v=41" />
+        <link rel="stylesheet" href="style.css?v=42" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -1035,7 +1035,9 @@
                                     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
                                 "
                             >
-                                <div id="pdf-zoom-controls" class="pdf-zoom-controls" style="display:none" aria-label="PDF zoom controls">
+                                <div id="pdf-zoom-controls" class="pdf-zoom-controls" style="display:none" aria-label="PDF viewer controls">
+                                    <span class="pdf-page-counter"><strong id="pdf-current-page">1</strong><span>/</span><span id="pdf-total-pages">1</span></span>
+                                    <span class="pdf-toolbar-divider" aria-hidden="true"></span>
                                     <button type="button" id="pdf-zoom-out" aria-label="Zoom out"><i data-lucide="minus"></i></button>
                                     <span id="pdf-zoom-level">100%</span>
                                     <button type="button" id="pdf-zoom-in" aria-label="Zoom in"><i data-lucide="plus"></i></button>
@@ -1618,7 +1620,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=60"></script>
+        <script src="script.js?v=61"></script>
         <script>
             lucide.createIcons();
         </script>
