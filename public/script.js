@@ -868,7 +868,7 @@ function renderDashboard() {
         visibleCourses.forEach(course => {
             const card = document.createElement('div');
             const isLocked = !course.is_enrolled;
-            card.className = `topic-card ${isLocked ? 'course-locked' : ''}`.trim();
+            card.className = `topic-card learner-course-card ${isLocked ? 'course-locked' : 'course-enrolled'}`.trim();
             card.style.cursor = 'pointer';
 
             let lockMsg = '';
@@ -892,16 +892,20 @@ function renderDashboard() {
                 : null;
 
             card.innerHTML = `
-                <p class="topic-num">Batch ${escapeHtml(course.batch_code || '')}</p>
+                <div class="course-card-heading">
+                    <p class="topic-num">Batch ${escapeHtml(course.batch_code || '')}</p>
+                    <span class="course-card-status ${isLocked ? 'available' : 'enrolled'}">${isLocked ? 'Available' : 'Enrolled'}</span>
+                </div>
                 <h3>${escapeHtml(course.batch_name)}</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem;"><strong>Assigned course:</strong> ${escapeHtml(course.title)}</p>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">${escapeHtml(course.batch_description || course.description || '')}</p>
+                <div class="course-card-master"><i data-lucide="graduation-cap"></i><span>${escapeHtml(course.title)}</span></div>
+                <p class="course-card-description">${escapeHtml(course.batch_description || course.description || '')}</p>
                 <div class="course-availability-dates">
-                    <p><span>Start date:</span> ${formatCourseDate(course.batch_starts_at) || 'To be announced'}</p>
-                    <p><span>End date:</span> ${formatCourseDate(course.batch_ends_at) || 'No end date'}</p>
+                    <p><i data-lucide="calendar-days"></i><span>Starts</span> ${formatCourseDate(course.batch_starts_at) || 'To be announced'}</p>
+                    <p><i data-lucide="calendar-check"></i><span>Access until</span> ${formatCourseDate(course.batch_ends_at) || 'No end date'}</p>
                 </div>
                 ${rankingLabel}
                 ${certificateLabel}
+                ${isLocked ? '' : '<div class="course-card-open-label">Open course <i data-lucide="arrow-right"></i></div>'}
                 ${lockMsg}
             `;
             const subscribeBtn = card.querySelector('.course-subscribe-btn');
