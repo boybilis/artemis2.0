@@ -2996,6 +2996,29 @@ if (dashboardSidebarBtn) dashboardSidebarBtn.addEventListener('click', () => sho
 if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('enrolled'));
 if (availableCoursesSidebarBtn) availableCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('available'));
 
+const learnerDashboardShell = document.querySelector('.learner-dashboard-shell');
+const learnerSidebarToggle = $('learner-sidebar-toggle');
+const learnerSidebarClose = $('learner-sidebar-close');
+const learnerSidebarBackdrop = $('learner-sidebar-backdrop');
+function setLearnerSidebarOpen(isOpen) {
+    if (!learnerDashboardShell) return;
+    learnerDashboardShell.classList.toggle('sidebar-open', isOpen);
+    document.body.classList.toggle('learner-sidebar-lock', isOpen);
+    if (learnerSidebarToggle) learnerSidebarToggle.setAttribute('aria-expanded', String(isOpen));
+}
+if (learnerSidebarToggle) learnerSidebarToggle.addEventListener('click', () => setLearnerSidebarOpen(true));
+if (learnerSidebarClose) learnerSidebarClose.addEventListener('click', () => setLearnerSidebarOpen(false));
+if (learnerSidebarBackdrop) learnerSidebarBackdrop.addEventListener('click', () => setLearnerSidebarOpen(false));
+document.querySelectorAll('.learner-sidebar-item, .learner-sidebar-action').forEach(button => {
+    button.addEventListener('click', () => setLearnerSidebarOpen(false));
+});
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') setLearnerSidebarOpen(false);
+});
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) setLearnerSidebarOpen(false);
+});
+
 // Check for successful Xendit return
 function checkXenditReturn() {
     const params = new URLSearchParams(window.location.search);

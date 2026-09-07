@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css?v=32" />
+        <link rel="stylesheet" href="style.css?v=33" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -627,6 +627,9 @@
             <section id="dashboard-screen" class="screen">
                 <div class="learner-dashboard-shell">
                 <aside class="learner-dashboard-sidebar" aria-label="Learner dashboard navigation">
+                    <button type="button" id="learner-sidebar-close" class="learner-sidebar-close" aria-label="Close navigation menu">
+                        <i data-lucide="x"></i>
+                    </button>
                     <div class="learner-sidebar-brand">
                         <span class="learner-sidebar-logo" aria-hidden="true">A</span>
                         <span class="learner-sidebar-brand-copy">
@@ -667,7 +670,12 @@
                         <small>Learn. Practice. Succeed.</small>
                     </div>
                 </aside>
+                <button type="button" id="learner-sidebar-backdrop" class="learner-sidebar-backdrop" aria-label="Close navigation menu"></button>
                 <div class="learner-dashboard-content">
+                <button type="button" id="learner-sidebar-toggle" class="learner-sidebar-toggle" aria-label="Open navigation menu" aria-controls="dashboard-screen" aria-expanded="false">
+                    <i data-lucide="menu"></i>
+                    <span>Menu</span>
+                </button>
                 <div class="dashboard-body">
                     <section id="dashboard-hero" class="dashboard-hero">
                         <div class="dashboard-hero-copy">
@@ -1581,7 +1589,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=51"></script>
+        <script src="script.js?v=52"></script>
         <script>
             lucide.createIcons();
         </script>
