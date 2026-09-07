@@ -45,6 +45,7 @@ class PaymongoPaymentTest extends TestCase
             'provider_checkout_id' => 'cs_test_123',
             'status' => 'pending_payment',
         ]);
+        $this->assertSame('Awaiting Payment', Voucher::where('provider_checkout_id', 'cs_test_123')->firstOrFail()->statusLabel());
     }
 
     public function test_valid_paid_webhook_activates_only_its_batch_enrollment(): void
@@ -90,6 +91,7 @@ class PaymongoPaymentTest extends TestCase
         ], $payload)->assertOk()->assertJson(['received' => true]);
 
         $this->assertDatabaseHas('vouchers', ['id' => $voucher->id, 'used' => true, 'provider_payment_id' => 'pay_test_paid']);
+        $this->assertSame('Paid / Enrolled', $voucher->fresh()->statusLabel());
         $this->assertDatabaseHas('course_enrollments', ['user_id' => $user->id, 'batch_id' => $batch->id, 'status' => 'active']);
         $this->assertSame(1, CourseEnrollment::where('user_id', $user->id)->count());
     }

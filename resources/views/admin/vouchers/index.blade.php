@@ -7,19 +7,19 @@
 
 @section('content')
     <section class="panel" data-ajax-table="vouchers-table">
-        <p class="panel-label">Voucher list</p>
-        <h2 class="panel-title">Exam Access Vouchers</h2>
+        <p class="panel-label">Payments and access</p>
+        <h2 class="panel-title">Batch Enrollment Payments &amp; Codes</h2>
         <div class="table-wrap">
             <table class="data-table">
-                <thead><tr><th>Code</th><th>Course</th><th>Status</th><th>Assigned user</th><th>Amount</th><th>Date created</th></tr></thead>
+                <thead><tr><th>Reference</th><th>Course / Batch</th><th>Status</th><th>Learner</th><th>Method</th><th>Amount</th><th>Date created</th></tr></thead>
                 <tbody>
                     @forelse ($vouchers as $voucher)
                         <tr>
                             <td><strong>{{ $voucher->code }}</strong></td>
-                            <td>{{ $voucher->batch?->course?->title ?? 'No assigned course' }}</td>
+                            <td><strong>{{ $voucher->batch?->course?->title ?? 'No assigned course' }}</strong>@if($voucher->batch)<br><span class="muted">{{ $voucher->batch->code }} — {{ $voucher->batch->name }}</span>@endif</td>
                             <td>
-                                <span class="status {{ $voucher->used ? 'success' : 'info' }}">
-                                    {{ $voucher->used ? 'Redeemed' : 'Active (Unused)' }}
+                                <span class="status {{ $voucher->statusCssClass() }}">
+                                    {{ $voucher->statusLabel() }}
                                 </span>
                             </td>
                             <td>
@@ -30,12 +30,13 @@
                                     <span class="muted">Unassigned</span>
                                 @endif
                             </td>
+                            <td><span class="status info">{{ $voucher->paymentMethodLabel() }}</span></td>
                             <td>₱{{ number_format($voucher->price, 2) }}</td>
                             <td>{{ $voucher->created_at->format('M d, Y h:i A') }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="muted">No vouchers found in database.</td>
+                            <td colspan="7" class="muted">No enrollment payments or access codes found.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -64,7 +65,7 @@
                                 <span class="muted">Unknown Learner</span>
                             @endif
                         </td>
-                        <td><span class="status info">Online Payment</span></td>
+                        <td><span class="status info">{{ $voucher->paymentMethodLabel() }}</span></td>
                         <td>₱{{ number_format($voucher->price, 2) }}</td>
                         <td><span class="status success">Paid</span></td>
                         <td>{{ $voucher->used_at ? \Carbon\Carbon::parse($voucher->used_at)->format('M d, Y h:i A') : 'N/A' }}</td>

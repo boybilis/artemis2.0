@@ -256,7 +256,7 @@ class AdminController extends Controller
             return [
                 'code' => $v->code,
                 'price' => '₱' . number_format($v->price, 2),
-                'status' => $v->used ? 'Redeemed' : 'Active (Unused)',
+                'status' => $v->statusLabel(),
                 'date' => $v->created_at->format('M d, Y')
             ];
         });
