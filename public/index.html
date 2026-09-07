@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css?v=29" />
+        <link rel="stylesheet" href="style.css?v=30" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -635,18 +635,18 @@
                         </span>
                     </div>
                     <div class="learner-sidebar-nav" aria-label="Dashboard sections">
-                        <div class="learner-sidebar-item active">
+                        <button type="button" id="sidebar-dashboard-btn" class="learner-sidebar-item active">
                             <i data-lucide="layout-dashboard"></i>
                             <span>Dashboard</span>
-                        </div>
-                        <div class="learner-sidebar-item">
+                        </button>
+                        <button type="button" id="sidebar-enrolled-courses-btn" class="learner-sidebar-item">
                             <i data-lucide="graduation-cap"></i>
-                            <span>Review Batches</span>
-                        </div>
-                        <div class="learner-sidebar-item">
-                            <i data-lucide="award"></i>
-                            <span>Certificates</span>
-                        </div>
+                            <span>Enrolled Courses</span>
+                        </button>
+                        <button type="button" id="sidebar-available-courses-btn" class="learner-sidebar-item">
+                            <i data-lucide="library"></i>
+                            <span>Available Courses</span>
+                        </button>
                     </div>
                     <div class="learner-sidebar-footer">
                         <span>Professional Exam Review</span>
@@ -764,15 +764,10 @@
                         id="dashboard-courses-head"
                     >
                         <div class="course-section-title-row">
-                            <p class="section-label">Available Batches</p>
-                            <label class="course-filter-toggle" for="enrolled-only-toggle">
-                                <input type="checkbox" id="enrolled-only-toggle" />
-                                <span class="course-filter-switch" aria-hidden="true"></span>
-                                <span>Enrolled batches only</span>
-                            </label>
+                            <h2 id="dashboard-course-list-title" class="dashboard-course-list-title">Available Courses</h2>
                         </div>
                         <div style="display: flex; align-items: center; gap: 1rem;">
-                            <p class="section-subtitle" style="margin: 0;">
+                            <p id="dashboard-course-list-subtitle" class="section-subtitle" style="margin: 0;">
                                 Enroll in a batch to access its assigned course and learning content.
                             </p>
                             <div class="layout-toggle" style="display:flex; gap:0.25rem; background: rgba(0,0,0,0.05); padding: 4px; border-radius: 8px;">
@@ -1598,7 +1593,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=46"></script>
+        <script src="script.js?v=47"></script>
         <script>
             lucide.createIcons();
         </script>

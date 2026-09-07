@@ -10,7 +10,7 @@ let state = {
     courseUnlocked: false,
     hasBoughtVoucher: false,
     certificates: [],
-    showEnrolledOnly: false,
+    courseListFilter: 'all',
     courseLayout: 'list'
 };
 
@@ -621,8 +621,6 @@ async function loginUser(user) {
     }
 
     state.user = user;
-    const enrolledFilterKey = `artemis_enrolled_only_${String(user.email || 'learner').toLowerCase()}`;
-    state.showEnrolledOnly = localStorage.getItem(enrolledFilterKey) === 'true';
     const layoutKey = `artemis_course_layout_${String(user.email || 'learner').toLowerCase()}`;
     state.courseLayout = localStorage.getItem(layoutKey) === 'grid' ? 'grid' : 'list';
     state.courseUnlocked = user.isCourseUnlocked || false;
@@ -828,12 +826,36 @@ function renderDashboard() {
     const cContainer = $('courses-container');
     if (cContainer) {
         cContainer.innerHTML = '';
-        const visibleCourses = state.showEnrolledOnly
+        const visibleCourses = state.courseListFilter === 'enrolled'
             ? courses.filter(course => course.is_enrolled)
-            : courses;
+            : state.courseListFilter === 'available'
+                ? courses.filter(course => !course.is_enrolled)
+                : courses;
+
+        const listTitle = $('dashboard-course-list-title');
+        const listSubtitle = $('dashboard-course-list-subtitle');
+        if (listTitle) listTitle.textContent = state.courseListFilter === 'enrolled'
+            ? 'Your Enrolled Courses'
+            : state.courseListFilter === 'available'
+                ? 'Available Courses'
+                : 'Course Dashboard';
+        if (listSubtitle) listSubtitle.textContent = state.courseListFilter === 'enrolled'
+            ? 'Continue learning from the courses included in your active batch enrollments.'
+            : state.courseListFilter === 'available'
+                ? 'Choose an available batch to enroll and unlock its assigned course.'
+                : 'View your enrolled courses or browse other available review courses.';
+
+        document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
+        const activeSidebarButton = state.courseListFilter === 'enrolled'
+            ? $('sidebar-enrolled-courses-btn')
+            : state.courseListFilter === 'available'
+                ? $('sidebar-available-courses-btn')
+                : $('sidebar-dashboard-btn');
+        if (activeSidebarButton) activeSidebarButton.classList.add('active');
 
         if (visibleCourses.length === 0) {
-            cContainer.innerHTML = `<div class="empty-course-filter"><i data-lucide="book-open"></i><p>No enrolled batches yet.</p><span>Turn off “Enrolled batches only” to browse available batches.</span></div>`;
+            const isEnrolledView = state.courseListFilter === 'enrolled';
+            cContainer.innerHTML = `<div class="empty-course-filter"><i data-lucide="book-open"></i><p>${isEnrolledView ? 'No enrolled courses yet.' : 'No available courses at this time.'}</p><span>${isEnrolledView ? 'Browse Available Courses to choose a review batch.' : 'Please check again when a new batch becomes available.'}</span></div>`;
         }
 
         visibleCourses.forEach(course => {
@@ -919,17 +941,6 @@ function renderDashboard() {
         if (window.lucide) lucide.createIcons();
         applyLayoutMode(state.courseLayout, false);
 
-        const enrolledToggle = $('enrolled-only-toggle');
-        if (enrolledToggle) {
-            enrolledToggle.checked = state.showEnrolledOnly;
-            enrolledToggle.onchange = () => {
-                state.showEnrolledOnly = enrolledToggle.checked;
-                const key = `artemis_enrolled_only_${String(state.user?.email || 'learner').toLowerCase()}`;
-                localStorage.setItem(key, String(state.showEnrolledOnly));
-                renderDashboard();
-            };
-        }
-        
         const backBtn = $('back-to-courses-btn');
         if (backBtn) {
             backBtn.onclick = () => {
@@ -2966,6 +2977,20 @@ if (dashboardMenuBtn && dashboardNavActions) {
         dashboardNavActions.classList.toggle('show');
     });
 }
+
+function showDashboardCourseList(filter) {
+    state.courseListFilter = ['enrolled', 'available'].includes(filter) ? filter : 'all';
+    renderDashboard();
+    const courseHeading = $('dashboard-courses-head');
+    if (courseHeading) courseHeading.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+const dashboardSidebarBtn = $('sidebar-dashboard-btn');
+const enrolledCoursesSidebarBtn = $('sidebar-enrolled-courses-btn');
+const availableCoursesSidebarBtn = $('sidebar-available-courses-btn');
+if (dashboardSidebarBtn) dashboardSidebarBtn.addEventListener('click', () => showDashboardCourseList('all'));
+if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('enrolled'));
+if (availableCoursesSidebarBtn) availableCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('available'));
 
 // Check for successful Xendit return
 function checkXenditReturn() {
