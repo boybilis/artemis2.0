@@ -90,12 +90,15 @@
             width: 100%;
             margin-top: 20px;
             padding: 11px 14px;
-            border: 1px solid #075176;
+            border: 1px solid #08b89f;
             border-radius: 10px;
-            background: linear-gradient(135deg, #075176, #1685e6);
+            background: linear-gradient(135deg, #08b89f, #06a990);
             color: #ffffff;
             font-weight: 800;
             cursor: pointer;
+        }
+        .btn:hover {
+            background: linear-gradient(135deg, #079d89, #058b7a);
         }
 
         .note {

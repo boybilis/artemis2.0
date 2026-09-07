@@ -32,13 +32,19 @@ body { background:var(--bg); color:var(--text); font-family:'Plus Jakarta Sans',
 .hidden { display:none !important; }
 
 /* Buttons */
-.btn-primary { background:var(--gradient); color:#fff; border:none; padding:.75rem 1.5rem; border-radius:10px; font-family:inherit; font-weight:600; font-size:.9rem; cursor:pointer; transition:all .3s; white-space:nowrap; position:relative; overflow:hidden; }
-.btn-primary::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,#0a668f,#2497ef); opacity:0; transition:opacity .3s; }
+.btn-primary { background:linear-gradient(135deg,#08b89f,#06a990); color:#fff; border:none; padding:.75rem 1.5rem; border-radius:10px; font-family:inherit; font-weight:600; font-size:.9rem; cursor:pointer; transition:all .3s; white-space:nowrap; position:relative; overflow:hidden; box-shadow:0 5px 14px rgba(8,184,159,.18); }
+.btn-primary::before { content:''; position:absolute; inset:0; background:linear-gradient(135deg,#079d89,#058b7a); opacity:0; transition:opacity .3s; }
+.btn-primary:hover { background:linear-gradient(135deg,#079d89,#058b7a); box-shadow:0 7px 18px rgba(8,184,159,.25); }
 
 .btn-primary span { position:relative; z-index:1; }
 
 .btn-primary:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
-.btn-ghost { background:transparent; color:var(--text-muted); border:1.5px solid var(--border); padding:.72rem 1.5rem; border-radius:10px; font-family:inherit; font-weight:600; font-size:.9rem; cursor:pointer; transition:all .3s; white-space:nowrap; }
+.btn-ghost { background:transparent; color:#fff; border:1.5px solid rgba(255,255,255,.72); padding:.72rem 1.5rem; border-radius:10px; font-family:inherit; font-weight:600; font-size:.9rem; cursor:pointer; transition:all .3s; white-space:nowrap; }
+.btn-ghost:hover { color:#fff; border-color:#08b89f; background:#073b60; }
+body.light-mode .btn-ghost { color:#073b60; border-color:#073b60; }
+body.light-mode .btn-ghost:hover { color:#fff; border-color:#073b60; background:#073b60; }
+.btn-secondary { color:#fff; border-color:#073b60; background:#073b60; }
+.btn-secondary:hover { background:#052f4e; }
 
 #explore-courses-btn, #resume-module-btn { min-width: 190px; text-align: center; justify-content: center; display: inline-flex; }
 
@@ -169,15 +175,17 @@ body.light-mode select:disabled { color:#64748b; background-color:#e5e7eb; opaci
 .hero h1 .gradient-text { background:var(--gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .hero-desc { font-size:1.05rem; color:var(--text-muted); line-height:1.65; margin-bottom:2.5rem; max-width:100%; text-align:left; }
 .hero-cta { display:flex; gap:1rem; justify-content:flex-start; flex-wrap:wrap; }
-#landing-screen .nav-logo { background:none; color:#f4510b; -webkit-text-fill-color:#f4510b; }
+#landing-screen .nav-logo { background:none; color:#fff; -webkit-text-fill-color:#fff; }
 #landing-screen .landing-nav { background:#075176; border-bottom-color:rgba(255,255,255,.16); }
 #landing-screen .landing-nav .burger-bars span { background:#fff; }
 #landing-screen #landing-theme-toggle { color:#fff; }
 #landing-screen .hero h1 .gradient-text { background:none; color:#f4510b; -webkit-text-fill-color:#f4510b; }
-#landing-screen #nav-signup-btn, #landing-screen #hero-signup-btn { color:#fff; background:linear-gradient(135deg,#f4510b,#ff6a1a); box-shadow:0 7px 18px rgba(244,81,11,.2); }
-#landing-screen #nav-signup-btn:hover, #landing-screen #hero-signup-btn:hover { background:linear-gradient(135deg,#dc4308,#f4510b); box-shadow:0 9px 22px rgba(244,81,11,.28); }
-#landing-screen #nav-login-btn, #landing-screen #hero-login-btn { color:#f4510b; border-color:#f4510b; background:transparent; }
-#landing-screen #nav-login-btn:hover, #landing-screen #hero-login-btn:hover { color:#fff; background:#f4510b; }
+#landing-screen #nav-signup-btn, #landing-screen #hero-signup-btn { color:#fff; background:linear-gradient(135deg,#08b89f,#06a990); box-shadow:0 7px 18px rgba(8,184,159,.2); }
+#landing-screen #nav-signup-btn:hover, #landing-screen #hero-signup-btn:hover { background:linear-gradient(135deg,#079d89,#058b7a); box-shadow:0 9px 22px rgba(8,184,159,.28); }
+#landing-screen #hero-login-btn { color:#073b60; border-color:#073b60; background:transparent; }
+#landing-screen #hero-login-btn:hover { color:#fff; background:#073b60; }
+#landing-screen #nav-login-btn { color:#fff; border-color:#fff; background:transparent; }
+#landing-screen #nav-login-btn:hover { color:#073b60; background:#fff; }
 #landing-screen .cert-paper-logo { color:#f4510b; }
 
 .hero-visual { flex: 1; display: flex; justify-content: center; align-items: center; position: relative; }
