@@ -10,7 +10,7 @@ let state = {
     courseUnlocked: false,
     hasBoughtVoucher: false,
     certificates: [],
-    courseListFilter: 'all',
+    courseListFilter: 'dashboard',
     courseLayout: 'list'
 };
 
@@ -621,6 +621,7 @@ async function loginUser(user) {
     }
 
     state.user = user;
+    state.courseListFilter = 'dashboard';
     const layoutKey = `artemis_course_layout_${String(user.email || 'learner').toLowerCase()}`;
     state.courseLayout = localStorage.getItem(layoutKey) === 'grid' ? 'grid' : 'list';
     state.courseUnlocked = user.isCourseUnlocked || false;
@@ -805,9 +806,12 @@ function renderDashboard() {
     const cdArea = $('course-details-area');
     const dcHead = $('dashboard-courses-head');
     const cCont = $('courses-container');
+    const dashboardHero = $('dashboard-hero');
+    const isDashboardOverview = state.courseListFilter === 'dashboard';
     if (cdArea) { cdArea.style.display = 'none'; cdArea.style.opacity = '0'; }
-    if (dcHead) { dcHead.style.display = ''; dcHead.style.opacity = '1'; dcHead.style.transform = 'none'; }
-    if (cCont) { cCont.style.display = ''; cCont.style.opacity = '1'; cCont.style.transform = 'none'; }
+    if (dashboardHero) dashboardHero.style.display = isDashboardOverview ? 'grid' : 'none';
+    if (dcHead) { dcHead.style.display = isDashboardOverview ? 'none' : ''; dcHead.style.opacity = '1'; dcHead.style.transform = 'none'; }
+    if (cCont) { cCont.style.display = isDashboardOverview ? 'none' : ''; cCont.style.opacity = '1'; cCont.style.transform = 'none'; }
 
     const resumeBtn = $('resume-module-btn');
     if (resumeBtn) resumeBtn.classList.add('hidden');
@@ -920,7 +924,7 @@ function renderDashboard() {
                 const titleEl = $('course-details-title');
                 if (titleEl) titleEl.textContent = course.title;
                 fadeTransition(
-                    [$('dashboard-courses-head'), cContainer],
+                    [$('dashboard-hero'), $('dashboard-courses-head'), cContainer],
                     [$('course-details-area')],
                     ['block']
                 );
@@ -2979,16 +2983,16 @@ if (dashboardMenuBtn && dashboardNavActions) {
 }
 
 function showDashboardCourseList(filter) {
-    state.courseListFilter = ['enrolled', 'available'].includes(filter) ? filter : 'all';
+    state.courseListFilter = ['enrolled', 'available'].includes(filter) ? filter : 'dashboard';
     renderDashboard();
     const courseHeading = $('dashboard-courses-head');
-    if (courseHeading) courseHeading.scrollIntoView({behavior:'smooth', block:'start'});
+    if (filter !== 'dashboard' && courseHeading) courseHeading.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 const dashboardSidebarBtn = $('sidebar-dashboard-btn');
 const enrolledCoursesSidebarBtn = $('sidebar-enrolled-courses-btn');
 const availableCoursesSidebarBtn = $('sidebar-available-courses-btn');
-if (dashboardSidebarBtn) dashboardSidebarBtn.addEventListener('click', () => showDashboardCourseList('all'));
+if (dashboardSidebarBtn) dashboardSidebarBtn.addEventListener('click', () => showDashboardCourseList('dashboard'));
 if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('enrolled'));
 if (availableCoursesSidebarBtn) availableCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('available'));
 
@@ -3230,21 +3234,7 @@ document.addEventListener('keydown', (e) => {
 const ecBtn = $('explore-courses-btn');
 if (ecBtn) {
     ecBtn.addEventListener('click', () => {
-        const lastCourseId = localStorage.getItem('last_course_id');
-        const cContainer = $('courses-container');
-        if (cContainer && cContainer.children.length > 0) {
-            let targetCard = null;
-            if (lastCourseId) {
-                const idx = courses.findIndex(c => c.id == lastCourseId);
-                if (idx !== -1 && cContainer.children[idx]) {
-                    targetCard = cContainer.children[idx];
-                }
-            }
-            if (!targetCard) {
-                targetCard = cContainer.children[0];
-            }
-            targetCard.click();
-        }
+        showDashboardCourseList('enrolled');
     });
 }
 
