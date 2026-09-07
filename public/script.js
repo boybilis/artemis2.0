@@ -833,7 +833,7 @@ function renderDashboard() {
         const visibleCourses = state.courseListFilter === 'enrolled'
             ? courses.filter(course => course.is_enrolled)
             : state.courseListFilter === 'available'
-                ? courses
+                ? courses.filter(course => !course.is_enrolled)
                 : courses;
 
         const listTitle = $('dashboard-course-list-title');
@@ -846,7 +846,7 @@ function renderDashboard() {
         if (listSubtitle) listSubtitle.textContent = state.courseListFilter === 'enrolled'
             ? 'Continue learning from the courses included in your active batch enrollments.'
             : state.courseListFilter === 'available'
-                ? 'Browse all available review courses and their active batches.'
+                ? 'Browse review courses you are not currently enrolled in.'
                 : 'View your enrolled courses or browse other available review courses.';
 
         document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
