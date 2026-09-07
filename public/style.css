@@ -170,6 +170,9 @@ body.light-mode select:disabled { color:#64748b; background-color:#e5e7eb; opaci
 .hero-desc { font-size:1.05rem; color:var(--text-muted); line-height:1.65; margin-bottom:2.5rem; max-width:100%; text-align:left; }
 .hero-cta { display:flex; gap:1rem; justify-content:flex-start; flex-wrap:wrap; }
 #landing-screen .nav-logo { background:none; color:#f4510b; -webkit-text-fill-color:#f4510b; }
+#landing-screen .landing-nav { background:#075176; border-bottom-color:rgba(255,255,255,.16); }
+#landing-screen .landing-nav .burger-bars span { background:#fff; }
+#landing-screen #landing-theme-toggle { color:#fff; }
 #landing-screen .hero h1 .gradient-text { background:none; color:#f4510b; -webkit-text-fill-color:#f4510b; }
 #landing-screen #nav-signup-btn, #landing-screen #hero-signup-btn { color:#fff; background:linear-gradient(135deg,#f4510b,#ff6a1a); box-shadow:0 7px 18px rgba(244,81,11,.2); }
 #landing-screen #nav-signup-btn:hover, #landing-screen #hero-signup-btn:hover { background:linear-gradient(135deg,#dc4308,#f4510b); box-shadow:0 9px 22px rgba(244,81,11,.28); }
