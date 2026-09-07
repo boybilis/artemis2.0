@@ -41,4 +41,11 @@ return [
         'folder_id' => env('GOOGLE_DRIVE_FOLDER_ID'),
     ],
 
+    'paymongo' => [
+        'secret_key' => env('PAYMONGO_SECRET_KEY'),
+        'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
+        'payment_methods' => array_values(array_filter(array_map('trim', explode(',', env('PAYMONGO_PAYMENT_METHODS', 'qrph'))))),
+        'webhook_tolerance' => (int) env('PAYMONGO_WEBHOOK_TOLERANCE', 300),
+    ],
+
 ];

@@ -114,8 +114,9 @@ Route::prefix('api')->group(function () {
         });
     });
 
-    // Public / callback endpoints (no auth middleware required)
-    Route::get('/voucher/xendit/success', [VoucherController::class, 'xenditSuccess'])->name('voucher.xendit.success');
+    // Public PayMongo return and webhook endpoints. Payment is verified server-side.
+    Route::get('/payments/paymongo/success', [VoucherController::class, 'paymongoSuccess'])->name('payments.paymongo.success');
+    Route::post('/payments/paymongo/webhook', [VoucherController::class, 'paymongoWebhook'])->name('payments.paymongo.webhook');
 });
 
 // ─── ADMIN DASHBOARD SYSTEM ──────────────────────────────────

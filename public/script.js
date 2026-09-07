@@ -577,7 +577,7 @@ async function boot() {
 
 // Start boot pipeline
 boot().then(() => {
-    checkXenditReturn();
+    checkPaymongoReturn();
 });
 
 async function loadPublicCurriculum() {
@@ -728,7 +728,7 @@ if (buyConfirmBtn) {
         try {
             const data = await apiRequest('/api/voucher/buy', 'POST', { batch_id: selectedPurchaseBatchId });
             if (data && data.success && data.checkout_url) {
-                buyConfirmBtn.textContent = 'Redirecting to Xendit...';
+                buyConfirmBtn.textContent = 'Opening PayMongo QR Ph...';
                 window.location.href = data.checkout_url;
             } else {
                 showToast(data.message || 'Failed to initiate purchase', 'error');
@@ -3142,8 +3142,8 @@ window.addEventListener('resize', () => {
     if (window.innerWidth > 900) setLearnerSidebarOpen(false);
 });
 
-// Check for successful Xendit return
-function checkXenditReturn() {
+// Check for successful PayMongo return
+function checkPaymongoReturn() {
     const params = new URLSearchParams(window.location.search);
     if (params.has('voucher_success')) {
         const code = params.get('voucher_success');

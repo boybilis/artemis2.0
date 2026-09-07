@@ -9,10 +9,13 @@ use App\Models\AuditLog;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Mail\VoucherPurchased;
 use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseBatch;
+use App\Models\User;
 
 class VoucherController extends Controller
 {
@@ -53,96 +56,211 @@ class VoucherController extends Controller
             'used_at' => null
         ]);
 
-        // Create Xendit Invoice
-        $secretKey = env('XENDIT_SECRET_KEY');
-        
+        $secretKey = config('services.paymongo.secret_key');
+        if (!$secretKey) {
+            $voucher->update(['status' => 'payment_configuration_error']);
+            return response()->json(['success' => false, 'message' => 'Online payment is not configured yet.'], 503);
+        }
+
+        $description = 'Artemis 2.0 batch enrollment: ' . $batch->name . ' (' . $course->title . ')';
         $response = Http::withBasicAuth($secretKey, '')
-            ->post('https://api.xendit.co/v2/invoices', [
-                'external_id' => $code,
-                'amount' => (float) $batch->price,
-                'currency' => 'PHP',
-                'payer_email' => $user->email,
-                'description' => 'Artemis 2.0 batch enrollment: ' . $batch->name . ' (' . $course->title . ')',
-                'success_redirect_url' => url('/api/voucher/xendit/success?code=' . $code),
-                'failure_redirect_url' => url('/')
+            ->acceptJson()
+            ->post('https://api.paymongo.com/v1/checkout_sessions', [
+                'data' => [
+                    'attributes' => [
+                        'billing' => array_filter([
+                            'name' => $user->name,
+                            'email' => $user->email,
+                            'phone' => $user->phone,
+                        ]),
+                        'cancel_url' => url('/?payment_cancelled=1'),
+                        'description' => $description,
+                        'line_items' => [[
+                            'amount' => (int) round(((float) $batch->price) * 100),
+                            'currency' => 'PHP',
+                            'description' => $description,
+                            'name' => $batch->name,
+                            'quantity' => 1,
+                        ]],
+                        'payment_method_types' => config('services.paymongo.payment_methods', ['qrph']),
+                        'reference_number' => $code,
+                        'send_email_receipt' => true,
+                        'show_description' => true,
+                        'show_line_items' => true,
+                        'success_url' => route('payments.paymongo.success', ['code' => $code]),
+                    ],
+                ],
             ]);
 
         if ($response->successful()) {
+            $checkout = $response->json('data');
+            $voucher->update([
+                'payment_provider' => 'paymongo',
+                'provider_checkout_id' => $checkout['id'] ?? null,
+            ]);
+
             return response()->json([
                 'success' => true,
-                'checkout_url' => $response->json()['invoice_url']
+                'checkout_url' => $checkout['attributes']['checkout_url'] ?? null,
             ]);
         }
 
+        $voucher->update(['status' => 'payment_creation_failed', 'payment_provider' => 'paymongo']);
+        Log::error('PayMongo checkout creation failed.', [
+            'voucher_id' => $voucher->id,
+            'status' => $response->status(),
+            'response' => $response->json(),
+        ]);
+
         return response()->json([
             'success' => false,
-            'message' => 'Failed to generate checkout link.'
+            'message' => 'PayMongo could not create the QR Ph checkout. Please try again.'
         ], 500);
     }
 
-    public function xenditSuccess(Request $request)
+    public function paymongoSuccess(Request $request)
     {
-        $code = $request->query('code');
+        $code = strtoupper(trim((string) $request->query('code')));
         if (!$code) {
             return redirect('/');
         }
 
         $voucher = Voucher::where('code', $code)->first();
-        if (!$voucher || $voucher->status !== 'pending_payment') {
-            return redirect('/?voucher_success=' . $code); // Already processed
+        if (!$voucher || $voucher->payment_provider !== 'paymongo') {
+            return redirect('/?error=payment_not_found');
         }
 
-        // Verify with Xendit
-        $secretKey = env('XENDIT_SECRET_KEY');
+        if ($voucher->used) {
+            return redirect('/?voucher_success=' . urlencode($code));
+        }
+
+        $secretKey = config('services.paymongo.secret_key');
+        if (!$secretKey || !$voucher->provider_checkout_id) {
+            return redirect('/?error=payment_not_completed');
+        }
+
         $response = Http::withBasicAuth($secretKey, '')
-            ->get('https://api.xendit.co/v2/invoices?external_id=' . $code);
+            ->acceptJson()
+            ->get('https://api.paymongo.com/v1/checkout_sessions/' . rawurlencode($voucher->provider_checkout_id));
 
-        if ($response->successful()) {
-            $invoices = $response->json();
-            \Illuminate\Support\Facades\Log::info('Xendit Invoices:', $invoices);
-            if (count($invoices) > 0 && in_array($invoices[0]['status'], ['PAID', 'SETTLED'])) {
-                $voucher->status = 'active';
-                $voucher->used = true;
-                $voucher->used_at = Carbon::now();
-                $voucher->redeemed_at = Carbon::now();
-                $voucher->save();
-
-                // Activate subscription for the user
-                $user = \App\Models\User::find($voucher->used_by);
-                if ($user) {
-                    CourseEnrollment::updateOrCreate(
-                        ['user_id' => $user->id, 'batch_id' => $voucher->batch_id],
-                        ['voucher_id' => $voucher->id, 'batch_id'=>$voucher->batch_id, 'status' => 'active', 'enrolled_at' => now(),
-                         'expires_at' => $voucher->batch?->ends_at ?: now()->addDays($voucher->duration_days ?: 30)]
-                    );
-
-                    \Illuminate\Support\Facades\Log::info('Sending email to: ' . $user->email);
-                    try {
-                        Mail::to($user->email)->send(new VoucherPurchased($voucher, $user));
-                        \Illuminate\Support\Facades\Log::info('Email sent.');
-                    } catch (\Exception $e) {
-                        \Illuminate\Support\Facades\Log::error('Mail Error: ' . $e->getMessage());
-                    }
-                } else {
-                    \Illuminate\Support\Facades\Log::error('User not found for voucher.');
-                }
-
-                AuditLog::create([
-                    'user_id' => $voucher->used_by,
-                    'action' => 'Subscription Purchase',
-                    'description' => 'Purchased enrollment for ' . ($voucher->batch?->name ?? 'batch') . ' via Xendit.',
-                    'ip_address' => $request->ip()
-                ]);
-
-                return redirect('/?voucher_success=' . $code);
-            } else {
-                \Illuminate\Support\Facades\Log::info('Status not PAID. Redirecting to error.');
-            }
-        } else {
-             \Illuminate\Support\Facades\Log::error('Xendit verification failed.');
+        if ($response->successful() && $this->checkoutIsPaid($response->json('data.attributes', []))) {
+            $paymentId = data_get($response->json(), 'data.attributes.payments.0.id');
+            $this->activatePaidVoucher($voucher, $request->ip(), $paymentId);
+            return redirect('/?voucher_success=' . urlencode($code));
         }
 
+        Log::warning('PayMongo return did not contain a paid checkout.', ['voucher_id' => $voucher->id]);
         return redirect('/?error=payment_not_completed');
+    }
+
+    public function paymongoWebhook(Request $request)
+    {
+        $rawPayload = $request->getContent();
+        if (!$this->validPaymongoSignature($rawPayload, (string) $request->header('Paymongo-Signature'))) {
+            return response()->json(['message' => 'Invalid webhook signature.'], 401);
+        }
+
+        $event = $request->json()->all();
+        $eventType = data_get($event, 'data.attributes.type');
+        if (!in_array($eventType, ['checkout_session.payment.paid', 'payment.paid'], true)) {
+            return response()->json(['received' => true]);
+        }
+
+        $resource = data_get($event, 'data.attributes.data', []);
+        $attributes = data_get($resource, 'attributes', []);
+        $checkoutId = data_get($resource, 'type') === 'checkout_session' ? data_get($resource, 'id') : null;
+        $code = strtoupper(trim((string) ($attributes['reference_number'] ?? $attributes['external_reference_number'] ?? '')));
+        $voucher = $checkoutId ? Voucher::where('provider_checkout_id', $checkoutId)->first() : null;
+        $voucher ??= $code ? Voucher::where('code', $code)->where('payment_provider', 'paymongo')->first() : null;
+
+        if (!$voucher) {
+            Log::warning('PayMongo paid webhook could not be matched.', ['event_id' => data_get($event, 'data.id')]);
+            return response()->json(['received' => true]);
+        }
+
+        $paymentId = data_get($resource, 'type') === 'payment'
+            ? data_get($resource, 'id')
+            : data_get($attributes, 'payments.0.id');
+        $this->activatePaidVoucher($voucher, $request->ip(), $paymentId);
+
+        return response()->json(['received' => true]);
+    }
+
+    private function checkoutIsPaid(array $attributes): bool
+    {
+        foreach (($attributes['payments'] ?? []) as $payment) {
+            if (data_get($payment, 'attributes.status') === 'paid') return true;
+        }
+
+        return in_array(data_get($attributes, 'payment_intent.attributes.status'), ['succeeded', 'paid'], true)
+            || in_array($attributes['status'] ?? null, ['paid', 'succeeded'], true);
+    }
+
+    private function validPaymongoSignature(string $payload, string $header): bool
+    {
+        $secret = (string) config('services.paymongo.webhook_secret');
+        if ($secret === '' || $header === '') return false;
+
+        $parts = [];
+        foreach (explode(',', $header) as $part) {
+            [$key, $value] = array_pad(explode('=', trim($part), 2), 2, null);
+            if ($key && $value) $parts[$key] = $value;
+        }
+
+        $timestamp = isset($parts['t']) ? (int) $parts['t'] : 0;
+        if (!$timestamp || abs(time() - $timestamp) > config('services.paymongo.webhook_tolerance', 300)) return false;
+
+        $signatureKey = str_starts_with((string) config('services.paymongo.secret_key'), 'sk_live_') ? 'li' : 'te';
+        $signature = $parts[$signatureKey] ?? null;
+        return $signature && hash_equals(hash_hmac('sha256', $timestamp . '.' . $payload, $secret), $signature);
+    }
+
+    private function activatePaidVoucher(Voucher $voucher, ?string $ipAddress, ?string $paymentId = null): void
+    {
+        $sendReceipt = false;
+        $voucher = DB::transaction(function () use ($voucher, $paymentId, &$sendReceipt) {
+            $locked = Voucher::with('batch')->lockForUpdate()->findOrFail($voucher->id);
+            if ($locked->used) return $locked;
+
+            $user = User::find($locked->used_by);
+            if (!$user || !$locked->batch) {
+                throw new \RuntimeException('Paid enrollment is missing its learner or batch.');
+            }
+
+            $locked->update([
+                'status' => 'active',
+                'used' => true,
+                'used_at' => now(),
+                'redeemed_at' => now(),
+                'provider_payment_id' => $paymentId ?: $locked->provider_payment_id,
+            ]);
+
+            CourseEnrollment::updateOrCreate(
+                ['user_id' => $user->id, 'batch_id' => $locked->batch_id],
+                ['voucher_id' => $locked->id, 'status' => 'active', 'enrolled_at' => now(),
+                    'expires_at' => $locked->batch->ends_at ?: now()->addDays($locked->duration_days ?: 30)]
+            );
+            $sendReceipt = true;
+            return $locked;
+        });
+
+        if (!$sendReceipt) return;
+
+        AuditLog::create([
+            'user_id' => $voucher->used_by,
+            'action' => 'Subscription Purchase',
+            'description' => 'Purchased enrollment for ' . ($voucher->batch?->name ?? 'batch') . ' via PayMongo QR Ph.',
+            'ip_address' => $ipAddress,
+        ]);
+
+        $user = User::find($voucher->used_by);
+        if ($user) {
+            try {
+                Mail::to($user->email)->send(new VoucherPurchased($voucher, $user));
+            } catch (\Throwable $e) {
+                Log::error('PayMongo receipt email failed.', ['voucher_id' => $voucher->id, 'error' => $e->getMessage()]);
+            }
+        }
     }
 
     public function verify(Request $request)
