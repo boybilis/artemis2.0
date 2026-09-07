@@ -646,6 +646,14 @@
                             <i data-lucide="graduation-cap"></i>
                             <span>Enrolled Courses</span>
                         </button>
+                        <button type="button" id="sidebar-subjects-btn" class="learner-sidebar-item learner-course-sidebar-item hidden">
+                            <i data-lucide="book-open"></i>
+                            <span>Subjects</span>
+                        </button>
+                        <button type="button" id="sidebar-progress-report-btn" class="learner-sidebar-item learner-course-sidebar-item hidden">
+                            <i data-lucide="chart-no-axes-column-increasing"></i>
+                            <span>Progress Report</span>
+                        </button>
                         <button type="button" id="sidebar-available-courses-btn" class="learner-sidebar-item">
                             <i data-lucide="library"></i>
                             <span>All Courses</span>
@@ -790,10 +798,6 @@
                             <button type="button" id="course-profile-btn" class="btn-ghost"><i data-lucide="clipboard-list"></i> Course Profile</button>
                             <button type="button" id="back-to-subjects-btn" class="btn-ghost hidden">Back to Subjects</button>
                         </div>
-                        <nav class="learner-course-tabs" aria-label="Course details">
-                            <button type="button" id="course-subjects-tab" class="learner-course-tab active">Subjects</button>
-                            <button type="button" id="course-progress-tab" class="learner-course-tab">Progress Report</button>
-                        </nav>
                         <div id="subjects-list-area">
                             <div class="dashboard-section-head">
                                 <div><h2 id="course-details-title" style="margin:0 0 .35rem">Course</h2><p class="section-label">Approved Subjects</p><p class="section-subtitle">Open a subject to view its topics and continue learning.</p></div>
@@ -1599,7 +1603,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=54"></script>
+        <script src="script.js?v=55"></script>
         <script>
             lucide.createIcons();
         </script>

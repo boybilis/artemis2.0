@@ -231,17 +231,17 @@ function setCourseDetailsTab(tab) {
     if (subjectsArea) subjectsArea.style.display = isProgress ? 'none' : '';
     if (topicsArea) topicsArea.style.display = 'none';
     if (reportArea) reportArea.style.display = isProgress ? '' : 'none';
-    $('course-subjects-tab')?.classList.toggle('active', !isProgress);
-    $('course-progress-tab')?.classList.toggle('active', isProgress);
+    $('sidebar-subjects-btn')?.classList.toggle('active', !isProgress);
+    $('sidebar-progress-report-btn')?.classList.toggle('active', isProgress);
     if (!isProgress) currentSubjectId = null;
     const backToSubjects = $('back-to-subjects-btn');
     if (backToSubjects) backToSubjects.classList.add('hidden');
 }
 
-const courseSubjectsTab = $('course-subjects-tab');
-if (courseSubjectsTab) courseSubjectsTab.addEventListener('click', () => { setCourseDetailsTab('subjects'); renderSubjects(); });
-const courseProgressTab = $('course-progress-tab');
-if (courseProgressTab) courseProgressTab.addEventListener('click', showLearnerProgressReport);
+const sidebarSubjectsBtn = $('sidebar-subjects-btn');
+if (sidebarSubjectsBtn) sidebarSubjectsBtn.addEventListener('click', () => { setCourseDetailsTab('subjects'); renderSubjects(); });
+const sidebarProgressReportBtn = $('sidebar-progress-report-btn');
+if (sidebarProgressReportBtn) sidebarProgressReportBtn.addEventListener('click', showLearnerProgressReport);
 window.alert = message => showSystemAlert(message);
 
 const learnerSettingsBtn = $('learner-settings-btn');
@@ -811,6 +811,7 @@ function renderDashboard() {
     const isDashboardOverview = state.courseListFilter === 'dashboard';
     if (cdArea) { cdArea.style.display = 'none'; cdArea.style.opacity = '0'; }
     if (courseContextNav) courseContextNav.classList.add('hidden');
+    setCourseSidebarMode(false);
     if (dashboardHero) dashboardHero.style.display = isDashboardOverview ? 'grid' : 'none';
     if (dcHead) { dcHead.style.display = isDashboardOverview ? 'none' : ''; dcHead.style.opacity = '1'; dcHead.style.transform = 'none'; }
     if (cCont) { cCont.style.display = isDashboardOverview ? 'none' : ''; cCont.style.opacity = '1'; cCont.style.transform = 'none'; }
@@ -938,6 +939,7 @@ function renderDashboard() {
                     contextDates.textContent = `Start date: ${formatContextDate(course.batch_starts_at)} · Access expiration: ${formatContextDate(course.enrollment_expires_at || course.batch_ends_at)}`;
                 }
                 if (contextNav) contextNav.classList.remove('hidden');
+                setCourseSidebarMode(true, 'subjects');
                 fadeTransition(
                     [$('dashboard-hero'), $('dashboard-courses-head'), cContainer],
                     [$('course-details-area')],
@@ -965,6 +967,7 @@ function renderDashboard() {
             backBtn.onclick = () => {
                 const contextNav = $('learner-course-context-nav');
                 if (contextNav) contextNav.classList.add('hidden');
+                setCourseSidebarMode(false);
                 fadeTransition(
                     [$('course-details-area')],
                     [$('dashboard-courses-head'), cContainer],
@@ -1125,8 +1128,8 @@ function renderSubjects() {
     if (topicsArea) topicsArea.style.display = 'none';
     const progressArea = $('course-progress-report-area');
     if (progressArea) progressArea.style.display = 'none';
-    $('course-subjects-tab')?.classList.add('active');
-    $('course-progress-tab')?.classList.remove('active');
+    $('sidebar-subjects-btn')?.classList.add('active');
+    $('sidebar-progress-report-btn')?.classList.remove('active');
     const backToSubjects = $('back-to-subjects-btn');
     if (backToSubjects) backToSubjects.classList.add('hidden');
     container.innerHTML = '';
@@ -3004,6 +3007,28 @@ function showDashboardCourseList(filter) {
     renderDashboard();
     const courseHeading = $('dashboard-courses-head');
     if (filter !== 'dashboard' && courseHeading) courseHeading.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
+    const allCoursesButton = $('sidebar-available-courses-btn');
+    const subjectsButton = $('sidebar-subjects-btn');
+    const progressButton = $('sidebar-progress-report-btn');
+    if (allCoursesButton) allCoursesButton.classList.toggle('hidden', isCourseOpen);
+    [subjectsButton, progressButton].forEach(button => {
+        if (button) button.classList.toggle('hidden', !isCourseOpen);
+    });
+    document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
+    if (!isCourseOpen) {
+        const listButton = state.courseListFilter === 'available'
+            ? allCoursesButton
+            : state.courseListFilter === 'enrolled'
+                ? $('sidebar-enrolled-courses-btn')
+                : $('sidebar-dashboard-btn');
+        if (listButton) listButton.classList.add('active');
+        return;
+    }
+    const activeButton = activePage === 'progress' ? progressButton : subjectsButton;
+    if (activeButton) activeButton.classList.add('active');
 }
 
 const dashboardSidebarBtn = $('sidebar-dashboard-btn');
