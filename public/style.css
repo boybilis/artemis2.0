@@ -175,7 +175,8 @@ body.light-mode select:disabled { color:#64748b; background-color:#e5e7eb; opaci
 .hero h1 .gradient-text { background:var(--gradient); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
 .hero-desc { font-size:1.05rem; color:var(--text-muted); line-height:1.65; margin-bottom:2.5rem; max-width:100%; text-align:left; }
 .hero-cta { display:flex; gap:1rem; justify-content:flex-start; flex-wrap:wrap; }
-#landing-screen .nav-logo { background:none; color:#fff; -webkit-text-fill-color:#fff; }
+#landing-screen .landing-nav .nav-logo,
+body.light-mode #landing-screen .landing-nav .nav-logo { background:none !important; color:#fff !important; -webkit-text-fill-color:#fff !important; }
 #landing-screen .landing-nav { background:#075176; border-bottom-color:rgba(255,255,255,.16); }
 #landing-screen .landing-nav .burger-bars span { background:#fff; }
 #landing-screen #landing-theme-toggle { color:#fff; }
