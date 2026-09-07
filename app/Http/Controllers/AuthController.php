@@ -16,6 +16,7 @@ use App\Mail\EmailChangeVerificationCode;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
@@ -147,7 +148,18 @@ class AuthController extends Controller
             ],
             'code_hash'=>Hash::make($code),'attempts'=>0,'expires_at'=>now()->addMinutes(10),'last_sent_at'=>now(),
         ]);
-        Mail::to($email)->send(new RegistrationVerificationCode($code, $request->input('su-fname')));
+        try {
+            Mail::to($email)->send(new RegistrationVerificationCode($code, $request->input('su-fname')));
+        } catch (\Throwable $exception) {
+            Log::error('Registration verification email could not be sent.', [
+                'email' => $email,
+                'exception' => $exception->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'We could not send the verification code. Please check the email address and try again shortly.',
+            ], 503);
+        }
         return response()->json(['success'=>true,'verification_required'=>true,'email'=>$email,'message'=>'We sent a six-digit verification code to your email.']);
     }
 
@@ -174,8 +186,20 @@ class AuthController extends Controller
         $email = strtolower(trim($request->validate(['email'=>'required|email'])['email']));
         $pending = PendingRegistration::where('email',$email)->firstOrFail();
         if ($pending->last_sent_at->gt(now()->subMinute())) return response()->json(['success'=>false,'message'=>'Please wait one minute before requesting another code.'],429);
-        $code=(string)random_int(100000,999999); $pending->update(['code_hash'=>Hash::make($code),'attempts'=>0,'expires_at'=>now()->addMinutes(10),'last_sent_at'=>now()]);
-        Mail::to($email)->send(new RegistrationVerificationCode($code,$pending->registration_data['first_name']));
+        $code=(string)random_int(100000,999999);
+        try {
+            Mail::to($email)->send(new RegistrationVerificationCode($code,$pending->registration_data['first_name']));
+        } catch (\Throwable $exception) {
+            Log::error('Registration verification email could not be resent.', [
+                'email' => $email,
+                'exception' => $exception->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'We could not resend the verification code. Please try again shortly.',
+            ], 503);
+        }
+        $pending->update(['code_hash'=>Hash::make($code),'attempts'=>0,'expires_at'=>now()->addMinutes(10),'last_sent_at'=>now()]);
         return response()->json(['success'=>true,'message'=>'A new verification code was sent.']);
     }
 
