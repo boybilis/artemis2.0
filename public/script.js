@@ -1134,7 +1134,7 @@ function renderSubjects() {
     if (backToSubjects) backToSubjects.classList.add('hidden');
     container.innerHTML = '';
     if (!subjects.length) {
-        container.innerHTML = '<div class="empty-course-filter"><p>No approved subjects are available in this course yet.</p></div>';
+        container.innerHTML = '<div class="empty-course-filter"><p>No subjects are available in this course yet.</p></div>';
         return;
     }
     subjects.forEach(subject => {
