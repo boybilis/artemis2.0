@@ -274,7 +274,6 @@ body.light-mode select:disabled { color:#64748b; background-color:#e5e7eb; opaci
 .learner-course-context-mark { width:38px; height:38px; flex:0 0 38px; display:grid; place-items:center; border-radius:11px; color:#fff; background:linear-gradient(135deg,#7c3aed,#3b82f6); font-family:'Outfit',sans-serif; font-weight:800; }
 .learner-course-context-copy { min-width:0; display:flex; flex-direction:column; gap:.15rem; }
 .learner-course-context-copy small { color:var(--accent); font-size:.6rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
-.learner-course-context-course { min-width:0; display:flex; align-items:baseline; gap:.35rem; overflow:hidden; color:var(--text-muted); font-size:.72rem; white-space:nowrap; }
 .learner-course-context-copy strong { overflow:hidden; color:var(--text); font-family:'Outfit',sans-serif; font-size:1rem; text-overflow:ellipsis; white-space:nowrap; }
 .learner-course-context-dates { overflow:hidden; color:var(--text-muted); font-size:.7rem; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
 
