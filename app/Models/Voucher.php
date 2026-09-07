@@ -11,6 +11,13 @@ class Voucher extends Model
 
     protected $fillable = ['batch_id', 'code', 'price', 'duration_days', 'used', 'used_by', 'used_at', 'redeemed_at', 'status', 'payment_provider', 'provider_checkout_id', 'provider_payment_id'];
 
+    protected $casts = [
+        'used' => 'boolean',
+        'used_at' => 'datetime',
+        'redeemed_at' => 'datetime',
+        'price' => 'decimal:2',
+    ];
+
     public function batch() { return $this->belongsTo(CourseBatch::class, 'batch_id'); }
 
     public function user()

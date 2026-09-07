@@ -16,6 +16,7 @@ use App\Models\Course;
 use App\Models\CourseEnrollment;
 use App\Models\CourseBatch;
 use App\Models\User;
+use App\Models\PaymentTransaction;
 
 class VoucherController extends Controller
 {
@@ -25,6 +26,15 @@ class VoucherController extends Controller
             return strtoupper(substr(md5(uniqid(mt_rand(), true)), 0, 4));
         };
         return "ART2-" . $seg() . "-" . $seg();
+    }
+
+    private function generatePaymentReference(): string
+    {
+        do {
+            $reference = 'ART2PAY-' . strtoupper(bin2hex(random_bytes(6)));
+        } while (PaymentTransaction::where('reference', $reference)->exists());
+
+        return $reference;
     }
 
     public function buy(Request $request)
@@ -42,23 +52,20 @@ class VoucherController extends Controller
             return response()->json(['success' => false, 'message' => 'You already have active access to this course.'], 422);
         }
 
-        $code = $this->generateVoucherCode();
-
-        // Create the voucher as pending
-        $voucher = Voucher::create([
-            'batch_id' => $batch?->id,
-            'code' => $code,
-            'price' => $batch->price,
-            'duration_days' => $batch->ends_at ? max(1, now()->diffInDays($batch->ends_at)) : 30,
+        $reference = $this->generatePaymentReference();
+        $transaction = PaymentTransaction::create([
+            'user_id' => $user->id,
+            'batch_id' => $batch->id,
+            'reference' => $reference,
+            'amount' => $batch->price,
+            'currency' => 'PHP',
+            'provider' => 'paymongo',
             'status' => 'pending_payment',
-            'used' => false,
-            'used_by' => $user->id,
-            'used_at' => null
         ]);
 
         $secretKey = config('services.paymongo.secret_key');
         if (!$secretKey) {
-            $voucher->update(['status' => 'payment_configuration_error']);
+            $transaction->update(['status' => 'payment_configuration_error']);
             return response()->json(['success' => false, 'message' => 'Online payment is not configured yet.'], 503);
         }
 
@@ -83,19 +90,18 @@ class VoucherController extends Controller
                             'quantity' => 1,
                         ]],
                         'payment_method_types' => config('services.paymongo.payment_methods', ['qrph']),
-                        'reference_number' => $code,
+                        'reference_number' => $reference,
                         'send_email_receipt' => true,
                         'show_description' => true,
                         'show_line_items' => true,
-                        'success_url' => route('payments.paymongo.success', ['code' => $code]),
+                        'success_url' => route('payments.paymongo.success', ['reference' => $reference]),
                     ],
                 ],
             ]);
 
         if ($response->successful()) {
             $checkout = $response->json('data');
-            $voucher->update([
-                'payment_provider' => 'paymongo',
+            $transaction->update([
                 'provider_checkout_id' => $checkout['id'] ?? null,
             ]);
 
@@ -105,9 +111,9 @@ class VoucherController extends Controller
             ]);
         }
 
-        $voucher->update(['status' => 'payment_creation_failed', 'payment_provider' => 'paymongo']);
+        $transaction->update(['status' => 'payment_creation_failed']);
         Log::error('PayMongo checkout creation failed.', [
-            'voucher_id' => $voucher->id,
+            'payment_transaction_id' => $transaction->id,
             'status' => $response->status(),
             'response' => $response->json(),
         ]);
@@ -120,36 +126,41 @@ class VoucherController extends Controller
 
     public function paymongoSuccess(Request $request)
     {
-        $code = strtoupper(trim((string) $request->query('code')));
-        if (!$code) {
+        $reference = strtoupper(trim((string) ($request->query('reference') ?: $request->query('code'))));
+        if (!$reference) {
             return redirect('/');
         }
 
-        $voucher = Voucher::where('code', $code)->first();
-        if (!$voucher || $voucher->payment_provider !== 'paymongo') {
+        $transaction = PaymentTransaction::where('reference', $reference)->first();
+        $legacyVoucher = $transaction ? null : Voucher::where('code', $reference)->where('payment_provider', 'paymongo')->first();
+        if (!$transaction && !$legacyVoucher) {
             return redirect('/?error=payment_not_found');
         }
 
-        if ($voucher->used) {
+        if ($transaction?->status === 'paid' || $legacyVoucher?->used) {
+            $code = $transaction ? $this->voucherCodeForTransaction($transaction) : $legacyVoucher->code;
             return redirect('/?voucher_success=' . urlencode($code));
         }
 
         $secretKey = config('services.paymongo.secret_key');
-        if (!$secretKey || !$voucher->provider_checkout_id) {
+        $checkoutId = $transaction?->provider_checkout_id ?: $legacyVoucher?->provider_checkout_id;
+        if (!$secretKey || !$checkoutId) {
             return redirect('/?error=payment_not_completed');
         }
 
         $response = Http::withBasicAuth($secretKey, '')
             ->acceptJson()
-            ->get('https://api.paymongo.com/v1/checkout_sessions/' . rawurlencode($voucher->provider_checkout_id));
+            ->get('https://api.paymongo.com/v1/checkout_sessions/' . rawurlencode($checkoutId));
 
         if ($response->successful() && $this->checkoutIsPaid($response->json('data.attributes', []))) {
             $paymentId = data_get($response->json(), 'data.attributes.payments.0.id');
-            $this->activatePaidVoucher($voucher, $request->ip(), $paymentId);
+            $code = $transaction
+                ? $this->activatePaidTransaction($transaction, $request->ip(), $paymentId)->code
+                : tap($legacyVoucher, fn ($voucher) => $this->activatePaidVoucher($voucher, $request->ip(), $paymentId))->code;
             return redirect('/?voucher_success=' . urlencode($code));
         }
 
-        Log::warning('PayMongo return did not contain a paid checkout.', ['voucher_id' => $voucher->id]);
+        Log::warning('PayMongo return did not contain a paid checkout.', ['reference' => $reference]);
         return redirect('/?error=payment_not_completed');
     }
 
@@ -170,10 +181,12 @@ class VoucherController extends Controller
         $attributes = data_get($resource, 'attributes', []);
         $checkoutId = data_get($resource, 'type') === 'checkout_session' ? data_get($resource, 'id') : null;
         $code = strtoupper(trim((string) ($attributes['reference_number'] ?? $attributes['external_reference_number'] ?? '')));
-        $voucher = $checkoutId ? Voucher::where('provider_checkout_id', $checkoutId)->first() : null;
-        $voucher ??= $code ? Voucher::where('code', $code)->where('payment_provider', 'paymongo')->first() : null;
+        $transaction = $checkoutId ? PaymentTransaction::where('provider_checkout_id', $checkoutId)->first() : null;
+        $transaction ??= $code ? PaymentTransaction::where('reference', $code)->first() : null;
+        $legacyVoucher = $transaction ? null : ($checkoutId ? Voucher::where('provider_checkout_id', $checkoutId)->first() : null);
+        $legacyVoucher ??= (!$transaction && $code) ? Voucher::where('code', $code)->where('payment_provider', 'paymongo')->first() : null;
 
-        if (!$voucher) {
+        if (!$transaction && !$legacyVoucher) {
             Log::warning('PayMongo paid webhook could not be matched.', ['event_id' => data_get($event, 'data.id')]);
             return response()->json(['received' => true]);
         }
@@ -181,7 +194,8 @@ class VoucherController extends Controller
         $paymentId = data_get($resource, 'type') === 'payment'
             ? data_get($resource, 'id')
             : data_get($attributes, 'payments.0.id');
-        $this->activatePaidVoucher($voucher, $request->ip(), $paymentId);
+        if ($transaction) $this->activatePaidTransaction($transaction, $request->ip(), $paymentId);
+        else $this->activatePaidVoucher($legacyVoucher, $request->ip(), $paymentId);
 
         return response()->json(['received' => true]);
     }
@@ -213,6 +227,73 @@ class VoucherController extends Controller
         $signatureKey = str_starts_with((string) config('services.paymongo.secret_key'), 'sk_live_') ? 'li' : 'te';
         $signature = $parts[$signatureKey] ?? null;
         return $signature && hash_equals(hash_hmac('sha256', $timestamp . '.' . $payload, $secret), $signature);
+    }
+
+    private function voucherCodeForTransaction(PaymentTransaction $transaction): string
+    {
+        return Voucher::where('provider_checkout_id', $transaction->provider_checkout_id)
+            ->value('code') ?: $transaction->reference;
+    }
+
+    private function activatePaidTransaction(PaymentTransaction $transaction, ?string $ipAddress, ?string $paymentId = null): Voucher
+    {
+        $created = false;
+        [$transaction, $voucher] = DB::transaction(function () use ($transaction, $paymentId, &$created) {
+            $locked = PaymentTransaction::with(['batch', 'user'])->lockForUpdate()->findOrFail($transaction->id);
+            $existingVoucher = Voucher::where('provider_checkout_id', $locked->provider_checkout_id)->first();
+            if ($locked->status === 'paid' && $existingVoucher) return [$locked, $existingVoucher];
+            if (!$locked->user || !$locked->batch) {
+                throw new \RuntimeException('Paid transaction is missing its learner or batch.');
+            }
+
+            $locked->update([
+                'status' => 'paid',
+                'paid_at' => now(),
+                'provider_payment_id' => $paymentId ?: $locked->provider_payment_id,
+            ]);
+
+            $voucher = $existingVoucher ?: Voucher::create([
+                'batch_id' => $locked->batch_id,
+                'code' => $this->generateVoucherCode(),
+                'price' => $locked->amount,
+                'duration_days' => $locked->batch->ends_at ? max(1, now()->diffInDays($locked->batch->ends_at)) : 30,
+                'status' => 'active',
+                'used' => true,
+                'used_by' => $locked->user_id,
+                'used_at' => now(),
+                'redeemed_at' => now(),
+                'payment_provider' => 'paymongo',
+                'provider_checkout_id' => $locked->provider_checkout_id,
+                'provider_payment_id' => $paymentId,
+            ]);
+
+            CourseEnrollment::updateOrCreate(
+                ['user_id' => $locked->user_id, 'batch_id' => $locked->batch_id],
+                ['voucher_id' => $voucher->id, 'status' => 'active', 'enrolled_at' => now(),
+                    'expires_at' => $locked->batch->ends_at ?: now()->addDays($voucher->duration_days ?: 30)]
+            );
+            $created = !$existingVoucher;
+            return [$locked, $voucher];
+        });
+
+        if (!$created) return $voucher;
+
+        AuditLog::create([
+            'user_id' => $transaction->user_id,
+            'action' => 'Subscription Purchase',
+            'description' => 'Purchased enrollment for ' . ($transaction->batch?->name ?? 'batch') . ' via PayMongo QR Ph.',
+            'ip_address' => $ipAddress,
+        ]);
+
+        if ($user = User::find($transaction->user_id)) {
+            try {
+                Mail::to($user->email)->send(new VoucherPurchased($voucher, $user));
+            } catch (\Throwable $e) {
+                Log::error('PayMongo receipt email failed.', ['voucher_id' => $voucher->id, 'error' => $e->getMessage()]);
+            }
+        }
+
+        return $voucher;
     }
 
     private function activatePaidVoucher(Voucher $voucher, ?string $ipAddress, ?string $paymentId = null): void

@@ -7,6 +7,7 @@ use App\Models\CourseBatch;
 use App\Models\CourseEnrollment;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Models\PaymentTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -39,13 +40,13 @@ class PaymongoPaymentTest extends TestCase
             && $request['data']['attributes']['payment_method_types'] === ['qrph']
             && $request['data']['attributes']['line_items'][0]['amount'] === 125000
         );
-        $this->assertDatabaseHas('vouchers', [
+        $this->assertDatabaseHas('payment_transactions', [
             'batch_id' => $batch->id,
-            'payment_provider' => 'paymongo',
+            'provider' => 'paymongo',
             'provider_checkout_id' => 'cs_test_123',
             'status' => 'pending_payment',
         ]);
-        $this->assertSame('Awaiting Payment', Voucher::where('provider_checkout_id', 'cs_test_123')->firstOrFail()->statusLabel());
+        $this->assertDatabaseCount('vouchers', 0);
     }
 
     public function test_valid_paid_webhook_activates_only_its_batch_enrollment(): void
@@ -55,15 +56,14 @@ class PaymongoPaymentTest extends TestCase
         config()->set('services.paymongo.webhook_secret', 'whsk_test_artemis');
         config()->set('services.paymongo.webhook_tolerance', 300);
         [$user, $batch] = $this->learnerAndBatch();
-        $voucher = Voucher::create([
+        $transaction = PaymentTransaction::create([
+            'user_id' => $user->id,
             'batch_id' => $batch->id,
-            'code' => 'ART2-QRPH-TEST',
-            'price' => $batch->price,
-            'duration_days' => 30,
-            'used' => false,
-            'used_by' => $user->id,
+            'reference' => 'ART2PAY-QRPH-TEST',
+            'amount' => $batch->price,
+            'currency' => 'PHP',
+            'provider' => 'paymongo',
             'status' => 'pending_payment',
-            'payment_provider' => 'paymongo',
             'provider_checkout_id' => 'cs_test_paid',
         ]);
         $payload = json_encode([
@@ -75,7 +75,7 @@ class PaymongoPaymentTest extends TestCase
                         'id' => 'cs_test_paid',
                         'type' => 'checkout_session',
                         'attributes' => [
-                            'reference_number' => $voucher->code,
+                            'reference_number' => $transaction->reference,
                             'payments' => [['id' => 'pay_test_paid', 'attributes' => ['status' => 'paid']]],
                         ],
                     ],
@@ -90,8 +90,10 @@ class PaymongoPaymentTest extends TestCase
             'HTTP_PAYMONGO_SIGNATURE' => "t={$timestamp},te={$signature}",
         ], $payload)->assertOk()->assertJson(['received' => true]);
 
-        $this->assertDatabaseHas('vouchers', ['id' => $voucher->id, 'used' => true, 'provider_payment_id' => 'pay_test_paid']);
-        $this->assertSame('Paid / Enrolled', $voucher->fresh()->statusLabel());
+        $this->assertDatabaseHas('payment_transactions', ['id' => $transaction->id, 'status' => 'paid', 'provider_payment_id' => 'pay_test_paid']);
+        $voucher = Voucher::where('provider_checkout_id', 'cs_test_paid')->firstOrFail();
+        $this->assertTrue($voucher->used);
+        $this->assertSame('Paid / Enrolled', $voucher->statusLabel());
         $this->assertDatabaseHas('course_enrollments', ['user_id' => $user->id, 'batch_id' => $batch->id, 'status' => 'active']);
         $this->assertSame(1, CourseEnrollment::where('user_id', $user->id)->count());
     }
