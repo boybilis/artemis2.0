@@ -2232,6 +2232,18 @@ function loadDocsForSubtopic(sub) {
 let pdfRenderSequence = 0;
 let pdfJsLoader = null;
 let currentPdfZoom = 1;
+let pdfZoomIdleTimer = null;
+function wakePdfZoomControls() {
+    const controls = $('pdf-zoom-controls');
+    if (!controls) return;
+    controls.classList.remove('is-idle');
+    controls.classList.add('is-active');
+    if (pdfZoomIdleTimer) clearTimeout(pdfZoomIdleTimer);
+    pdfZoomIdleTimer = setTimeout(() => {
+        controls.classList.remove('is-active');
+        controls.classList.add('is-idle');
+    }, 1200);
+}
 function setPdfZoom(value) {
     currentPdfZoom = Math.max(.6, Math.min(2.5, Math.round(value * 10) / 10));
     document.querySelectorAll('#pdf-pages-container canvas[data-base-width]').forEach(canvas => {
@@ -2243,6 +2255,7 @@ function setPdfZoom(value) {
     const zoomIn = $('pdf-zoom-in');
     if (zoomOut) zoomOut.disabled = currentPdfZoom <= .6;
     if (zoomIn) zoomIn.disabled = currentPdfZoom >= 2.5;
+    wakePdfZoomControls();
 }
 async function renderTrackedPdf(path, shouldTrackCompletion = true) {
     const sequence = ++pdfRenderSequence;
