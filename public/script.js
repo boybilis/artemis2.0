@@ -1148,12 +1148,22 @@ function renderSubjects() {
             <div class="learner-subject-action"><button type="button" class="btn-primary">Open</button></div>`;
         row.querySelector('button').addEventListener('click', () => {
             currentSubjectId = Number(subject.id);
-            if (listArea) listArea.style.display = 'none';
-            if (topicsArea) topicsArea.style.display = '';
-            if (backToSubjects) backToSubjects.classList.remove('hidden');
-            const title = $('subject-details-title');
-            if (title) title.textContent = `${subject.code || ''} ${subject.title}`.trim();
-            renderTopics();
+            const subjectTopics = topics
+                .map((topic, originalIndex) => ({topic, originalIndex}))
+                .filter(item => Number(item.topic.subjectId) === currentSubjectId);
+            const isTopicAccessible = topic => {
+                const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
+                const isPolicyTopic = topic.isPolicyTopic === true || /policy/i.test(String(topic.title || ''));
+                const isPreTestTopic = (topic.subtopics || []).some(subtopic => subtopic.contentType === 'pre_test');
+                return isPolicyTopic || preTestCompleted || (isPreTestTopic && hasCompletedSubjectPolicy(topic.subjectId));
+            };
+            const destination = subjectTopics.find(item => isTopicAccessible(item.topic) && !isTopicContentComplete(item.topic))
+                || subjectTopics.find(item => isTopicAccessible(item.topic));
+            if (!destination) {
+                showToast('No learning content is available for this subject yet.', 'info');
+                return;
+            }
+            openTopic(destination.originalIndex);
         });
         container.appendChild(row);
     });
@@ -2303,7 +2313,7 @@ if (docsFullscreenBtn) {
 const backBtn = $('lesson-back-btn');
 if (backBtn) backBtn.addEventListener('click', () => {
     pauseActiveLessonVideo();
-    if (currentSubjectId !== null) renderTopics();
+    if (currentSubjectId !== null) renderSubjects();
     showScreen('dashboard-screen');
 });
 
