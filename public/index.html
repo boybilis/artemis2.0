@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css?v=31" />
+        <link rel="stylesheet" href="style.css?v=32" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -648,38 +648,26 @@
                             <span>All Courses</span>
                         </button>
                     </div>
+                    <div class="learner-sidebar-actions" aria-label="Account controls">
+                        <button id="learner-settings-btn" class="learner-sidebar-action" type="button">
+                            <i data-lucide="settings"></i>
+                            <span>Settings</span>
+                        </button>
+                        <button id="theme-toggle-btn" class="learner-sidebar-action" type="button" title="Toggle light/dark mode" aria-label="Toggle light/dark mode">
+                            <i id="theme-icon" data-lucide="moon"></i>
+                            <span>Light / Dark Mode</span>
+                        </button>
+                        <button id="logout-btn" class="learner-sidebar-action learner-sidebar-logout" type="button">
+                            <i data-lucide="log-out"></i>
+                            <span>Log out</span>
+                        </button>
+                    </div>
                     <div class="learner-sidebar-footer">
                         <span>Professional Exam Review</span>
                         <small>Learn. Practice. Succeed.</small>
                     </div>
                 </aside>
                 <div class="learner-dashboard-content">
-                <nav class="landing-nav">
-                    <div class="nav-logo">Artemis 2.0</div>
-                    <button
-                        id="dashboard-menu-btn"
-                        class="mobile-menu-btn"
-                        aria-label="Toggle menu"
-                    >
-                        <div class="burger-bars">
-                            <span></span><span></span><span></span>
-                        </div>
-                    </button>
-                    <div class="nav-actions" id="dashboard-nav-actions">
-                        <button id="learner-settings-btn" class="btn-ghost" type="button">Settings</button>
-                        <button id="logout-btn" class="btn-ghost">
-                            Log out
-                        </button>
-                        <button
-                            id="theme-toggle-btn"
-                            class="btn-icon-round"
-                            title="Toggle light/dark mode"
-                            aria-label="Toggle theme"
-                        >
-                            <i id="theme-icon" data-lucide="moon"></i>
-                        </button>
-                    </div>
-                </nav>
                 <div class="dashboard-body">
                     <section id="dashboard-hero" class="dashboard-hero">
                         <div class="dashboard-hero-copy">
@@ -1593,7 +1581,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=50"></script>
+        <script src="script.js?v=51"></script>
         <script>
             lucide.createIcons();
         </script>

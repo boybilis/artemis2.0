@@ -257,7 +257,14 @@ body.light-mode select:disabled { color:#64748b; background-color:#e5e7eb; opaci
 .learner-sidebar-item:focus-visible { outline:2px solid rgba(255,255,255,.8); outline-offset:2px; }
 .learner-sidebar-item.active { color:#fff; background:rgba(255,255,255,.12); box-shadow:inset 3px 0 0 #8b5cf6; }
 .learner-sidebar-item svg { width:18px; height:18px; flex:none; }
-.learner-sidebar-footer { margin-top:auto; padding:1.15rem .4rem .25rem; border-top:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; gap:.3rem; color:rgba(255,255,255,.8); font-size:.72rem; }
+.learner-sidebar-actions { margin-top:auto; padding-top:1rem; border-top:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; gap:.4rem; }
+.learner-sidebar-action { width:100%; min-height:42px; display:flex; align-items:center; gap:.75rem; padding:.65rem .8rem; border:0; border-radius:10px; color:rgba(255,255,255,.76); background:transparent; font:inherit; font-size:.78rem; font-weight:600; text-align:left; cursor:pointer; }
+.learner-sidebar-action:hover { color:#fff; background:rgba(255,255,255,.09); }
+.learner-sidebar-action:focus-visible { outline:2px solid rgba(255,255,255,.8); outline-offset:2px; }
+.learner-sidebar-action svg { width:17px; height:17px; flex:none; }
+.learner-sidebar-logout { color:#fecaca; }
+.learner-sidebar-logout:hover { color:#fff; background:rgba(239,68,68,.22); }
+.learner-sidebar-footer { margin-top:1rem; padding:1rem .4rem .25rem; border-top:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; gap:.3rem; color:rgba(255,255,255,.8); font-size:.72rem; }
 .learner-sidebar-footer small { color:rgba(255,255,255,.48); font-size:.63rem; }
 #dashboard-screen .landing-nav { width:100%; }
 
@@ -973,6 +980,9 @@ body.light-mode .dashboard-hero-copy::before { background:radial-gradient(circle
     .learner-sidebar-nav { width:100%; margin:0; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.35rem; }
     .learner-sidebar-item { min-height:38px; justify-content:center; padding:.55rem .35rem; font-size:.7rem; text-align:center; }
     .learner-sidebar-item svg { width:15px; height:15px; }
+    .learner-sidebar-actions { width:100%; margin:0; padding-top:.65rem; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.35rem; }
+    .learner-sidebar-action { min-height:38px; justify-content:center; padding:.55rem .3rem; font-size:.68rem; text-align:center; }
+    .learner-sidebar-action svg { width:15px; height:15px; }
     .learner-sidebar-footer { display:none; }
     .btn-primary, .btn-ghost { width:100% !important; justify-content:center; text-align:center; margin-top:.4rem; }
     .landing-nav { flex-wrap:wrap; padding:1.25rem 1.5rem; justify-content:space-between; align-items:center; }
