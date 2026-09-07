@@ -701,6 +701,16 @@ body.light-mode .sub-child-item.active { background: rgba(124,58,237,0.07); }
 .lesson-sidebar .sub-nav-badges, .lesson-sidebar .learning-outline-topic-header small,
 .lesson-sidebar .learning-outline-item small, .lesson-sidebar .sub-child-lock-reason { color:rgba(255,255,255,.55); }
 .lesson-sidebar .subtopics-nav::-webkit-scrollbar-thumb { background:rgba(255,255,255,.25); }
+.lesson-sidebar .subtopics-nav { padding:.65rem .7rem 1rem; }
+.lesson-sidebar .learning-outline-topic { margin:0 0 .65rem; overflow:hidden; border:1px solid rgba(255,255,255,.16); border-radius:13px; background:rgba(255,255,255,.045); box-shadow:0 5px 14px rgba(1,18,34,.16); }
+.lesson-sidebar .learning-outline-topic:last-child { margin-bottom:0; }
+.lesson-sidebar .learning-outline-topic.active { border-color:rgba(167,139,250,.72); background:rgba(139,92,246,.13); box-shadow:0 7px 18px rgba(1,18,34,.24), inset 0 0 0 1px rgba(167,139,250,.12); }
+.lesson-sidebar .learning-outline-topic.completed:not(.active) { border-color:rgba(74,222,128,.38); }
+.lesson-sidebar .learning-outline-topic-header { padding:.85rem .8rem; }
+.lesson-sidebar .learning-outline-topic.active>.learning-outline-topic-header { border-left:0; background:rgba(139,92,246,.2); }
+.lesson-sidebar .learning-outline-contents { padding:.2rem .5rem .65rem; border-top:1px solid rgba(255,255,255,.09); }
+.lesson-sidebar .learning-outline-item { margin-top:.35rem; padding:.58rem .6rem; border:1px solid transparent; border-radius:9px; }
+.lesson-sidebar .learning-outline-item:hover:not(:disabled), .lesson-sidebar .learning-outline-item.active { border-color:rgba(167,139,250,.28); }
 
 /* Sidebar actions (quiz button) */
 .lesson-sidebar-actions {
