@@ -15,8 +15,8 @@
             display: grid;
             place-items: center;
             padding: 24px;
-            color: #1f2937;
-            background: #f5f7fb;
+            color: #082b45;
+            background: #f4f7fa;
             font-family: Arial, Helvetica, sans-serif;
         }
 
@@ -25,7 +25,7 @@
             max-width: 430px;
             padding: 28px;
             background: #ffffff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(7, 81, 118, .16);
             border-radius: 16px;
             box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
         }
@@ -43,7 +43,7 @@
             display: grid;
             place-items: center;
             border-radius: 12px;
-            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            background: linear-gradient(135deg, #f4510b, #ff7a2f);
             color: #ffffff;
             font-weight: 800;
         }
@@ -82,17 +82,17 @@
         }
 
         input:focus {
-            border-color: #93c5fd;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+            border-color: #f4510b;
+            box-shadow: 0 0 0 3px rgba(244, 81, 11, .12);
         }
 
         .btn {
             width: 100%;
             margin-top: 20px;
             padding: 11px 14px;
-            border: 1px solid #2563eb;
+            border: 1px solid #075176;
             border-radius: 10px;
-            background: #2563eb;
+            background: linear-gradient(135deg, #075176, #1685e6);
             color: #ffffff;
             font-weight: 800;
             cursor: pointer;
@@ -111,7 +111,7 @@
         .back-link {
             display: inline-block;
             margin-top: 16px;
-            color: #2563eb;
+            color: #075176;
             font-weight: 800;
             text-decoration: none;
             font-size: 14px;
