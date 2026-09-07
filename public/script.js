@@ -2019,7 +2019,6 @@ function loadVideoForSubtopic(sub) {
     const uploadedPlayer = $('uploaded-video-player');
     const videoIframeWrap = $('video-iframe-wrap');
     const unavailable  = $('video-unavailable');
-    const titleLabel   = $('video-title-label');
     const loadingOverlay = $('video-loading-overlay');
     const loadingLabel = $('video-loading-label');
     const loadingBar = $('video-loading-bar');
@@ -2069,8 +2068,6 @@ function loadVideoForSubtopic(sub) {
     if (unavailable)     unavailable.style.display     = 'none';
     hideVideoLoading();
     setVideoLoadingPercentage(0);
-
-    if (titleLabel) titleLabel.textContent = sub.title || 'Video';
 
     if (!sub.videoUrl && !sub.videoUploadUrl) {
         if (unavailable) unavailable.style.display = 'flex';
@@ -2147,7 +2144,6 @@ function loadVideoForSubtopic(sub) {
         uploadedPlayer.onended = () => markCurrentLearningItemComplete(learningItemIndex);
         uploadedPlayer.src = sub.videoUploadUrl;
         uploadedPlayer.load();
-        if (titleLabel) titleLabel.textContent = sub.videoFilename || sub.title || 'Video';
     } else if (player) {
         hideVideoLoading();
         activeLessonVideoKey = getLessonVideoKey(sub);
