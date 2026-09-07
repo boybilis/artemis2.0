@@ -1490,6 +1490,7 @@ let activeSubtopicAssessmentId = null;
 let activeSubtopicAssessmentContext = 'topic';
 
 function openTopic(index) {
+    setLessonSidebarOpen(false);
     state.currentTopicIndex = index;
     currentSubtopicIndex = 0;
 
@@ -2312,9 +2313,36 @@ if (docsFullscreenBtn) {
 
 const backBtn = $('lesson-back-btn');
 if (backBtn) backBtn.addEventListener('click', () => {
+    setLessonSidebarOpen(false);
     pauseActiveLessonVideo();
     if (currentSubjectId !== null) renderSubjects();
     showScreen('dashboard-screen');
+});
+
+const lessonWrapper = document.querySelector('.lesson-wrapper');
+const lessonSidebar = document.querySelector('.lesson-sidebar');
+const lessonSidebarToggle = $('lesson-sidebar-toggle');
+const lessonSidebarClose = $('lesson-sidebar-close');
+const lessonSidebarBackdrop = $('lesson-sidebar-backdrop');
+function setLessonSidebarOpen(isOpen) {
+    if (!lessonWrapper) return;
+    lessonWrapper.classList.toggle('sidebar-open', isOpen);
+    document.body.classList.toggle('lesson-sidebar-lock', isOpen);
+    if (lessonSidebarToggle) lessonSidebarToggle.setAttribute('aria-expanded', String(isOpen));
+}
+if (lessonSidebarToggle) lessonSidebarToggle.addEventListener('click', () => setLessonSidebarOpen(true));
+if (lessonSidebarClose) lessonSidebarClose.addEventListener('click', () => setLessonSidebarOpen(false));
+if (lessonSidebarBackdrop) lessonSidebarBackdrop.addEventListener('click', () => setLessonSidebarOpen(false));
+if (lessonSidebar) lessonSidebar.addEventListener('click', event => {
+    if (event.target.closest('.subtopic-nav-item, .sub-child-item, .learning-outline-topic-header, .learning-outline-item')) {
+        setLessonSidebarOpen(false);
+    }
+});
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') setLessonSidebarOpen(false);
+});
+window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) setLessonSidebarOpen(false);
 });
 
 

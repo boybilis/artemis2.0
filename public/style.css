@@ -375,8 +375,8 @@ body.light-mode select:disabled { color:#64748b; background-color:#e5e7eb; opaci
 
 /* Sidebar */
 .lesson-sidebar {
-    background: var(--bg2);
-    border-right: 1px solid var(--border);
+    background: linear-gradient(180deg,#062e52 0%,#073b65 52%,#052743 100%);
+    border-right: 1px solid rgba(255,255,255,.12);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -384,6 +384,7 @@ body.light-mode select:disabled { color:#64748b; background-color:#e5e7eb; opaci
     height: 100dvh;
     min-height: 0;
 }
+.lesson-sidebar-close, .lesson-sidebar-toggle, .lesson-sidebar-backdrop { display:none; }
 
 .lesson-back-link {
     display: flex;
@@ -391,25 +392,25 @@ body.light-mode select:disabled { color:#64748b; background-color:#e5e7eb; opaci
     gap: 0.5rem;
     padding: 1rem 1.25rem !important;
     font-size: 0.82rem !important;
-    color: var(--text-muted) !important;
+    color: rgba(255,255,255,.78) !important;
     border: none !important;
-    border-bottom: 1px solid var(--border) !important;
+    border-bottom: 1px solid rgba(255,255,255,.14) !important;
     border-radius: 0 !important;
     width: 100% !important;
     justify-content: flex-start !important;
     margin-bottom: 0 !important;
     transition: background 0.2s !important;
 }
-.lesson-back-link:hover { background: rgba(255,255,255,0.04) !important; color: var(--text) !important; }
-body.light-mode .lesson-back-link:hover { background: rgba(0,0,0,0.04) !important; }
+.lesson-back-link:hover { background: rgba(255,255,255,.09) !important; color:#fff !important; }
+body.light-mode .lesson-back-link:hover { background:rgba(255,255,255,.09) !important; }
 
 .lesson-brand {
     display: flex;
     align-items: center;
     gap: 0.7rem;
     padding: 0.85rem 1.25rem;
-    border-bottom: 1px solid var(--border);
-    background: linear-gradient(135deg, rgba(124,58,237,.11), rgba(59,130,246,.07));
+    border-bottom: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.04);
 }
 .lesson-brand-mark {
     display: inline-flex;
@@ -429,7 +430,7 @@ body.light-mode .lesson-back-link:hover { background: rgba(0,0,0,0.04) !importan
 .lesson-brand-copy { min-width: 0; line-height: 1.15; }
 .lesson-brand-copy strong {
     display: block;
-    color: var(--text);
+    color:#fff;
     font-family: 'Outfit', sans-serif;
     font-size: 0.92rem;
     font-weight: 800;
@@ -438,7 +439,7 @@ body.light-mode .lesson-back-link:hover { background: rgba(0,0,0,0.04) !importan
 .lesson-brand-copy small {
     display: block;
     margin-top: 0.22rem;
-    color: var(--text-muted);
+    color:rgba(255,255,255,.6);
     font-size: 0.61rem;
     font-weight: 700;
     letter-spacing: 0.09em;
@@ -447,21 +448,21 @@ body.light-mode .lesson-back-link:hover { background: rgba(0,0,0,0.04) !importan
 
 .lesson-sidebar-topic {
     padding: 1.1rem 1.25rem 0.75rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom:1px solid rgba(255,255,255,.14);
 }
 .sidebar-topic-eyebrow {
     font-size: 0.65rem;
     font-weight: 700;
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: var(--accent);
+    color:#a78bfa;
     margin-bottom: 0.3rem;
 }
 .sidebar-topic-title {
     font-family: 'Outfit', sans-serif;
     font-size: 0.92rem;
     font-weight: 700;
-    color: var(--text);
+    color:#fff;
     line-height: 1.35;
     margin: 0;
     padding: 0;
@@ -685,6 +686,21 @@ body.light-mode .sub-child-item.active { background: rgba(124,58,237,0.07); }
     cursor: not-allowed;
     background: transparent !important;
 }
+
+/* Keep the learning outline legible against the branded navy sidebar in both themes. */
+.lesson-sidebar .sub-group, .lesson-sidebar .learning-outline-topic { border-color:rgba(255,255,255,.12); }
+.lesson-sidebar .subtopic-nav-item, .lesson-sidebar .sub-child-item,
+.lesson-sidebar .learning-outline-topic-header, .lesson-sidebar .learning-outline-item { color:rgba(255,255,255,.72); }
+.lesson-sidebar .sub-group-header, .lesson-sidebar .sub-group-title,
+.lesson-sidebar .learning-outline-topic-header strong, .lesson-sidebar .learning-outline-item strong { color:#fff; }
+.lesson-sidebar .sub-nav-num, .lesson-sidebar .sub-group-num, .lesson-sidebar .learning-outline-topic-number { color:#fff; background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.24); }
+.lesson-sidebar .subtopic-nav-item:hover, .lesson-sidebar .sub-child-item:hover,
+.lesson-sidebar .learning-outline-item:hover:not(:disabled) { color:#fff; background:rgba(255,255,255,.08); }
+.lesson-sidebar .subtopic-nav-item.active, .lesson-sidebar .sub-child-item.active,
+.lesson-sidebar .learning-outline-item.active, .lesson-sidebar .learning-outline-topic.active>.learning-outline-topic-header { color:#fff; background:rgba(139,92,246,.28); border-left-color:#a78bfa; }
+.lesson-sidebar .sub-nav-badges, .lesson-sidebar .learning-outline-topic-header small,
+.lesson-sidebar .learning-outline-item small, .lesson-sidebar .sub-child-lock-reason { color:rgba(255,255,255,.55); }
+.lesson-sidebar .subtopics-nav::-webkit-scrollbar-thumb { background:rgba(255,255,255,.25); }
 
 /* Sidebar actions (quiz button) */
 .lesson-sidebar-actions {
@@ -1008,12 +1024,20 @@ body.light-mode .dashboard-hero-copy::before { background:radial-gradient(circle
     .hero-cta button { margin-top:0; }
     .cert-actions { flex-direction:column; width:100%; }
     .landing-footer { padding:1.1rem 1.5rem; flex-direction:column; gap:.75rem; text-align:center; }
-    .lesson-wrapper { display:flex; flex-direction:column; height:100vh; height:100dvh; min-height:0; }
-    .lesson-sidebar { flex:0 1 38%; height:auto; min-height:120px; max-height:38vh; max-height:38dvh; border-right:none; border-bottom:1px solid var(--border); }
-    .lesson-brand { padding:.6rem 1rem; }
-    .lesson-brand-mark { width:30px; height:30px; flex-basis:30px; border-radius:9px; font-size:.9rem; }
-    .lesson-brand-copy small { display:none; }
-    .lesson-main { flex:1 1 auto; height:auto; min-height:0; }
+    .lesson-wrapper { display:block; position:relative; height:100vh; height:100dvh; min-height:0; }
+    .lesson-sidebar { position:fixed; inset:0 auto 0 0; width:min(84vw,320px); height:100vh; height:100dvh; min-height:0; border-right:1px solid rgba(255,255,255,.12); border-bottom:0; transform:translateX(-105%); transition:transform .25s ease; box-shadow:14px 0 36px rgba(3,24,44,.34); z-index:302; }
+    .lesson-wrapper.sidebar-open .lesson-sidebar { transform:translateX(0); }
+    .lesson-sidebar-close { position:absolute; top:.7rem; right:.75rem; z-index:2; width:36px; height:36px; display:grid; place-items:center; border:1px solid rgba(255,255,255,.2); border-radius:10px; color:#fff; background:rgba(255,255,255,.08); cursor:pointer; }
+    .lesson-sidebar-close svg { width:18px; height:18px; }
+    .lesson-back-link { padding-right:3.5rem !important; }
+    .lesson-brand { padding:.75rem 1rem; }
+    .lesson-brand-mark { width:34px; height:34px; flex-basis:34px; border-radius:10px; font-size:.95rem; }
+    .lesson-sidebar-backdrop { position:fixed; inset:0; z-index:301; width:100%; height:100%; border:0; background:rgba(2,15,28,.6); opacity:0; pointer-events:none; }
+    .lesson-wrapper.sidebar-open .lesson-sidebar-backdrop { display:block; opacity:1; pointer-events:auto; }
+    .lesson-main { width:100%; height:100vh; height:100dvh; min-height:0; }
+    .lesson-sidebar-toggle { flex:0 0 auto; min-height:50px; padding:.7rem 1rem; display:flex; align-items:center; gap:.55rem; border:0; border-bottom:1px solid rgba(255,255,255,.14); color:#fff; background:#062e52; font:inherit; font-size:.78rem; font-weight:700; cursor:pointer; }
+    .lesson-sidebar-toggle svg { width:18px; height:18px; }
+    body.lesson-sidebar-lock { overflow:hidden; }
     .subtopic-header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
     .video-wrap { min-height: 240px; }
     #docs-iframe-wrap iframe { min-height: 400px; }
