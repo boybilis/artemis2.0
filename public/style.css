@@ -268,13 +268,15 @@ body.light-mode select:disabled { color:#64748b; background-color:#e5e7eb; opaci
 .learner-sidebar-footer { margin-top:1rem; padding:1rem .4rem .25rem; border-top:1px solid rgba(255,255,255,.14); display:flex; flex-direction:column; gap:.3rem; color:rgba(255,255,255,.8); font-size:.72rem; }
 .learner-sidebar-footer small { color:rgba(255,255,255,.48); font-size:.63rem; }
 #dashboard-screen .landing-nav { width:100%; }
-.learner-course-context-nav { min-height:72px; padding:.8rem 2rem; display:flex; align-items:center; border-bottom:1px solid var(--border); background:var(--surface); }
+.learner-course-context-nav { min-height:82px; padding:.8rem 2rem; display:flex; align-items:center; border-bottom:1px solid var(--border); background:var(--surface); }
 .learner-course-context-nav.hidden { display:none; }
 .learner-course-context-brand { min-width:0; display:flex; align-items:center; gap:.75rem; }
 .learner-course-context-mark { width:38px; height:38px; flex:0 0 38px; display:grid; place-items:center; border-radius:11px; color:#fff; background:linear-gradient(135deg,#7c3aed,#3b82f6); font-family:'Outfit',sans-serif; font-weight:800; }
 .learner-course-context-copy { min-width:0; display:flex; flex-direction:column; gap:.15rem; }
 .learner-course-context-copy small { color:var(--accent); font-size:.6rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }
+.learner-course-context-course { min-width:0; display:flex; align-items:baseline; gap:.35rem; overflow:hidden; color:var(--text-muted); font-size:.72rem; white-space:nowrap; }
 .learner-course-context-copy strong { overflow:hidden; color:var(--text); font-family:'Outfit',sans-serif; font-size:1rem; text-overflow:ellipsis; white-space:nowrap; }
+.learner-course-context-dates { overflow:hidden; color:var(--text-muted); font-size:.7rem; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
 
 .dashboard-body { padding:2.5rem 3rem 3.5rem; max-width:1180px; margin:0 auto; width:100%; }
 .dashboard-course-list-title { margin:0; font-family:'Outfit',sans-serif; font-size:1.45rem; font-weight:800; letter-spacing:-.02em; }
@@ -993,9 +995,10 @@ body.light-mode .dashboard-hero-copy::before { background:radial-gradient(circle
     .learner-dashboard-shell.sidebar-open .learner-sidebar-backdrop { display:block; opacity:1; pointer-events:auto; }
     .learner-sidebar-toggle { position:sticky; top:0; z-index:90; width:100%; min-height:54px; padding:.75rem 1.25rem; display:flex; align-items:center; gap:.55rem; border:0; color:#fff; background:#062e52; box-shadow:0 5px 18px rgba(3,24,44,.16); font:inherit; font-size:.8rem; font-weight:700; cursor:pointer; }
     .learner-sidebar-toggle svg { width:19px; height:19px; }
-    .learner-course-context-nav { min-height:62px; padding:.65rem 1rem; }
+    .learner-course-context-nav { min-height:72px; padding:.65rem 1rem; }
     .learner-course-context-mark { width:34px; height:34px; flex-basis:34px; border-radius:10px; }
     .learner-course-context-copy strong { font-size:.9rem; }
+    .learner-course-context-dates { font-size:.64rem; white-space:normal; }
     body.learner-sidebar-lock { overflow:hidden; }
     .btn-primary, .btn-ghost { width:100% !important; justify-content:center; text-align:center; margin-top:.4rem; }
     .landing-nav { flex-wrap:wrap; padding:1.25rem 1.5rem; justify-content:space-between; align-items:center; }

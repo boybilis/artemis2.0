@@ -926,8 +926,17 @@ function renderDashboard() {
                 const titleEl = $('course-details-title');
                 if (titleEl) titleEl.textContent = course.title;
                 const contextName = $('learner-course-context-name');
+                const contextBatch = $('learner-course-context-batch');
+                const contextDates = $('learner-course-context-dates');
                 const contextNav = $('learner-course-context-nav');
                 if (contextName) contextName.textContent = course.title;
+                if (contextBatch) contextBatch.textContent = course.batch_code || course.batch_name || 'Batch';
+                if (contextDates) {
+                    const formatContextDate = value => value
+                        ? new Date(value).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'})
+                        : 'Not set';
+                    contextDates.textContent = `Start date: ${formatContextDate(course.batch_starts_at)} · Access expiration: ${formatContextDate(course.enrollment_expires_at || course.batch_ends_at)}`;
+                }
                 if (contextNav) contextNav.classList.remove('hidden');
                 fadeTransition(
                     [$('dashboard-hero'), $('dashboard-courses-head'), cContainer],
