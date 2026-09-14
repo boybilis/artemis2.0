@@ -865,10 +865,12 @@ function renderDashboard() {
             cContainer.innerHTML = `<div class="empty-course-filter"><i data-lucide="book-open"></i><p>${isEnrolledView ? 'No enrolled courses yet.' : 'No available courses at this time.'}</p><span>${isEnrolledView ? 'Browse Available Courses to choose a review batch.' : 'Please check again when a new batch becomes available.'}</span></div>`;
         }
 
+        let enrolledCardIndex = 0;
         visibleCourses.forEach(course => {
             const card = document.createElement('div');
             const isLocked = !course.is_enrolled;
-            card.className = `topic-card learner-course-card ${isLocked ? 'course-locked' : 'course-enrolled'}`.trim();
+            const enrolledTheme = !isLocked ? (enrolledCardIndex++ % 2 === 0 ? 'course-theme-blue' : 'course-theme-orange') : '';
+            card.className = `topic-card learner-course-card ${isLocked ? 'course-locked' : `course-enrolled ${enrolledTheme}`}`.trim();
             card.style.cursor = 'pointer';
 
             let lockMsg = '';
