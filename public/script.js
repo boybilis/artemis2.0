@@ -656,6 +656,7 @@ async function loginUser(user) {
 
     const panelName = $('panel-name');
     if (panelName) panelName.textContent = user.name || ((user.firstName || '') + ' ' + (user.lastName || '')).trim() || 'Student';
+    updateLearnerSidebarIdentity(false);
     const panelEmail = $('panel-email');
     if (panelEmail) panelEmail.textContent = user.email || 'N/A';
     const panelOrg = $('panel-org');
@@ -3126,6 +3127,7 @@ function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
     [subjectsButton, progressButton].forEach(button => {
         if (button) button.classList.toggle('hidden', !isCourseOpen);
     });
+    updateLearnerSidebarIdentity(isCourseOpen);
     document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
     if (!isCourseOpen) {
         const listButton = state.courseListFilter === 'available'
@@ -3138,6 +3140,22 @@ function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
     }
     const activeButton = activePage === 'progress' ? progressButton : subjectsButton;
     if (activeButton) activeButton.classList.add('active');
+}
+
+function updateLearnerSidebarIdentity(isCourseOpen = false) {
+    const userName = $('learner-sidebar-user-name');
+    const courseName = $('learner-sidebar-course-name');
+    const displayName = state.user?.name
+        || [state.user?.firstName, state.user?.lastName].filter(Boolean).join(' ')
+        || 'Learner';
+    if (userName) userName.textContent = displayName;
+    if (!courseName) return;
+
+    const selectedCourse = isCourseOpen
+        ? courses.find(course => Number(course.id) === Number(currentCourseId) && course.is_enrolled)
+        : null;
+    courseName.textContent = selectedCourse?.title || '';
+    courseName.classList.toggle('hidden', !selectedCourse);
 }
 
 const dashboardSidebarBtn = $('sidebar-dashboard-btn');
