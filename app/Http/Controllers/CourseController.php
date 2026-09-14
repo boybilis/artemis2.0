@@ -29,6 +29,12 @@ class CourseController extends Controller
         $user = Auth::user();
         $availableCourses = Course::available()->with(['batches' => fn ($query) => $query->available()->orderBy('starts_at')->orderBy('name')])->get();
         $courseIds = $availableCourses->pluck('id');
+        $approvedTopicTotals = Topic::whereIn('course_id', $courseIds)->where('status', 'approved')
+            ->selectRaw('course_id, COUNT(*) as total')->groupBy('course_id')->pluck('total', 'course_id');
+        $approvedSubjectTotals = Subject::whereIn('course_id', $courseIds)->where('status', 'approved')
+            ->selectRaw('course_id, COUNT(*) as total')->groupBy('course_id')->pluck('total', 'course_id');
+        $completedTopicTotals = UserProgress::where('user_id', $user->id)->whereIn('course_id', $courseIds)
+            ->selectRaw('course_id, COUNT(DISTINCT topic_id) as total')->groupBy('course_id')->pluck('total', 'course_id');
         $userCertificates = Certificate::with('course:id,title')
             ->where('user_id', $user->id)
             ->orderByDesc('issued_at')
@@ -74,7 +80,7 @@ class CourseController extends Controller
             return [$courseId => ['positions' => $positions, 'total' => $bestScores->count()]];
         });
 
-        $courses = $availableCourses->flatMap(function ($course) use ($user, $rankings, $certificatesByCourse) {
+        $courses = $availableCourses->flatMap(function ($course) use ($user, $rankings, $certificatesByCourse, $approvedTopicTotals, $approvedSubjectTotals, $completedTopicTotals) {
             $enrollment = $user->enrollments()->whereHas('batch', fn ($query) => $query->where('course_id', $course->id))->latest()->first();
             if ($enrollment?->isActive() && $enrollment->batch_id && !$course->batches->contains('id', $enrollment->batch_id)) {
                 if ($enrolledBatch = CourseBatch::find($enrollment->batch_id)) $course->batches->push($enrolledBatch);
@@ -82,8 +88,10 @@ class CourseController extends Controller
             $courseRanking = $rankings->get($course->id, ['positions'=>[], 'total'=>0]);
             $international = strtoupper((string) $user->country_code) !== 'PH';
             $base = collect($course->toArray())->except('batches')->all();
-            return $course->batches->unique('id')->map(function ($batch) use ($base, $course, $enrollment, $courseRanking, $user, $certificatesByCourse, $international) {
+            return $course->batches->unique('id')->map(function ($batch) use ($base, $course, $enrollment, $courseRanking, $user, $certificatesByCourse, $international, $approvedTopicTotals, $approvedSubjectTotals, $completedTopicTotals) {
                 $isEnrolled = ($enrollment?->isActive() ?? false) && (int) $enrollment->batch_id === (int) $batch->id;
+                $topicTotal = (int) ($approvedTopicTotals[$course->id] ?? 0);
+                $topicCompleted = min($topicTotal, (int) ($completedTopicTotals[$course->id] ?? 0));
                 return array_merge($base, [
                     'batch_id'=>$batch->id, 'batch_name'=>$batch->name, 'batch_code'=>$batch->code,
                     'batch_description'=>$batch->description, 'batch_starts_at'=>$batch->starts_at?->toIso8601String(),
@@ -98,6 +106,10 @@ class CourseController extends Controller
                     'mock_exam_ranked_count'=>$isEnrolled ? $courseRanking['total'] : 0,
                     'has_certificate'=>$isEnrolled && $certificatesByCourse->has($course->id),
                     'certificate'=>$isEnrolled ? $certificatesByCourse->get($course->id) : null,
+                    'subject_count'=>(int) ($approvedSubjectTotals[$course->id] ?? 0),
+                    'completed_topic_count'=>$isEnrolled ? $topicCompleted : 0,
+                    'topic_count'=>$topicTotal,
+                    'course_progress'=>$isEnrolled && $topicTotal > 0 ? (int) round(($topicCompleted / $topicTotal) * 100) : 0,
                     'display_price'=>(float) ($international ? ($batch->usd_price ?? $batch->price) : $batch->price),
                     'currency_symbol'=>$international ? '$' : '₱', 'currency_code'=>$international ? 'USD' : 'PHP',
                     'billing_price'=>(float) $batch->price, 'billing_currency_symbol'=>'₱', 'billing_currency_code'=>'PHP',

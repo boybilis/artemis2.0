@@ -891,7 +891,32 @@ function renderDashboard() {
                 ? new Date(value).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'})
                 : null;
 
-            card.innerHTML = `
+            if (!isLocked) {
+                const progress = Math.max(0, Math.min(100, Number(course.course_progress || 0)));
+                const schedule = [course.batch_schedule_day, course.batch_start_time ? String(course.batch_start_time).slice(0, 5) : null].filter(Boolean).join(' · ');
+                card.innerHTML = `
+                    <div class="enrolled-card-content">
+                        <div class="enrolled-card-eyebrow">
+                            <span class="enrolled-card-icon"><i data-lucide="graduation-cap"></i></span>
+                            <span><strong>Active Enrollment</strong><small>${escapeHtml(course.batch_code || course.batch_name || 'Batch')}</small></span>
+                        </div>
+                        <h3>${escapeHtml(course.title)}</h3>
+                        <p class="enrolled-card-until">Access until ${formatCourseDate(course.enrollment_expires_at || course.batch_ends_at) || 'further notice'}</p>
+                        <div class="enrolled-card-facts">
+                            <p><i data-lucide="book-open"></i><span>${Number(course.subject_count || 0)} ${Number(course.subject_count || 0) === 1 ? 'subject' : 'subjects'}</span></p>
+                            <p><i data-lucide="layers-3"></i><span>${Number(course.completed_topic_count || 0)} of ${Number(course.topic_count || 0)} topics completed</span></p>
+                            <p><i data-lucide="monitor-play"></i><span>${escapeHtml(course.batch_modality || 'Online')}${schedule ? ` · ${escapeHtml(schedule)}` : ''}</span></p>
+                        </div>
+                        <div class="enrolled-card-meta">${rankingLabel}${certificateLabel}</div>
+                        <div class="enrolled-card-progress">
+                            <div><span>Course progress</span><strong>${progress}%</strong></div>
+                            <div class="enrolled-card-progress-track"><span style="width:${progress}%"></span></div>
+                        </div>
+                    </div>
+                    <div class="course-card-open-label"><span>Open ${escapeHtml(course.title)}</span><i data-lucide="arrow-right"></i></div>`;
+            } else {
+
+                card.innerHTML = `
                 <div class="course-card-heading">
                     <p class="topic-num">Batch ${escapeHtml(course.batch_code || '')}</p>
                     <span class="course-card-status ${isLocked ? 'available' : 'enrolled'}">${isLocked ? 'Available' : 'Enrolled'}</span>
@@ -908,6 +933,7 @@ function renderDashboard() {
                 ${isLocked ? '' : '<div class="course-card-open-label">Open course <i data-lucide="arrow-right"></i></div>'}
                 ${lockMsg}
             `;
+            }
             const subscribeBtn = card.querySelector('.course-subscribe-btn');
             if (subscribeBtn) subscribeBtn.addEventListener('click', event => {
                 event.stopPropagation();
