@@ -6,6 +6,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\PackageController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AdministratorMiddleware;
 
@@ -55,6 +56,8 @@ Route::prefix('api')->group(function () {
         Route::post('/voucher/buy', [VoucherController::class, 'buy']);
         Route::post('/voucher/verify', [VoucherController::class, 'verify']);
         Route::post('/voucher/redeem', [VoucherController::class, 'redeem']);
+        Route::get('/packages', [PackageController::class, 'index']);
+        Route::post('/packages/{package}/buy', [PackageController::class, 'buy']);
 
         // Exam & Certificate
         Route::get('/courses/{course}/exam/questions', [ExamController::class, 'getQuestions']);
@@ -138,6 +141,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
             Route::post('/users/{user}/toggle', [AdminController::class, 'toggleUserStatus'])->name('users.toggle');
             Route::post('/users/{user}/role', [AdminController::class, 'updateUserRole'])->name('users.role');
+            Route::get('/packages', [AdminController::class, 'packages'])->name('packages.index');
+            Route::post('/packages', [AdminController::class, 'storePackage'])->name('packages.store');
+            Route::put('/packages/{package}', [AdminController::class, 'updatePackage'])->name('packages.update');
+            Route::delete('/packages/{package}', [AdminController::class, 'destroyPackage'])->name('packages.destroy');
         });
 
         // Content

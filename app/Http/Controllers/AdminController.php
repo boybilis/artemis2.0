@@ -14,6 +14,7 @@ use App\Models\Course;
 use App\Models\Subject;
 use App\Models\CourseEnrollment;
 use App\Models\CourseBatch;
+use App\Models\ReviewPackage;
 
 use App\Models\QuizQuestion;
 use App\Models\UserProgress;
@@ -26,6 +27,61 @@ use Carbon\Carbon;
 
 class AdminController extends Controller
 {
+    public function packages()
+    {
+        $packages = ReviewPackage::with('batches.course')->latest()->get();
+        $batches = CourseBatch::available()->with('course')->orderBy('starts_at')->orderBy('name')->get();
+        return view('admin.packages.index', compact('packages', 'batches'));
+    }
+
+    public function storePackage(Request $request)
+    {
+        $data = $this->validatePackage($request);
+        $batchIds = $data['batch_ids'];
+        unset($data['batch_ids']);
+        $package = DB::transaction(function () use ($data, $batchIds) {
+            $package = ReviewPackage::create($data + ['created_by' => Auth::id()]);
+            $package->batches()->sync($batchIds);
+            return $package;
+        });
+        AuditLog::create(['user_id'=>Auth::id(), 'action'=>'Package Created', 'description'=>'Created review package '.$package->name, 'ip_address'=>$request->ip()]);
+        return redirect()->route('admin.packages.index')->with('success', 'Review package created.');
+    }
+
+    public function updatePackage(Request $request, ReviewPackage $package)
+    {
+        $data = $this->validatePackage($request);
+        $batchIds = $data['batch_ids'];
+        unset($data['batch_ids']);
+        DB::transaction(function () use ($package, $data, $batchIds) {
+            $package->update($data);
+            $package->batches()->sync($batchIds);
+        });
+        return redirect()->route('admin.packages.index')->with('success', 'Review package updated.');
+    }
+
+    public function destroyPackage(Request $request, ReviewPackage $package)
+    {
+        abort_if($package->transactions()->where('status', 'paid')->exists(), 422, 'A package with successful payments cannot be deleted. Set it to draft instead.');
+        $name = $package->name;
+        $package->delete();
+        AuditLog::create(['user_id'=>Auth::id(), 'action'=>'Package Deleted', 'description'=>'Deleted review package '.$name, 'ip_address'=>$request->ip()]);
+        return redirect()->route('admin.packages.index')->with('success', 'Review package deleted.');
+    }
+
+    private function validatePackage(Request $request): array
+    {
+        $data = $request->validate([
+            'name'=>'required|string|max:255', 'description'=>'nullable|string|max:3000', 'price'=>'required|numeric|min:0',
+            'starts_at'=>'required|date', 'class_type'=>'required|in:Live Online,Face to face,Full Online',
+            'status'=>'required|in:draft,active', 'batch_ids'=>'required|array|min:1', 'batch_ids.*'=>'integer|exists:course_batches,id',
+        ]);
+        $batchIds = collect($data['batch_ids'])->map(fn ($id) => (int) $id)->unique();
+        abort_unless(CourseBatch::available()->whereIn('id', $batchIds)->count() === $batchIds->count(), 422, 'Packages may include only active batch offerings.');
+        $data['batch_ids'] = $batchIds->values()->all();
+        return $data;
+    }
+
     // ─── AUTHENTICATION ──────────────────────────────────────────
     public function showLogin()
     {

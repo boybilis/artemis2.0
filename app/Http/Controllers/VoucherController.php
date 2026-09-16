@@ -138,6 +138,7 @@ class VoucherController extends Controller
         }
 
         if ($transaction?->status === 'paid' || $legacyVoucher?->used) {
+            if ($transaction?->review_package_id) return redirect('/?package_success=1');
             $code = $transaction ? $this->voucherCodeForTransaction($transaction) : $legacyVoucher->code;
             return redirect('/?voucher_success=' . urlencode($code));
         }
@@ -154,8 +155,11 @@ class VoucherController extends Controller
 
         if ($response->successful() && $this->checkoutIsPaid($response->json('data.attributes', []))) {
             $paymentId = data_get($response->json(), 'data.attributes.payments.0.id');
-            $code = $transaction
-                ? $this->activatePaidTransaction($transaction, $request->ip(), $paymentId)->code
+            if ($transaction?->review_package_id) {
+                $this->activatePaidTransaction($transaction, $request->ip(), $paymentId);
+                return redirect('/?package_success=1');
+            }
+            $code = $transaction ? $this->activatePaidTransaction($transaction, $request->ip(), $paymentId)->code
                 : tap($legacyVoucher, fn ($voucher) => $this->activatePaidVoucher($voucher, $request->ip(), $paymentId))->code;
             return redirect('/?voucher_success=' . urlencode($code));
         }
@@ -235,8 +239,9 @@ class VoucherController extends Controller
             ->value('code') ?: $transaction->reference;
     }
 
-    private function activatePaidTransaction(PaymentTransaction $transaction, ?string $ipAddress, ?string $paymentId = null): Voucher
+    private function activatePaidTransaction(PaymentTransaction $transaction, ?string $ipAddress, ?string $paymentId = null)
     {
+        if ($transaction->review_package_id) return $this->activatePaidPackageTransaction($transaction, $ipAddress, $paymentId);
         $created = false;
         [$transaction, $voucher] = DB::transaction(function () use ($transaction, $paymentId, &$created) {
             $locked = PaymentTransaction::with(['batch', 'user'])->lockForUpdate()->findOrFail($transaction->id);
@@ -294,6 +299,35 @@ class VoucherController extends Controller
         }
 
         return $voucher;
+    }
+
+    private function activatePaidPackageTransaction(PaymentTransaction $transaction, ?string $ipAddress, ?string $paymentId = null): PaymentTransaction
+    {
+        $activated = false;
+        $transaction = DB::transaction(function () use ($transaction, $paymentId, &$activated) {
+            $locked = PaymentTransaction::with(['reviewPackage.batches', 'user'])->lockForUpdate()->findOrFail($transaction->id);
+            if ($locked->status === 'paid') return $locked;
+            if (!$locked->user || !$locked->reviewPackage || $locked->reviewPackage->batches->isEmpty()) {
+                throw new \RuntimeException('Paid package transaction is missing its learner or included batches.');
+            }
+            $locked->update(['status'=>'paid', 'paid_at'=>now(), 'provider_payment_id'=>$paymentId ?: $locked->provider_payment_id]);
+            foreach ($locked->reviewPackage->batches as $batch) {
+                CourseEnrollment::updateOrCreate(
+                    ['user_id'=>$locked->user_id, 'batch_id'=>$batch->id],
+                    ['status'=>'active', 'enrolled_at'=>now(), 'expires_at'=>$batch->ends_at]
+                );
+            }
+            $activated = true;
+            return $locked;
+        });
+        if ($activated) {
+            AuditLog::create([
+                'user_id'=>$transaction->user_id, 'action'=>'Package Purchase',
+                'description'=>'Purchased package '.($transaction->reviewPackage?->name ?? '#'.$transaction->review_package_id).' via PayMongo QR Ph.',
+                'ip_address'=>$ipAddress,
+            ]);
+        }
+        return $transaction;
     }
 
     private function activatePaidVoucher(Voucher $voucher, ?string $ipAddress, ?string $paymentId = null): void

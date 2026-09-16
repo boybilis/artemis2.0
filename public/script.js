@@ -15,6 +15,7 @@ let state = {
 };
 
 let courses = [];
+let reviewPackages = [];
 let topics = [];
 let subjects = [];
 let courseMockExamQuestionCount = 0;
@@ -669,6 +670,11 @@ async function loginUser(user) {
     showScreen('dashboard-screen');
 }
 
+async function loadReviewPackages() {
+    const result = await apiRequest('/api/packages');
+    reviewPackages = result?.packages || [];
+}
+
 // ─── Buy Voucher ─────────────────────────────────────────
 function populateCourseSelector(preferredId = null) {
     const select = $('voucher-course-select');
@@ -846,20 +852,28 @@ function renderDashboard() {
             ? 'Your Enrolled Courses'
             : state.courseListFilter === 'available'
                 ? 'All Available Courses'
-                : 'Course Dashboard';
+                : state.courseListFilter === 'packages' ? 'Review Packages' : 'Course Dashboard';
         if (listSubtitle) listSubtitle.textContent = state.courseListFilter === 'enrolled'
             ? 'Continue learning from the courses included in your active batch enrollments.'
             : state.courseListFilter === 'available'
                 ? 'Browse review courses you are not currently enrolled in.'
-                : 'View your enrolled courses or browse other available review courses.';
+                : state.courseListFilter === 'packages'
+                    ? 'Choose a package promotion to enroll in multiple included batch offerings with one subscription.'
+                    : 'View your enrolled courses or browse other available review courses.';
 
         document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
         const activeSidebarButton = state.courseListFilter === 'enrolled'
             ? $('sidebar-enrolled-courses-btn')
             : state.courseListFilter === 'available'
                 ? $('sidebar-available-courses-btn')
-                : $('sidebar-dashboard-btn');
+                : state.courseListFilter === 'packages' ? $('sidebar-packages-btn') : $('sidebar-dashboard-btn');
         if (activeSidebarButton) activeSidebarButton.classList.add('active');
+
+        if (state.courseListFilter === 'packages') {
+            renderReviewPackages(cContainer);
+            if (window.lucide) lucide.createIcons();
+            return;
+        }
 
         if (visibleCourses.length === 0) {
             const isEnrolledView = state.courseListFilter === 'enrolled';
@@ -3112,8 +3126,39 @@ if (dashboardMenuBtn && dashboardNavActions) {
     });
 }
 
-function showDashboardCourseList(filter) {
-    state.courseListFilter = ['enrolled', 'available'].includes(filter) ? filter : 'dashboard';
+function renderReviewPackages(container) {
+    container.innerHTML = '';
+    if (!reviewPackages.length) {
+        container.innerHTML = '<div class="empty-course-filter"><i data-lucide="package-open"></i><p>No review packages are available yet.</p><span>Please check again when a new package promotion becomes active.</span></div>';
+        return;
+    }
+    reviewPackages.forEach(item => {
+        const card = document.createElement('article');
+        card.className = 'topic-card review-package-card';
+        const start = item.starts_at ? new Date(`${item.starts_at}T00:00:00`).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : 'To be announced';
+        card.innerHTML = `<div class="review-package-card-head"><span class="review-package-icon"><i data-lucide="package-open"></i></span><span><small>PACKAGE OFFERING</small><strong>${escapeHtml(item.class_type)}</strong></span></div><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.description || 'A bundled review offering from Artemis 2.0.')}</p><div class="review-package-batches"><strong>Included batch offerings</strong>${item.batches.map(batch=>`<span><i data-lucide="check-circle-2"></i>${escapeHtml(batch.course)} — ${escapeHtml(batch.name)} <small>${escapeHtml(batch.code)}</small></span>`).join('')}</div><div class="review-package-meta"><span><i data-lucide="calendar-days"></i>Starts ${start}</span><strong>₱${Number(item.price||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div><button type="button" class="btn-primary review-package-buy" ${item.is_subscribed?'disabled':''}>${item.is_subscribed?'Already Enrolled':'Subscribe to Package'}</button>`;
+        const buy = card.querySelector('.review-package-buy');
+        if (!item.is_subscribed) buy.addEventListener('click', async () => {
+            buy.disabled = true;
+            buy.textContent = 'Opening secure checkout…';
+            try {
+                const result = await apiRequest(`/api/packages/${item.id}/buy`, 'POST', {});
+                if (result?.checkout_url) window.location.href = result.checkout_url;
+                else throw new Error('The secure checkout link was not returned.');
+            } catch (error) {
+                buy.disabled = false;
+                buy.textContent = 'Subscribe to Package';
+            }
+        });
+        container.appendChild(card);
+    });
+}
+
+async function showDashboardCourseList(filter) {
+    state.courseListFilter = ['enrolled', 'available', 'packages'].includes(filter) ? filter : 'dashboard';
+    if (state.courseListFilter === 'packages') {
+        try { await loadReviewPackages(); } catch (error) { reviewPackages = []; }
+    }
     renderDashboard();
     const courseHeading = $('dashboard-courses-head');
     if (filter !== 'dashboard' && courseHeading) courseHeading.scrollIntoView({behavior:'smooth', block:'start'});
@@ -3121,9 +3166,11 @@ function showDashboardCourseList(filter) {
 
 function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
     const allCoursesButton = $('sidebar-available-courses-btn');
+    const packagesButton = $('sidebar-packages-btn');
     const subjectsButton = $('sidebar-subjects-btn');
     const progressButton = $('sidebar-progress-report-btn');
     if (allCoursesButton) allCoursesButton.classList.toggle('hidden', isCourseOpen);
+    if (packagesButton) packagesButton.classList.toggle('hidden', isCourseOpen);
     [subjectsButton, progressButton].forEach(button => {
         if (button) button.classList.toggle('hidden', !isCourseOpen);
     });
@@ -3132,6 +3179,8 @@ function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
     if (!isCourseOpen) {
         const listButton = state.courseListFilter === 'available'
             ? allCoursesButton
+            : state.courseListFilter === 'packages'
+                ? packagesButton
             : state.courseListFilter === 'enrolled'
                 ? $('sidebar-enrolled-courses-btn')
                 : $('sidebar-dashboard-btn');
@@ -3160,9 +3209,11 @@ function updateLearnerSidebarIdentity(isCourseOpen = false) {
 
 const dashboardSidebarBtn = $('sidebar-dashboard-btn');
 const enrolledCoursesSidebarBtn = $('sidebar-enrolled-courses-btn');
+const packagesSidebarBtn = $('sidebar-packages-btn');
 const availableCoursesSidebarBtn = $('sidebar-available-courses-btn');
 if (dashboardSidebarBtn) dashboardSidebarBtn.addEventListener('click', () => showDashboardCourseList('dashboard'));
 if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('enrolled'));
+if (packagesSidebarBtn) packagesSidebarBtn.addEventListener('click', () => showDashboardCourseList('packages'));
 if (availableCoursesSidebarBtn) availableCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('available'));
 
 const learnerDashboardShell = document.querySelector('.learner-dashboard-shell');
@@ -3191,6 +3242,11 @@ window.addEventListener('resize', () => {
 // Check for successful PayMongo return
 function checkPaymongoReturn() {
     const params = new URLSearchParams(window.location.search);
+    if (params.has('package_success')) {
+        showToast('Package payment successful. Your included courses are now enrolled!', 'success');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+    }
     if (params.has('voucher_success')) {
         const code = params.get('voucher_success');
         const enrolledBatch = courses.find(course => course.is_enrolled);

@@ -18,6 +18,7 @@
         array_splice($navItems, 1, 0, [[
             'label' => 'Users', 'route' => 'admin.users.index', 'active' => 'admin.users.*', 'icon' => 'users'
         ]]);
+        $navItems[] = ['label' => 'Packages', 'route' => 'admin.packages.index', 'active' => 'admin.packages.*', 'icon' => 'package-open'];
     }
     
     $newVouchersCount = 0;
