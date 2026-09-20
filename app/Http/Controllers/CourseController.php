@@ -47,13 +47,9 @@ class CourseController extends Controller
                 'issuedAt' => $certificate->issued_at?->format('F j, Y'),
             ]);
         $certificatesByCourse = $userCertificates->keyBy('courseId');
-        $activeLearners = CourseEnrollment::with('batch:id,course_id')
-            ->whereHas('batch', fn ($query) => $query->whereIn('course_id', $courseIds))
-            ->where('status', 'active')
-            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
-            ->get(['batch_id', 'user_id'])
-            ->groupBy(fn ($enrollment) => $enrollment->batch?->course_id)
-            ->map(fn ($enrollments) => $enrollments->pluck('user_id')->unique()->values());
+        $activeLearners = $courseIds->mapWithKeys(fn ($courseId) => [$courseId => CourseEnrollment::whereHas('batch.courses', fn ($query) => $query->where('courses.id', $courseId))
+            ->where('status', 'active')->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->pluck('user_id')->unique()->values()]);
         $mockAttempts = QuizAttempt::whereIn('course_id', $courseIds)
             ->where('assessment_type', 'final')
             ->get(['id', 'course_id', 'user_id', 'score', 'total', 'points_earned', 'points_possible'])
@@ -81,7 +77,7 @@ class CourseController extends Controller
         });
 
         $courses = $availableCourses->flatMap(function ($course) use ($user, $rankings, $certificatesByCourse, $approvedTopicTotals, $approvedSubjectTotals, $completedTopicTotals) {
-            $enrollment = $user->enrollments()->whereHas('batch', fn ($query) => $query->where('course_id', $course->id))->latest()->first();
+            $enrollment = $user->enrollments()->whereHas('batch.courses', fn ($query) => $query->where('courses.id', $course->id))->latest()->first();
             if ($enrollment?->isActive() && $enrollment->batch_id && !$course->batches->contains('id', $enrollment->batch_id)) {
                 if ($enrolledBatch = CourseBatch::with('zoomSessions')->find($enrollment->batch_id)) $course->batches->push($enrolledBatch);
             }
@@ -144,7 +140,7 @@ class CourseController extends Controller
         }
         $course = Course::findOrFail($courseId);
         $user = Auth::user();
-        $activeBatch = CourseBatch::where('course_id', $courseId)
+        $activeBatch = CourseBatch::forCourse($courseId)
             ->whereHas('enrollments', fn ($query) => $query->where('user_id', $user->id)->where('status', 'active'))
             ->firstOrFail();
         $topics = Topic::where('course_id', $courseId)->where('status', 'approved')
@@ -306,7 +302,7 @@ class CourseController extends Controller
         if (! $user->hasActiveEnrollment((int) $courseId)) {
             return response()->json(['success' => false, 'message' => 'An active enrollment is required.'], 403);
         }
-        $batch = CourseBatch::where('course_id', $courseId)
+        $batch = CourseBatch::forCourse($courseId)
             ->whereHas('enrollments', fn ($query) => $query->where('user_id', $user->id)->where('status', 'active'))
             ->firstOrFail();
         $rankingAttempts = QuizAttempt::where('course_id', $courseId)
@@ -696,7 +692,7 @@ class CourseController extends Controller
                 $batchId = CourseEnrollment::where('user_id', $user->id)
                     ->where('status', 'active')
                     ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
-                    ->whereHas('batch', fn ($query) => $query->where('course_id', $topic->course_id))
+                    ->whereHas('batch.courses', fn ($query) => $query->where('courses.id', $topic->course_id))
                     ->value('batch_id');
                 $hasScoredSubmission = QuizAttempt::where('user_id', $user->id)
                     ->where('course_id', $topic->course_id)
@@ -800,7 +796,7 @@ class CourseController extends Controller
         QuizAttempt::create([
             'user_id' => $user->id,
             'course_id' => $topic->course_id,
-            'batch_id' => CourseEnrollment::where('user_id', $user->id)->whereHas('batch', fn ($query) => $query->where('course_id', $topic->course_id))->where('status', 'active')->value('batch_id'),
+            'batch_id' => CourseEnrollment::where('user_id', $user->id)->whereHas('batch.courses', fn ($query) => $query->where('courses.id', $topic->course_id))->where('status', 'active')->value('batch_id'),
             'topic_id' => $topicId,
             'assessment_type' => 'quiz',
             'score' => $score,

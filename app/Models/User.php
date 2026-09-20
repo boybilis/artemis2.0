@@ -77,7 +77,7 @@ class User extends Authenticatable
     {
         return $this->enrollments()->where('status', 'active')
             ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
-            ->whereHas('batch', fn ($query) => $query->where('course_id', $courseId))->exists();
+            ->whereHas('batch.courses', fn ($query) => $query->where('courses.id', $courseId))->exists();
     }
 
     public function progress()

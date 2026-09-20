@@ -23,7 +23,7 @@
                 <label>Included active batch offerings</label>
                 <div class="package-batch-checklist">
                     @forelse($batches as $batch)
-                        <label class="package-batch-option"><input type="checkbox" name="batch_ids[]" value="{{ $batch->id }}"><span><strong>{{ $batch->course?->title }} — {{ $batch->name }}</strong><small>{{ $batch->code }} · {{ $batch->starts_at?->format('M d, Y') ?? 'Open schedule' }}</small></span></label>
+                        <label class="package-batch-option"><input type="checkbox" name="batch_ids[]" value="{{ $batch->id }}"><span><strong>{{ $batch->name }}</strong><small>{{ $batch->code }} · {{ $batch->courses->pluck('title')->join(', ') }} · {{ $batch->starts_at?->format('M d, Y') ?? 'Open schedule' }}</small></span></label>
                     @empty
                         <p class="muted">No active batch offerings are currently available.</p>
                     @endforelse
@@ -49,7 +49,7 @@
                 <article class="list-item">
                     <div style="display:flex;justify-content:space-between;gap:1rem"><div><strong>{{ $package->name }}</strong><span class="muted">₱{{ number_format($package->price, 2) }} · {{ $package->class_type }} · starts {{ $package->starts_at?->format('M d, Y') }}</span></div><span class="status {{ $package->status === 'active' ? 'success' : 'warning' }}">{{ ucfirst($package->status) }}</span></div>
                     <p class="muted" style="margin:.75rem 0">{{ $package->description ?: 'No description provided.' }}</p>
-                    <ul style="margin:.5rem 0 1rem;padding-left:1.25rem">@foreach($package->batches as $batch)<li>{{ $batch->course?->title }} — {{ $batch->name }} ({{ $batch->code }})</li>@endforeach</ul>
+                    <ul style="margin:.5rem 0 1rem;padding-left:1.25rem">@foreach($package->batches as $batch)<li>{{ $batch->name }} ({{ $batch->code }}) — {{ $batch->courses->pluck('title')->join(', ') }}</li>@endforeach</ul>
                     <div style="display:flex;gap:.5rem;flex-wrap:wrap">
                         <button type="button" class="btn-ghost" data-package="{{ json_encode($packageEditorData) }}" onclick="editPackage(JSON.parse(this.dataset.package))">Edit</button>
                         <form method="POST" action="{{ route('admin.packages.destroy', $package) }}" onsubmit="return confirm('Delete this package promotion?')">@csrf @method('DELETE')<button class="btn-ghost" style="color:var(--wrong)" type="submit">Delete</button></form>

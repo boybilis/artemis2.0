@@ -15,7 +15,7 @@ class PackageController extends Controller
     public function index()
     {
         $user = Auth::user();
-        $packages = ReviewPackage::available()->with(['batches' => fn ($query) => $query->available()->with('course')])->latest('starts_at')->get();
+        $packages = ReviewPackage::available()->with(['batches' => fn ($query) => $query->available()->with('courses')])->latest('starts_at')->get();
 
         return response()->json(['success' => true, 'packages' => $packages->map(function (ReviewPackage $package) use ($user) {
             $batchIds = $package->batches->pluck('id');
@@ -28,10 +28,13 @@ class PackageController extends Controller
                 'price' => (float) $package->price,
                 'starts_at' => $package->starts_at?->toDateString(),
                 'class_type' => $package->class_type,
-                'is_subscribed' => $batchIds->isNotEmpty() && $enrolledIds->unique()->count() === $batchIds->unique()->count(),
+                // A package purchase grants one learner-selected batch. Once any
+                // included batch is active, the package has already been used.
+                'is_subscribed' => $enrolledIds->isNotEmpty(),
                 'batches' => $package->batches->map(fn (CourseBatch $batch) => [
                     'id' => $batch->id, 'name' => $batch->name, 'code' => $batch->code,
-                    'course' => $batch->course?->title,
+                    'courses' => $batch->courses->pluck('title')->values(),
+                    'is_enrolled' => $enrolledIds->contains($batch->id),
                 ])->values(),
             ];
         })->values()]);
@@ -41,13 +44,16 @@ class PackageController extends Controller
     {
         $user = Auth::user();
         abort_unless($package->status === 'active', 404);
-        $package->load(['batches' => fn ($query) => $query->available()->with('course')]);
+        $data = $request->validate(['batch_id'=>'required|integer|exists:course_batches,id']);
+        $package->load(['batches' => fn ($query) => $query->available()->with('courses')]);
         abort_if($package->batches->isEmpty(), 422, 'This package has no currently available batch offerings.');
+        $batch = $package->batches->firstWhere('id', (int) $data['batch_id']);
+        abort_unless($batch, 422, 'Select an available batch included in this package.');
 
         $activeBatchIds = $user->enrollments()->whereIn('batch_id', $package->batches->pluck('id'))->where('status', 'active')
             ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))->pluck('batch_id');
-        if ($activeBatchIds->unique()->count() === $package->batches->count()) {
-            return response()->json(['success' => false, 'message' => 'You already have active access to every offering in this package.'], 422);
+        if ($activeBatchIds->isNotEmpty()) {
+            return response()->json(['success' => false, 'message' => 'You have already used this package for an included batch.'], 422);
         }
 
         do {
@@ -55,7 +61,7 @@ class PackageController extends Controller
         } while (PaymentTransaction::where('reference', $reference)->exists());
 
         $transaction = PaymentTransaction::create([
-            'user_id' => $user->id, 'review_package_id' => $package->id, 'reference' => $reference,
+            'user_id' => $user->id, 'batch_id'=>$batch->id, 'review_package_id' => $package->id, 'reference' => $reference,
             'amount' => $package->price, 'currency' => 'PHP', 'provider' => 'paymongo', 'status' => 'pending_payment',
         ]);
         $secretKey = config('services.paymongo.secret_key');
@@ -64,7 +70,7 @@ class PackageController extends Controller
             return response()->json(['success' => false, 'message' => 'Online payment is not configured yet.'], 503);
         }
 
-        $description = 'Artemis 2.0 review package: ' . $package->name;
+        $description = 'Artemis 2.0 review package: ' . $package->name . ' — ' . $batch->name;
         $response = Http::withBasicAuth($secretKey, '')->acceptJson()->post('https://api.paymongo.com/v1/checkout_sessions', [
             'data' => ['attributes' => [
                 'billing' => array_filter(['name'=>$user->name, 'email'=>$user->email, 'phone'=>$user->phone]),

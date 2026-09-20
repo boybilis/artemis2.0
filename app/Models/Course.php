@@ -56,7 +56,7 @@ class Course extends Model
         return $this->hasManyThrough(CourseEnrollment::class, CourseBatch::class, 'course_id', 'batch_id');
     }
 
-    public function batches() { return $this->hasMany(CourseBatch::class); }
+    public function batches() { return $this->belongsToMany(CourseBatch::class, 'course_batch_courses', 'course_id', 'batch_id')->withTimestamps(); }
 
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
 }

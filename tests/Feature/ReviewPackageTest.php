@@ -31,21 +31,24 @@ class ReviewPackageTest extends TestCase
         config()->set('services.paymongo.secret_key', 'sk_test_artemis');
         Http::fake(['api.paymongo.com/v1/checkout_sessions' => Http::response(['data'=>['id'=>'cs_pkg','attributes'=>['checkout_url'=>'https://checkout.paymongo.com/pkg']]], 200)]);
         [$learner, $package] = $this->makePackage();
+        $selectedBatch = $package->batches->first();
 
         $this->actingAs($learner)->getJson('/api/packages')->assertOk()
-            ->assertJsonPath('packages.0.name', 'Nursing Power Bundle')->assertJsonCount(2, 'packages.0.batches');
-        $this->actingAs($learner)->postJson("/api/packages/{$package->id}/buy")->assertOk()
+            ->assertJsonPath('packages.0.name', 'Nursing Power Bundle')->assertJsonCount(2, 'packages.0.batches')
+            ->assertJsonPath('packages.0.batches.0.courses.0', $selectedBatch->courses->first()->title);
+        $this->actingAs($learner)->postJson("/api/packages/{$package->id}/buy", ['batch_id'=>$selectedBatch->id])->assertOk()
             ->assertJsonPath('checkout_url', 'https://checkout.paymongo.com/pkg');
         Http::assertSent(fn ($request) => $request['data']['attributes']['line_items'][0]['amount'] === 399900);
-        $this->assertDatabaseHas('payment_transactions', ['review_package_id'=>$package->id, 'batch_id'=>null, 'amount'=>3999, 'status'=>'pending_payment']);
+        $this->assertDatabaseHas('payment_transactions', ['review_package_id'=>$package->id, 'batch_id'=>$selectedBatch->id, 'amount'=>3999, 'status'=>'pending_payment']);
     }
 
-    public function test_paid_package_webhook_enrolls_every_included_batch_once(): void
+    public function test_paid_package_webhook_enrolls_only_the_selected_batch_once(): void
     {
         config()->set('services.paymongo.secret_key', 'sk_test_artemis');
         config()->set('services.paymongo.webhook_secret', 'whsk_test_artemis');
         [$learner, $package] = $this->makePackage();
-        $transaction = PaymentTransaction::create(['user_id'=>$learner->id, 'review_package_id'=>$package->id, 'reference'=>'ART2PKG-TEST', 'amount'=>3999, 'currency'=>'PHP', 'provider'=>'paymongo', 'status'=>'pending_payment', 'provider_checkout_id'=>'cs_pkg_paid']);
+        $selectedBatch = $package->batches->last();
+        $transaction = PaymentTransaction::create(['user_id'=>$learner->id, 'batch_id'=>$selectedBatch->id, 'review_package_id'=>$package->id, 'reference'=>'ART2PKG-TEST', 'amount'=>3999, 'currency'=>'PHP', 'provider'=>'paymongo', 'status'=>'pending_payment', 'provider_checkout_id'=>'cs_pkg_paid']);
         $payload = json_encode(['data'=>['id'=>'evt_pkg','attributes'=>['type'=>'checkout_session.payment.paid','data'=>['id'=>'cs_pkg_paid','type'=>'checkout_session','attributes'=>['reference_number'=>$transaction->reference,'payments'=>[['id'=>'pay_pkg','attributes'=>['status'=>'paid']]]]]]]], JSON_UNESCAPED_SLASHES);
         $timestamp = time();
         $signature = hash_hmac('sha256', $timestamp.'.'.$payload, 'whsk_test_artemis');
@@ -54,8 +57,9 @@ class ReviewPackageTest extends TestCase
         $this->call('POST', '/api/payments/paymongo/webhook', [], [], [], $server, $payload)->assertOk();
         $this->call('POST', '/api/payments/paymongo/webhook', [], [], [], $server, $payload)->assertOk();
         $this->assertDatabaseHas('payment_transactions', ['id'=>$transaction->id, 'status'=>'paid']);
-        $this->assertSame(2, $learner->enrollments()->where('status', 'active')->count());
-        foreach ($package->batches as $batch) $this->assertDatabaseHas('course_enrollments', ['user_id'=>$learner->id, 'batch_id'=>$batch->id, 'status'=>'active']);
+        $this->assertSame(1, $learner->enrollments()->where('status', 'active')->count());
+        $this->assertDatabaseHas('course_enrollments', ['user_id'=>$learner->id, 'batch_id'=>$selectedBatch->id, 'status'=>'active']);
+        $this->assertDatabaseMissing('course_enrollments', ['user_id'=>$learner->id, 'batch_id'=>$package->batches->first()->id]);
     }
 
     private function makePackage(): array
@@ -67,6 +71,6 @@ class ReviewPackageTest extends TestCase
         });
         $package = ReviewPackage::create(['name'=>'Nursing Power Bundle', 'description'=>'Two review programs.', 'price'=>3999, 'starts_at'=>now()->addWeek(), 'class_type'=>'Live Online', 'status'=>'active']);
         $package->batches()->sync($batches->pluck('id'));
-        return [$learner, $package->load('batches')];
+        return [$learner, $package->load('batches.courses')];
     }
 }

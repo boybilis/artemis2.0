@@ -16,7 +16,7 @@
                     @forelse ($vouchers as $voucher)
                         <tr>
                             <td><strong>{{ $voucher->code }}</strong></td>
-                            <td><strong>{{ $voucher->batch?->course?->title ?? 'No assigned course' }}</strong>@if($voucher->batch)<br><span class="muted">{{ $voucher->batch->code }} — {{ $voucher->batch->name }}</span>@endif</td>
+                            <td><strong>{{ $voucher->batch?->courses?->pluck('title')->join(', ') ?: 'No assigned course' }}</strong>@if($voucher->batch)<br><span class="muted">{{ $voucher->batch->code }} — {{ $voucher->batch->name }}</span>@endif</td>
                             <td>
                                 <span class="status {{ $voucher->statusCssClass() }}">
                                     {{ $voucher->statusLabel() }}
@@ -57,7 +57,7 @@
                 @forelse ($redeemedVouchers as $idx => $voucher)
                     <tr>
                         <td><code>TXN-2026-{{ str_pad(($redeemedVouchers->firstItem() ?? 1) + $idx, 5, '0', STR_PAD_LEFT) }}</code></td>
-                        <td>{{ $voucher->batch?->course?->title ?? 'No assigned course' }}</td>
+                        <td>{{ $voucher->batch?->courses?->pluck('title')->join(', ') ?: 'No assigned course' }}</td>
                         <td>
                             @if ($voucher->user)
                                 <strong>{{ $voucher->user->name }}</strong> (<span class="muted">{{ $voucher->user->email }}</span>)

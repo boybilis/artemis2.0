@@ -141,6 +141,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
             Route::post('/users/{user}/toggle', [AdminController::class, 'toggleUserStatus'])->name('users.toggle');
             Route::post('/users/{user}/role', [AdminController::class, 'updateUserRole'])->name('users.role');
+            Route::post('/classes/batches', [AdminController::class, 'storeClassBatch'])->name('classes.batches.store');
+            Route::put('/classes/batches/{batch}', [AdminController::class, 'updateClassBatch'])->name('classes.batches.update');
+            Route::delete('/classes/batches/{batch}', [AdminController::class, 'destroyClassBatch'])->name('classes.batches.destroy');
             Route::get('/packages', [AdminController::class, 'packages'])->name('packages.index');
             Route::post('/packages', [AdminController::class, 'storePackage'])->name('packages.store');
             Route::put('/packages/{package}', [AdminController::class, 'updatePackage'])->name('packages.update');
@@ -150,6 +153,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Content
         Route::get('/content', [AdminController::class, 'contentCourses'])->name('content.index');
         Route::get('/classes', [AdminController::class, 'classManagement'])->name('classes.index');
+        Route::get('/classes/batches/{batch}/zoom-sessions', [AdminController::class, 'classBatchZoomSessions'])->name('classes.batches.zoom-sessions');
+        Route::post('/classes/batches/{batch}/zoom-sessions', [AdminController::class, 'storeClassBatchZoomSession'])->name('classes.batches.zoom-sessions.store');
+        Route::put('/classes/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'updateClassBatchZoomSession'])->name('classes.batches.zoom-sessions.update');
+        Route::delete('/classes/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'destroyClassBatchZoomSession'])->name('classes.batches.zoom-sessions.destroy');
         
         // Course specific content
         Route::prefix('/content/courses/{course}')->group(function () {

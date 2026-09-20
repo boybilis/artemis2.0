@@ -3174,18 +3174,21 @@ function renderReviewPackages(container) {
         const card = document.createElement('article');
         card.className = 'topic-card review-package-card';
         const start = item.starts_at ? new Date(`${item.starts_at}T00:00:00`).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'}) : 'To be announced';
-        card.innerHTML = `<div class="review-package-card-head"><span class="review-package-icon"><i data-lucide="package-open"></i></span><span><small>PACKAGE OFFERING</small><strong>${escapeHtml(item.class_type)}</strong></span></div><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.description || 'A bundled review offering from Artemis 2.0.')}</p><div class="review-package-batches"><strong>Included batch offerings</strong>${item.batches.map(batch=>`<span><i data-lucide="check-circle-2"></i>${escapeHtml(batch.course)} — ${escapeHtml(batch.name)} <small>${escapeHtml(batch.code)}</small></span>`).join('')}</div><div class="review-package-meta"><span><i data-lucide="calendar-days"></i>Starts ${start}</span><strong>₱${Number(item.price||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div><button type="button" class="btn-primary review-package-buy" ${item.is_subscribed?'disabled':''}>${item.is_subscribed?'Already Enrolled':'Subscribe to Package'}</button>`;
+        const selectableBatches = item.batches.filter(batch => !batch.is_enrolled);
+        card.innerHTML = `<div class="review-package-card-head"><span class="review-package-icon"><i data-lucide="package-open"></i></span><span><small>PACKAGE OFFERING</small><strong>${escapeHtml(item.class_type)}</strong></span></div><h3>${escapeHtml(item.name)}</h3><p>${escapeHtml(item.description || 'A bundled review offering from Artemis 2.0.')}</p><div class="review-package-batches"><strong>Included batch offerings</strong>${item.batches.map(batch=>`<span><i data-lucide="${batch.is_enrolled?'check-circle-2':'layers-3'}"></i><span><b>${escapeHtml(batch.name)}</b> <small>${escapeHtml(batch.code)}</small><em>${escapeHtml((batch.courses||[]).join(', '))}</em></span></span>`).join('')}</div>${!item.is_subscribed&&selectableBatches.length?`<label class="review-package-batch-picker"><span>Select your batch</span><select class="review-package-batch-select" aria-label="Select a batch for ${escapeHtml(item.name)}">${selectableBatches.map(batch=>`<option value="${Number(batch.id)}">${escapeHtml(batch.name)} (${escapeHtml(batch.code)})</option>`).join('')}</select></label>`:''}<div class="review-package-meta"><span><i data-lucide="calendar-days"></i>Starts ${start}</span><strong>₱${Number(item.price||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div><button type="button" class="btn-primary review-package-buy" ${item.is_subscribed?'disabled':''}>${item.is_subscribed?'Package Already Used':'Subscribe to Selected Batch'}</button>`;
         const buy = card.querySelector('.review-package-buy');
         if (!item.is_subscribed) buy.addEventListener('click', async () => {
+            const selectedBatchId = Number(card.querySelector('.review-package-batch-select')?.value || 0);
+            if (!selectedBatchId) return showAlertModal('Select a batch included in this package first.');
             buy.disabled = true;
             buy.textContent = 'Opening secure checkout…';
             try {
-                const result = await apiRequest(`/api/packages/${item.id}/buy`, 'POST', {});
+                const result = await apiRequest(`/api/packages/${item.id}/buy`, 'POST', {batch_id:selectedBatchId});
                 if (result?.checkout_url) window.location.href = result.checkout_url;
                 else throw new Error('The secure checkout link was not returned.');
             } catch (error) {
                 buy.disabled = false;
-                buy.textContent = 'Subscribe to Package';
+                buy.textContent = 'Subscribe to Selected Batch';
             }
         });
         container.appendChild(card);

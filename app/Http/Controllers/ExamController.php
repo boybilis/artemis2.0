@@ -22,7 +22,7 @@ class ExamController extends Controller
 {
     private function activeBatch(int $userId, int $courseId): CourseBatch
     {
-        return CourseBatch::where('course_id', $courseId)->whereHas('enrollments', fn ($query) => $query->where('user_id', $userId)->where('status', 'active')->where(fn ($active) => $active->whereNull('expires_at')->orWhere('expires_at', '>', now())))->firstOrFail();
+        return CourseBatch::forCourse($courseId)->whereHas('enrollments', fn ($query) => $query->where('user_id', $userId)->where('status', 'active')->where(fn ($active) => $active->whereNull('expires_at')->orWhere('expires_at', '>', now())))->firstOrFail();
     }
 
     private function mockExamAttemptMessage(int $userId, Course $course): ?string
@@ -222,7 +222,7 @@ class ExamController extends Controller
         }
         $passingRatio = ((float) ($item->passing_percentage ?? 80)) / 100;
         $passed = $possible > 0 && ($earned / $possible) >= $passingRatio;
-        QuizAttempt::create(['user_id'=>$user->id,'course_id'=>$course->id,'batch_id'=>CourseEnrollment::where('user_id',$user->id)->whereHas('batch',fn($query)=>$query->where('course_id',$course->id))->where('status','active')->value('batch_id'),'topic_id'=>$item->topic_id,'subtopic_id'=>$item->id,'assessment_type'=>$item->content_type,'score'=>$score,'total'=>count($ids),'points_earned'=>$earned,'points_possible'=>$possible,'passed'=>$passed,'review_data'=>$reviewQuestions]);
+        QuizAttempt::create(['user_id'=>$user->id,'course_id'=>$course->id,'batch_id'=>CourseEnrollment::where('user_id',$user->id)->whereHas('batch.courses',fn($query)=>$query->where('courses.id',$course->id))->where('status','active')->value('batch_id'),'topic_id'=>$item->topic_id,'subtopic_id'=>$item->id,'assessment_type'=>$item->content_type,'score'=>$score,'total'=>count($ids),'points_earned'=>$earned,'points_possible'=>$possible,'passed'=>$passed,'review_data'=>$reviewQuestions]);
         return response()->json(['success'=>true,'passed'=>$passed,'score'=>$earned,'total'=>$possible,'attemptsUsed'=>$used+1,'maximumAttempts'=>$limit,'questions'=>$reviewQuestions,'incorrectQuestions'=>$incorrectQuestions]);
     }
 
@@ -360,7 +360,7 @@ class ExamController extends Controller
         QuizAttempt::create([
             'user_id' => $user->id,
             'course_id' => $courseId,
-            'batch_id' => CourseEnrollment::where('user_id', $user->id)->whereHas('batch', fn ($query) => $query->where('course_id', $courseId))->where('status', 'active')->value('batch_id'),
+            'batch_id' => CourseEnrollment::where('user_id', $user->id)->whereHas('batch.courses', fn ($query) => $query->where('courses.id', $courseId))->where('status', 'active')->value('batch_id'),
             'topic_id' => null, 
             'assessment_type' => $type === 'mid' ? 'midterm' : 'final',
             'score' => $score,

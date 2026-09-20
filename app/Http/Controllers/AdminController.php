@@ -30,8 +30,8 @@ class AdminController extends Controller
 {
     public function packages()
     {
-        $packages = ReviewPackage::with('batches.course')->latest()->get();
-        $batches = CourseBatch::available()->with('course')->orderBy('starts_at')->orderBy('name')->get();
+        $packages = ReviewPackage::with('batches.courses')->latest()->get();
+        $batches = CourseBatch::available()->with('courses')->orderBy('starts_at')->orderBy('name')->get();
         return view('admin.packages.index', compact('packages', 'batches'));
     }
 
@@ -380,14 +380,82 @@ class AdminController extends Controller
 
     public function classManagement()
     {
-        $courses = Course::orderBy('created_at', 'desc')->get();
-        return view('admin.content.courses', ['courses' => $courses, 'classManagement' => true]);
+        $courses = Course::available()->orderBy('title')->get();
+        $batches = CourseBatch::with(['courses:id,title', 'zoomSessions'])->withCount(['enrollments as active_enrollments_count'=>fn($query)=>$query->where('status','active')])->orderByDesc('starts_at')->orderByDesc('id')->get();
+        return view('admin.classes.index', compact('courses', 'batches'));
+    }
+
+    public function storeClassBatch(Request $request)
+    {
+        $data = $this->validateClassBatch($request);
+        $courseIds = $data['course_ids']; unset($data['course_ids']);
+        $batch = DB::transaction(function () use ($data, $courseIds) {
+            $batch = CourseBatch::create($data + ['course_id'=>$courseIds[0], 'created_by'=>Auth::id()]);
+            $batch->courses()->sync($courseIds);
+            return $batch;
+        });
+        return redirect()->route('admin.classes.index')->with('success', "{$batch->name} created.");
+    }
+
+    public function updateClassBatch(Request $request, CourseBatch $batch)
+    {
+        $data = $this->validateClassBatch($request, $batch->id);
+        $courseIds = $data['course_ids']; unset($data['course_ids']);
+        DB::transaction(function () use ($batch, $data, $courseIds) {
+            $batch->update($data + ['course_id'=>$courseIds[0]]);
+            $batch->courses()->sync($courseIds);
+        });
+        return redirect()->route('admin.classes.index')->with('success', 'Batch updated.');
+    }
+
+    public function destroyClassBatch(CourseBatch $batch)
+    {
+        abort_if($batch->enrollments()->exists(), 422, 'A batch with enrollment history cannot be deleted. Close it instead.');
+        $batch->delete();
+        return redirect()->route('admin.classes.index')->with('success', 'Batch deleted.');
+    }
+
+    private function validateClassBatch(Request $request, ?int $batchId = null): array
+    {
+        return $request->validate([
+            'name'=>'required|string|max:255', 'code'=>['required','string','max:80',\Illuminate\Validation\Rule::unique('course_batches','code')->ignore($batchId)],
+            'description'=>'nullable|string|max:2000', 'starts_at'=>'nullable|date', 'ends_at'=>'nullable|date|after_or_equal:starts_at',
+            'schedule_day'=>'nullable|string|max:100', 'start_time'=>'nullable|date_format:H:i', 'end_time'=>'nullable|date_format:H:i|after:start_time',
+            'modality'=>'nullable|in:Online,Blended,Live via Zoom', 'price'=>'required|numeric|min:0', 'usd_price'=>'nullable|numeric|min:0',
+            'capacity'=>'nullable|integer|min:1|max:100000', 'status'=>'required|in:draft,open,closed,completed',
+            'course_ids'=>'required|array|min:1', 'course_ids.*'=>['integer',\Illuminate\Validation\Rule::exists('courses','id')->where('approval_status','approved')],
+        ]);
+    }
+
+    public function classBatchZoomSessions(CourseBatch $batch)
+    {
+        return response()->json(['success'=>true,'batch'=>['id'=>$batch->id,'name'=>$batch->name,'code'=>$batch->code], 'sessions'=>$batch->zoomSessions()->with('creator:id,name')->get()->map(fn($session)=>$this->zoomSessionData($session))]);
+    }
+
+    public function storeClassBatchZoomSession(Request $request, CourseBatch $batch)
+    {
+        $session = $batch->zoomSessions()->create($this->validateZoomSession($request)+['created_by'=>Auth::id()]);
+        return response()->json(['success'=>true,'session'=>$this->zoomSessionData($session)]);
+    }
+
+    public function updateClassBatchZoomSession(Request $request, CourseBatch $batch, BatchZoomSession $session)
+    {
+        abort_unless((int)$session->batch_id === (int)$batch->id, 404);
+        $session->update($this->validateZoomSession($request));
+        return response()->json(['success'=>true,'session'=>$this->zoomSessionData($session)]);
+    }
+
+    public function destroyClassBatchZoomSession(CourseBatch $batch, BatchZoomSession $session)
+    {
+        abort_unless((int)$session->batch_id === (int)$batch->id, 404);
+        $session->delete();
+        return response()->json(['success'=>true]);
     }
 
     public function courseBatches($courseId)
     {
         $course = Course::findOrFail($courseId);
-        $batches = CourseBatch::where('course_id', $course->id)->withCount(['enrollments as active_enrollments_count' => fn ($query) => $query->where('status', 'active')])->orderByDesc('starts_at')->orderByDesc('id')->get();
+        $batches = CourseBatch::forCourse($course->id)->withCount(['enrollments as active_enrollments_count' => fn ($query) => $query->where('status', 'active')])->orderByDesc('starts_at')->orderByDesc('id')->get();
         return response()->json(['success'=>true,'course'=>['id'=>$course->id,'title'=>$course->title],'batches'=>$batches->map(fn ($batch) => [
             'id'=>$batch->id,'courseId'=>$batch->course_id,'name'=>$batch->name,'code'=>$batch->code,'description'=>$batch->description,
             'startsAt'=>$batch->starts_at?->format('Y-m-d\TH:i'),'endsAt'=>$batch->ends_at?->format('Y-m-d\TH:i'),
@@ -412,23 +480,24 @@ class AdminController extends Controller
     {
         abort_unless(Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin', 403, 'Only administrators can edit batches.');
         $course = Course::findOrFail($courseId);
-        $batch = CourseBatch::where('course_id', $course->id)->findOrFail($batchId);
+        $batch = CourseBatch::forCourse($course->id)->findOrFail($batchId);
         $request->validate(['course_id'=>'required|integer|exists:courses,id']);
         $data = $request->validate(['name'=>'required|string|max:255','code'=>'required|string|max:80|unique:course_batches,code,'.$batch->id,'description'=>'nullable|string|max:2000','starts_at'=>'nullable|date','ends_at'=>'nullable|date|after_or_equal:starts_at','schedule_day'=>'nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday','start_time'=>'nullable|date_format:H:i','end_time'=>'nullable|date_format:H:i|after:start_time','modality'=>'nullable|in:Online,Blended,Live via Zoom','price'=>'required|numeric|min:0','usd_price'=>'nullable|numeric|min:0','capacity'=>'nullable|integer|min:1|max:100000','status'=>'required|in:draft,open,closed,completed']);
         $batch->update($data + ['course_id'=>$request->integer('course_id')]);
+        $batch->courses()->syncWithoutDetaching([$request->integer('course_id')]);
         return response()->json(['success'=>true,'message'=>'Batch updated successfully.']);
     }
 
     public function batchZoomSessions($courseId, $batchId)
     {
-        $batch = CourseBatch::where('course_id', $courseId)->findOrFail($batchId);
+        $batch = CourseBatch::forCourse($courseId)->findOrFail($batchId);
         return response()->json(['success'=>true, 'batch'=>['id'=>$batch->id, 'name'=>$batch->name, 'code'=>$batch->code],
             'sessions'=>$batch->zoomSessions()->with('creator:id,name')->get()->map(fn ($session) => $this->zoomSessionData($session))]);
     }
 
     public function storeBatchZoomSession(Request $request, $courseId, $batchId)
     {
-        $batch = CourseBatch::where('course_id', $courseId)->findOrFail($batchId);
+        $batch = CourseBatch::forCourse($courseId)->findOrFail($batchId);
         $session = $batch->zoomSessions()->create($this->validateZoomSession($request) + ['created_by'=>Auth::id()]);
         AuditLog::create(['user_id'=>Auth::id(),'action'=>'Zoom Session Created','description'=>"Scheduled {$session->title} for {$batch->name}.",'ip_address'=>$request->ip()]);
         return response()->json(['success'=>true, 'message'=>'Zoom session scheduled.', 'session'=>$this->zoomSessionData($session)]);
@@ -436,7 +505,7 @@ class AdminController extends Controller
 
     public function updateBatchZoomSession(Request $request, $courseId, $batchId, $sessionId)
     {
-        $batch = CourseBatch::where('course_id', $courseId)->findOrFail($batchId);
+        $batch = CourseBatch::forCourse($courseId)->findOrFail($batchId);
         $session = $batch->zoomSessions()->findOrFail($sessionId);
         $session->update($this->validateZoomSession($request));
         return response()->json(['success'=>true, 'message'=>'Zoom session updated.', 'session'=>$this->zoomSessionData($session)]);
@@ -444,7 +513,7 @@ class AdminController extends Controller
 
     public function destroyBatchZoomSession(Request $request, $courseId, $batchId, $sessionId)
     {
-        $batch = CourseBatch::where('course_id', $courseId)->findOrFail($batchId);
+        $batch = CourseBatch::forCourse($courseId)->findOrFail($batchId);
         $session = $batch->zoomSessions()->findOrFail($sessionId);
         $title = $session->title;
         $session->delete();
@@ -473,8 +542,8 @@ class AdminController extends Controller
     {
         $course = Course::findOrFail($courseId);
         $data = $request->validate(['batch_id'=>'required|integer|exists:course_batches,id']);
-        $batch = CourseBatch::where('course_id', $course->id)->findOrFail($data['batch_id']);
-        $enrollment = CourseEnrollment::whereHas('batch', fn ($query) => $query->where('course_id', $course->id))->where('user_id', $userId)->firstOrFail();
+        $batch = CourseBatch::forCourse($course->id)->findOrFail($data['batch_id']);
+        $enrollment = CourseEnrollment::whereHas('batch.courses', fn ($query) => $query->where('courses.id', $course->id))->where('user_id', $userId)->firstOrFail();
         if ($batch->capacity && $enrollment->batch_id !== $batch->id && $batch->enrollments()->where('status', 'active')->count() >= $batch->capacity) {
             return response()->json(['success'=>false,'message'=>'This batch has reached its enrollment capacity.'], 422);
         }
@@ -486,7 +555,7 @@ class AdminController extends Controller
     public function courseEnrollments(Request $request, $courseId)
     {
         $course = Course::findOrFail($courseId);
-        $batch = CourseBatch::where('course_id', $course->id)->findOrFail($request->integer('batch_id'));
+        $batch = CourseBatch::forCourse($course->id)->findOrFail($request->integer('batch_id'));
         $search = trim((string) $request->input('search'));
         $enrollments = CourseEnrollment::with(['user:id,name,email','batch:id,name,code'])
             ->where('batch_id', $batch->id)
@@ -528,7 +597,7 @@ class AdminController extends Controller
                 'enrolledAt' => optional($enrollment->enrolled_at ?? $enrollment->created_at)->format('M d, Y h:i A'),
             ]),
             'assessments' => $assessments->values(),
-            'batches' => CourseBatch::where('course_id', $course->id)->orderBy('name')->get(['id','name','code','status']),
+            'batches' => CourseBatch::forCourse($course->id)->orderBy('name')->get(['course_batches.id','name','code','status']),
             'pagination' => ['currentPage'=>$enrollments->currentPage(),'lastPage'=>$enrollments->lastPage(),'total'=>$enrollments->total()],
         ]);
     }
@@ -536,7 +605,7 @@ class AdminController extends Controller
     public function courseRankings(Request $request, $courseId)
     {
         $course = Course::findOrFail($courseId);
-        $batch = CourseBatch::where('course_id', $course->id)->findOrFail($request->integer('batch_id'));
+        $batch = CourseBatch::forCourse($course->id)->findOrFail($request->integer('batch_id'));
         $enrolledUsers = CourseEnrollment::with('user:id,name')
             ->where('batch_id', $batch->id)
             ->where('status', 'active')
@@ -591,7 +660,7 @@ class AdminController extends Controller
         $actor = Auth::user();
         abort_unless($actor->is_admin || strtolower((string) $actor->role) === 'admin', 403, 'Only administrators can unenroll students.');
         $course = Course::findOrFail($courseId);
-        $enrollment = CourseEnrollment::whereHas('batch', fn ($query) => $query->where('course_id', $course->id))->where('user_id', $user->id)->firstOrFail();
+        $enrollment = CourseEnrollment::whereHas('batch.courses', fn ($query) => $query->where('courses.id', $course->id))->where('user_id', $user->id)->firstOrFail();
         $enrollment->delete();
         AuditLog::create([
             'user_id'=>$actor->id,
@@ -606,7 +675,7 @@ class AdminController extends Controller
     {
         $course = Course::findOrFail($courseId);
         $data = $request->validate(['user_id'=>'required|integer|exists:users,id','assessment'=>'required|string|max:80','batch_id'=>'required|integer|exists:course_batches,id']);
-        $batch = CourseBatch::where('course_id', $course->id)->findOrFail($data['batch_id']);
+        $batch = CourseBatch::forCourse($course->id)->findOrFail($data['batch_id']);
         abort_unless(CourseEnrollment::where('batch_id', $batch->id)->where('user_id', $data['user_id'])->exists(), 422, 'The learner is not enrolled in this batch.');
 
         $attempts = QuizAttempt::where('course_id', $course->id)->where('batch_id', $batch->id)->where('user_id', $data['user_id']);
@@ -1592,11 +1661,11 @@ class AdminController extends Controller
             $user->save();
         }
         
-        $vouchers = Voucher::with(['user', 'batch.course'])
+        $vouchers = Voucher::with(['user', 'batch.courses'])
             ->orderBy('created_at', 'desc')
             ->paginate(15, ['*'], 'vouchers_page')
             ->withQueryString();
-        $redeemedVouchers = Voucher::with(['user', 'batch.course'])
+        $redeemedVouchers = Voucher::with(['user', 'batch.courses'])
             ->where('used', true)
             ->orderBy('used_at', 'desc')
             ->paginate(15, ['*'], 'redeemed_page')

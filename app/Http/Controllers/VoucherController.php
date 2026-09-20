@@ -45,11 +45,11 @@ class VoucherController extends Controller
         }
 
         $data = $request->validate(['batch_id'=>'required|integer|exists:course_batches,id']);
-        $batch = CourseBatch::available()->findOrFail($data['batch_id']);
-        $course = Course::available()->findOrFail($batch->course_id);
+        $batch = CourseBatch::available()->with(['courses' => fn ($query) => $query->available()])->findOrFail($data['batch_id']);
+        abort_if($batch->courses->isEmpty(), 422, 'This batch has no available master courses.');
 
-        if ($user->hasActiveEnrollment($course->id)) {
-            return response()->json(['success' => false, 'message' => 'You already have active access to this course.'], 422);
+        if ($user->enrollments()->where('batch_id', $batch->id)->where('status', 'active')->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))->exists()) {
+            return response()->json(['success' => false, 'message' => 'You already have active access to this batch.'], 422);
         }
 
         $reference = $this->generatePaymentReference();
@@ -69,7 +69,7 @@ class VoucherController extends Controller
             return response()->json(['success' => false, 'message' => 'Online payment is not configured yet.'], 503);
         }
 
-        $description = 'Artemis 2.0 batch enrollment: ' . $batch->name . ' (' . $course->title . ')';
+        $description = 'Artemis 2.0 batch enrollment: ' . $batch->name . ' (' . $batch->courses->pluck('title')->join(', ') . ')';
         $response = Http::withBasicAuth($secretKey, '')
             ->acceptJson()
             ->post('https://api.paymongo.com/v1/checkout_sessions', [
@@ -305,18 +305,16 @@ class VoucherController extends Controller
     {
         $activated = false;
         $transaction = DB::transaction(function () use ($transaction, $paymentId, &$activated) {
-            $locked = PaymentTransaction::with(['reviewPackage.batches', 'user'])->lockForUpdate()->findOrFail($transaction->id);
+            $locked = PaymentTransaction::with(['reviewPackage.batches', 'batch', 'user'])->lockForUpdate()->findOrFail($transaction->id);
             if ($locked->status === 'paid') return $locked;
-            if (!$locked->user || !$locked->reviewPackage || $locked->reviewPackage->batches->isEmpty()) {
-                throw new \RuntimeException('Paid package transaction is missing its learner or included batches.');
+            if (!$locked->user || !$locked->reviewPackage || !$locked->batch || !$locked->reviewPackage->batches->contains('id', $locked->batch_id)) {
+                throw new \RuntimeException('Paid package transaction is missing its learner or selected package batch.');
             }
             $locked->update(['status'=>'paid', 'paid_at'=>now(), 'provider_payment_id'=>$paymentId ?: $locked->provider_payment_id]);
-            foreach ($locked->reviewPackage->batches as $batch) {
-                CourseEnrollment::updateOrCreate(
-                    ['user_id'=>$locked->user_id, 'batch_id'=>$batch->id],
-                    ['status'=>'active', 'enrolled_at'=>now(), 'expires_at'=>$batch->ends_at]
-                );
-            }
+            CourseEnrollment::updateOrCreate(
+                ['user_id'=>$locked->user_id, 'batch_id'=>$locked->batch_id],
+                ['status'=>'active', 'enrolled_at'=>now(), 'expires_at'=>$locked->batch->ends_at]
+            );
             $activated = true;
             return $locked;
         });
@@ -449,7 +447,7 @@ class VoucherController extends Controller
 
         $batchId = $voucher->batch_id ?: $request->integer('batch_id');
         $batch = CourseBatch::available()->findOrFail($batchId);
-        $courseId = $batch->course_id;
+        $courseIds = $batch->courses()->pluck('courses.id');
 
         // Mark as used
         $voucher->update([
@@ -462,7 +460,7 @@ class VoucherController extends Controller
 
         $durationDays = $voucher->duration_days ?: 30;
         $existing = CourseEnrollment::where('user_id', $user->id)->where('batch_id', $batch->id)->first();
-        $course = Course::available()->findOrFail($courseId);
+        abort_if($courseIds->isEmpty(), 422, 'This batch has no assigned master courses.');
         $base = $existing?->expires_at && $existing->expires_at->isFuture() ? $existing->expires_at : now();
         $enrollment = CourseEnrollment::updateOrCreate(
             ['user_id' => $user->id, 'batch_id' => $batch->id],
@@ -473,14 +471,15 @@ class VoucherController extends Controller
         AuditLog::create([
             'user_id' => $user->id,
             'action' => 'Subscription Activated',
-            'description' => 'Redeemed enrollment code ' . $code . ' for ' . Course::find($courseId)?->title . '.',
+            'description' => 'Redeemed enrollment code ' . $code . ' for batch ' . $batch->name . '.',
             'ip_address' => $request->ip()
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Batch enrollment activated successfully. The assigned course is now available.',
-            'courseId' => (int) $courseId,
+            'courseId' => (int) $courseIds->first(),
+            'courseIds' => $courseIds->map(fn ($id) => (int) $id)->values(),
             'batchId' => $batch?->id,
             'batchName' => $batch?->name,
             'enrollmentExpiresAt' => $enrollment->expires_at?->toIso8601String(),
