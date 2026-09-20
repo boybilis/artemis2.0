@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use App\Models\User;
 use App\Models\Topic;
 use App\Models\Subtopic;
@@ -417,14 +418,27 @@ class AdminController extends Controller
 
     private function validateClassBatch(Request $request, ?int $batchId = null): array
     {
-        return $request->validate([
-            'name'=>'required|string|max:255', 'code'=>['required','string','max:80',\Illuminate\Validation\Rule::unique('course_batches','code')->ignore($batchId)],
+        $data = $request->validate([
+            'name'=>'required|string|max:255', 'code'=>'nullable|string|max:80',
             'description'=>'nullable|string|max:2000', 'starts_at'=>'nullable|date', 'ends_at'=>'nullable|date|after_or_equal:starts_at',
             'schedule_day'=>'nullable|string|max:100', 'start_time'=>'nullable|date_format:H:i', 'end_time'=>'nullable|date_format:H:i|after:start_time',
             'modality'=>'nullable|in:Online,Blended,Live via Zoom', 'price'=>'required|numeric|min:0', 'usd_price'=>'nullable|numeric|min:0',
             'capacity'=>'nullable|integer|min:1|max:100000', 'status'=>'required|in:draft,open,closed,completed',
             'course_ids'=>'required|array|min:1', 'course_ids.*'=>['integer',\Illuminate\Validation\Rule::exists('courses','id')->where('approval_status','approved')],
         ]);
+
+        if (!$batchId || blank($data['code'] ?? null)) {
+            $base = Str::upper(Str::slug($data['name']));
+            $base = Str::limit($base ?: 'BATCH', 70, '');
+            $candidate = $base;
+            $suffix = 2;
+            while (CourseBatch::where('code', $candidate)->when($batchId, fn ($query) => $query->where('id', '!=', $batchId))->exists()) {
+                $candidate = Str::limit($base, 70 - strlen((string) $suffix), '') . '-' . $suffix++;
+            }
+            $data['code'] = $candidate;
+        }
+
+        return $data;
     }
 
     public function classBatchZoomSessions(CourseBatch $batch)

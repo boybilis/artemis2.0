@@ -27,8 +27,15 @@ class MultiCourseBatchTest extends TestCase
             'price'=>5999, 'status'=>'open', 'course_ids'=>$courses->pluck('id')->all(),
         ])->assertRedirect('/admin/classes');
 
-        $batch = CourseBatch::where('code', 'OCT-2026-MWF-FULL')->firstOrFail();
+        $batch = CourseBatch::where('code', 'OCTOBER-2026-MWF-FULL')->firstOrFail();
         $this->assertEqualsCanonicalizing($courses->pluck('id')->all(), $batch->courses()->pluck('courses.id')->all());
+
+        $this->actingAs($admin)->post('/admin/classes/batches', [
+            'name'=>'OCTOBER 2026 (MWF) FULL', 'schedule_day'=>'Monday, Wednesday, Friday',
+            'modality'=>'Live via Zoom', 'price'=>5999, 'status'=>'open',
+            'course_ids'=>$courses->pluck('id')->all(),
+        ])->assertRedirect('/admin/classes');
+        $this->assertDatabaseHas('course_batches', ['code'=>'OCTOBER-2026-MWF-FULL-2']);
     }
 
     public function test_one_batch_enrollment_unlocks_every_assigned_master_course(): void
