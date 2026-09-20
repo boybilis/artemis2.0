@@ -23,6 +23,7 @@ class ZoomSubtopicTest extends TestCase
         $this->actingAs($instructor)->postJson(route('admin.content.batches.zoom-sessions.store', [$course, $batch]), [
             'title' => 'Maternal Nursing Live Review',
             'zoom_url' => 'https://zoom.us/j/123456789',
+            'recording_url' => 'https://zoom.us/rec/share/batch-one-recording',
             'description' => "Live discussion and question review.\nPrepare your notes.",
             'starts_at' => now()->addDay()->format('Y-m-d H:i:s'),
             'ends_at' => now()->addDay()->addHours(2)->format('Y-m-d H:i:s'),
@@ -33,6 +34,7 @@ class ZoomSubtopicTest extends TestCase
             'batch_id' => $batch->id,
             'title' => 'Maternal Nursing Live Review',
             'zoom_url' => 'https://zoom.us/j/123456789',
+            'recording_url' => 'https://zoom.us/rec/share/batch-one-recording',
             'status' => 'scheduled',
         ]);
     }
@@ -46,11 +48,13 @@ class ZoomSubtopicTest extends TestCase
         CourseEnrollment::create(['user_id' => $learner->id, 'batch_id' => $batch->id, 'status' => 'active', 'enrolled_at' => now()]);
         BatchZoomSession::create([
             'batch_id'=>$batch->id, 'title'=>'Live Review', 'zoom_url'=>'https://zoom.us/j/987654321',
+            'recording_url'=>'https://zoom.us/rec/share/private-batch-recording',
             'description'=>'Weekly live review.', 'starts_at'=>now()->addDay(), 'status'=>'scheduled',
         ]);
 
         $this->actingAs($learner)->getJson('/api/courses')->assertOk()
-            ->assertJsonPath('courses.0.zoom_sessions.0.zoom_url', 'https://zoom.us/j/987654321');
+            ->assertJsonPath('courses.0.zoom_sessions.0.zoom_url', 'https://zoom.us/j/987654321')
+            ->assertJsonPath('courses.0.zoom_sessions.0.recording_url', 'https://zoom.us/rec/share/private-batch-recording');
         $this->actingAs($outsider)->getJson('/api/courses')->assertOk()
             ->assertJsonCount(0, 'courses.0.zoom_sessions');
     }

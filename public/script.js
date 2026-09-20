@@ -1198,6 +1198,16 @@ function renderCourseOverview() {
             return `<article class="course-zoom-session"><div class="course-zoom-date"><small>${start.toLocaleDateString('en-US',{month:'short'}).toUpperCase()}</small><strong>${String(start.getDate()).padStart(2,'0')}</strong></div><div class="course-zoom-copy"><span>${today ? 'TODAY' : (index === 0 ? 'NEXT CLASS' : 'UPCOMING')}</span><h4>${escapeHtml(item.title)}</h4><p>${escapeHtml(item.description || 'Live instructor-led review session')} · ${escapeHtml(time)}</p></div><a class="btn-primary course-zoom-join" href="${escapeHtml(item.zoom_url)}" target="_blank" rel="noopener noreferrer">Join Zoom <i data-lucide="video"></i></a></article>`;
         }).join('');
     }
+    const recordings = sessions.filter(item => item.recording_url);
+    const recordingsPanel = $('course-recordings-panel');
+    const recordingsContainer = $('course-zoom-recordings');
+    if (recordingsPanel && recordingsContainer) {
+        recordingsPanel.classList.toggle('hidden', recordings.length === 0);
+        recordingsContainer.innerHTML = recordings.map(item => {
+            const heldAt = new Date(item.starts_at);
+            return `<article class="course-zoom-session course-recording-session"><div class="course-zoom-date"><small>${heldAt.toLocaleDateString('en-US',{month:'short'}).toUpperCase()}</small><strong>${String(heldAt.getDate()).padStart(2,'0')}</strong></div><div class="course-zoom-copy"><span>RECORDING</span><h4>${escapeHtml(item.title)}</h4><p>${escapeHtml(item.description || 'Recorded instructor-led Zoom review session')}</p></div><a class="btn-primary course-zoom-join" href="${escapeHtml(item.recording_url)}" target="_blank" rel="noopener noreferrer">Watch Recording <i data-lucide="play"></i></a></article>`;
+        }).join('');
+    }
     if (window.lucide) lucide.createIcons();
 }
 

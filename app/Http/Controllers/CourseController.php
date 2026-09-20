@@ -110,6 +110,7 @@ class CourseController extends Controller
                         'id'=>$session->id, 'title'=>$session->title, 'description'=>$session->description,
                         'starts_at'=>$session->starts_at?->toIso8601String(), 'ends_at'=>$session->ends_at?->toIso8601String(),
                         'status'=>$session->status, 'zoom_url'=>$session->status === 'scheduled' ? $session->zoom_url : null,
+                        'recording_url'=>$session->recording_url,
                     ])->values() : [],
                     'display_price'=>(float) ($international ? ($batch->usd_price ?? $batch->price) : $batch->price),
                     'currency_symbol'=>$international ? '$' : '₱', 'currency_code'=>$international ? 'USD' : 'PHP',

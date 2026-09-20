@@ -539,7 +539,7 @@ class AdminController extends Controller
     {
         return $request->validate([
             'title'=>'required|string|max:255', 'description'=>'nullable|string|max:3000',
-            'zoom_url'=>'required|url|max:1000', 'starts_at'=>'required|date',
+            'zoom_url'=>'required|url|max:1000', 'recording_url'=>'nullable|url|max:1000', 'starts_at'=>'required|date',
             'ends_at'=>'nullable|date|after:starts_at', 'status'=>'required|in:scheduled,cancelled',
         ]);
     }
@@ -547,7 +547,7 @@ class AdminController extends Controller
     private function zoomSessionData(BatchZoomSession $session): array
     {
         return ['id'=>$session->id, 'title'=>$session->title, 'description'=>$session->description,
-            'zoomUrl'=>$session->zoom_url, 'startsAt'=>$session->starts_at?->toIso8601String(),
+            'zoomUrl'=>$session->zoom_url, 'recordingUrl'=>$session->recording_url, 'startsAt'=>$session->starts_at?->toIso8601String(),
             'endsAt'=>$session->ends_at?->toIso8601String(), 'status'=>$session->status,
             'createdBy'=>$session->creator?->name];
     }
