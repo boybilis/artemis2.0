@@ -161,6 +161,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/batches', [AdminController::class, 'courseBatches'])->name('content.batches');
             Route::post('/batches', [AdminController::class, 'storeCourseBatch'])->name('content.batches.store');
             Route::post('/batches/{batch}', [AdminController::class, 'updateCourseBatch'])->name('content.batches.update');
+            Route::get('/batches/{batch}/zoom-sessions', [AdminController::class, 'batchZoomSessions'])->name('content.batches.zoom-sessions');
+            Route::post('/batches/{batch}/zoom-sessions', [AdminController::class, 'storeBatchZoomSession'])->name('content.batches.zoom-sessions.store');
+            Route::put('/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'updateBatchZoomSession'])->name('content.batches.zoom-sessions.update');
+            Route::delete('/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'destroyBatchZoomSession'])->name('content.batches.zoom-sessions.destroy');
             Route::post('/enrollments/{user}/batch', [AdminController::class, 'reassignEnrollmentBatch'])->name('content.enrollments.batch');
             Route::post('/enrollments/{user}/unenroll', [AdminController::class, 'unenrollCourseStudent'])->name('content.enrollments.unenroll');
             Route::post('/assessment-attempts/reset', [AdminController::class, 'resetCourseAssessmentAttempt'])->name('content.assessment-attempts.reset');

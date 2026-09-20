@@ -15,6 +15,7 @@ use App\Models\Subject;
 use App\Models\CourseEnrollment;
 use App\Models\CourseBatch;
 use App\Models\ReviewPackage;
+use App\Models\BatchZoomSession;
 
 use App\Models\QuizQuestion;
 use App\Models\UserProgress;
@@ -416,6 +417,56 @@ class AdminController extends Controller
         $data = $request->validate(['name'=>'required|string|max:255','code'=>'required|string|max:80|unique:course_batches,code,'.$batch->id,'description'=>'nullable|string|max:2000','starts_at'=>'nullable|date','ends_at'=>'nullable|date|after_or_equal:starts_at','schedule_day'=>'nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday','start_time'=>'nullable|date_format:H:i','end_time'=>'nullable|date_format:H:i|after:start_time','modality'=>'nullable|in:Online,Blended,Live via Zoom','price'=>'required|numeric|min:0','usd_price'=>'nullable|numeric|min:0','capacity'=>'nullable|integer|min:1|max:100000','status'=>'required|in:draft,open,closed,completed']);
         $batch->update($data + ['course_id'=>$request->integer('course_id')]);
         return response()->json(['success'=>true,'message'=>'Batch updated successfully.']);
+    }
+
+    public function batchZoomSessions($courseId, $batchId)
+    {
+        $batch = CourseBatch::where('course_id', $courseId)->findOrFail($batchId);
+        return response()->json(['success'=>true, 'batch'=>['id'=>$batch->id, 'name'=>$batch->name, 'code'=>$batch->code],
+            'sessions'=>$batch->zoomSessions()->with('creator:id,name')->get()->map(fn ($session) => $this->zoomSessionData($session))]);
+    }
+
+    public function storeBatchZoomSession(Request $request, $courseId, $batchId)
+    {
+        $batch = CourseBatch::where('course_id', $courseId)->findOrFail($batchId);
+        $session = $batch->zoomSessions()->create($this->validateZoomSession($request) + ['created_by'=>Auth::id()]);
+        AuditLog::create(['user_id'=>Auth::id(),'action'=>'Zoom Session Created','description'=>"Scheduled {$session->title} for {$batch->name}.",'ip_address'=>$request->ip()]);
+        return response()->json(['success'=>true, 'message'=>'Zoom session scheduled.', 'session'=>$this->zoomSessionData($session)]);
+    }
+
+    public function updateBatchZoomSession(Request $request, $courseId, $batchId, $sessionId)
+    {
+        $batch = CourseBatch::where('course_id', $courseId)->findOrFail($batchId);
+        $session = $batch->zoomSessions()->findOrFail($sessionId);
+        $session->update($this->validateZoomSession($request));
+        return response()->json(['success'=>true, 'message'=>'Zoom session updated.', 'session'=>$this->zoomSessionData($session)]);
+    }
+
+    public function destroyBatchZoomSession(Request $request, $courseId, $batchId, $sessionId)
+    {
+        $batch = CourseBatch::where('course_id', $courseId)->findOrFail($batchId);
+        $session = $batch->zoomSessions()->findOrFail($sessionId);
+        $title = $session->title;
+        $session->delete();
+        AuditLog::create(['user_id'=>Auth::id(),'action'=>'Zoom Session Deleted','description'=>"Deleted {$title} from {$batch->name}.",'ip_address'=>$request->ip()]);
+        return response()->json(['success'=>true, 'message'=>'Zoom session deleted.']);
+    }
+
+    private function validateZoomSession(Request $request): array
+    {
+        return $request->validate([
+            'title'=>'required|string|max:255', 'description'=>'nullable|string|max:3000',
+            'zoom_url'=>'required|url|max:1000', 'starts_at'=>'required|date',
+            'ends_at'=>'nullable|date|after:starts_at', 'status'=>'required|in:scheduled,cancelled',
+        ]);
+    }
+
+    private function zoomSessionData(BatchZoomSession $session): array
+    {
+        return ['id'=>$session->id, 'title'=>$session->title, 'description'=>$session->description,
+            'zoomUrl'=>$session->zoom_url, 'startsAt'=>$session->starts_at?->toIso8601String(),
+            'endsAt'=>$session->ends_at?->toIso8601String(), 'status'=>$session->status,
+            'createdBy'=>$session->creator?->name];
     }
 
     public function reassignEnrollmentBatch(Request $request, $courseId, $userId)
@@ -1108,9 +1159,9 @@ class AdminController extends Controller
         $course = Course::findOrFail($course_id);
         $request->validate([
             'topic_id'    => ['required', \Illuminate\Validation\Rule::exists('topics', 'id')->where('course_id', $course->id)],
-            'content_type' => 'required|in:subtopic,zoom_link,pre_test,post_test,practice_test,mock_exam',
-            'title'       => 'required_if:content_type,subtopic,zoom_link|nullable|string|max:255',
-            'instructions' => 'required_unless:content_type,subtopic,zoom_link|nullable|string|max:5000',
+            'content_type' => 'required|in:subtopic,pre_test,post_test,practice_test,mock_exam',
+            'title'       => 'required_if:content_type,subtopic|nullable|string|max:255',
+            'instructions' => 'required_unless:content_type,subtopic|nullable|string|max:5000',
             'maximum_attempts' => 'nullable|in:1,2,3,4,5',
             'video_url'   => 'nullable|string|max:500',
             'video_file'  => 'nullable|file|mimes:mp4,webm,mov,m4v|max:38912',

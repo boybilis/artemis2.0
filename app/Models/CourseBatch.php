@@ -13,6 +13,7 @@ class CourseBatch extends Model
     public function course() { return $this->belongsTo(Course::class); }
     public function enrollments() { return $this->hasMany(CourseEnrollment::class, 'batch_id'); }
     public function instructors() { return $this->belongsToMany(User::class, 'course_batch_instructors')->withTimestamps(); }
+    public function zoomSessions() { return $this->hasMany(BatchZoomSession::class, 'batch_id')->orderBy('starts_at'); }
 
     public function scopeAvailable($query)
     {

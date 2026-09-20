@@ -27,7 +27,7 @@ class CourseController extends Controller
     public function getCourses()
     {
         $user = Auth::user();
-        $availableCourses = Course::available()->with(['batches' => fn ($query) => $query->available()->orderBy('starts_at')->orderBy('name')])->get();
+        $availableCourses = Course::available()->with(['batches' => fn ($query) => $query->available()->with('zoomSessions')->orderBy('starts_at')->orderBy('name')])->get();
         $courseIds = $availableCourses->pluck('id');
         $approvedTopicTotals = Topic::whereIn('course_id', $courseIds)->where('status', 'approved')
             ->selectRaw('course_id, COUNT(*) as total')->groupBy('course_id')->pluck('total', 'course_id');
@@ -83,7 +83,7 @@ class CourseController extends Controller
         $courses = $availableCourses->flatMap(function ($course) use ($user, $rankings, $certificatesByCourse, $approvedTopicTotals, $approvedSubjectTotals, $completedTopicTotals) {
             $enrollment = $user->enrollments()->whereHas('batch', fn ($query) => $query->where('course_id', $course->id))->latest()->first();
             if ($enrollment?->isActive() && $enrollment->batch_id && !$course->batches->contains('id', $enrollment->batch_id)) {
-                if ($enrolledBatch = CourseBatch::find($enrollment->batch_id)) $course->batches->push($enrolledBatch);
+                if ($enrolledBatch = CourseBatch::with('zoomSessions')->find($enrollment->batch_id)) $course->batches->push($enrolledBatch);
             }
             $courseRanking = $rankings->get($course->id, ['positions'=>[], 'total'=>0]);
             $international = strtoupper((string) $user->country_code) !== 'PH';
@@ -110,6 +110,11 @@ class CourseController extends Controller
                     'completed_topic_count'=>$isEnrolled ? $topicCompleted : 0,
                     'topic_count'=>$topicTotal,
                     'course_progress'=>$isEnrolled && $topicTotal > 0 ? (int) round(($topicCompleted / $topicTotal) * 100) : 0,
+                    'zoom_sessions'=>$isEnrolled ? $batch->zoomSessions->map(fn ($session) => [
+                        'id'=>$session->id, 'title'=>$session->title, 'description'=>$session->description,
+                        'starts_at'=>$session->starts_at?->toIso8601String(), 'ends_at'=>$session->ends_at?->toIso8601String(),
+                        'status'=>$session->status, 'zoom_url'=>$session->status === 'scheduled' ? $session->zoom_url : null,
+                    ])->values() : [],
                     'display_price'=>(float) ($international ? ($batch->usd_price ?? $batch->price) : $batch->price),
                     'currency_symbol'=>$international ? '$' : '₱', 'currency_code'=>$international ? 'USD' : 'PHP',
                     'billing_price'=>(float) $batch->price, 'billing_currency_symbol'=>'₱', 'billing_currency_code'=>'PHP',

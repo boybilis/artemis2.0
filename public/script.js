@@ -1162,6 +1162,45 @@ function getSubjectLearningProgress(subjectId) {
     };
 }
 
+function renderCourseOverview() {
+    const course = courses.find(item => Number(item.id) === Number(currentCourseId) && Number(item.batch_id) === Number(currentBatchId));
+    if (!course) return;
+    const batchLabel = $('course-overview-batch');
+    if (batchLabel) batchLabel.textContent = course.batch_code || course.batch_name || 'ENROLLED BATCH';
+
+    const totalTopics = topics.length;
+    const completedTopics = topics.filter(topic => isTopicContentComplete(topic)).length;
+    const subjectProgress = subjects.map(subject => getSubjectLearningProgress(subject.id));
+    const totalContents = subjectProgress.reduce((sum, item) => sum + item.total, 0);
+    const completedContents = subjectProgress.reduce((sum, item) => sum + item.completed, 0);
+    const percentage = totalContents > 0 ? Math.round((completedContents / totalContents) * 100) : 0;
+    if ($('course-topics-completed')) $('course-topics-completed').textContent = `${completedTopics} of ${totalTopics}`;
+    if ($('course-overview-progress')) $('course-overview-progress').textContent = `${percentage}%`;
+
+    const sessions = Array.isArray(course.zoom_sessions) ? [...course.zoom_sessions] : [];
+    sessions.sort((left, right) => new Date(left.starts_at) - new Date(right.starts_at));
+    const upcoming = sessions.filter(item => item.status === 'scheduled' && new Date(item.ends_at || item.starts_at) >= new Date());
+    const next = upcoming[0];
+    if ($('course-next-live-class')) $('course-next-live-class').textContent = next
+        ? new Date(next.starts_at).toLocaleString(undefined, {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})
+        : 'No upcoming class';
+
+    const container = $('course-zoom-sessions');
+    if (!container) return;
+    if (!upcoming.length) {
+        container.innerHTML = '<div class="course-zoom-empty"><i data-lucide="calendar-x"></i><span>No upcoming Zoom class has been scheduled for this batch.</span></div>';
+    } else {
+        container.innerHTML = upcoming.map((item, index) => {
+            const start = new Date(item.starts_at);
+            const end = item.ends_at ? new Date(item.ends_at) : null;
+            const today = start.toDateString() === new Date().toDateString();
+            const time = `${start.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}${end ? ` – ${end.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'})}` : ''}`;
+            return `<article class="course-zoom-session"><div class="course-zoom-date"><small>${start.toLocaleDateString('en-US',{month:'short'}).toUpperCase()}</small><strong>${String(start.getDate()).padStart(2,'0')}</strong></div><div class="course-zoom-copy"><span>${today ? 'TODAY' : (index === 0 ? 'NEXT CLASS' : 'UPCOMING')}</span><h4>${escapeHtml(item.title)}</h4><p>${escapeHtml(item.description || 'Live instructor-led review session')} · ${escapeHtml(time)}</p></div><a class="btn-primary course-zoom-join" href="${escapeHtml(item.zoom_url)}" target="_blank" rel="noopener noreferrer">Join Zoom <i data-lucide="video"></i></a></article>`;
+        }).join('');
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
 function renderSubjects() {
     const container = $('subjects-container');
     const listArea = $('subjects-list-area');
@@ -1178,6 +1217,7 @@ function renderSubjects() {
     const backToSubjects = $('back-to-subjects-btn');
     if (backToSubjects) backToSubjects.classList.add('hidden');
     container.innerHTML = '';
+    renderCourseOverview();
     if (!subjects.length) {
         container.innerHTML = '<div class="empty-course-filter"><p>No subjects are available in this course yet.</p></div>';
         return;

@@ -459,7 +459,6 @@
                     <label for="add_sub_type">Content type</label>
                     <select id="add_sub_type" name="content_type" required onchange="syncSubtopicFields('add')">
                         <option value="subtopic">Subtopic</option>
-                        <option value="zoom_link">Zoom Link</option>
                         <option value="pre_test">Pre-test</option>
                         <option value="post_test">Post-test</option>
                         <option value="practice_test">Practice Test</option>

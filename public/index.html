@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css?v=61" />
+        <link rel="stylesheet" href="style.css?v=62" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -780,8 +780,21 @@
                             <button type="button" id="back-to-subjects-btn" class="btn-ghost hidden">Back to Subjects</button>
                         </div>
                         <div id="subjects-list-area">
-                            <div class="dashboard-section-head">
-                                <div><h2 id="course-details-title" style="margin:0 0 .35rem">Course</h2><p class="section-subtitle">Open a subject to view its topics and continue learning.</p></div>
+                            <section class="course-overview-hero">
+                                <div><p class="section-eyebrow" id="course-overview-batch">ENROLLED BATCH</p><h2 id="course-details-title">Course</h2><p class="section-subtitle">Your live classes, subjects, assessments, and progress for this enrollment.</p></div>
+                                <span class="course-overview-enrolled"><i data-lucide="circle-check"></i> Enrolled</span>
+                            </section>
+                            <div class="course-overview-metrics">
+                                <div><span class="course-overview-metric-icon"><i data-lucide="calendar-days"></i></span><p><small>NEXT LIVE CLASS</small><strong id="course-next-live-class">No upcoming class</strong></p></div>
+                                <div><span class="course-overview-metric-icon"><i data-lucide="layers-3"></i></span><p><small>TOPICS COMPLETED</small><strong id="course-topics-completed">0 of 0</strong></p></div>
+                                <div><span class="course-overview-metric-icon"><i data-lucide="target"></i></span><p><small>COURSE PROGRESS</small><strong id="course-overview-progress">0%</strong></p></div>
+                            </div>
+                            <section class="course-live-schedule">
+                                <div class="course-panel-heading"><span class="course-panel-icon"><i data-lucide="video"></i></span><div><h3>Live Zoom Classes</h3><p>Join your scheduled instructor-led review sessions.</p></div></div>
+                                <div id="course-zoom-sessions" class="course-zoom-sessions"></div>
+                            </section>
+                            <div class="dashboard-section-head course-lessons-heading">
+                                <div><h2 style="margin:0 0 .35rem">Subjects</h2><p class="section-subtitle">Open a subject to view its modules, learning materials, and assessments.</p></div>
                             </div>
                             <div id="subjects-container" class="learner-subject-list"></div>
                             <div id="course-mock-exams-container" class="course-mock-exams-container"></div>
@@ -1466,7 +1479,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=70"></script>
+        <script src="script.js?v=71"></script>
         <script>
             lucide.createIcons();
         </script>
