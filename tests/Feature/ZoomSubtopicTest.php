@@ -25,10 +25,12 @@ class ZoomSubtopicTest extends TestCase
             'zoom_url' => 'https://zoom.us/j/123456789',
             'recording_url' => 'https://zoom.us/rec/share/batch-one-recording',
             'description' => "Live discussion and question review.\nPrepare your notes.",
-            'starts_at' => now()->addDay()->format('Y-m-d H:i:s'),
-            'ends_at' => now()->addDay()->addHours(2)->format('Y-m-d H:i:s'),
+            'starts_at' => '2026-10-09 08:00:00',
+            'ends_at' => '2026-10-09 12:00:00',
             'status' => 'scheduled',
-        ])->assertOk()->assertJsonPath('success', true);
+        ])->assertOk()->assertJsonPath('success', true)
+            ->assertJsonPath('session.startsAt', '2026-10-09T08:00:00+08:00')
+            ->assertJsonPath('session.endsAt', '2026-10-09T12:00:00+08:00');
 
         $this->assertDatabaseHas('batch_zoom_sessions', [
             'batch_id' => $batch->id,
