@@ -3,15 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\PaymentTransaction;
 use App\Models\TestBank;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 
 class TestBankController extends Controller
 {
     public function catalog()
     {
+        $user = Auth::user();
         $testBanks = TestBank::query()
             ->with('course:id,title')
             ->where('status', 'active')
@@ -26,8 +30,81 @@ class TestBankController extends Controller
             'price' => (float) $testBank->price,
             'usdPrice' => $testBank->usd_price === null ? null : (float) $testBank->usd_price,
             'accessDays' => $testBank->access_days,
+            'isSubscribed' => $user->testBankEnrollments()
+                ->where('test_bank_id', $testBank->id)
+                ->where('status', 'active')
+                ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->exists(),
             'course' => ['id' => $testBank->course?->id, 'title' => $testBank->course?->title],
         ])->values()]);
+    }
+
+    public function buy(TestBank $testBank)
+    {
+        $user = Auth::user();
+        abort_unless($testBank->status === 'active', 404);
+
+        $hasAccess = $user->testBankEnrollments()
+            ->where('test_bank_id', $testBank->id)
+            ->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->exists();
+        if ($hasAccess) {
+            return response()->json(['success' => false, 'message' => 'You already have active access to this Test Bank.'], 422);
+        }
+
+        do {
+            $reference = 'ART2TB-' . strtoupper(bin2hex(random_bytes(6)));
+        } while (PaymentTransaction::where('reference', $reference)->exists());
+
+        $transaction = PaymentTransaction::create([
+            'user_id' => $user->id,
+            'test_bank_id' => $testBank->id,
+            'reference' => $reference,
+            'amount' => $testBank->price,
+            'currency' => 'PHP',
+            'provider' => 'paymongo',
+            'status' => 'pending_payment',
+        ]);
+
+        $secretKey = config('services.paymongo.secret_key');
+        if (!$secretKey) {
+            $transaction->update(['status' => 'payment_configuration_error']);
+            return response()->json(['success' => false, 'message' => 'Online payment is not configured yet.'], 503);
+        }
+
+        $description = 'Artemis 2.0 Test Bank: ' . $testBank->title;
+        $response = Http::withBasicAuth($secretKey, '')->acceptJson()->post('https://api.paymongo.com/v1/checkout_sessions', [
+            'data' => ['attributes' => [
+                'billing' => array_filter(['name' => $user->name, 'email' => $user->email, 'phone' => $user->phone]),
+                'cancel_url' => url('/?payment_cancelled=1'),
+                'description' => $description,
+                'line_items' => [[
+                    'amount' => (int) round(((float) $testBank->price) * 100),
+                    'currency' => 'PHP',
+                    'description' => $description,
+                    'name' => $testBank->title,
+                    'quantity' => 1,
+                ]],
+                'payment_method_types' => config('services.paymongo.payment_methods', ['qrph']),
+                'reference_number' => $reference,
+                'send_email_receipt' => true,
+                'show_description' => true,
+                'show_line_items' => true,
+                'success_url' => route('payments.paymongo.success', ['reference' => $reference]),
+            ]],
+        ]);
+
+        if (!$response->successful()) {
+            $transaction->update(['status' => 'payment_creation_failed']);
+            Log::error('PayMongo Test Bank checkout failed.', ['transaction' => $transaction->id, 'response' => $response->json()]);
+            return response()->json(['success' => false, 'message' => 'PayMongo could not create the Test Bank checkout. Please try again.'], 500);
+        }
+
+        $checkout = $response->json('data');
+        $transaction->update(['provider_checkout_id' => $checkout['id'] ?? null]);
+
+        return response()->json(['success' => true, 'checkout_url' => $checkout['attributes']['checkout_url'] ?? null]);
     }
 
     public function enrolled()

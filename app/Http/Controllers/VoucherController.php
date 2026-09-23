@@ -17,6 +17,7 @@ use App\Models\CourseEnrollment;
 use App\Models\CourseBatch;
 use App\Models\User;
 use App\Models\PaymentTransaction;
+use App\Models\TestBankEnrollment;
 
 class VoucherController extends Controller
 {
@@ -138,6 +139,7 @@ class VoucherController extends Controller
         }
 
         if ($transaction?->status === 'paid' || $legacyVoucher?->used) {
+            if ($transaction?->test_bank_id) return redirect('/?test_bank_success=1');
             if ($transaction?->review_package_id) return redirect('/?package_success=1');
             $code = $transaction ? $this->voucherCodeForTransaction($transaction) : $legacyVoucher->code;
             return redirect('/?voucher_success=' . urlencode($code));
@@ -155,6 +157,10 @@ class VoucherController extends Controller
 
         if ($response->successful() && $this->checkoutIsPaid($response->json('data.attributes', []))) {
             $paymentId = data_get($response->json(), 'data.attributes.payments.0.id');
+            if ($transaction?->test_bank_id) {
+                $this->activatePaidTransaction($transaction, $request->ip(), $paymentId);
+                return redirect('/?test_bank_success=1');
+            }
             if ($transaction?->review_package_id) {
                 $this->activatePaidTransaction($transaction, $request->ip(), $paymentId);
                 return redirect('/?package_success=1');
@@ -241,6 +247,7 @@ class VoucherController extends Controller
 
     private function activatePaidTransaction(PaymentTransaction $transaction, ?string $ipAddress, ?string $paymentId = null)
     {
+        if ($transaction->test_bank_id) return $this->activatePaidTestBankTransaction($transaction, $ipAddress, $paymentId);
         if ($transaction->review_package_id) return $this->activatePaidPackageTransaction($transaction, $ipAddress, $paymentId);
         $created = false;
         [$transaction, $voucher] = DB::transaction(function () use ($transaction, $paymentId, &$created) {
@@ -325,6 +332,39 @@ class VoucherController extends Controller
                 'ip_address'=>$ipAddress,
             ]);
         }
+        return $transaction;
+    }
+
+    private function activatePaidTestBankTransaction(PaymentTransaction $transaction, ?string $ipAddress, ?string $paymentId = null): PaymentTransaction
+    {
+        $activated = false;
+        $transaction = DB::transaction(function () use ($transaction, $paymentId, &$activated) {
+            $locked = PaymentTransaction::with(['testBank', 'user'])->lockForUpdate()->findOrFail($transaction->id);
+            if ($locked->status === 'paid') return $locked;
+            if (!$locked->user || !$locked->testBank) {
+                throw new \RuntimeException('Paid Test Bank transaction is missing its learner or product.');
+            }
+
+            $locked->update([
+                'status' => 'paid',
+                'paid_at' => now(),
+                'provider_payment_id' => $paymentId ?: $locked->provider_payment_id,
+            ]);
+            TestBankEnrollment::activate($locked->testBank, $locked->user);
+            $activated = true;
+
+            return $locked;
+        });
+
+        if ($activated) {
+            AuditLog::create([
+                'user_id' => $transaction->user_id,
+                'action' => 'Test Bank Subscription',
+                'description' => 'Purchased Test Bank ' . ($transaction->testBank?->title ?? '#' . $transaction->test_bank_id) . ' via PayMongo QR Ph.',
+                'ip_address' => $ipAddress,
+            ]);
+        }
+
         return $transaction;
     }
 

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class PaymentTransaction extends Model
 {
     protected $fillable = [
-        'user_id', 'batch_id', 'review_package_id', 'reference', 'amount', 'currency', 'provider',
+        'user_id', 'batch_id', 'review_package_id', 'test_bank_id', 'reference', 'amount', 'currency', 'provider',
         'provider_checkout_id', 'provider_payment_id', 'status', 'paid_at',
     ];
 
@@ -16,4 +16,5 @@ class PaymentTransaction extends Model
     public function user() { return $this->belongsTo(User::class); }
     public function batch() { return $this->belongsTo(CourseBatch::class); }
     public function reviewPackage() { return $this->belongsTo(ReviewPackage::class); }
+    public function testBank() { return $this->belongsTo(TestBank::class); }
 }

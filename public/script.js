@@ -1070,10 +1070,29 @@ function renderDashboard() {
                                 <span><i data-lucide="clock-3"></i>${Number(testBank.accessDays)} days access</span>
                                 <strong>₱${Number(testBank.price || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}</strong>
                             </div>
+                            <button type="button" class="btn-primary test-bank-subscribe-btn" data-test-bank-id="${Number(testBank.id)}" ${testBank.isSubscribed ? 'disabled' : ''}>
+                                ${testBank.isSubscribed ? 'Active Access' : `Subscribe — ₱${Number(testBank.price || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`}
+                            </button>
                         </article>
                     `).join('')}
                 </div>`;
             cContainer.appendChild(section);
+            section.querySelectorAll('.test-bank-subscribe-btn:not(:disabled)').forEach(button => {
+                button.addEventListener('click', async () => {
+                    const originalText = button.textContent;
+                    button.disabled = true;
+                    button.textContent = 'Opening secure payment…';
+                    try {
+                        const result = await apiRequest(`/api/test-banks/${button.dataset.testBankId}/buy`, 'POST');
+                        if (!result?.checkout_url) throw new Error('The secure payment page is unavailable.');
+                        window.location.href = result.checkout_url;
+                    } catch (error) {
+                        button.disabled = false;
+                        button.textContent = originalText;
+                        showToast(error.message || 'Unable to start the Test Bank subscription.', 'error');
+                    }
+                });
+            });
         }
         if (window.lucide) lucide.createIcons();
         applyLayoutMode(state.courseLayout, false);
@@ -3375,6 +3394,11 @@ window.addEventListener('resize', () => {
 // Check for successful PayMongo return
 function checkPaymongoReturn() {
     const params = new URLSearchParams(window.location.search);
+    if (params.has('test_bank_success')) {
+        showToast('Test Bank payment successful. Your access is now active!', 'success');
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+    }
     if (params.has('package_success')) {
         showToast('Package payment successful. Your included courses are now enrolled!', 'success');
         window.history.replaceState({}, document.title, window.location.pathname);

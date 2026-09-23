@@ -1390,6 +1390,7 @@ body.light-mode .enrolled-card-progress strong { color:var(--course-card-accent)
 .test-bank-catalog-copy small{color:#f56600;font-size:.64rem;font-weight:800;letter-spacing:.1em}.test-bank-catalog-copy h3{margin:.35rem 0 .65rem;font-size:1.2rem}.test-bank-catalog-copy>p:last-child{color:var(--text-muted);font-size:.8rem;line-height:1.55}
 .test-bank-course-name{display:flex;align-items:center;gap:.4rem;margin:0 0 .7rem;color:var(--text);font-size:.76rem;font-weight:700}.test-bank-course-name svg{width:15px;height:15px;color:#08b89f}
 .test-bank-catalog-meta{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-top:auto;padding-top:1rem;border-top:1px solid var(--border)}.test-bank-catalog-meta span{display:flex;align-items:center;gap:.35rem;color:var(--text-muted);font-size:.72rem}.test-bank-catalog-meta svg{width:14px;height:14px}.test-bank-catalog-meta strong{color:#f56600;font-size:1rem}
+.test-bank-subscribe-btn{width:100%;margin-top:1rem;background:linear-gradient(135deg,#08b89f,#0aa88f);box-shadow:0 9px 20px rgba(8,184,159,.18)}.test-bank-subscribe-btn:disabled{cursor:default;opacity:.78}
 .course-card-actions .course-code-btn { flex: 0 0 auto; }
 .course-ranking-badge { display:inline-flex; align-items:center; gap:.4rem; align-self:flex-start; margin-top:.8rem; padding:.38rem .65rem; border-radius:999px; background:rgba(8,184,159,.13); color:#20d3b9; font-size:.72rem; font-weight:700; }
 .course-ranking-badge strong { color:var(--text); font-size:.78rem; }

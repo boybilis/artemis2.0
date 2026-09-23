@@ -3,11 +3,13 @@
 namespace Tests\Feature;
 
 use App\Models\Course;
+use App\Models\PaymentTransaction;
 use App\Models\TestBank;
 use App\Models\TestBankEnrollment;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class TestBankEnrollmentTest extends TestCase
@@ -134,5 +136,68 @@ class TestBankEnrollmentTest extends TestCase
 
         $this->actingAs($admin)->post($url)->assertRedirect();
         $this->assertSame('active', $testBank->fresh()->status);
+    }
+
+    public function test_test_bank_subscription_creates_a_separate_paymongo_checkout(): void
+    {
+        config()->set('services.paymongo.secret_key', 'sk_test_artemis');
+        config()->set('services.paymongo.payment_methods', ['qrph']);
+        Http::fake(['api.paymongo.com/v1/checkout_sessions' => Http::response([
+            'data' => ['id' => 'cs_test_bank', 'attributes' => ['checkout_url' => 'https://checkout.paymongo.com/test-bank']],
+        ], 200)]);
+        $learner = User::factory()->create();
+        $course = Course::create(['title' => 'NCLEX Review']);
+        $testBank = TestBank::create(['course_id' => $course->id, 'title' => 'NCLEX Bank', 'code' => 'TB-PAY-001', 'price' => 3000, 'access_days' => 30, 'status' => 'active']);
+
+        $this->actingAs($learner)->postJson("/api/test-banks/{$testBank->id}/buy")
+            ->assertOk()
+            ->assertJsonPath('checkout_url', 'https://checkout.paymongo.com/test-bank');
+
+        Http::assertSent(fn ($request) => $request['data']['attributes']['payment_method_types'] === ['qrph']
+            && $request['data']['attributes']['line_items'][0]['amount'] === 300000);
+        $this->assertDatabaseHas('payment_transactions', [
+            'user_id' => $learner->id,
+            'test_bank_id' => $testBank->id,
+            'batch_id' => null,
+            'status' => 'pending_payment',
+        ]);
+        $this->assertDatabaseCount('test_bank_enrollments', 0);
+    }
+
+    public function test_paid_test_bank_webhook_activates_only_timed_test_bank_access_once(): void
+    {
+        Carbon::setTestNow('2026-09-24 08:00:00');
+        config()->set('services.paymongo.secret_key', 'sk_test_artemis');
+        config()->set('services.paymongo.webhook_secret', 'whsk_test_artemis');
+        config()->set('services.paymongo.webhook_tolerance', 300);
+        $learner = User::factory()->create();
+        $course = Course::create(['title' => 'PNLE Review']);
+        $testBank = TestBank::create(['course_id' => $course->id, 'title' => 'PNLE Bank', 'code' => 'TB-PAY-002', 'price' => 2000, 'access_days' => 45, 'status' => 'active']);
+        $transaction = PaymentTransaction::create([
+            'user_id' => $learner->id, 'test_bank_id' => $testBank->id, 'reference' => 'ART2TB-WEBHOOK',
+            'amount' => 2000, 'currency' => 'PHP', 'provider' => 'paymongo', 'status' => 'pending_payment',
+            'provider_checkout_id' => 'cs_test_bank_paid',
+        ]);
+        $payload = json_encode(['data' => ['id' => 'evt_tb', 'attributes' => [
+            'type' => 'checkout_session.payment.paid',
+            'data' => ['id' => 'cs_test_bank_paid', 'type' => 'checkout_session', 'attributes' => [
+                'reference_number' => $transaction->reference,
+                'payments' => [['id' => 'pay_tb', 'attributes' => ['status' => 'paid']]],
+            ]],
+        ]]], JSON_UNESCAPED_SLASHES);
+        $timestamp = time();
+        $signature = hash_hmac('sha256', $timestamp . '.' . $payload, 'whsk_test_artemis');
+        $server = ['CONTENT_TYPE' => 'application/json', 'HTTP_PAYMONGO_SIGNATURE' => "t={$timestamp},te={$signature}"];
+
+        $this->call('POST', '/api/payments/paymongo/webhook', [], [], [], $server, $payload)->assertOk();
+        $this->call('POST', '/api/payments/paymongo/webhook', [], [], [], $server, $payload)->assertOk();
+
+        $this->assertDatabaseHas('payment_transactions', ['id' => $transaction->id, 'status' => 'paid', 'provider_payment_id' => 'pay_tb']);
+        $enrollment = TestBankEnrollment::where('user_id', $learner->id)->where('test_bank_id', $testBank->id)->firstOrFail();
+        $this->assertTrue($enrollment->expires_at->equalTo(now()->addDays(45)));
+        $this->assertDatabaseCount('test_bank_enrollments', 1);
+        $this->assertDatabaseCount('course_enrollments', 0);
+        $this->assertDatabaseCount('vouchers', 0);
+        Carbon::setTestNow();
     }
 }

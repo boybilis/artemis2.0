@@ -60,6 +60,7 @@ Route::prefix('api')->group(function () {
         Route::get('/packages', [PackageController::class, 'index']);
         Route::post('/packages/{package}/buy', [PackageController::class, 'buy']);
         Route::get('/test-banks', [TestBankController::class, 'catalog']);
+        Route::post('/test-banks/{testBank}/buy', [TestBankController::class, 'buy']);
         Route::get('/test-banks/enrolled', [TestBankController::class, 'enrolled']);
 
         // Exam & Certificate
