@@ -55,6 +55,7 @@
                         <button class="btn-ghost" type="button" onclick="openBatchListModal({{ $course->id }})">Manage Batches</button>
                         @else
                         <a href="{{ route('admin.content.subjects', $course->id) }}" class="btn-primary" style="text-decoration:none;">Manage Content</a>
+                        @if($isAdmin)<a href="{{ route('admin.content.test-banks.index', $course->id) }}" class="btn-ghost" style="text-decoration:none;">Test Banks</a>@endif
                         <button class="btn-ghost" type="button" onclick='openEditCourseModal(@json($course->id), @json($course->title), @json($course->description), @json($course->approval_status))'>Edit</button>
                         <form action="{{ route('admin.content.courses.destroy', $course->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this course?');">
                             @csrf

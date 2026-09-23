@@ -73,4 +73,51 @@ class TestBankEnrollmentTest extends TestCase
     {
         $this->getJson('/api/test-banks/enrolled')->assertUnauthorized();
     }
+
+    public function test_admin_can_create_a_test_bank_for_a_master_course(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $course = Course::create(['title' => 'PNLE Review']);
+
+        $this->actingAs($admin)->post("/admin/content/courses/{$course->id}/test-banks", [
+            'title' => 'PNLE Practice Bank',
+            'code' => 'TB-PNLE-001',
+            'description' => 'Independent practice catalog.',
+            'price' => 1499,
+            'access_days' => 45,
+            'status' => 'active',
+        ])->assertRedirect();
+
+        $this->assertDatabaseHas('test_banks', [
+            'course_id' => $course->id,
+            'code' => 'TB-PNLE-001',
+            'access_days' => 45,
+            'created_by' => $admin->id,
+        ]);
+    }
+
+    public function test_instructor_cannot_manage_paid_test_bank_catalogs(): void
+    {
+        $instructor = User::factory()->create(['role' => 'instructor', 'is_admin' => false]);
+        $course = Course::create(['title' => 'NCLEX Review']);
+
+        $this->actingAs($instructor)
+            ->get("/admin/content/courses/{$course->id}/test-banks")
+            ->assertNotFound();
+    }
+
+    public function test_catalog_only_returns_active_currently_available_test_banks(): void
+    {
+        $learner = User::factory()->create();
+        $course = Course::create(['title' => 'Civil Service Review']);
+        TestBank::create(['course_id' => $course->id, 'title' => 'Available Bank', 'code' => 'TB-CS-001', 'price' => 500, 'access_days' => 30, 'status' => 'active']);
+        TestBank::create(['course_id' => $course->id, 'title' => 'Draft Bank', 'code' => 'TB-CS-002', 'price' => 500, 'access_days' => 30, 'status' => 'draft']);
+        TestBank::create(['course_id' => $course->id, 'title' => 'Future Bank', 'code' => 'TB-CS-003', 'price' => 500, 'access_days' => 30, 'status' => 'active', 'starts_at' => now()->addDay()]);
+
+        $this->actingAs($learner)->getJson('/api/test-banks')
+            ->assertOk()
+            ->assertJsonCount(1, 'testBanks')
+            ->assertJsonPath('testBanks.0.title', 'Available Bank')
+            ->assertJsonPath('testBanks.0.course.title', 'Civil Service Review');
+    }
 }

@@ -59,6 +59,7 @@ Route::prefix('api')->group(function () {
         Route::post('/voucher/redeem', [VoucherController::class, 'redeem']);
         Route::get('/packages', [PackageController::class, 'index']);
         Route::post('/packages/{package}/buy', [PackageController::class, 'buy']);
+        Route::get('/test-banks', [TestBankController::class, 'catalog']);
         Route::get('/test-banks/enrolled', [TestBankController::class, 'enrolled']);
 
         // Exam & Certificate
@@ -150,6 +151,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/packages', [AdminController::class, 'storePackage'])->name('packages.store');
             Route::put('/packages/{package}', [AdminController::class, 'updatePackage'])->name('packages.update');
             Route::delete('/packages/{package}', [AdminController::class, 'destroyPackage'])->name('packages.destroy');
+            Route::get('/content/courses/{course}/test-banks', [TestBankController::class, 'adminIndex'])->name('content.test-banks.index');
+            Route::post('/content/courses/{course}/test-banks', [TestBankController::class, 'store'])->name('content.test-banks.store');
+            Route::put('/content/courses/{course}/test-banks/{testBank}', [TestBankController::class, 'update'])->name('content.test-banks.update');
+            Route::delete('/content/courses/{course}/test-banks/{testBank}', [TestBankController::class, 'destroy'])->name('content.test-banks.destroy');
         });
 
         // Content

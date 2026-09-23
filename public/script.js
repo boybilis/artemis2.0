@@ -17,6 +17,7 @@ let state = {
 let courses = [];
 let reviewPackages = [];
 let enrolledTestBanks = [];
+let availableTestBanks = [];
 let topics = [];
 let subjects = [];
 let courseMockExamQuestionCount = 0;
@@ -550,6 +551,15 @@ async function loadEnrolledTestBanks() {
     renderEnrolledTestBankSidebar();
 }
 
+async function loadAvailableTestBanks() {
+    try {
+        const data = await apiRequest('/api/test-banks');
+        availableTestBanks = data?.testBanks || [];
+    } catch (error) {
+        availableTestBanks = [];
+    }
+}
+
 function renderEnrolledTestBankSidebar() {
     const group = $('sidebar-enrolled-test-banks-group');
     const list = $('sidebar-enrolled-test-banks-list');
@@ -662,7 +672,7 @@ async function loginUser(user) {
     state.subscriptionExpiresAt = user.subscriptionExpiresAt || null;
     state.hasCertificate = user.hasCertificate || false;
 
-    await Promise.all([loadCoursesIfNeeded(), loadEnrolledTestBanks()]);
+    await Promise.all([loadCoursesIfNeeded(), loadEnrolledTestBanks(), loadAvailableTestBanks()]);
     
     // Fetch live progress (defaults to all progress)
     try {
@@ -907,7 +917,7 @@ function renderDashboard() {
             return;
         }
 
-        if (visibleCourses.length === 0) {
+        if (visibleCourses.length === 0 && !(state.courseListFilter === 'available' && availableTestBanks.length)) {
             const isEnrolledView = state.courseListFilter === 'enrolled';
             cContainer.innerHTML = `<div class="empty-course-filter"><i data-lucide="book-open"></i><p>${isEnrolledView ? 'No enrolled courses yet.' : 'No available courses at this time.'}</p><span>${isEnrolledView ? 'Browse Available Courses to choose a review batch.' : 'Please check again when a new batch becomes available.'}</span></div>`;
         }
@@ -1036,6 +1046,35 @@ function renderDashboard() {
             });
             cContainer.appendChild(card);
         });
+
+        if (state.courseListFilter === 'available' && availableTestBanks.length) {
+            const section = document.createElement('section');
+            section.className = 'test-bank-catalog-section';
+            section.innerHTML = `
+                <div class="test-bank-catalog-heading">
+                    <p class="section-eyebrow">SEPARATE PAID PRODUCTS</p>
+                    <h2>Test Banks</h2>
+                    <p>Practice with course-specific question banks. Access begins separately when your Test Bank subscription is activated.</p>
+                </div>
+                <div class="test-bank-catalog-grid">
+                    ${availableTestBanks.map(testBank => `
+                        <article class="test-bank-catalog-card">
+                            <div class="test-bank-catalog-icon"><i data-lucide="file-question"></i></div>
+                            <div class="test-bank-catalog-copy">
+                                <small>${escapeHtml(testBank.code || 'TEST BANK')}</small>
+                                <h3>${escapeHtml(testBank.title)}</h3>
+                                <p class="test-bank-course-name"><i data-lucide="graduation-cap"></i>${escapeHtml(testBank.course?.title || 'Master Course')}</p>
+                                <p>${escapeHtml(testBank.description || 'Course-focused practice questions and review activities.')}</p>
+                            </div>
+                            <div class="test-bank-catalog-meta">
+                                <span><i data-lucide="clock-3"></i>${Number(testBank.accessDays)} days access</span>
+                                <strong>₱${Number(testBank.price || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}</strong>
+                            </div>
+                        </article>
+                    `).join('')}
+                </div>`;
+            cContainer.appendChild(section);
+        }
         if (window.lucide) lucide.createIcons();
         applyLayoutMode(state.courseLayout, false);
 
