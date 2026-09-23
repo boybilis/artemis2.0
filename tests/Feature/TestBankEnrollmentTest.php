@@ -165,6 +165,37 @@ class TestBankEnrollmentTest extends TestCase
         $this->assertDatabaseCount('test_bank_enrollments', 0);
     }
 
+    public function test_zero_priced_test_bank_is_rejected_before_contacting_paymongo(): void
+    {
+        config()->set('services.paymongo.secret_key', 'sk_test_artemis');
+        Http::fake();
+        $learner = User::factory()->create();
+        $course = Course::create(['title' => 'NCLEX Review']);
+        $testBank = TestBank::create(['course_id' => $course->id, 'title' => 'NCLEX Bank', 'code' => 'TB-ZERO', 'price' => 0, 'access_days' => 30, 'status' => 'active']);
+
+        $this->actingAs($learner)->postJson("/api/test-banks/{$testBank->id}/buy")
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Test Bank subscription is unavailable because the administrator has not configured a valid price yet.');
+
+        Http::assertNothingSent();
+        $this->assertDatabaseCount('payment_transactions', 0);
+    }
+
+    public function test_paymongo_test_bank_validation_detail_is_returned_to_the_learner(): void
+    {
+        config()->set('services.paymongo.secret_key', 'sk_test_artemis');
+        Http::fake(['api.paymongo.com/v1/checkout_sessions' => Http::response([
+            'errors' => [['code' => 'parameter_below_minimum', 'detail' => 'The amount is below the allowed minimum.']],
+        ], 400)]);
+        $learner = User::factory()->create();
+        $course = Course::create(['title' => 'NCLEX Review']);
+        $testBank = TestBank::create(['course_id' => $course->id, 'title' => 'NCLEX Bank', 'code' => 'TB-REJECT', 'price' => 1, 'access_days' => 30, 'status' => 'active']);
+
+        $this->actingAs($learner)->postJson("/api/test-banks/{$testBank->id}/buy")
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'PayMongo rejected the Test Bank checkout: The amount is below the allowed minimum.');
+    }
+
     public function test_paid_test_bank_webhook_activates_only_timed_test_bank_access_once(): void
     {
         Carbon::setTestNow('2026-09-24 08:00:00');

@@ -44,6 +44,12 @@ class TestBankController extends Controller
     {
         $user = Auth::user();
         abort_unless($testBank->status === 'active', 404);
+        if ((float) $testBank->price <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Test Bank subscription is unavailable because the administrator has not configured a valid price yet.',
+            ], 422);
+        }
 
         do {
             $reference = 'ART2TB-' . strtoupper(bin2hex(random_bytes(6)));
@@ -66,31 +72,54 @@ class TestBankController extends Controller
         }
 
         $description = 'Artemis 2.0 Test Bank: ' . $testBank->title;
-        $response = Http::withBasicAuth($secretKey, '')->acceptJson()->post('https://api.paymongo.com/v1/checkout_sessions', [
-            'data' => ['attributes' => [
-                'billing' => array_filter(['name' => $user->name, 'email' => $user->email]),
-                'cancel_url' => url('/?payment_cancelled=1'),
-                'description' => $description,
-                'line_items' => [[
-                    'amount' => (int) round(((float) $testBank->price) * 100),
-                    'currency' => 'PHP',
-                    'description' => $description,
-                    'name' => $testBank->title,
-                    'quantity' => 1,
-                ]],
-                'payment_method_types' => config('services.paymongo.payment_methods', ['qrph']),
-                'reference_number' => $reference,
-                'send_email_receipt' => true,
-                'show_description' => true,
-                'show_line_items' => true,
-                'success_url' => route('payments.paymongo.success', ['reference' => $reference]),
-            ]],
-        ]);
+        try {
+            $response = Http::withBasicAuth($secretKey, '')
+                ->acceptJson()
+                ->timeout(25)
+                ->connectTimeout(10)
+                ->post('https://api.paymongo.com/v1/checkout_sessions', [
+                    'data' => ['attributes' => [
+                        'billing' => array_filter(['name' => $user->name, 'email' => $user->email]),
+                        'cancel_url' => url('/?payment_cancelled=1'),
+                        'description' => $description,
+                        'line_items' => [[
+                            'amount' => (int) round(((float) $testBank->price) * 100),
+                            'currency' => 'PHP',
+                            'description' => $description,
+                            'name' => $testBank->title,
+                            'quantity' => 1,
+                        ]],
+                        'payment_method_types' => config('services.paymongo.payment_methods', ['qrph']),
+                        'reference_number' => $reference,
+                        'send_email_receipt' => true,
+                        'show_description' => true,
+                        'show_line_items' => true,
+                        'success_url' => route('payments.paymongo.success', ['reference' => $reference]),
+                    ]],
+                ]);
+        } catch (\Throwable $error) {
+            $transaction->update(['status' => 'payment_gateway_unavailable']);
+            Log::error('PayMongo Test Bank connection failed.', [
+                'transaction' => $transaction->id,
+                'error' => $error->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'The PayMongo payment service could not be reached. Please try again shortly.',
+            ], 503);
+        }
 
         if (!$response->successful()) {
             $transaction->update(['status' => 'payment_creation_failed']);
             Log::error('PayMongo Test Bank checkout failed.', ['transaction' => $transaction->id, 'response' => $response->json()]);
-            return response()->json(['success' => false, 'message' => 'PayMongo could not create the Test Bank checkout. Please try again.'], 500);
+            $providerMessage = data_get($response->json(), 'errors.0.detail')
+                ?: data_get($response->json(), 'errors.0.code');
+            return response()->json([
+                'success' => false,
+                'message' => $providerMessage
+                    ? 'PayMongo rejected the Test Bank checkout: ' . $providerMessage
+                    : 'PayMongo could not create the Test Bank checkout. Please try again.',
+            ], 422);
         }
 
         $checkout = $response->json('data');
