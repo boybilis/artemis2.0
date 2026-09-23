@@ -28,17 +28,18 @@
     <div class="test-bank-grid">
         @forelse($testBanks as $testBank)
             <article class="test-bank-admin-card">
-                <div><span class="status {{ $testBank->status === 'active' ? 'success' : ($testBank->status === 'closed' ? 'danger' : 'warning') }}">{{ ucfirst($testBank->status) }}</span></div>
+                <div><span class="status {{ $testBank->status === 'active' ? 'success' : 'danger' }}">{{ $testBank->status === 'active' ? 'Active' : 'Inactive' }}</span></div>
                 <div><small style="color:#f56600;font-weight:800;letter-spacing:.08em">{{ $testBank->code }}</small><h3>{{ $testBank->title }}</h3></div>
                 <p>{{ $testBank->description ?: 'No description provided.' }}</p>
                 <div class="test-bank-admin-meta">
                     <span><small>Price</small><strong>₱{{ number_format($testBank->price, 2) }}</strong></span>
                     <span><small>Access</small><strong>{{ $testBank->access_days }} days</strong></span>
-                    <span><small>Available from</small><strong>{{ $testBank->starts_at?->format('M d, Y') ?: 'Immediately' }}</strong></span>
-                    <span><small>Available until</small><strong>{{ $testBank->ends_at?->format('M d, Y') ?: 'No cutoff' }}</strong></span>
+                    <span><small>Master course</small><strong>{{ $course->title }}</strong></span>
+                    <span><small>Visibility</small><strong>{{ $testBank->status === 'active' ? 'Learners can view' : 'Hidden' }}</strong></span>
                 </div>
                 <div class="test-bank-admin-actions">
                     <button type="button" class="btn-ghost" onclick='editTestBank(@json($testBank))'>Edit</button>
+                    <form method="POST" action="{{ route('admin.content.test-banks.status', [$course, $testBank]) }}">@csrf<button type="submit" class="btn-ghost">{{ $testBank->status === 'active' ? 'Deactivate' : 'Activate' }}</button></form>
                     <button type="button" class="btn-ghost" style="color:var(--wrong)" onclick="requestDeleteTestBank({{ $testBank->id }}, @js($testBank->title))">Delete</button>
                 </div>
             </article>
@@ -61,11 +62,8 @@
                 <div class="field"><label>Price (PHP)</label><input id="test_bank_price" class="form-control" name="price" type="number" min="0" step="0.01" required></div>
                 <div class="field"><label>Price (USD, optional display)</label><input id="test_bank_usd_price" class="form-control" name="usd_price" type="number" min="0" step="0.01"></div>
                 <div class="field"><label>Learner access duration (days)</label><input id="test_bank_access_days" class="form-control" name="access_days" type="number" min="1" max="3650" required value="30"></div>
-                <div class="field"><label>Status</label><select id="test_bank_status" class="form-control" name="status" required><option value="draft">Draft</option><option value="active">Active</option><option value="closed">Closed</option></select></div>
-                <div class="field"><label>Catalog available from</label><input id="test_bank_starts_at" class="form-control" name="starts_at" type="datetime-local"></div>
-                <div class="field"><label>Catalog available until</label><input id="test_bank_ends_at" class="form-control" name="ends_at" type="datetime-local"></div>
             </div>
-            <p class="muted" style="font-size:.75rem">The access duration starts separately when each learner's successful subscription is activated.</p>
+            <p class="muted" style="font-size:.75rem">New Test Banks are activated immediately. The learner access duration starts separately when each successful subscription is activated.</p>
         </div>
         <div class="admin-modal-footer"><button type="button" class="btn-ghost" onclick="closeModal('testBankFormModal')">Cancel</button><button type="submit" class="btn-primary">Save Test Bank</button></div>
     </form>
@@ -85,9 +83,8 @@ const testBankStoreUrl=@json(route('admin.content.test-banks.store',$course));
 const testBankBaseUrl=@json(url('/admin/content/courses/'.$course->id.'/test-banks'));
 function openModal(id){document.getElementById(id)?.classList.add('open')}
 function closeModal(id){document.getElementById(id)?.classList.remove('open')}
-function localDateTime(value){if(!value)return '';const date=new Date(value);const offset=date.getTimezoneOffset();return new Date(date.getTime()-offset*60000).toISOString().slice(0,16)}
-function openTestBankForm(){const form=document.getElementById('testBankForm');form.reset();form.action=testBankStoreUrl;document.getElementById('test_bank_method').value='POST';document.getElementById('test_bank_access_days').value=30;document.getElementById('test_bank_status').value='draft';document.getElementById('test_bank_form_title').textContent='Add Test Bank';openModal('testBankFormModal')}
-function editTestBank(item){openTestBankForm();document.getElementById('test_bank_form_title').textContent='Edit Test Bank';document.getElementById('testBankForm').action=`${testBankBaseUrl}/${item.id}`;document.getElementById('test_bank_method').value='PUT';['title','code','description','price','usd_price','access_days','status'].forEach(key=>document.getElementById(`test_bank_${key}`).value=item[key]??'');document.getElementById('test_bank_starts_at').value=localDateTime(item.starts_at);document.getElementById('test_bank_ends_at').value=localDateTime(item.ends_at)}
+function openTestBankForm(){const form=document.getElementById('testBankForm');form.reset();form.action=testBankStoreUrl;document.getElementById('test_bank_method').value='POST';document.getElementById('test_bank_access_days').value=30;document.getElementById('test_bank_form_title').textContent='Add Test Bank';openModal('testBankFormModal')}
+function editTestBank(item){openTestBankForm();document.getElementById('test_bank_form_title').textContent='Edit Test Bank';document.getElementById('testBankForm').action=`${testBankBaseUrl}/${item.id}`;document.getElementById('test_bank_method').value='PUT';['title','code','description','price','usd_price','access_days'].forEach(key=>document.getElementById(`test_bank_${key}`).value=item[key]??'')}
 function requestDeleteTestBank(id,title){document.getElementById('deleteTestBankForm').action=`${testBankBaseUrl}/${id}`;document.getElementById('delete_test_bank_message').textContent=`Delete “${title}”? Existing learner access records for this Test Bank will also be removed.`;openModal('deleteTestBankModal')}
 </script>
 @endsection

@@ -15,8 +15,6 @@ class TestBankController extends Controller
         $testBanks = TestBank::query()
             ->with('course:id,title')
             ->where('status', 'active')
-            ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
-            ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
             ->orderBy('title')
             ->get();
 
@@ -28,8 +26,6 @@ class TestBankController extends Controller
             'price' => (float) $testBank->price,
             'usdPrice' => $testBank->usd_price === null ? null : (float) $testBank->usd_price,
             'accessDays' => $testBank->access_days,
-            'startsAt' => $testBank->starts_at?->toIso8601String(),
-            'endsAt' => $testBank->ends_at?->toIso8601String(),
             'course' => ['id' => $testBank->course?->id, 'title' => $testBank->course?->title],
         ])->values()]);
     }
@@ -50,8 +46,6 @@ class TestBankController extends Controller
                 'id'=>$enrollment->testBank->course?->id,
                 'title'=>$enrollment->testBank->course?->title,
             ],
-            'startsAt'=>$enrollment->testBank->starts_at?->toIso8601String(),
-            'endsAt'=>$enrollment->testBank->ends_at?->toIso8601String(),
             'enrolledAt'=>$enrollment->enrolled_at?->toIso8601String(),
             'expiresAt'=>$enrollment->expires_at?->toIso8601String(),
         ])->values()]);
@@ -68,7 +62,10 @@ class TestBankController extends Controller
     public function store(Request $request, Course $course)
     {
         $data = $this->validatedData($request);
-        $course->testBanks()->create($data + ['created_by' => $request->user()->id]);
+        $course->testBanks()->create($data + [
+            'status' => 'active',
+            'created_by' => $request->user()->id,
+        ]);
 
         return back()->with('success', 'Test Bank catalog created.');
     }
@@ -89,6 +86,16 @@ class TestBankController extends Controller
         return back()->with('success', 'Test Bank catalog deleted.');
     }
 
+    public function toggleStatus(Course $course, TestBank $testBank)
+    {
+        abort_unless($testBank->course_id === $course->id, 404);
+        $testBank->update(['status' => $testBank->status === 'active' ? 'closed' : 'active']);
+
+        return back()->with('success', $testBank->status === 'active'
+            ? 'Test Bank activated and visible to learners.'
+            : 'Test Bank deactivated and hidden from learners.');
+    }
+
     private function validatedData(Request $request, ?TestBank $testBank = null): array
     {
         return $request->validate([
@@ -98,9 +105,6 @@ class TestBankController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'usd_price' => ['nullable', 'numeric', 'min:0'],
             'access_days' => ['required', 'integer', 'min:1', 'max:3650'],
-            'starts_at' => ['nullable', 'date'],
-            'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
-            'status' => ['required', Rule::in(['draft', 'active', 'closed'])],
         ]);
     }
 }

@@ -154,6 +154,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/content/courses/{course}/test-banks', [TestBankController::class, 'adminIndex'])->name('content.test-banks.index');
             Route::post('/content/courses/{course}/test-banks', [TestBankController::class, 'store'])->name('content.test-banks.store');
             Route::put('/content/courses/{course}/test-banks/{testBank}', [TestBankController::class, 'update'])->name('content.test-banks.update');
+            Route::post('/content/courses/{course}/test-banks/{testBank}/status', [TestBankController::class, 'toggleStatus'])->name('content.test-banks.status');
             Route::delete('/content/courses/{course}/test-banks/{testBank}', [TestBankController::class, 'destroy'])->name('content.test-banks.destroy');
         });
 

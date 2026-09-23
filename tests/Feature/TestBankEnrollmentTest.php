@@ -85,13 +85,13 @@ class TestBankEnrollmentTest extends TestCase
             'description' => 'Independent practice catalog.',
             'price' => 1499,
             'access_days' => 45,
-            'status' => 'active',
         ])->assertRedirect();
 
         $this->assertDatabaseHas('test_banks', [
             'course_id' => $course->id,
             'code' => 'TB-PNLE-001',
             'access_days' => 45,
+            'status' => 'active',
             'created_by' => $admin->id,
         ]);
     }
@@ -106,7 +106,7 @@ class TestBankEnrollmentTest extends TestCase
             ->assertNotFound();
     }
 
-    public function test_catalog_only_returns_active_currently_available_test_banks(): void
+    public function test_catalog_returns_every_active_test_bank_without_date_filtering(): void
     {
         $learner = User::factory()->create();
         $course = Course::create(['title' => 'Civil Service Review']);
@@ -116,8 +116,23 @@ class TestBankEnrollmentTest extends TestCase
 
         $this->actingAs($learner)->getJson('/api/test-banks')
             ->assertOk()
-            ->assertJsonCount(1, 'testBanks')
+            ->assertJsonCount(2, 'testBanks')
             ->assertJsonPath('testBanks.0.title', 'Available Bank')
-            ->assertJsonPath('testBanks.0.course.title', 'Civil Service Review');
+            ->assertJsonPath('testBanks.0.course.title', 'Civil Service Review')
+            ->assertJsonPath('testBanks.1.title', 'Future Bank');
+    }
+
+    public function test_admin_can_deactivate_and_reactivate_a_test_bank(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $course = Course::create(['title' => 'DOH Review']);
+        $testBank = TestBank::create(['course_id' => $course->id, 'title' => 'DOH Bank', 'code' => 'TB-DOH-STATUS', 'price' => 500, 'access_days' => 30, 'status' => 'active']);
+
+        $url = "/admin/content/courses/{$course->id}/test-banks/{$testBank->id}/status";
+        $this->actingAs($admin)->post($url)->assertRedirect();
+        $this->assertSame('closed', $testBank->fresh()->status);
+
+        $this->actingAs($admin)->post($url)->assertRedirect();
+        $this->assertSame('active', $testBank->fresh()->status);
     }
 }
