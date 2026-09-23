@@ -861,6 +861,12 @@ function openBuyVoucherModal(batchId = null) {
         const endDate = course.batch_ends_at ? new Date(course.batch_ends_at).toLocaleString() : 'the batch access period ends';
         $('purchase-access-until').textContent = `Access available until ${endDate}`;
     }
+    const confirmButton = $('buy-confirm-btn');
+    const hasValidPrice = Number(course.billing_price ?? course.display_price ?? 0) > 0;
+    if (confirmButton) {
+        confirmButton.disabled = !hasValidPrice;
+        confirmButton.textContent = hasValidPrice ? 'Continue to Payment' : 'Price Not Configured';
+    }
     const s1 = $('buy-step-1');
     const s2 = $('buy-step-2');
     if (s1) s1.classList.remove('hidden');
@@ -880,7 +886,8 @@ if (buyConfirmBtn) {
                 showToast(data.message || 'Failed to initiate purchase', 'error');
             }
         } catch (e) {
-            showToast('Network error', 'error');
+            buyConfirmBtn.disabled = false;
+            buyConfirmBtn.textContent = 'Continue to Payment';
         }
     });
 }

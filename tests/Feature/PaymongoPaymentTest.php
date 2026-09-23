@@ -98,6 +98,21 @@ class PaymongoPaymentTest extends TestCase
         $this->assertSame(1, CourseEnrollment::where('user_id', $user->id)->count());
     }
 
+    public function test_zero_priced_batch_is_rejected_before_contacting_paymongo(): void
+    {
+        config()->set('services.paymongo.secret_key', 'sk_test_artemis');
+        Http::fake();
+        [$user, $batch] = $this->learnerAndBatch();
+        $batch->update(['price' => 0]);
+
+        $this->actingAs($user)->postJson('/api/voucher/buy', ['batch_id' => $batch->id])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Online enrollment is unavailable because the administrator has not configured a valid batch price yet.');
+
+        Http::assertNothingSent();
+        $this->assertDatabaseCount('payment_transactions', 0);
+    }
+
     private function learnerAndBatch(): array
     {
         $user = User::factory()->create();

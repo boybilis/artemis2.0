@@ -73,7 +73,7 @@ class PackageController extends Controller
         $description = 'Artemis 2.0 review package: ' . $package->name . ' — ' . $batch->name;
         $response = Http::withBasicAuth($secretKey, '')->acceptJson()->post('https://api.paymongo.com/v1/checkout_sessions', [
             'data' => ['attributes' => [
-                'billing' => array_filter(['name'=>$user->name, 'email'=>$user->email, 'phone'=>$user->phone]),
+                'billing' => array_filter(['name'=>$user->name, 'email'=>$user->email]),
                 'cancel_url' => url('/?payment_cancelled=1'), 'description' => $description,
                 'line_items' => [[ 'amount'=>(int) round(((float) $package->price) * 100), 'currency'=>'PHP', 'description'=>$description, 'name'=>$package->name, 'quantity'=>1 ]],
                 'payment_method_types' => config('services.paymongo.payment_methods', ['qrph']),

@@ -48,6 +48,12 @@ class VoucherController extends Controller
         $data = $request->validate(['batch_id'=>'required|integer|exists:course_batches,id']);
         $batch = CourseBatch::available()->with(['courses' => fn ($query) => $query->available()])->findOrFail($data['batch_id']);
         abort_if($batch->courses->isEmpty(), 422, 'This batch has no available master courses.');
+        if ((float) $batch->price <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Online enrollment is unavailable because the administrator has not configured a valid batch price yet.',
+            ], 422);
+        }
 
         if ($user->enrollments()->where('batch_id', $batch->id)->where('status', 'active')->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))->exists()) {
             return response()->json(['success' => false, 'message' => 'You already have active access to this batch.'], 422);
@@ -71,15 +77,17 @@ class VoucherController extends Controller
         }
 
         $description = 'Artemis 2.0 batch enrollment: ' . $batch->name . ' (' . $batch->courses->pluck('title')->join(', ') . ')';
-        $response = Http::withBasicAuth($secretKey, '')
-            ->acceptJson()
-            ->post('https://api.paymongo.com/v1/checkout_sessions', [
+        try {
+            $response = Http::withBasicAuth($secretKey, '')
+                ->acceptJson()
+                ->timeout(25)
+                ->connectTimeout(10)
+                ->post('https://api.paymongo.com/v1/checkout_sessions', [
                 'data' => [
                     'attributes' => [
                         'billing' => array_filter([
                             'name' => $user->name,
                             'email' => $user->email,
-                            'phone' => $user->phone,
                         ]),
                         'cancel_url' => url('/?payment_cancelled=1'),
                         'description' => $description,
@@ -99,6 +107,17 @@ class VoucherController extends Controller
                     ],
                 ],
             ]);
+        } catch (\Throwable $error) {
+            $transaction->update(['status' => 'payment_gateway_unavailable']);
+            Log::error('PayMongo checkout connection failed.', [
+                'payment_transaction_id' => $transaction->id,
+                'error' => $error->getMessage(),
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'The PayMongo payment service could not be reached. Please try again shortly.',
+            ], 503);
+        }
 
         if ($response->successful()) {
             $checkout = $response->json('data');
@@ -119,10 +138,14 @@ class VoucherController extends Controller
             'response' => $response->json(),
         ]);
 
+        $providerMessage = data_get($response->json(), 'errors.0.detail')
+            ?: data_get($response->json(), 'errors.0.code');
         return response()->json([
             'success' => false,
-            'message' => 'PayMongo could not create the QR Ph checkout. Please try again.'
-        ], 500);
+            'message' => $providerMessage
+                ? 'PayMongo rejected the checkout: ' . $providerMessage
+                : 'PayMongo could not create the QR Ph checkout. Please try again.',
+        ], 422);
     }
 
     public function paymongoSuccess(Request $request)

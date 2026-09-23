@@ -68,7 +68,7 @@ class TestBankController extends Controller
         $description = 'Artemis 2.0 Test Bank: ' . $testBank->title;
         $response = Http::withBasicAuth($secretKey, '')->acceptJson()->post('https://api.paymongo.com/v1/checkout_sessions', [
             'data' => ['attributes' => [
-                'billing' => array_filter(['name' => $user->name, 'email' => $user->email, 'phone' => $user->phone]),
+                'billing' => array_filter(['name' => $user->name, 'email' => $user->email]),
                 'cancel_url' => url('/?payment_cancelled=1'),
                 'description' => $description,
                 'line_items' => [[
