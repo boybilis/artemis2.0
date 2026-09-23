@@ -1393,16 +1393,20 @@ body.light-mode .enrolled-card-progress strong { color:var(--course-card-accent)
 .test-bank-subscribe-btn{width:100%;margin-top:1rem;background:linear-gradient(135deg,#08b89f,#0aa88f);box-shadow:0 9px 20px rgba(8,184,159,.18)}.test-bank-subscribe-btn:disabled{cursor:default;opacity:.78}
 /* All Available Courses uses one midnight-blue language for actions and capsules. */
 #courses-container.available-catalog-view .course-card-status.available,
-#courses-container.available-catalog-view .course-card-master{border-color:#062f50;background:#062f50;color:#fff}
+#courses-container.available-catalog-view .course-card-master{border:1px solid #073b65;background:transparent;color:#073b65}
 #courses-container.available-catalog-view .course-card-status.available,
 #courses-container.available-catalog-view .course-card-master span,
-#courses-container.available-catalog-view .course-card-master svg{color:#fff}
+#courses-container.available-catalog-view .course-card-master svg{color:#073b65}
 #courses-container.available-catalog-view .course-subscribe-btn,
-#courses-container.available-catalog-view .test-bank-subscribe-btn{border-color:#062f50;background:#062f50;color:#fff;box-shadow:0 9px 20px rgba(6,47,80,.2)}
+#courses-container.available-catalog-view .test-bank-subscribe-btn{border-color:#073b65;background:linear-gradient(135deg,#062e52,#073b65);color:#fff;box-shadow:0 9px 20px rgba(6,47,80,.22)}
 #courses-container.available-catalog-view .course-code-btn{border-color:#062f50;background:transparent;color:#062f50}
-#courses-container.available-catalog-view .course-code-btn:hover{background:#062f50;color:#fff}
+#courses-container.available-catalog-view .course-code-btn:hover{background:linear-gradient(135deg,#062e52,#073b65);color:#fff}
+body:not(.light-mode) #courses-container.available-catalog-view .course-card-status.available,
+body:not(.light-mode) #courses-container.available-catalog-view .course-card-master{border-color:#9bc8e6;color:#d7efff}
+body:not(.light-mode) #courses-container.available-catalog-view .course-card-master span,
+body:not(.light-mode) #courses-container.available-catalog-view .course-card-master svg{color:#d7efff}
 body:not(.light-mode) #courses-container.available-catalog-view .course-code-btn{border-color:#9bc8e6;color:#d7efff}
-body:not(.light-mode) #courses-container.available-catalog-view .course-code-btn:hover{border-color:#062f50;background:#062f50;color:#fff}
+body:not(.light-mode) #courses-container.available-catalog-view .course-code-btn:hover{border-color:#073b65;background:linear-gradient(135deg,#062e52,#073b65);color:#fff}
 .test-bank-workspace{width:100%;padding-bottom:2rem}.test-bank-workspace-loading{padding:3rem;text-align:center;color:var(--text-muted)}.test-bank-workspace-topbar{display:flex;margin-bottom:1rem}.test-bank-workspace-topbar .btn-ghost{display:inline-flex;align-items:center;gap:.4rem}.test-bank-workspace-topbar svg{width:16px;height:16px}
 .test-bank-workspace-hero,.test-bank-subscription-panel{display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding:1.3rem 1.5rem;border:1px solid var(--border);border-radius:16px;background:var(--surface)}.test-bank-workspace-mark,.test-bank-subscription-panel>span{display:grid;place-items:center;width:48px;height:48px;flex:0 0 48px;border-radius:12px;color:#fff;background:#2f678f}.test-bank-workspace-mark svg,.test-bank-subscription-panel>span svg{width:22px;height:22px}.test-bank-workspace-hero>div:nth-child(2),.test-bank-subscription-panel>div{min-width:0}.test-bank-workspace-hero small,.test-bank-subscription-panel small{color:#f56600;font-size:.62rem;font-weight:800;letter-spacing:.1em}.test-bank-workspace-hero h1{margin:.2rem 0;font-size:1.35rem}.test-bank-workspace-hero p,.test-bank-subscription-panel p{margin:.2rem 0 0;color:var(--text-muted);font-size:.75rem}.test-bank-readiness{display:flex;flex-direction:column;align-items:flex-end;margin-left:auto}.test-bank-readiness strong{color:#2f678f;font-size:1.55rem}.test-bank-readiness span{color:var(--text-muted);font-size:.65rem}
 .test-bank-subscription-panel>span{color:#f56600;background:rgba(245,102,0,.12)}.test-bank-subscription-panel h3{margin:.25rem 0;font-size:1rem}.test-bank-subscription-panel .btn-ghost{margin-left:auto;white-space:nowrap}
