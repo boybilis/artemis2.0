@@ -9,7 +9,7 @@
 
 @section('content')
 <style>
-    .test-bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}.test-bank-admin-card{display:flex;flex-direction:column;gap:.8rem;padding:1.25rem;border:1px solid var(--border);border-top:4px solid #f56600;border-radius:14px;background:var(--surface)}.test-bank-admin-card h3{margin:0}.test-bank-admin-card p{margin:0;color:var(--text-muted);font-size:.82rem;line-height:1.55}.test-bank-admin-meta{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}.test-bank-admin-meta span{display:flex;flex-direction:column;gap:.15rem;padding:.65rem;border-radius:9px;background:rgba(47,103,143,.07);font-size:.72rem}.test-bank-admin-meta small{color:var(--text-muted);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em}.test-bank-admin-actions{display:flex;gap:.5rem;margin-top:auto}.test-bank-admin-actions>*{flex:1}.test-bank-admin-actions form button{width:100%}@media(max-width:600px){.test-bank-admin-meta{grid-template-columns:1fr}}
+    .test-bank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}.test-bank-admin-card{display:flex;flex-direction:column;gap:.8rem;padding:1.25rem;border:1px solid var(--border);border-top:4px solid #f56600;border-radius:14px;background:var(--surface)}.test-bank-card-status{display:flex;align-items:center;justify-content:space-between;gap:.75rem}.test-bank-card-status form{margin:0}.test-bank-status-toggle{min-height:34px;padding:.4rem .75rem;font-size:.7rem;white-space:nowrap}.test-bank-admin-card h3{margin:0}.test-bank-admin-card p{margin:0;color:var(--text-muted);font-size:.82rem;line-height:1.55}.test-bank-admin-meta{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}.test-bank-admin-meta span{display:flex;flex-direction:column;gap:.15rem;padding:.65rem;border-radius:9px;background:rgba(47,103,143,.07);font-size:.72rem}.test-bank-admin-meta small{color:var(--text-muted);font-size:.6rem;text-transform:uppercase;letter-spacing:.08em}.test-bank-admin-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;margin-top:auto}.test-bank-admin-actions>*{width:100%;min-width:0;padding-left:.6rem;padding-right:.6rem}@media(max-width:600px){.test-bank-admin-meta{grid-template-columns:1fr}.test-bank-admin-actions{grid-template-columns:1fr 1fr}.test-bank-admin-actions>*:first-child{grid-column:1/-1}}
 </style>
 
 <div class="toolbar">
@@ -28,7 +28,10 @@
     <div class="test-bank-grid">
         @forelse($testBanks as $testBank)
             <article class="test-bank-admin-card">
-                <div><span class="status {{ $testBank->status === 'active' ? 'success' : 'danger' }}">{{ $testBank->status === 'active' ? 'Active' : 'Inactive' }}</span></div>
+                <div class="test-bank-card-status">
+                    <span class="status {{ $testBank->status === 'active' ? 'success' : 'danger' }}">{{ $testBank->status === 'active' ? 'Active' : 'Inactive' }}</span>
+                    <form method="POST" action="{{ route('admin.content.test-banks.status', [$course, $testBank]) }}">@csrf<button type="submit" class="btn-ghost test-bank-status-toggle">{{ $testBank->status === 'active' ? 'Deactivate' : 'Activate' }}</button></form>
+                </div>
                 <div><small style="color:#f56600;font-weight:800;letter-spacing:.08em">{{ $testBank->code }}</small><h3>{{ $testBank->title }}</h3></div>
                 <p>{{ $testBank->description ?: 'No description provided.' }}</p>
                 <div class="test-bank-admin-meta">
@@ -40,7 +43,6 @@
                 <div class="test-bank-admin-actions">
                     <a href="{{ route('admin.content.test-banks.manage', [$course, $testBank]) }}" class="btn-primary" style="text-decoration:none;text-align:center">Open</a>
                     <button type="button" class="btn-ghost" onclick='editTestBank(@json($testBank))'>Edit</button>
-                    <form method="POST" action="{{ route('admin.content.test-banks.status', [$course, $testBank]) }}">@csrf<button type="submit" class="btn-ghost">{{ $testBank->status === 'active' ? 'Deactivate' : 'Activate' }}</button></form>
                     <button type="button" class="btn-ghost" style="color:var(--wrong)" onclick="requestDeleteTestBank({{ $testBank->id }}, @js($testBank->title))">Delete</button>
                 </div>
             </article>
