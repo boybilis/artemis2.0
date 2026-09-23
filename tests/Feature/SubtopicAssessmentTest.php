@@ -68,6 +68,16 @@ class SubtopicAssessmentTest extends TestCase
             ->assertJsonPath('attempts.2.batchRank.rank', 2)
             ->assertJsonPath('attempts.2.batchRank.total', 2)
             ->assertJsonPath('attempts.2.courseRank.rank', 3)
-            ->assertJsonPath('attempts.2.courseRank.total', 3);
+            ->assertJsonPath('attempts.2.courseRank.total', 3)
+            ->assertJsonCount(1, 'requiredTests')
+            ->assertJsonPath('requiredTests.0.title', 'Post-test')
+            ->assertJsonPath('requiredTests.0.taken', true)
+            ->assertJsonPath('requiredTests.0.passed', true)
+            ->assertJsonPath('requiredTests.0.attempts', 2)
+            ->assertJsonPath('summary.required', 1)
+            ->assertJsonPath('summary.taken', 1)
+            ->assertJsonPath('summary.notTaken', 0)
+            ->assertJsonPath('summary.passed', 1)
+            ->assertJsonPath('summary.progress', 100);
     }
 }

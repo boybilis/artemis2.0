@@ -190,40 +190,40 @@ async function showLearnerProgressReport() {
     if (!result?.success || !content) return;
     const context = $('learner-progress-report-context');
     if (context) context.textContent = `${result.course?.title || 'Course'} · ${result.batch?.name || 'Active batch'}`;
-    const attempts = Array.isArray(result.attempts) ? result.attempts : [];
-    if (!attempts.length) {
-        content.innerHTML = '<p class="progress-report-empty">No assessment attempts have been recorded for this course yet.</p>';
-        return;
-    }
-    const subjectGroups = new Map();
-    attempts.forEach(attempt => {
-        const subjectKey = attempt.subjectId ? `subject-${attempt.subjectId}` : 'course-mock-exam';
-        if (!subjectGroups.has(subjectKey)) subjectGroups.set(subjectKey, {
-            title: attempt.subjectId ? `${attempt.subjectCode || ''} ${attempt.subjectTitle || 'Subject'}`.trim() : 'Course Mock Exam',
-            assessments: new Map(),
-        });
-        const group = subjectGroups.get(subjectKey);
-        if (!group.assessments.has(attempt.assessmentKey)) group.assessments.set(attempt.assessmentKey, {
-            title: attempt.assessmentTitle || attempt.assessmentLabel,
-            label: attempt.assessmentLabel,
-            topic: attempt.topicTitle,
-            attempts: [],
-        });
-        group.assessments.get(attempt.assessmentKey).attempts.push(attempt);
-    });
-    content.innerHTML = [...subjectGroups.values()].map(subject => `
-        <section class="progress-report-subject">
-            <h3>${escapeHtml(subject.title)}</h3>
-            ${[...subject.assessments.values()].map(assessment => `
-                <details class="progress-report-assessment" open>
-                    <summary><strong>${escapeHtml(assessment.label)} · ${escapeHtml(assessment.title)}</strong><span>${assessment.attempts.length} ${assessment.attempts.length === 1 ? 'Attempt' : 'Attempts'}</span></summary>
-                    ${assessment.topic ? `<p class="progress-report-topic">Topic: ${escapeHtml(assessment.topic)}</p>` : ''}
-                    <div class="progress-report-attempts">${assessment.attempts.map(attempt => {
-                        const taken = attempt.takenAt ? new Date(attempt.takenAt).toLocaleString(undefined,{year:'numeric',month:'long',day:'numeric',hour:'numeric',minute:'2-digit'}) : '--';
-                        return `<div class="progress-report-attempt"><strong>Attempt ${attempt.attemptNumber}</strong><span>${Number(attempt.score).toLocaleString(undefined,{maximumFractionDigits:2})} out of ${Number(attempt.total).toLocaleString(undefined,{maximumFractionDigits:2})} · ${attempt.percentage}%</span><strong class="${attempt.passed ? 'passed' : 'failed'}">${attempt.passed ? 'Passed' : 'Not Passed'}</strong><time>${escapeHtml(taken)}</time><span class="progress-rank"><small>Batch Rank</small><strong>${attempt.batchRank?.rank || '--'} out of ${attempt.batchRank?.total || '--'}</strong></span><span class="progress-rank"><small>Course-wide Rank</small><strong>${attempt.courseRank?.rank || '--'} out of ${attempt.courseRank?.total || '--'}</strong></span></div>`;
-                    }).join('')}</div>
-                </details>`).join('')}
-        </section>`).join('');
+    const requiredTests = Array.isArray(result.requiredTests) ? result.requiredTests : [];
+    const summary = result.summary || {required:0,taken:0,notTaken:0,passed:0,progress:0};
+    content.innerHTML = `
+        <section class="course-progress-tracker">
+            <div class="course-progress-tracker-head">
+                <span class="course-progress-tracker-icon"><i data-lucide="chart-no-axes-column-increasing"></i></span>
+                <div><small>REQUIRED TESTS</small><h3>Progress Tracker</h3><p>Passed required tests ÷ total required tests × 100</p></div>
+                <div class="course-progress-tracker-score"><strong>${Number(summary.progress || 0)}%</strong><span>${Number(summary.passed || 0)} of ${Number(summary.required || 0)} required tests passed</span><div><span style="width:${Number(summary.progress || 0)}%"></span></div></div>
+            </div>
+            <div class="course-progress-metrics">
+                <div><strong>${Number(summary.required || 0)}</strong><span>Total required</span></div>
+                <div><strong>${Number(summary.taken || 0)}</strong><span>Taken</span></div>
+                <div><strong>${Number(summary.notTaken || 0)}</strong><span>Not taken</span></div>
+                <div><strong>${Number(summary.passed || 0)}</strong><span>Passed</span></div>
+            </div>
+            <div class="course-progress-table-wrap">
+                <table class="course-progress-table">
+                    <thead><tr><th>Required Test</th><th>Status</th><th>Result</th><th>Score</th><th>Attempts</th><th>Date Taken</th><th>Current Rank</th><th>All-Time Rank</th></tr></thead>
+                    <tbody>${requiredTests.length ? requiredTests.map(test => {
+                        const takenDate = test.takenAt ? new Date(test.takenAt).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '—';
+                        const score = test.taken ? `${Number(test.score).toLocaleString(undefined,{maximumFractionDigits:2})} out of ${Number(test.total).toLocaleString(undefined,{maximumFractionDigits:2})} · ${Number(test.percentage)}%` : '—';
+                        return `<tr>
+                            <td><strong>${escapeHtml(test.title)}</strong><small>${[test.subjectTitle,test.topicTitle,test.typeLabel].filter(Boolean).map(escapeHtml).join(' · ')}</small></td>
+                            <td><span class="progress-table-pill ${test.taken ? 'taken' : 'not-taken'}">${test.taken ? 'Taken' : 'Not Taken'}</span></td>
+                            <td><span class="progress-table-pill ${test.passed ? 'passed' : (test.taken ? 'failed' : 'neutral')}">${test.taken ? (test.passed ? 'Pass' : 'Not Passed') : '—'}</span></td>
+                            <td>${score}</td><td><strong>${Number(test.attempts || 0)}</strong></td><td>${escapeHtml(takenDate)}</td>
+                            <td>${test.batchRank?.rank ? `<span class="progress-rank-pill current">#${test.batchRank.rank} / ${test.batchRank.total}</span>` : '—'}</td>
+                            <td>${test.courseRank?.rank ? `<span class="progress-rank-pill all-time">#${test.courseRank.rank} / ${test.courseRank.total}</span>` : '—'}</td>
+                        </tr>`;
+                    }).join('') : '<tr><td colspan="8" class="course-progress-no-tests">No approved required assessments are available for this course yet.</td></tr>'}</tbody>
+                </table>
+            </div>
+        </section>`;
+    if (window.lucide) lucide.createIcons();
 }
 
 function setCourseDetailsTab(tab) {

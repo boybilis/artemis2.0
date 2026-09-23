@@ -355,9 +355,61 @@ class CourseController extends Controller
                 ];
             })->values();
 
+        $attemptGroups = $attempts->groupBy('assessmentKey');
+        $requiredTests = Subtopic::with(['topic.subject'])
+            ->where('status', 'approved')
+            ->whereIn('content_type', ['pre_test', 'post_test', 'practice_test'])
+            ->whereHas('topic', fn ($query) => $query->where('course_id', $courseId)->where('status', 'approved'))
+            ->whereHas('questions', fn ($query) => $query->where('status', 'approved'))
+            ->orderBy('topic_id')->orderBy('sort_order')->orderBy('id')->get()
+            ->map(function (Subtopic $subtopic) use ($attemptGroups) {
+                $key = 'subtopic_'.$subtopic->id;
+                $history = $attemptGroups->get($key, collect());
+                $latest = $history->last();
+                $labels = ['pre_test'=>'Pre-Test','post_test'=>'Post-Test','practice_test'=>'Practice Test'];
+                return [
+                    'assessmentKey'=>$key,
+                    'title'=>$subtopic->title ?: ($labels[$subtopic->content_type] ?? 'Assessment'),
+                    'typeLabel'=>$labels[$subtopic->content_type] ?? 'Assessment',
+                    'subjectTitle'=>$subtopic->topic?->subject?->title,
+                    'topicTitle'=>$subtopic->topic?->title,
+                    'taken'=>$history->isNotEmpty(),
+                    'passed'=>$history->contains(fn ($attempt) => $attempt['passed']),
+                    'attempts'=>$history->count(),
+                    'score'=>$latest['score'] ?? null,
+                    'total'=>$latest['total'] ?? null,
+                    'percentage'=>$latest['percentage'] ?? null,
+                    'takenAt'=>$latest['takenAt'] ?? null,
+                    'batchRank'=>$latest['batchRank'] ?? null,
+                    'courseRank'=>$latest['courseRank'] ?? null,
+                ];
+            });
+
+        if (QuizQuestion::where('course_id', $courseId)->where('question_type', 'final')->where('status', 'approved')->exists()) {
+            $history = $attemptGroups->get('mock_exam', collect());
+            $latest = $history->last();
+            $requiredTests->push([
+                'assessmentKey'=>'mock_exam','title'=>'Comprehensive Mock Exam','typeLabel'=>'Mock Exam',
+                'subjectTitle'=>null,'topicTitle'=>null,'taken'=>$history->isNotEmpty(),
+                'passed'=>$history->contains(fn ($attempt) => $attempt['passed']),'attempts'=>$history->count(),
+                'score'=>$latest['score'] ?? null,'total'=>$latest['total'] ?? null,
+                'percentage'=>$latest['percentage'] ?? null,'takenAt'=>$latest['takenAt'] ?? null,
+                'batchRank'=>$latest['batchRank'] ?? null,'courseRank'=>$latest['courseRank'] ?? null,
+            ]);
+        }
+
+        $takenCount = $requiredTests->where('taken', true)->count();
+        $passedCount = $requiredTests->where('passed', true)->count();
+        $requiredCount = $requiredTests->count();
+
         return response()->json([
             'success'=>true,'course'=>Course::findOrFail($courseId)->only(['id','title']),
             'batch'=>$batch->only(['id','name','code']),'attempts'=>$attempts,
+            'requiredTests'=>$requiredTests->values(),
+            'summary'=>[
+                'required'=>$requiredCount,'taken'=>$takenCount,'notTaken'=>max(0, $requiredCount - $takenCount),
+                'passed'=>$passedCount,'progress'=>$requiredCount ? (int) round(($passedCount / $requiredCount) * 100) : 0,
+            ],
         ]);
     }
 
