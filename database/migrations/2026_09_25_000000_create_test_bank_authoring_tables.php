@@ -17,7 +17,6 @@ return new class extends Migration
             $table->json('options');
             $table->unsignedTinyInteger('correct_answer')->comment('Zero-based option index');
             $table->text('rationale')->nullable();
-            $table->enum('difficulty', ['easy', 'average', 'difficult'])->default('average');
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();

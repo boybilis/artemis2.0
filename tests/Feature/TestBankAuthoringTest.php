@@ -31,7 +31,7 @@ class TestBankAuthoringTest extends TestCase
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.store', [$course, $bank]), [
             'subject_id' => $subject->id, 'question' => 'Which action is appropriate?',
             'options' => ['Assess first', 'Call immediately', 'Document only', ''],
-            'correct_answer' => 0, 'difficulty' => 'average', 'rationale' => 'Assessment comes first.',
+            'correct_answer' => 0, 'rationale' => 'Assessment comes first.',
         ])->assertSessionHas('success');
         $this->assertDatabaseHas('test_bank_questions', ['test_bank_id' => $bank->id, 'subject_id' => $subject->id, 'correct_answer' => 0]);
     }
@@ -39,11 +39,11 @@ class TestBankAuthoringTest extends TestCase
     public function test_admin_can_import_course_subject_questions_from_csv(): void
     {
         extract($this->catalog());
-        $csv = "subject_code,question,option_a,option_b,option_c,option_d,correct_answer,difficulty,rationale\nMEDSURG,What comes first?,Assessment,Intervention,Evaluation,Documentation,A,easy,Assess first";
+        $csv = "subject_code,question,option_a,option_b,option_c,option_d,correct_answer,rationale\nMEDSURG,What comes first?,Assessment,Intervention,Evaluation,Documentation,A,Assess first";
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.import', [$course, $bank]), [
             'csv_file' => UploadedFile::fake()->createWithContent('questions.csv', $csv),
         ])->assertSessionHas('success');
-        $this->assertDatabaseHas('test_bank_questions', ['test_bank_id' => $bank->id, 'subject_id' => $subject->id, 'difficulty' => 'easy']);
+        $this->assertDatabaseHas('test_bank_questions', ['test_bank_id' => $bank->id, 'subject_id' => $subject->id]);
     }
 
     public function test_quiz_builder_uses_all_available_questions_when_requested_count_is_higher(): void
@@ -52,7 +52,7 @@ class TestBankAuthoringTest extends TestCase
         foreach (range(1, 3) as $number) TestBankQuestion::create([
             'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
             'question' => "Question {$number}", 'options' => ['A', 'B'], 'correct_answer' => 0,
-            'difficulty' => 'average', 'status' => 'active', 'created_by' => $admin->id,
+            'status' => 'active', 'created_by' => $admin->id,
         ]);
         $this->actingAs($admin)->post(route('admin.content.test-banks.quizzes.store', [$course, $bank]), [
             'title' => 'Medical Surgical Drill', 'item_count' => 10, 'subject_ids' => [$subject->id],
@@ -70,7 +70,7 @@ class TestBankAuthoringTest extends TestCase
         $other = Subject::create(['course_id' => $otherCourse->id, 'subject_code' => 'OTHER', 'title' => 'Other', 'status' => 'approved']);
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.store', [$course, $bank]), [
             'subject_id' => $other->id, 'question' => 'Invalid?', 'options' => ['A', 'B'],
-            'correct_answer' => 0, 'difficulty' => 'average',
+            'correct_answer' => 0,
         ])->assertNotFound();
         $this->assertDatabaseCount('test_bank_questions', 0);
     }
