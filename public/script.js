@@ -981,6 +981,7 @@ function renderDashboard() {
     const cContainer = $('courses-container');
     if (cContainer) {
         cContainer.innerHTML = '';
+        cContainer.classList.toggle('available-catalog-view', state.courseListFilter === 'available');
         const visibleCourses = state.courseListFilter === 'enrolled'
             ? courses.filter(course => course.is_enrolled)
             : state.courseListFilter === 'available'
