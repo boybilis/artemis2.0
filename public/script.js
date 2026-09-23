@@ -16,6 +16,7 @@ let state = {
 
 let courses = [];
 let reviewPackages = [];
+let enrolledTestBanks = [];
 let topics = [];
 let subjects = [];
 let courseMockExamQuestionCount = 0;
@@ -539,6 +540,37 @@ async function loadCoursesIfNeeded() {
     } catch (e) { console.error(e); }
 }
 
+async function loadEnrolledTestBanks() {
+    try {
+        const data = await apiRequest('/api/test-banks/enrolled');
+        enrolledTestBanks = data?.testBanks || [];
+    } catch (error) {
+        enrolledTestBanks = [];
+    }
+    renderEnrolledTestBankSidebar();
+}
+
+function renderEnrolledTestBankSidebar() {
+    const group = $('sidebar-enrolled-test-banks-group');
+    const list = $('sidebar-enrolled-test-banks-list');
+    const button = $('sidebar-enrolled-test-banks-btn');
+    if (!group || !list || !button) return;
+
+    group.classList.toggle('hidden', enrolledTestBanks.length === 0);
+    list.innerHTML = enrolledTestBanks.map(testBank => `
+        <button type="button" class="learner-sidebar-subitem" data-test-bank-id="${Number(testBank.id)}">
+            <i data-lucide="file-question"></i>
+            <span>${escapeHtml(testBank.title)}<small>${escapeHtml(testBank.course?.title || testBank.code || 'TEST BANK')}</small></span>
+        </button>
+    `).join('');
+
+    if (!enrolledTestBanks.length) {
+        list.classList.add('hidden');
+        button.setAttribute('aria-expanded', 'false');
+    }
+    if (window.lucide) lucide.createIcons();
+}
+
 async function loadTopicsIfNeeded(courseId) {
     try {
         const topicData = await apiRequest(`/api/courses/${courseId}/topics`);
@@ -630,7 +662,7 @@ async function loginUser(user) {
     state.subscriptionExpiresAt = user.subscriptionExpiresAt || null;
     state.hasCertificate = user.hasCertificate || false;
 
-    await loadCoursesIfNeeded();
+    await Promise.all([loadCoursesIfNeeded(), loadEnrolledTestBanks()]);
     
     // Fetch live progress (defaults to all progress)
     try {
@@ -3220,8 +3252,10 @@ function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
     const packagesButton = $('sidebar-packages-btn');
     const subjectsButton = $('sidebar-subjects-btn');
     const progressButton = $('sidebar-progress-report-btn');
+    const testBanksGroup = $('sidebar-enrolled-test-banks-group');
     if (allCoursesButton) allCoursesButton.classList.toggle('hidden', isCourseOpen);
     if (packagesButton) packagesButton.classList.toggle('hidden', isCourseOpen);
+    if (testBanksGroup) testBanksGroup.classList.toggle('hidden', isCourseOpen || enrolledTestBanks.length === 0);
     [subjectsButton, progressButton].forEach(button => {
         if (button) button.classList.toggle('hidden', !isCourseOpen);
     });
@@ -3260,10 +3294,17 @@ function updateLearnerSidebarIdentity(isCourseOpen = false) {
 
 const dashboardSidebarBtn = $('sidebar-dashboard-btn');
 const enrolledCoursesSidebarBtn = $('sidebar-enrolled-courses-btn');
+const enrolledTestBanksSidebarBtn = $('sidebar-enrolled-test-banks-btn');
 const packagesSidebarBtn = $('sidebar-packages-btn');
 const availableCoursesSidebarBtn = $('sidebar-available-courses-btn');
 if (dashboardSidebarBtn) dashboardSidebarBtn.addEventListener('click', () => showDashboardCourseList('dashboard'));
 if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('enrolled'));
+if (enrolledTestBanksSidebarBtn) enrolledTestBanksSidebarBtn.addEventListener('click', () => {
+    const list = $('sidebar-enrolled-test-banks-list');
+    const expanded = enrolledTestBanksSidebarBtn.getAttribute('aria-expanded') === 'true';
+    enrolledTestBanksSidebarBtn.setAttribute('aria-expanded', String(!expanded));
+    if (list) list.classList.toggle('hidden', expanded);
+});
 if (packagesSidebarBtn) packagesSidebarBtn.addEventListener('click', () => showDashboardCourseList('packages'));
 if (availableCoursesSidebarBtn) availableCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('available'));
 
@@ -3281,7 +3322,9 @@ if (learnerSidebarToggle) learnerSidebarToggle.addEventListener('click', () => s
 if (learnerSidebarClose) learnerSidebarClose.addEventListener('click', () => setLearnerSidebarOpen(false));
 if (learnerSidebarBackdrop) learnerSidebarBackdrop.addEventListener('click', () => setLearnerSidebarOpen(false));
 document.querySelectorAll('.learner-sidebar-item, .learner-sidebar-action').forEach(button => {
-    button.addEventListener('click', () => setLearnerSidebarOpen(false));
+    button.addEventListener('click', () => {
+        if (!button.dataset.sidebarExpandable) setLearnerSidebarOpen(false);
+    });
 });
 document.addEventListener('keydown', event => {
     if (event.key === 'Escape') setLearnerSidebarOpen(false);

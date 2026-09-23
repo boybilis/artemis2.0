@@ -46,6 +46,11 @@ class Course extends Model
         return $this->hasMany(Certificate::class);
     }
 
+    public function testBanks()
+    {
+        return $this->hasMany(TestBank::class);
+    }
+
     public function quizAttempts()
     {
         return $this->hasMany(QuizAttempt::class);

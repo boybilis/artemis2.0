@@ -73,6 +73,11 @@ class User extends Authenticatable
         return $this->hasMany(CourseEnrollment::class);
     }
 
+    public function testBankEnrollments()
+    {
+        return $this->hasMany(TestBankEnrollment::class);
+    }
+
     public function hasActiveEnrollment(int $courseId): bool
     {
         return $this->enrollments()->where('status', 'active')

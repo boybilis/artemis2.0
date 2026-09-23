@@ -7,6 +7,7 @@ use App\Http\Controllers\VoucherController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PackageController;
+use App\Http\Controllers\TestBankController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AdministratorMiddleware;
 
@@ -58,6 +59,7 @@ Route::prefix('api')->group(function () {
         Route::post('/voucher/redeem', [VoucherController::class, 'redeem']);
         Route::get('/packages', [PackageController::class, 'index']);
         Route::post('/packages/{package}/buy', [PackageController::class, 'buy']);
+        Route::get('/test-banks/enrolled', [TestBankController::class, 'enrolled']);
 
         // Exam & Certificate
         Route::get('/courses/{course}/exam/questions', [ExamController::class, 'getQuestions']);

@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css?v=64" />
+        <link rel="stylesheet" href="style.css?v=65" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -623,6 +623,14 @@
                             <i data-lucide="graduation-cap"></i>
                             <span>Enrolled Courses</span>
                         </button>
+                        <div id="sidebar-enrolled-test-banks-group" class="learner-sidebar-group hidden">
+                            <button type="button" id="sidebar-enrolled-test-banks-btn" class="learner-sidebar-item learner-sidebar-expandable" aria-expanded="false" aria-controls="sidebar-enrolled-test-banks-list" data-sidebar-expandable>
+                                <i data-lucide="notebook-tabs"></i>
+                                <span>Enrolled Test Banks</span>
+                                <i class="learner-sidebar-chevron" data-lucide="chevron-down"></i>
+                            </button>
+                            <div id="sidebar-enrolled-test-banks-list" class="learner-sidebar-submenu hidden"></div>
+                        </div>
                         <button type="button" id="sidebar-subjects-btn" class="learner-sidebar-item learner-course-sidebar-item hidden">
                             <i data-lucide="book-open"></i>
                             <span>Subjects</span>
@@ -1483,7 +1491,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=73"></script>
+        <script src="script.js?v=74"></script>
         <script>
             lucide.createIcons();
         </script>
