@@ -38,6 +38,7 @@
                     <span><small>Visibility</small><strong>{{ $testBank->status === 'active' ? 'Learners can view' : 'Hidden' }}</strong></span>
                 </div>
                 <div class="test-bank-admin-actions">
+                    <a href="{{ route('admin.content.test-banks.manage', [$course, $testBank]) }}" class="btn-primary" style="text-decoration:none;text-align:center">Open</a>
                     <button type="button" class="btn-ghost" onclick='editTestBank(@json($testBank))'>Edit</button>
                     <form method="POST" action="{{ route('admin.content.test-banks.status', [$course, $testBank]) }}">@csrf<button type="submit" class="btn-ghost">{{ $testBank->status === 'active' ? 'Deactivate' : 'Activate' }}</button></form>
                     <button type="button" class="btn-ghost" style="color:var(--wrong)" onclick="requestDeleteTestBank({{ $testBank->id }}, @js($testBank->title))">Delete</button>

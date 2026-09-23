@@ -12,4 +12,6 @@ class TestBank extends Model
     public function enrollments() { return $this->hasMany(TestBankEnrollment::class); }
     public function course() { return $this->belongsTo(Course::class); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
+    public function questions() { return $this->hasMany(TestBankQuestion::class); }
+    public function premadeQuizzes() { return $this->hasMany(TestBankQuiz::class); }
 }

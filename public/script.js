@@ -644,6 +644,11 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-subject-progress"><div><span>Subject progress</span><strong>${Number(subject.progress || 0)}%</strong></div><div><span style="width:${Number(subject.progress || 0)}%"></span></div></div>
             <button type="button" class="test-bank-subject-open" data-test-bank-subject="${Number(subject.id)}" ${Number(subject.questionCount || 0) ? '' : 'disabled'}>View Practice Tests <i data-lucide="chevron-right"></i></button>
         </article>`).join('');
+    const premadeCards = (workspace.premadeTests || []).map(test => `
+        <article class="test-bank-premade-card">
+            <div><small>PREMADE QUIZ</small><h3>${escapeHtml(test.title)}</h3><p>${escapeHtml(test.description || 'Admin-curated randomized practice quiz.')}</p></div>
+            <span>${Number(test.itemCount || 0)} items</span>
+        </article>`).join('');
 
     workspaceArea.innerHTML = `
         <div class="test-bank-workspace-topbar"><button type="button" class="btn-ghost" id="test-bank-back-btn"><i data-lucide="arrow-left"></i> Back to All Courses</button></div>
@@ -664,6 +669,7 @@ function renderTestBankWorkspace(workspace) {
         </div>
         <section class="test-bank-tab-panel" data-test-bank-panel="premade">
             <div class="test-bank-panel-heading"><div><h2>${escapeHtml(workspace.courseTitle)} Premade Tests by Subject</h2><p>Curated from approved questions in the course question bank.</p></div></div>
+            <div class="test-bank-premade-grid">${premadeCards || '<div class="empty-course-filter"><p>No premade quizzes are available yet.</p></div>'}</div>
             <div class="test-bank-subject-grid">${subjectCards || '<div class="empty-course-filter"><p>No approved subject questions yet.</p></div>'}</div>
         </section>
         <section class="test-bank-tab-panel hidden" data-test-bank-panel="builder"><div class="test-bank-empty-panel"><i data-lucide="wand-sparkles"></i><h2>Quiz Builder</h2><p>Create a personalized practice test by subject, difficulty, and number of questions.</p></div></section>
