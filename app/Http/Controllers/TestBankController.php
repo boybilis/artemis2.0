@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Course;
 use App\Models\PaymentTransaction;
+use App\Models\QuizQuestion;
 use App\Models\TestBank;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -43,15 +44,6 @@ class TestBankController extends Controller
     {
         $user = Auth::user();
         abort_unless($testBank->status === 'active', 404);
-
-        $hasAccess = $user->testBankEnrollments()
-            ->where('test_bank_id', $testBank->id)
-            ->where('status', 'active')
-            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
-            ->exists();
-        if ($hasAccess) {
-            return response()->json(['success' => false, 'message' => 'You already have active access to this Test Bank.'], 422);
-        }
 
         do {
             $reference = 'ART2TB-' . strtoupper(bin2hex(random_bytes(6)));
@@ -105,6 +97,52 @@ class TestBankController extends Controller
         $transaction->update(['provider_checkout_id' => $checkout['id'] ?? null]);
 
         return response()->json(['success' => true, 'checkout_url' => $checkout['attributes']['checkout_url'] ?? null]);
+    }
+
+    public function workspace(TestBank $testBank)
+    {
+        $user = Auth::user();
+        $enrollment = $user->testBankEnrollments()
+            ->where('test_bank_id', $testBank->id)
+            ->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->firstOrFail();
+
+        $testBank->load(['course.subjects' => fn ($query) => $query->where('status', 'approved')->orderBy('sort_order')]);
+        $subjects = $testBank->course->subjects->map(function ($subject) use ($testBank) {
+            $questionQuery = QuizQuestion::query()
+                ->where('course_id', $testBank->course_id)
+                ->where('status', 'approved')
+                ->whereHas('topic', fn ($query) => $query->where('subject_id', $subject->id));
+            $questionCount = (clone $questionQuery)->count();
+            $testCount = (clone $questionQuery)->whereNotNull('topic_id')->distinct('topic_id')->count('topic_id');
+
+            return [
+                'id' => $subject->id,
+                'code' => $subject->subject_code,
+                'title' => $subject->title,
+                'description' => $subject->description,
+                'questionCount' => $questionCount,
+                'premadeTestCount' => $testCount,
+                'completedTests' => 0,
+                'averageScore' => null,
+                'progress' => 0,
+            ];
+        })->values();
+
+        return response()->json(['success' => true, 'workspace' => [
+            'id' => $testBank->id,
+            'title' => $testBank->title,
+            'code' => $testBank->code,
+            'courseTitle' => $testBank->course->title,
+            'accessDays' => $testBank->access_days,
+            'enrolledAt' => $enrollment->enrolled_at?->toIso8601String(),
+            'expiresAt' => $enrollment->expires_at?->toIso8601String(),
+            'daysRemaining' => $enrollment->expires_at ? max(0, (int) ceil(now()->diffInDays($enrollment->expires_at, false))) : null,
+            'readiness' => 0,
+            'subjects' => $subjects,
+            'history' => [],
+        ]]);
     }
 
     public function enrolled()

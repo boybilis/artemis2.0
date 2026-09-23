@@ -20,6 +20,10 @@ class TestBankEnrollment extends Model
     public static function activate(TestBank $testBank, User $user): self
     {
         $activatedAt = now();
+        $existing = static::where('test_bank_id', $testBank->id)->where('user_id', $user->id)->first();
+        $accessStartsAt = $existing?->status === 'active' && $existing->expires_at?->isFuture()
+            ? $existing->expires_at->copy()
+            : $activatedAt->copy();
 
         return static::updateOrCreate(
             ['test_bank_id' => $testBank->id, 'user_id' => $user->id],
@@ -27,7 +31,7 @@ class TestBankEnrollment extends Model
                 'status' => 'active',
                 'enrolled_at' => $activatedAt,
                 'expires_at' => $testBank->access_days
-                    ? $activatedAt->copy()->addDays($testBank->access_days)
+                    ? $accessStartsAt->addDays($testBank->access_days)
                     : null,
             ]
         );

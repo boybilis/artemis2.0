@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\PaymentTransaction;
 use App\Models\TestBank;
 use App\Models\TestBankEnrollment;
+use App\Models\Subject;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -198,6 +199,48 @@ class TestBankEnrollmentTest extends TestCase
         $this->assertDatabaseCount('test_bank_enrollments', 1);
         $this->assertDatabaseCount('course_enrollments', 0);
         $this->assertDatabaseCount('vouchers', 0);
+        Carbon::setTestNow();
+    }
+
+    public function test_enrolled_learner_can_open_course_linked_test_bank_workspace(): void
+    {
+        $learner = User::factory()->create();
+        $course = Course::create(['title' => 'NCLEX Review']);
+        $subject = Subject::create(['course_id' => $course->id, 'subject_code' => 'NUR-101', 'title' => 'Fundamentals of Nursing', 'status' => 'approved']);
+        $testBank = TestBank::create(['course_id' => $course->id, 'title' => 'NCLEX Bank', 'code' => 'TB-WORKSPACE', 'price' => 3000, 'access_days' => 30, 'status' => 'active']);
+        TestBankEnrollment::activate($testBank, $learner);
+
+        $this->actingAs($learner)->getJson("/api/test-banks/{$testBank->id}/workspace")
+            ->assertOk()
+            ->assertJsonPath('workspace.title', 'NCLEX Bank')
+            ->assertJsonPath('workspace.courseTitle', 'NCLEX Review')
+            ->assertJsonPath('workspace.subjects.0.id', $subject->id)
+            ->assertJsonPath('workspace.subjects.0.title', 'Fundamentals of Nursing')
+            ->assertJsonPath('workspace.subjects.0.questionCount', 0);
+    }
+
+    public function test_workspace_rejects_a_learner_without_active_test_bank_access(): void
+    {
+        $learner = User::factory()->create();
+        $course = Course::create(['title' => 'PNLE Review']);
+        $testBank = TestBank::create(['course_id' => $course->id, 'title' => 'PNLE Bank', 'code' => 'TB-NO-ACCESS', 'price' => 2000, 'access_days' => 30, 'status' => 'active']);
+
+        $this->actingAs($learner)->getJson("/api/test-banks/{$testBank->id}/workspace")->assertNotFound();
+    }
+
+    public function test_renewal_adds_access_days_after_the_current_expiration(): void
+    {
+        Carbon::setTestNow('2026-09-24 08:00:00');
+        $learner = User::factory()->create();
+        $course = Course::create(['title' => 'HAAD Review']);
+        $testBank = TestBank::create(['course_id' => $course->id, 'title' => 'HAAD Bank', 'code' => 'TB-RENEW', 'price' => 2000, 'access_days' => 30, 'status' => 'active']);
+        $first = TestBankEnrollment::activate($testBank, $learner);
+        $firstExpiration = $first->expires_at->copy();
+        Carbon::setTestNow(now()->addDays(5));
+
+        $renewed = TestBankEnrollment::activate($testBank, $learner);
+
+        $this->assertTrue($renewed->expires_at->equalTo($firstExpiration->addDays(30)));
         Carbon::setTestNow();
     }
 }

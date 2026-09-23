@@ -578,6 +578,103 @@ function renderEnrolledTestBankSidebar() {
         list.classList.add('hidden');
         button.setAttribute('aria-expanded', 'false');
     }
+    list.querySelectorAll('.learner-sidebar-subitem').forEach(item => {
+        item.addEventListener('click', () => {
+            openTestBankWorkspace(Number(item.dataset.testBankId));
+            setLearnerSidebarOpen(false);
+        });
+    });
+    if (window.lucide) lucide.createIcons();
+}
+
+async function startTestBankCheckout(testBankId, button) {
+    const originalText = button?.textContent;
+    if (button) {
+        button.disabled = true;
+        button.textContent = 'Opening secure payment…';
+    }
+    try {
+        const result = await apiRequest(`/api/test-banks/${testBankId}/buy`, 'POST');
+        if (!result?.checkout_url) throw new Error('The secure payment page is unavailable.');
+        window.location.href = result.checkout_url;
+    } catch (error) {
+        if (button) {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+        showToast(error.message || 'Unable to start the Test Bank subscription.', 'error');
+    }
+}
+
+async function openTestBankWorkspace(testBankId) {
+    const workspaceArea = $('test-bank-workspace-area');
+    if (!workspaceArea) return;
+    workspaceArea.classList.remove('hidden');
+    workspaceArea.innerHTML = '<div class="test-bank-workspace-loading">Loading your Test Bank…</div>';
+    [$('dashboard-hero'), $('dashboard-courses-head'), $('courses-container'), $('course-details-area')].forEach(element => {
+        if (element) element.style.display = 'none';
+    });
+    document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
+    $('sidebar-enrolled-test-banks-btn')?.classList.add('active');
+
+    try {
+        const data = await apiRequest(`/api/test-banks/${testBankId}/workspace`);
+        renderTestBankWorkspace(data.workspace);
+    } catch (error) {
+        workspaceArea.innerHTML = `<div class="empty-course-filter"><i data-lucide="shield-alert"></i><p>Test Bank access unavailable.</p><span>${escapeHtml(error.message || 'Your subscription may have expired.')}</span></div>`;
+        if (window.lucide) lucide.createIcons();
+    }
+}
+
+function renderTestBankWorkspace(workspace) {
+    const workspaceArea = $('test-bank-workspace-area');
+    if (!workspaceArea) return;
+    const expiresAt = workspace.expiresAt
+        ? new Date(workspace.expiresAt).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})
+        : 'No expiration';
+    const subjectCards = (workspace.subjects || []).map((subject, index) => `
+        <article class="test-bank-subject-card">
+            <div class="test-bank-subject-card-head">
+                <span class="test-bank-subject-icon tone-${(index % 3) + 1}"><i data-lucide="${index % 3 === 1 ? 'brain' : index % 3 === 2 ? 'notebook-tabs' : 'book-open'}"></i></span>
+                <small>${Number(subject.premadeTestCount || 0)} TESTS</small>
+            </div>
+            <h3>${escapeHtml(subject.title)}</h3>
+            <p>${Number(subject.questionCount || 0)} approved practice questions with detailed rationales</p>
+            <div class="test-bank-subject-stats"><span><strong>${Number(subject.completedTests || 0)}</strong><small>completed</small></span><span><strong>${subject.averageScore === null ? '--' : `${Number(subject.averageScore)}%`}</strong><small>average</small></span></div>
+            <div class="test-bank-subject-progress"><div><span>Subject progress</span><strong>${Number(subject.progress || 0)}%</strong></div><div><span style="width:${Number(subject.progress || 0)}%"></span></div></div>
+            <button type="button" class="test-bank-subject-open" data-test-bank-subject="${Number(subject.id)}" ${Number(subject.questionCount || 0) ? '' : 'disabled'}>View Practice Tests <i data-lucide="chevron-right"></i></button>
+        </article>`).join('');
+
+    workspaceArea.innerHTML = `
+        <div class="test-bank-workspace-topbar"><button type="button" class="btn-ghost" id="test-bank-back-btn"><i data-lucide="arrow-left"></i> Back to All Courses</button></div>
+        <section class="test-bank-workspace-hero">
+            <span class="test-bank-workspace-mark"><i data-lucide="book-open"></i></span>
+            <div><small>ACTIVE TEST BANK</small><h1>${escapeHtml(workspace.title)}</h1><p>Only your ${escapeHtml(workspace.courseTitle)} questions, scores, and progress are shown on this page.</p></div>
+            <div class="test-bank-readiness"><strong>${Number(workspace.readiness || 0)}%</strong><span>Exam readiness</span></div>
+        </section>
+        <section class="test-bank-subscription-panel">
+            <span><i data-lucide="credit-card"></i></span>
+            <div><small>YOUR ${escapeHtml(workspace.courseTitle).toUpperCase()} SUBSCRIPTION</small><h3>${Number(workspace.accessDays)}-Day Test Bank Access</h3><p>Until ${expiresAt}${workspace.daysRemaining === null ? '' : ` · ${Number(workspace.daysRemaining)} days remaining`}</p></div>
+            <button type="button" class="btn-ghost" id="extend-test-bank-btn">Extend Subscription</button>
+        </section>
+        <div class="test-bank-workspace-tabs" role="tablist">
+            <button type="button" class="active" data-test-bank-tab="premade"><i data-lucide="book-open"></i> Premade Tests</button>
+            <button type="button" data-test-bank-tab="builder"><i data-lucide="wand-sparkles"></i> Quiz Builder</button>
+            <button type="button" data-test-bank-tab="history"><i data-lucide="history"></i> Quiz History</button>
+        </div>
+        <section class="test-bank-tab-panel" data-test-bank-panel="premade">
+            <div class="test-bank-panel-heading"><div><h2>${escapeHtml(workspace.courseTitle)} Premade Tests by Subject</h2><p>Curated from approved questions in the course question bank.</p></div></div>
+            <div class="test-bank-subject-grid">${subjectCards || '<div class="empty-course-filter"><p>No approved subject questions yet.</p></div>'}</div>
+        </section>
+        <section class="test-bank-tab-panel hidden" data-test-bank-panel="builder"><div class="test-bank-empty-panel"><i data-lucide="wand-sparkles"></i><h2>Quiz Builder</h2><p>Create a personalized practice test by subject, difficulty, and number of questions.</p></div></section>
+        <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-empty-panel"><i data-lucide="history"></i><h2>Quiz History</h2><p>Your completed Test Bank attempts and scores will appear here.</p></div></section>`;
+
+    $('test-bank-back-btn')?.addEventListener('click', () => showDashboardCourseList('available'));
+    $('extend-test-bank-btn')?.addEventListener('click', event => startTestBankCheckout(workspace.id, event.currentTarget));
+    workspaceArea.querySelectorAll('[data-test-bank-tab]').forEach(button => button.addEventListener('click', () => {
+        workspaceArea.querySelectorAll('[data-test-bank-tab]').forEach(tab => tab.classList.toggle('active', tab === button));
+        workspaceArea.querySelectorAll('[data-test-bank-panel]').forEach(panel => panel.classList.toggle('hidden', panel.dataset.testBankPanel !== button.dataset.testBankTab));
+    }));
     if (window.lucide) lucide.createIcons();
 }
 
@@ -857,9 +954,11 @@ function renderDashboard() {
     const cCont = $('courses-container');
     const dashboardHero = $('dashboard-hero');
     const courseContextNav = $('learner-course-context-nav');
+    const testBankWorkspace = $('test-bank-workspace-area');
     const isDashboardOverview = state.courseListFilter === 'dashboard';
     if (cdArea) { cdArea.style.display = 'none'; cdArea.style.opacity = '0'; }
     if (courseContextNav) courseContextNav.classList.add('hidden');
+    if (testBankWorkspace) testBankWorkspace.classList.add('hidden');
     setCourseSidebarMode(false);
     if (dashboardHero) dashboardHero.style.display = isDashboardOverview ? 'grid' : 'none';
     if (dcHead) { dcHead.style.display = isDashboardOverview ? 'none' : ''; dcHead.style.opacity = '1'; dcHead.style.transform = 'none'; }
@@ -1070,28 +1169,15 @@ function renderDashboard() {
                                 <span><i data-lucide="clock-3"></i>${Number(testBank.accessDays)} days access</span>
                                 <strong>₱${Number(testBank.price || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}</strong>
                             </div>
-                            <button type="button" class="btn-primary test-bank-subscribe-btn" data-test-bank-id="${Number(testBank.id)}" ${testBank.isSubscribed ? 'disabled' : ''}>
-                                ${testBank.isSubscribed ? 'Active Access' : `Subscribe — ₱${Number(testBank.price || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`}
+                            <button type="button" class="btn-primary test-bank-subscribe-btn" data-test-bank-id="${Number(testBank.id)}">
+                                ${testBank.isSubscribed ? 'Extend Access' : `Subscribe — ₱${Number(testBank.price || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`}
                             </button>
                         </article>
                     `).join('')}
                 </div>`;
             cContainer.appendChild(section);
-            section.querySelectorAll('.test-bank-subscribe-btn:not(:disabled)').forEach(button => {
-                button.addEventListener('click', async () => {
-                    const originalText = button.textContent;
-                    button.disabled = true;
-                    button.textContent = 'Opening secure payment…';
-                    try {
-                        const result = await apiRequest(`/api/test-banks/${button.dataset.testBankId}/buy`, 'POST');
-                        if (!result?.checkout_url) throw new Error('The secure payment page is unavailable.');
-                        window.location.href = result.checkout_url;
-                    } catch (error) {
-                        button.disabled = false;
-                        button.textContent = originalText;
-                        showToast(error.message || 'Unable to start the Test Bank subscription.', 'error');
-                    }
-                });
+            section.querySelectorAll('.test-bank-subscribe-btn').forEach(button => {
+                button.addEventListener('click', () => startTestBankCheckout(button.dataset.testBankId, button));
             });
         }
         if (window.lucide) lucide.createIcons();
