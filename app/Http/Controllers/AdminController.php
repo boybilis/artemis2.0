@@ -1575,27 +1575,23 @@ class AdminController extends Controller
         $course = Course::findOrFail($course_id);
         $data = $request->validate([
             'subject_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('subjects', 'id')->where('course_id', $course->id)],
-            'question_type' => 'required|in:quiz,pre_test,post_test,subtopic_assessment',
-            'topic_id' => 'nullable|integer|exists:topics,id',
+            'question_type' => 'required|in:pre_test,post_test,subtopic_assessment',
             'subtopic_id' => 'nullable|integer|exists:subtopics,id',
             'csv_file' => 'required|file|mimes:csv,txt|max:10240',
         ]);
 
         $subject = Subject::where('course_id', $course->id)->findOrFail($data['subject_id']);
-        $topic = null;
-        $subtopic = null;
-        if ($data['question_type'] === 'quiz') {
-            $topic = Topic::where('course_id', $course->id)->where('subject_id', $subject->id)->find($data['topic_id'] ?? null);
-            if (!$topic) throw \Illuminate\Validation\ValidationException::withMessages(['topic_id'=>'Select a topic from the subject currently being managed.']);
-        } else {
-            $subtopic = Subtopic::whereHas('topic', fn ($query) => $query->where('course_id', $course->id)->where('subject_id', $subject->id))
-                ->find($data['subtopic_id'] ?? null);
-            $expectedType = $data['question_type'] === 'subtopic_assessment' ? 'practice_test' : $data['question_type'];
-            if (!$subtopic || $subtopic->content_type !== $expectedType) {
-                throw \Illuminate\Validation\ValidationException::withMessages(['subtopic_id'=>'Select a matching assessment entry from the subject currently being managed.']);
-            }
-            $topic = $subtopic->topic;
+        $expectedType = $data['question_type'] === 'subtopic_assessment' ? 'practice_test' : $data['question_type'];
+        $matchingEntries = Subtopic::whereHas('topic', fn ($query) => $query->where('course_id', $course->id)->where('subject_id', $subject->id))
+            ->where('content_type', $expectedType)->with('topic')->get();
+        if ($matchingEntries->isEmpty()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['subtopic_id'=>'Create a matching assessment entry under this subject before importing questions.']);
         }
+        $subtopic = $matchingEntries->count() === 1
+            ? $matchingEntries->first()
+            : $matchingEntries->firstWhere('id', (int) ($data['subtopic_id'] ?? 0));
+        if (!$subtopic) throw \Illuminate\Validation\ValidationException::withMessages(['subtopic_id'=>'Select which matching assessment entry will receive these questions.']);
+        $topic = $subtopic->topic;
 
         $handle = fopen($request->file('csv_file')->getRealPath(), 'rb');
         if (!$handle) throw \Illuminate\Validation\ValidationException::withMessages(['csv_file'=>'The CSV file could not be opened.']);
