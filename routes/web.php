@@ -202,6 +202,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/quizzes/approve-all', [AdminController::class, 'approveAllQuizzes'])->name('content.quizzes.approve-all');
             Route::post('/quizzes/{quiz}/approve', [AdminController::class, 'approveQuiz'])->name('content.quizzes.approve');
             Route::post('/quizzes', [AdminController::class, 'storeQuiz'])->name('content.quizzes.store');
+            Route::post('/quizzes/bulk-import', [AdminController::class, 'bulkImportMultipleChoiceQuestions'])->name('content.quizzes.bulk-import');
             Route::post('/quizzes/{quiz}', [AdminController::class, 'updateQuiz'])->name('content.quizzes.update');
             Route::delete('/quizzes/{quiz}', [AdminController::class, 'destroyQuiz'])->name('content.quizzes.destroy');
         });

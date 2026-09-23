@@ -4,7 +4,10 @@
 @section('kicker', 'Assessment Management')
 
 @section('header_actions')
-    <button class="btn btn-primary" type="button" onclick="openAddQuestionModal()">Add question</button>
+    <div style="display:flex;gap:.55rem;flex-wrap:wrap">
+        <button class="btn-ghost" type="button" onclick="openBulkQuestionModal()"><i data-lucide="upload"></i> Bulk Upload CSV</button>
+        <button class="btn btn-primary" type="button" onclick="openAddQuestionModal()">Add question</button>
+    </div>
 @endsection
 
 @section('content')
@@ -275,6 +278,23 @@
 </div>
 @endif
 
+<!-- ================= BULK MULTIPLE-CHOICE IMPORT ================= -->
+<div id="bulkQuestionModal" class="admin-modal">
+    <form method="POST" action="{{ route('admin.content.quizzes.bulk-import', ['course'=>$course->id]) }}" enctype="multipart/form-data" class="admin-modal-content" style="max-width:650px">
+        @csrf
+        <input type="hidden" name="subject_id" value="{{ $managedSubject->id }}">
+        <div class="admin-modal-header"><div><h3 class="admin-modal-title">Bulk Upload Multiple-Choice Questions</h3><small class="muted">{{ $managedSubject->subject_code }} — {{ $managedSubject->title }}</small></div><button type="button" class="admin-modal-close" onclick="closeModal('bulkQuestionModal')">&times;</button></div>
+        <div class="admin-modal-body">
+            <div class="field"><label for="bulk_question_type">Assessment type</label><select id="bulk_question_type" name="question_type" required onchange="syncBulkQuestionTarget()"><option value="quiz">Topic Quiz</option><option value="pre_test">Pre-test</option><option value="post_test">Post-test</option><option value="subtopic_assessment">Practice Test</option></select></div>
+            <div id="bulk_topic_field" class="field" style="margin-top:1rem"><label for="bulk_topic_id">Topic / Module</label><select id="bulk_topic_id" name="topic_id"><option value="">-- Select a topic --</option>@foreach($topics as $topic)<option value="{{ $topic->id }}">{{ $topic->title }}</option>@endforeach</select></div>
+            <div id="bulk_assessment_field" class="field" style="display:none;margin-top:1rem"><label for="bulk_subtopic_id">Assessment entry</label><select id="bulk_subtopic_id" name="subtopic_id"><option value="">-- Select an assessment entry --</option>@foreach($assessmentItems as $item)<option value="{{ $item->id }}" data-content-type="{{ $item->content_type }}">{{ $item->topic->title }} — {{ $item->title }}</option>@endforeach</select></div>
+            <div class="field" style="margin-top:1rem"><label for="bulk_csv_file">CSV file</label><input id="bulk_csv_file" name="csv_file" type="file" accept=".csv,text/csv" required><small>Maximum 5,000 questions or 10 MB per upload. Questions imported by instructors remain pending for admin approval.</small></div>
+            <div style="margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:10px;background:rgba(47,103,143,.06)"><strong style="display:block;margin-bottom:.35rem">Use the Artemis template</strong><small class="muted" style="display:block;margin-bottom:.75rem">Correct answers use letters A–H. Required columns are question, option_a, option_b, and correct_answer.</small><a class="btn-ghost" href="{{ asset('templates/multiple-choice-questions-template.csv') }}" download><i data-lucide="download"></i> Download CSV Template</a></div>
+        </div>
+        <div class="admin-modal-footer"><button type="button" class="btn-ghost" onclick="closeModal('bulkQuestionModal')">Cancel</button><button type="submit" class="btn-primary"><i data-lucide="upload"></i> Import Questions</button></div>
+    </form>
+</div>
+
 <!-- ================= ADD / EDIT QUESTION MODAL ================= -->
 <div id="questionModal" class="admin-modal">
     <form id="questionForm" method="POST" action="{{ route('admin.content.quizzes.store', ['course' => $course->id]) }}" enctype="multipart/form-data" class="admin-modal-content">
@@ -454,6 +474,39 @@
     
     function closeModal(id) {
         document.getElementById(id).classList.remove('open');
+    }
+
+    function openBulkQuestionModal() {
+        document.getElementById('bulk_question_type').value = 'quiz';
+        document.getElementById('bulk_topic_id').value = '';
+        document.getElementById('bulk_subtopic_id').value = '';
+        document.getElementById('bulk_csv_file').value = '';
+        syncBulkQuestionTarget();
+        openModal('bulkQuestionModal');
+    }
+
+    function syncBulkQuestionTarget() {
+        const type = document.getElementById('bulk_question_type').value;
+        const isTopicQuiz = type === 'quiz';
+        const topicField = document.getElementById('bulk_topic_field');
+        const assessmentField = document.getElementById('bulk_assessment_field');
+        const topicSelect = document.getElementById('bulk_topic_id');
+        const assessmentSelect = document.getElementById('bulk_subtopic_id');
+        topicField.style.display = isTopicQuiz ? 'block' : 'none';
+        assessmentField.style.display = isTopicQuiz ? 'none' : 'block';
+        topicSelect.required = isTopicQuiz;
+        assessmentSelect.required = !isTopicQuiz;
+        if (isTopicQuiz) assessmentSelect.value = '';
+        else {
+            topicSelect.value = '';
+            const requiredContentType = type === 'subtopic_assessment' ? 'practice_test' : type;
+            [...assessmentSelect.options].forEach(option => {
+                if (!option.value) return;
+                option.hidden = option.dataset.contentType !== requiredContentType;
+                option.disabled = option.hidden;
+            });
+            if (assessmentSelect.selectedOptions[0]?.disabled) assessmentSelect.value = '';
+        }
     }
 
     function syncAssessmentTimingField(prefix) {

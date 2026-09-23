@@ -1570,6 +1570,102 @@ class AdminController extends Controller
         return back()->with('success', 'Question created successfully.');
     }
 
+    public function bulkImportMultipleChoiceQuestions(Request $request, $course_id)
+    {
+        $course = Course::findOrFail($course_id);
+        $data = $request->validate([
+            'subject_id' => ['required', 'integer', \Illuminate\Validation\Rule::exists('subjects', 'id')->where('course_id', $course->id)],
+            'question_type' => 'required|in:quiz,pre_test,post_test,subtopic_assessment',
+            'topic_id' => 'nullable|integer|exists:topics,id',
+            'subtopic_id' => 'nullable|integer|exists:subtopics,id',
+            'csv_file' => 'required|file|mimes:csv,txt|max:10240',
+        ]);
+
+        $subject = Subject::where('course_id', $course->id)->findOrFail($data['subject_id']);
+        $topic = null;
+        $subtopic = null;
+        if ($data['question_type'] === 'quiz') {
+            $topic = Topic::where('course_id', $course->id)->where('subject_id', $subject->id)->find($data['topic_id'] ?? null);
+            if (!$topic) throw \Illuminate\Validation\ValidationException::withMessages(['topic_id'=>'Select a topic from the subject currently being managed.']);
+        } else {
+            $subtopic = Subtopic::whereHas('topic', fn ($query) => $query->where('course_id', $course->id)->where('subject_id', $subject->id))
+                ->find($data['subtopic_id'] ?? null);
+            $expectedType = $data['question_type'] === 'subtopic_assessment' ? 'practice_test' : $data['question_type'];
+            if (!$subtopic || $subtopic->content_type !== $expectedType) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['subtopic_id'=>'Select a matching assessment entry from the subject currently being managed.']);
+            }
+            $topic = $subtopic->topic;
+        }
+
+        $handle = fopen($request->file('csv_file')->getRealPath(), 'rb');
+        if (!$handle) throw \Illuminate\Validation\ValidationException::withMessages(['csv_file'=>'The CSV file could not be opened.']);
+        $header = fgetcsv($handle);
+        if (!$header) {
+            fclose($handle);
+            throw \Illuminate\Validation\ValidationException::withMessages(['csv_file'=>'The CSV file is empty.']);
+        }
+        $header = array_map(fn ($value) => strtolower(trim((string) $value, "\xEF\xBB\xBF \t\n\r\0\x0B")), $header);
+        $required = ['question','option_a','option_b','correct_answer'];
+        $missing = array_values(array_diff($required, $header));
+        if ($missing) {
+            fclose($handle);
+            throw \Illuminate\Validation\ValidationException::withMessages(['csv_file'=>'Missing required columns: '.implode(', ', $missing).'. Please use the Artemis CSV template.']);
+        }
+
+        $rows = [];
+        $rowNumber = 1;
+        while (($values = fgetcsv($handle)) !== false) {
+            $rowNumber++;
+            if (count(array_filter($values, fn ($value) => trim((string) $value) !== '')) === 0) continue;
+            if (count($rows) >= 5000) {
+                fclose($handle);
+                throw \Illuminate\Validation\ValidationException::withMessages(['csv_file'=>'A single upload may contain no more than 5,000 questions.']);
+            }
+            $values = array_pad($values, count($header), null);
+            $row = array_combine($header, array_slice($values, 0, count($header)));
+            $question = trim((string) ($row['question'] ?? ''));
+            $options = [];
+            foreach (range('a', 'h') as $letter) {
+                $option = trim((string) ($row['option_'.$letter] ?? ''));
+                if ($option !== '') $options[] = $option;
+            }
+            $correctLetter = strtoupper(trim((string) ($row['correct_answer'] ?? '')));
+            $correctIndex = ord($correctLetter ?: '@') - ord('A');
+            $category = strtolower(trim((string) ($row['category'] ?? 'average'))) ?: 'average';
+            $points = trim((string) ($row['maximum_points'] ?? '1')) ?: '1';
+
+            $errors = [];
+            if ($question === '' || mb_strlen($question) > 2000) $errors[] = 'question is required and must not exceed 2,000 characters';
+            if (count($options) < 2) $errors[] = 'at least option_a and option_b are required';
+            if (collect($options)->contains(fn ($option) => mb_strlen($option) > 255)) $errors[] = 'each option must not exceed 255 characters';
+            if ($correctIndex < 0 || $correctIndex >= count($options)) $errors[] = 'correct_answer must be the letter of a populated option';
+            if (!in_array($category, ['easy','average','difficult'], true)) $errors[] = 'category must be easy, average, or difficult';
+            if (!is_numeric($points) || (float) $points < 0.01 || (float) $points > 9999) $errors[] = 'maximum_points must be between 0.01 and 9999';
+            if (mb_strlen((string) ($row['rationale'] ?? '')) > 5000) $errors[] = 'rationale must not exceed 5,000 characters';
+            if ($errors) {
+                fclose($handle);
+                throw \Illuminate\Validation\ValidationException::withMessages(['csv_file'=>'CSV row '.$rowNumber.': '.implode('; ', $errors).'. No questions were imported.']);
+            }
+            $rows[] = [
+                'course_id'=>$course->id, 'topic_id'=>$topic->id, 'subtopic_id'=>$subtopic?->id,
+                'question_type'=>$data['question_type'], 'response_type'=>'single', 'category'=>$category,
+                'question'=>$question, 'rationale'=>trim((string) ($row['rationale'] ?? '')) ?: null,
+                'options'=>$options, 'answer'=>$correctIndex, 'correct_answers'=>[$correctIndex],
+                'maximum_points'=>(float) $points, 'scoring_method'=>'all_or_nothing',
+                'status'=>(Auth::user()->is_admin || Auth::user()->role === 'admin') ? 'approved' : 'pending',
+            ];
+        }
+        fclose($handle);
+        if (!$rows) throw \Illuminate\Validation\ValidationException::withMessages(['csv_file'=>'The CSV file contains no question rows.']);
+
+        DB::transaction(function () use ($rows) {
+            foreach ($rows as $row) QuizQuestion::create($row);
+        });
+        AuditLog::create(['user_id'=>Auth::id(), 'action'=>'Bulk Question Import', 'description'=>'Imported '.count($rows).' multiple-choice questions.', 'ip_address'=>$request->ip()]);
+
+        return back()->with('success', count($rows).' multiple-choice questions imported successfully.');
+    }
+
     public function updateQuiz(Request $request, $course_id, $id)
     {
         $quiz = QuizQuestion::where('course_id', $course_id)->findOrFail($id);
