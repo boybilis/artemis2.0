@@ -424,8 +424,10 @@ class AdminController extends Controller
             'schedule_day'=>'nullable|string|max:100', 'start_time'=>'nullable|date_format:H:i', 'end_time'=>'nullable|date_format:H:i|after:start_time',
             'modality'=>'nullable|in:Online,Blended,Live via Zoom', 'price'=>'required|numeric|min:0', 'usd_price'=>'nullable|numeric|min:0',
             'capacity'=>'nullable|integer|min:1|max:100000', 'status'=>'required|in:draft,open,closed,completed',
+            'includes_intensive_final_coaching'=>'nullable|boolean',
             'course_ids'=>'required|array|min:1', 'course_ids.*'=>['integer',\Illuminate\Validation\Rule::exists('courses','id')->where('approval_status','approved')],
         ]);
+        $data['includes_intensive_final_coaching'] = $request->boolean('includes_intensive_final_coaching');
 
         if (!$batchId || blank($data['code'] ?? null)) {
             $base = Str::upper(Str::slug($data['name']));
@@ -922,12 +924,15 @@ class AdminController extends Controller
 
     private function validateSubject(Request $request, int $courseId, ?int $subjectId = null): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'subject_code' => ['required', 'string', 'max:50', \Illuminate\Validation\Rule::unique('subjects')->where('course_id', $courseId)->ignore($subjectId)],
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:2000',
             'sort_order' => 'nullable|integer|min:0',
+            'is_intensive_final_coaching' => 'nullable|boolean',
         ]);
+        $data['is_intensive_final_coaching'] = $request->boolean('is_intensive_final_coaching');
+        return $data;
     }
 
     public function updateSubject(Request $request, $course_id, $subject_id)

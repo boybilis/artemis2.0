@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class CourseBatch extends Model
 {
-    protected $fillable = ['course_id', 'name', 'code', 'description', 'starts_at', 'ends_at', 'schedule_day', 'start_time', 'end_time', 'modality', 'price', 'usd_price', 'capacity', 'status', 'created_by'];
+    protected $fillable = ['course_id', 'name', 'code', 'description', 'includes_intensive_final_coaching', 'starts_at', 'ends_at', 'schedule_day', 'start_time', 'end_time', 'modality', 'price', 'usd_price', 'capacity', 'status', 'created_by'];
 
-    protected $casts = ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'price' => 'decimal:2', 'usd_price' => 'decimal:2'];
+    protected $casts = ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'price' => 'decimal:2', 'usd_price' => 'decimal:2', 'includes_intensive_final_coaching' => 'boolean'];
 
     public function course() { return $this->belongsTo(Course::class); }
     public function courses() { return $this->belongsToMany(Course::class, 'course_batch_courses', 'batch_id', 'course_id')->withTimestamps(); }

@@ -10,6 +10,7 @@
 @section('content')
 @php($isAdmin = Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin')
 <style>
+.subject-phase-check{display:flex;align-items:flex-start;gap:.7rem;padding:.85rem;border:1px solid var(--border);border-radius:10px;background:rgba(245,102,0,.06);cursor:pointer}.subject-phase-check input{appearance:auto;-webkit-appearance:checkbox;width:17px!important;height:17px!important;min-width:17px;margin:.12rem 0 0;accent-color:#f56600}.subject-phase-check strong,.subject-phase-check small{display:block}.subject-phase-check small{margin-top:.2rem;color:var(--text-muted);font-size:.7rem;line-height:1.4}
 .subject-modal-content{max-width:780px}.subject-form-section{padding:1rem;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.02)}body.light-mode .subject-form-section{background:rgba(0,0,0,.02)}.subject-form-section+.subject-form-section{margin-top:1rem}.subject-form-heading{display:flex;align-items:center;gap:.55rem;margin:0 0 1rem;color:var(--text);font-family:'Outfit',sans-serif;font-size:.95rem;font-weight:700}.subject-form-heading span{display:inline-flex;width:26px;height:26px;align-items:center;justify-content:center;border-radius:8px;background:rgba(124,58,237,.12);color:var(--accent);font-size:.75rem}.subject-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}.subject-form-grid .field{min-width:0}.subject-form-grid .field.full{grid-column:1/-1}.subject-modal-content .field{display:flex;flex-direction:column;gap:.45rem}.subject-modal-content .field label{font-size:.78rem;font-weight:700;color:var(--text-muted)}.subject-modal-content .field label .required{color:var(--wrong)}.subject-modal-content .field textarea{width:100%;min-height:96px;box-sizing:border-box;padding:.75rem 1rem;border:1.5px solid var(--border);border-radius:10px;outline:none;background:rgba(255,255,255,.04);color:var(--text);font:inherit;font-size:.875rem;line-height:1.5;resize:vertical;transition:.2s}.subject-modal-content .field textarea:focus{border-color:var(--accent);background:rgba(124,58,237,.05);box-shadow:0 0 0 3px rgba(124,58,237,.1)}body.light-mode .subject-modal-content .field textarea{background:rgba(0,0,0,.04)}.subject-field-help{margin:0;color:var(--text-muted);font-size:.72rem;line-height:1.4}.subject-modal-content .admin-modal-body{padding-top:1.25rem}@media(max-width:700px){.subject-form-grid{grid-template-columns:1fr}.subject-form-grid .field.full{grid-column:auto}.subject-modal-content{max-height:calc(100dvh - 1.5rem)}}
 </style>
 <div style="margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;">
@@ -41,7 +42,7 @@
             @forelse($subjects as $subject)
                 <tr>
                     <td><strong>{{ $subject->subject_code ?: '—' }}</strong></td>
-                    <td><strong>{{ $subject->title }}</strong><small style="display:block;color:var(--text-muted);margin-top:.3rem">{{ $subject->description ?: 'No description' }}</small></td>
+                    <td><strong>{{ $subject->title }}</strong>@if($subject->is_intensive_final_coaching)<span class="status warning" style="margin-left:.45rem">Intensive Final Coaching</span>@endif<small style="display:block;color:var(--text-muted);margin-top:.3rem">{{ $subject->description ?: 'No description' }}</small></td>
                     <td><span class="status {{ $subject->status === 'approved' ? 'success' : 'warning' }}">{{ ucfirst($subject->status) }}</span></td>
                     <td style="white-space:nowrap">
                         <a href="{{ route('admin.content.topics', ['course' => $course->id, 'subject_id' => $subject->id]) }}" class="btn-primary" style="display:inline-flex;padding:.45rem .75rem;text-decoration:none">Manage</a>
@@ -50,7 +51,7 @@
                         @endif
                         <button type="button" class="btn-ghost edit-subject-btn"
                             data-id="{{ $subject->id }}" data-code="{{ $subject->subject_code }}" data-title="{{ $subject->title }}"
-                            data-description="{{ $subject->description }}" data-order="{{ $subject->sort_order }}">Edit</button>
+                            data-description="{{ $subject->description }}" data-order="{{ $subject->sort_order }}" data-intensive="{{ $subject->is_intensive_final_coaching ? '1' : '0' }}">Edit</button>
                         <form method="POST" action="{{ route('admin.content.subjects.destroy', ['course' => $course->id, 'subject' => $subject->id]) }}" style="display:inline" onsubmit="return confirm('Delete this subject?');">
                             @csrf @method('DELETE')
                             <button type="submit" class="btn-ghost" style="color:var(--wrong)">Delete</button>
@@ -94,6 +95,12 @@
                     <input id="subject_sort_order" type="number" name="sort_order" min="0" placeholder="Automatically placed last when empty">
                     <p class="subject-field-help">Controls the order in which this subject appears in the course.</p>
                 </div>
+                <div class="field full">
+                    <label class="subject-phase-check" for="subject_intensive_final_coaching">
+                        <input id="subject_intensive_final_coaching" type="checkbox" name="is_intensive_final_coaching" value="1">
+                        <span><strong>Intensive Final Coaching phase</strong><small>Only learners whose enrolled batch includes Intensive Final Coaching can see this subject.</small></span>
+                    </label>
+                </div>
             </div>
           </section>
         </div>
@@ -122,6 +129,7 @@ document.querySelectorAll('.edit-subject-btn').forEach(button => button.addEvent
     document.getElementById('subject_title').value = button.dataset.title || '';
     document.getElementById('subject_description').value = button.dataset.description || '';
     document.getElementById('subject_sort_order').value = button.dataset.order || 0;
+    document.getElementById('subject_intensive_final_coaching').checked = button.dataset.intensive === '1';
     document.getElementById('subjectModalTitle').textContent = 'Edit Subject';
     document.getElementById('subjectSaveButton').textContent = 'Save Changes';
     subjectModal.classList.add('open');

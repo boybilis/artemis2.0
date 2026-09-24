@@ -86,8 +86,15 @@ class CourseController extends Controller
             $base = collect($course->toArray())->except('batches')->all();
             return $course->batches->unique('id')->map(function ($batch) use ($base, $course, $enrollment, $courseRanking, $user, $certificatesByCourse, $international, $approvedTopicTotals, $approvedSubjectTotals, $completedTopicTotals) {
                 $isEnrolled = ($enrollment?->isActive() ?? false) && (int) $enrollment->batch_id === (int) $batch->id;
-                $topicTotal = (int) ($approvedTopicTotals[$course->id] ?? 0);
-                $topicCompleted = min($topicTotal, (int) ($completedTopicTotals[$course->id] ?? 0));
+                $visibleSubjectQuery = Subject::where('course_id', $course->id)->where('status', 'approved')
+                    ->when(! $batch->includes_intensive_final_coaching, fn ($query) => $query->where('is_intensive_final_coaching', false));
+                $visibleSubjectIds = (clone $visibleSubjectQuery)->pluck('id');
+                $visibleTopicIds = Topic::where('course_id', $course->id)->where('status', 'approved')
+                    ->where(fn ($query) => $query->whereNull('subject_id')->orWhereIn('subject_id', $visibleSubjectIds))->pluck('id');
+                $topicTotal = $visibleTopicIds->count();
+                $topicCompleted = $isEnrolled
+                    ? UserProgress::where('user_id', $user->id)->where('course_id', $course->id)->whereIn('topic_id', $visibleTopicIds)->distinct('topic_id')->count('topic_id')
+                    : 0;
                 return array_merge($base, [
                     'batch_id'=>$batch->id, 'batch_name'=>$batch->name, 'batch_code'=>$batch->code,
                     'batch_description'=>$batch->description, 'batch_starts_at'=>$batch->starts_at?->toIso8601String(),
@@ -102,7 +109,7 @@ class CourseController extends Controller
                     'mock_exam_ranked_count'=>$isEnrolled ? $courseRanking['total'] : 0,
                     'has_certificate'=>$isEnrolled && $certificatesByCourse->has($course->id),
                     'certificate'=>$isEnrolled ? $certificatesByCourse->get($course->id) : null,
-                    'subject_count'=>(int) ($approvedSubjectTotals[$course->id] ?? 0),
+                    'subject_count'=>(clone $visibleSubjectQuery)->count(),
                     'completed_topic_count'=>$isEnrolled ? $topicCompleted : 0,
                     'topic_count'=>$topicTotal,
                     'course_progress'=>$isEnrolled && $topicTotal > 0 ? (int) round(($topicCompleted / $topicTotal) * 100) : 0,
@@ -145,7 +152,14 @@ class CourseController extends Controller
             ->whereHas('enrollments', fn ($query) => $query->where('user_id', $user->id)->where('status', 'active'))
             ->firstOrFail();
         $topics = Topic::where('course_id', $courseId)->where('status', 'approved')
-            ->where(fn ($query) => $query->whereNull('subject_id')->orWhereHas('subject', fn ($subject) => $subject->where('status', 'approved')))
+            ->where(function ($query) use ($activeBatch) {
+                $query->whereNull('subject_id')->orWhereHas('subject', function ($subject) use ($activeBatch) {
+                    $subject->where('status', 'approved');
+                    if (! $activeBatch->includes_intensive_final_coaching) {
+                        $subject->where('is_intensive_final_coaching', false);
+                    }
+                });
+            })
             ->orderBy('sort_order')->get();
 
         $completedPreTestSubjectIds = QuizAttempt::where('user_id', $user->id)
@@ -256,7 +270,9 @@ class CourseController extends Controller
         });
 
         $completedTopicIds = UserProgress::where('user_id', $user->id)->where('course_id', $courseId)->pluck('topic_id');
-        $subjects = Subject::where('course_id', $courseId)->where('status', 'approved')->orderBy('sort_order')->orderBy('title')->get()->map(function ($subject) use ($topics, $completedTopicIds) {
+        $subjects = Subject::where('course_id', $courseId)->where('status', 'approved')
+            ->when(! $activeBatch->includes_intensive_final_coaching, fn ($query) => $query->where('is_intensive_final_coaching', false))
+            ->orderBy('sort_order')->orderBy('title')->get()->map(function ($subject) use ($topics, $completedTopicIds) {
             $subjectTopicIds = $topics->where('subject_id', $subject->id)->pluck('id');
             $total = $subjectTopicIds->count();
             $completed = $subjectTopicIds->intersect($completedTopicIds)->count();

@@ -12,11 +12,13 @@ class Subject extends Model
     protected $fillable = [
         'course_id', 'subject_code', 'title', 'description', 'start_date', 'end_date',
         'schedule_day', 'start_time', 'end_time', 'modality', 'sort_order', 'status',
+        'is_intensive_final_coaching',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'is_intensive_final_coaching' => 'boolean',
     ];
 
     public function course()
