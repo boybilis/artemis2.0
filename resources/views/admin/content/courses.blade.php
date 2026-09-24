@@ -2,6 +2,7 @@
 
 @section('title', ($classManagement ?? false) ? 'Class Management' : 'Course Management')
 @section('kicker', ($classManagement ?? false) ? 'Batch Delivery' : 'Content Management')
+@section('toast_notifications', 'true')
 
 @section('header_actions')
     @if(!($classManagement ?? false))<button class="btn btn-primary" type="button" onclick="openAddCourseModal()">Add Course</button>@endif
@@ -32,12 +33,6 @@
                 <h2 class="panel-title">{{ ($classManagement ?? false) ? 'Class Management' : 'Course Content Library' }}</h2>
             </div>
         </div>
-
-        @if(session('success'))
-            <div style="margin: 0 0 1rem; padding: 0.75rem 1rem; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); border-radius: 8px; color: #10b981; font-size: 0.875rem; font-weight: 500;">
-                ✓ {{ session('success') }}
-            </div>
-        @endif
 
         <div id="coursesList">
             @forelse ($courses as $course)
@@ -484,5 +479,8 @@
         document.getElementById('editCourseForm').action = '/admin/content/courses/' + id;
         openModal('editCourseModal');
     }
+    @if(session('success')) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(session('success')), 'success')); @endif
+    @if(session('error')) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(session('error')), 'error', 6500)); @endif
+    @if($errors->any()) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(implode(' ', $errors->all())), 'error', 6500)); @endif
 </script>
 @endsection
