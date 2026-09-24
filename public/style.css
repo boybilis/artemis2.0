@@ -1296,7 +1296,7 @@ body.light-mode .page-item:not(.active):not(.disabled) .page-link:hover {
 .course-card-master { display:flex; align-items:center; gap:.55rem; padding:.68rem .75rem; border-radius:11px; background:rgba(8,184,159,.09); color:var(--text); }
 .course-card-master svg { width:18px; height:18px; flex:0 0 auto; color:#20d3b9; }
 .course-card-master span { color:var(--text); font-size:.82rem; font-weight:700; }
-.course-card-description { min-height:2.7em; margin:.8rem 0 0; color:var(--text-muted); font-size:.82rem; line-height:1.55; }
+.course-card-description { min-height:2.7em; margin:.8rem 0 0; color:var(--text-muted); font-size:.82rem; line-height:1.55; white-space:pre-wrap; overflow-wrap:anywhere; }
 .learner-course-card .course-availability-dates { display:grid; grid-template-columns:1fr; gap:.45rem; margin-top:.8rem; padding-top:.75rem; border-top:1px solid rgba(8,184,159,.16); }
 .learner-course-card .course-availability-dates p { display:flex; align-items:center; gap:.38rem; }
 .learner-course-card .course-availability-dates svg { width:14px; height:14px; color:#20d3b9; }

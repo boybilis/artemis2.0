@@ -20,14 +20,16 @@ class MultiCourseBatchTest extends TestCase
             Course::create(['title'=>'NCLEX-RN', 'is_published'=>true, 'approval_status'=>'approved']),
             Course::create(['title'=>'PNLE', 'is_published'=>true, 'approval_status'=>'approved']),
         ]);
+        $description = "NCLEX COMPLETE REVIEW COURSE\nwith INTENSIVE FINAL COACHING\nLive online via Zoom Classes plus Online Practice Tests";
 
         $this->actingAs($admin)->post('/admin/classes/batches', [
             'name'=>'OCTOBER 2026 (MWF) FULL', 'code'=>'OCT-2026-MWF-FULL',
             'schedule_day'=>'Monday, Wednesday, Friday', 'modality'=>'Live via Zoom',
-            'price'=>5999, 'status'=>'open', 'course_ids'=>$courses->pluck('id')->all(),
+            'description'=>$description, 'price'=>5999, 'status'=>'open', 'course_ids'=>$courses->pluck('id')->all(),
         ])->assertRedirect('/admin/classes');
 
         $batch = CourseBatch::where('code', 'OCTOBER-2026-MWF-FULL')->firstOrFail();
+        $this->assertSame($description, $batch->description);
         $this->assertEqualsCanonicalizing($courses->pluck('id')->all(), $batch->courses()->pluck('courses.id')->all());
 
         $this->actingAs($admin)->post('/admin/classes/batches', [
