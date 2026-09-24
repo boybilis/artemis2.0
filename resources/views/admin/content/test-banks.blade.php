@@ -2,6 +2,7 @@
 
 @section('title', 'Test Bank Catalogs')
 @section('kicker', 'Paid Test Products')
+@section('toast_notifications', 'true')
 
 @section('header_actions')
     <button type="button" class="btn-primary" onclick="openTestBankForm()">Add Test Bank</button>
@@ -20,9 +21,6 @@
         <p class="panel-subtitle">Create separately paid question-bank products for this master course.</p>
     </div>
 </div>
-
-@if(session('success'))<div class="notice" style="color:var(--correct)">{{ session('success') }}</div>@endif
-@if($errors->any())<div class="notice" style="color:var(--wrong)">{{ $errors->first() }}</div>@endif
 
 <section class="panel">
     <div class="test-bank-grid">
@@ -89,5 +87,8 @@ function closeModal(id){document.getElementById(id)?.classList.remove('open')}
 function openTestBankForm(){const form=document.getElementById('testBankForm');form.reset();form.action=testBankStoreUrl;document.getElementById('test_bank_method').value='POST';document.getElementById('test_bank_access_days').value=30;document.getElementById('test_bank_form_title').textContent='Add Test Bank';openModal('testBankFormModal')}
 function editTestBank(item){openTestBankForm();document.getElementById('test_bank_form_title').textContent='Edit Test Bank';document.getElementById('testBankForm').action=`${testBankBaseUrl}/${item.id}`;document.getElementById('test_bank_method').value='PUT';['title','code','description','price','usd_price','access_days'].forEach(key=>document.getElementById(`test_bank_${key}`).value=item[key]??'')}
 function requestDeleteTestBank(id,title){document.getElementById('deleteTestBankForm').action=`${testBankBaseUrl}/${id}`;document.getElementById('delete_test_bank_message').textContent=`Delete “${title}”? Existing learner access records for this Test Bank will also be removed.`;openModal('deleteTestBankModal')}
+@if(session('success')) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(session('success')), 'success')); @endif
+@if(session('error')) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(session('error')), 'error', 6500)); @endif
+@if($errors->any()) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(implode(' ', $errors->all())), 'error', 6500)); @endif
 </script>
 @endsection

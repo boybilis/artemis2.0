@@ -2,6 +2,7 @@
 
 @section('title', $testBank->title)
 @section('kicker', 'Test Bank Authoring')
+@section('toast_notifications', 'true')
 
 @section('header_actions')
 <button class="btn-primary" type="button" onclick="openModal('questionModal')">Add Question</button>
@@ -15,9 +16,6 @@
 </style>
 
 <div class="toolbar"><div><a class="btn-ghost" href="{{ route('admin.content.test-banks.index', $course) }}" style="display:inline-flex;text-decoration:none;margin-bottom:1rem">← Test Bank Catalogs</a><p class="panel-label">{{ $testBank->code }} · {{ $course->title }}</p><h2 class="panel-title">{{ $testBank->title }}</h2><p class="panel-subtitle">Build the multiple-choice question bank and learner-facing premade quizzes.</p></div></div>
-@if(session('success'))<div class="notice" style="color:var(--correct)">{{ session('success') }}</div>@endif
-@if($errors->any())<div class="notice" style="color:var(--wrong)">{{ $errors->first() }}</div>@endif
-
 <div class="tb-summary"><div class="tb-stat"><small>Questions</small><strong>{{ $questions->total() }}</strong></div><div class="tb-stat"><small>Premade quizzes</small><strong>{{ $quizzes->count() }}</strong></div><div class="tb-stat"><small>Question format</small><strong>Multiple choice</strong></div></div>
 
 <section class="panel" style="margin-bottom:1rem"><p class="panel-label">Quiz Builder</p><h2 class="panel-title">Premade Quizzes</h2><div class="tb-quiz-list" style="margin-top:1rem">@forelse($quizzes as $quiz)<article class="tb-quiz"><div><h3>{{ $quiz->title }}</h3><p>{{ $quiz->questions_count }} items · Randomized · {{ $quiz->status === 'active' ? 'Available to learners' : 'Inactive' }}</p>@if($quiz->description)<p>{{ $quiz->description }}</p>@endif</div><form method="POST" action="{{ route('admin.content.test-banks.quizzes.destroy', [$course,$testBank,$quiz]) }}">@csrf @method('DELETE')<button class="btn-ghost" style="color:var(--wrong)">Delete</button></form></article>@empty<p class="muted">No premade quizzes created yet.</p>@endforelse</div></section>
@@ -33,5 +31,8 @@
 <script>
 function openModal(id){document.getElementById(id)?.classList.add('open')}function closeModal(id){document.getElementById(id)?.classList.remove('open')}
 function downloadTemplate(){const csv='subject_code,question,option_a,option_b,option_c,option_d,option_e,option_f,option_g,option_h,correct_answer,rationale\n{{ $subjects->first()?->subject_code ?? 'SUBJECT-1' }},What is the best answer?,Choice A,Choice B,Choice C,Choice D,,,,,A,Explain why A is correct.';const blob=new Blob([csv],{type:'text/csv'});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='artemis-test-bank-questions.csv';link.click();URL.revokeObjectURL(link.href)}
+@if(session('success')) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(session('success')), 'success')); @endif
+@if(session('error')) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(session('error')), 'error', 6500)); @endif
+@if($errors->any()) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(implode(' ', $errors->all())), 'error', 6500)); @endif
 </script>
 @endsection
