@@ -1454,6 +1454,7 @@ function renderSubjects() {
         });
         container.appendChild(row);
     });
+    setupSubjectCarousel();
     const mockContainer = $('course-mock-exams-container');
     if (mockContainer) {
         const allSubjectsComplete = subjects.length > 0 && subjects.every(subject =>
@@ -1497,6 +1498,38 @@ function renderSubjects() {
     }
     const back = $('back-to-subjects-btn');
     if (back) back.onclick = () => { currentSubjectId = null; renderSubjects(); };
+}
+
+function setupSubjectCarousel() {
+    const container = $('subjects-container');
+    const controls = $('subject-carousel-controls');
+    const previous = $('subject-carousel-prev');
+    const next = $('subject-carousel-next');
+    if (!container || !controls || !previous || !next) return;
+
+    const updateControls = () => {
+        const overflow = container.scrollWidth > container.clientWidth + 2;
+        controls.classList.toggle('hidden', !overflow);
+        previous.disabled = !overflow || container.scrollLeft <= 2;
+        next.disabled = !overflow || container.scrollLeft + container.clientWidth >= container.scrollWidth - 2;
+    };
+    const slide = direction => {
+        const firstCard = container.querySelector('.learner-subject-row');
+        const gap = parseFloat(getComputedStyle(container).gap) || 0;
+        const cardWidth = firstCard?.getBoundingClientRect().width || container.clientWidth;
+        container.scrollBy({left: direction * (cardWidth + gap), behavior: 'smooth'});
+    };
+
+    container.scrollLeft = 0;
+    previous.onclick = () => slide(-1);
+    next.onclick = () => slide(1);
+    container.onscroll = updateControls;
+    requestAnimationFrame(updateControls);
+    if (window.ResizeObserver) {
+        window.subjectCarouselObserver?.disconnect();
+        window.subjectCarouselObserver = new ResizeObserver(updateControls);
+        window.subjectCarouselObserver.observe(container);
+    }
 }
 
 const confirmStartMockExam = $('confirm-start-mock-exam');
