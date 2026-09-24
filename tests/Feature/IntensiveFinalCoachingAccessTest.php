@@ -68,5 +68,9 @@ class IntensiveFinalCoachingAccessTest extends TestCase
         ])->assertSessionHas('success');
         $this->assertDatabaseHas('subjects', ['course_id' => $course->id, 'is_intensive_final_coaching' => true]);
         $this->assertDatabaseHas('course_batches', ['includes_intensive_final_coaching' => true]);
+        $this->actingAs($admin)->get(route('admin.classes.index'))
+            ->assertOk()
+            ->assertSee('class-course-phase', false)
+            ->assertSee('Intensive Final Coaching Phase');
     }
 }
