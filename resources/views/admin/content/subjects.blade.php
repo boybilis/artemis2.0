@@ -2,6 +2,7 @@
 
 @section('title', 'Subjects')
 @section('kicker', 'Course Content')
+@section('toast_notifications', 'true')
 
 @section('header_actions')
     <button type="button" class="btn btn-primary" onclick="openSubjectModal()">Add Subject</button>
@@ -21,13 +22,6 @@
 <div class="tabs">
     <a class="tab active" href="{{ route('admin.content.subjects', $course->id) }}">Subjects</a>
 </div>
-
-@if(session('success'))
-    <div style="margin:0 0 1rem;padding:.75rem 1rem;border:1px solid rgba(16,185,129,.25);border-radius:8px;background:rgba(16,185,129,.1);color:#10b981;">{{ session('success') }}</div>
-@endif
-@if($errors->any())
-    <div style="margin:0 0 1rem;padding:.75rem 1rem;border:1px solid rgba(239,68,68,.25);border-radius:8px;background:rgba(239,68,68,.1);color:#ef4444;">{{ $errors->first() }}</div>
-@endif
 
 <section class="panel">
     <div class="toolbar">
@@ -116,6 +110,9 @@ const subjectModal = document.getElementById('subjectModal');
 const subjectForm = document.getElementById('subjectForm');
 const subjectStoreUrl = @json(route('admin.content.subjects.store', $course->id));
 const subjectUpdateBase = @json(url('/admin/content/courses/' . $course->id . '/subjects'));
+@if(session('success')) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(session('success')), 'success')); @endif
+@if(session('error')) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(session('error')), 'error', 6500)); @endif
+@if($errors->any()) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(implode(' ', $errors->all())), 'error', 6500)); @endif
 function openSubjectModal() {
     subjectForm.reset(); subjectForm.action = subjectStoreUrl;
     document.getElementById('subjectModalTitle').textContent = 'Add Subject';

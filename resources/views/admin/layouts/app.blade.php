@@ -122,6 +122,7 @@
         .toolbar-group { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
 
         .notice { padding: 1rem 1.5rem; border: 1.5px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.875rem; background: rgba(255,255,255,0.03); }
+        .admin-toast-stack{position:fixed;top:92px;right:1.25rem;z-index:10100;display:flex;flex-direction:column;gap:.65rem;width:min(390px,calc(100vw - 2rem));pointer-events:none}.admin-toast{display:flex;align-items:flex-start;gap:.7rem;padding:.9rem 1rem;border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;box-shadow:0 14px 35px rgba(0,0,0,.2);backdrop-filter:blur(12px);pointer-events:auto;animation:adminToastIn .25s ease both}.admin-toast.success{background:rgba(5,150,105,.94)}.admin-toast.error{background:rgba(220,38,38,.94)}.admin-toast.info{background:rgba(3,57,87,.94)}.admin-toast span{flex:1;font-size:.82rem;line-height:1.45}.admin-toast button{padding:0;border:0;background:transparent;color:inherit;font-size:1rem;cursor:pointer}.admin-toast.leaving{animation:adminToastOut .22s ease both}@keyframes adminToastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}@keyframes adminToastOut{to{opacity:0;transform:translateX(24px)}}
 
         .btn-danger { background: var(--wrong); color: #fff; border: none; padding: .75rem 1.5rem; border-radius: 10px; font-family: inherit; font-weight: 600; font-size: .9rem; cursor: pointer; transition: all .3s; white-space: nowrap; }
         .btn-warning { background: #f59e0b; color: #fff; border: none; padding: .75rem 1.5rem; border-radius: 10px; font-family: inherit; font-weight: 600; font-size: .9rem; cursor: pointer; transition: all .3s; white-space: nowrap; }
@@ -243,17 +244,17 @@
                     <p class="kicker">@yield('kicker', $workspaceRole . ' Panel')</p>
                     <h1>{{ $pageTitle }}</h1>
                 </div>
-                @if (session('success'))
+                @if (! View::hasSection('toast_notifications') && session('success'))
                     <div class="notice" style="border-color: #bbf7d0; background: #f0fdf4; color: #166534;">
                         {{ session('success') }}
                     </div>
                 @endif
-                @if (session('error'))
+                @if (! View::hasSection('toast_notifications') && session('error'))
                     <div class="notice" style="border-color: #fecaca; background: #fef2f2; color: #991b1b;">
                         {{ session('error') }}
                     </div>
                 @endif
-                @if ($errors->any())
+                @if (! View::hasSection('toast_notifications') && $errors->any())
                     <div class="notice" style="border-color: #fecaca; background: #fef2f2; color: #991b1b;">
                         <ul style="margin: 0; padding-left: 20px;">
                             @foreach ($errors->all() as $error)
@@ -268,6 +269,8 @@
             </section>
         </main>
     </div>
+
+    <div id="adminToastStack" class="admin-toast-stack" aria-live="polite" aria-atomic="true"></div>
 
     <div id="adminProfileSettingsModal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="adminProfileSettingsTitle" style="z-index:10020">
         <form id="adminProfileSettingsForm" class="admin-modal-content" style="max-width:560px">
@@ -322,6 +325,19 @@
         }
         function closeAdminAlert() { document.getElementById('adminAlertModal').classList.remove('open'); }
         window.alert = function (message) { showAdminAlert(message); };
+        function showAdminToast(message, type = 'success', duration = 4500) {
+            const stack = document.getElementById('adminToastStack');
+            if (!stack || !message) return;
+            const toast = document.createElement('div');
+            toast.className = `admin-toast ${type}`;
+            const text = document.createElement('span');
+            text.textContent = String(message);
+            const close = document.createElement('button');
+            close.type = 'button'; close.setAttribute('aria-label', 'Close notification'); close.innerHTML = '&times;';
+            const remove = () => { if (toast.classList.contains('leaving')) return; toast.classList.add('leaving'); setTimeout(() => toast.remove(), 230); };
+            close.addEventListener('click', remove); toast.append(text, close); stack.appendChild(toast);
+            if (duration > 0) setTimeout(remove, duration);
+        }
 
         function openAdminProfileSettings() {
             const modal = document.getElementById('adminProfileSettingsModal');
