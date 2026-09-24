@@ -1336,6 +1336,9 @@ body.light-mode .course-card-status.enrolled { color:#067565; background:rgba(8,
 .enrolled-card-facts { display:flex; flex-direction:column; gap:.62rem; }
 .enrolled-card-facts p { display:flex; align-items:center; gap:.52rem; margin:0; color:var(--text-muted); font-size:.77rem; }
 .enrolled-card-facts svg { width:16px; height:16px; flex:0 0 auto; color:var(--course-card-accent); }
+.course-coaching-phase { color:var(--course-card-accent) !important; font-weight:700; }
+.course-coaching-phase.available { display:inline-flex; align-items:center; gap:.42rem; width:max-content; max-width:100%; margin:.15rem 0 .75rem; padding:.38rem .65rem; border:1px solid var(--course-card-accent); border-radius:999px; font-size:.7rem; line-height:1.25; }
+.course-coaching-phase.available svg { width:15px; height:15px; flex:0 0 auto; }
 .enrolled-card-meta { display:flex; align-items:center; flex-wrap:wrap; gap:.4rem; min-height:32px; }
 .enrolled-card-meta .course-ranking-badge,
 .enrolled-card-meta .course-certificate-badge { margin-top:.7rem; }

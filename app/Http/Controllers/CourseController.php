@@ -101,6 +101,7 @@ class CourseController extends Controller
                     'batch_ends_at'=>$batch->ends_at?->toIso8601String(), 'batch_capacity'=>$batch->capacity,
                     'batch_schedule_day'=>$batch->schedule_day, 'batch_start_time'=>$batch->start_time,
                     'batch_end_time'=>$batch->end_time, 'batch_modality'=>$batch->modality,
+                    'batch_includes_intensive_final_coaching'=>(bool) $batch->includes_intensive_final_coaching,
                     'batch_status'=>$batch->status, 'batch_price'=>(float) $batch->price,
                     'batch_usd_price'=>$batch->usd_price !== null ? (float) $batch->usd_price : null,
                     'is_enrolled'=>$isEnrolled, 'enrolled_at'=>$isEnrolled ? $enrollment?->enrolled_at?->toIso8601String() : null,

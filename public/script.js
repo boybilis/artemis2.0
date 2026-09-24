@@ -1076,6 +1076,7 @@ function renderDashboard() {
                             <p><i data-lucide="book-open"></i><span>${Number(course.subject_count || 0)} ${Number(course.subject_count || 0) === 1 ? 'subject' : 'subjects'}</span></p>
                             <p><i data-lucide="layers-3"></i><span>${Number(course.completed_topic_count || 0)} of ${Number(course.topic_count || 0)} topics completed</span></p>
                             <p><i data-lucide="monitor-play"></i><span>${escapeHtml(course.batch_modality || 'Online')}${schedule ? ` · ${escapeHtml(schedule)}` : ''}</span></p>
+                            ${course.batch_includes_intensive_final_coaching ? '<p class="course-coaching-phase"><i data-lucide="badge-check"></i><span>With Intensive Final Coaching Phase</span></p>' : ''}
                         </div>
                         <div class="enrolled-card-meta">${rankingLabel}${certificateLabel}</div>
                         <div class="enrolled-card-progress">
@@ -1094,6 +1095,7 @@ function renderDashboard() {
                 <h3>${escapeHtml(course.batch_name)}</h3>
                 <div class="course-card-master"><i data-lucide="graduation-cap"></i><span>${escapeHtml(course.title)}</span></div>
                 <p class="course-card-description">${escapeHtml(course.batch_description || course.description || '')}</p>
+                ${course.batch_includes_intensive_final_coaching ? '<div class="course-coaching-phase available"><i data-lucide="badge-check"></i><span>With Intensive Final Coaching Phase</span></div>' : ''}
                 <div class="course-availability-dates">
                     <p><i data-lucide="calendar-days"></i><span>Starts</span> ${formatCourseDate(course.batch_starts_at) || 'To be announced'}</p>
                     <p><i data-lucide="calendar-check"></i><span>Access until</span> ${formatCourseDate(course.batch_ends_at) || 'No end date'}</p>

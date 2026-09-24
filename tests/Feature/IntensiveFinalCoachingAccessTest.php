@@ -41,6 +41,7 @@ class IntensiveFinalCoachingAccessTest extends TestCase
             ->first(fn ($entry) => (int) $entry['id'] === $course->id && $entry['is_enrolled']);
         $this->assertSame(1, $courseCard['subject_count']);
         $this->assertSame(1, $courseCard['topic_count']);
+        $this->assertFalse($courseCard['batch_includes_intensive_final_coaching']);
     }
 
     public function test_entitled_batch_shows_intensive_final_coaching_subjects_and_topics(): void
@@ -49,6 +50,9 @@ class IntensiveFinalCoachingAccessTest extends TestCase
         $response = $this->actingAs($learner)->getJson("/api/courses/{$course->id}/topics")->assertOk();
         $this->assertEqualsCanonicalizing(['REG', 'IFC'], collect($response->json('subjects'))->pluck('code')->all());
         $this->assertEqualsCanonicalizing(['Regular Topic', 'Coaching Topic'], collect($response->json('topics'))->pluck('title')->all());
+        $courseCard = collect($this->actingAs($learner)->getJson('/api/courses')->assertOk()->json('courses'))
+            ->first(fn ($entry) => (int) $entry['id'] === $course->id && $entry['is_enrolled']);
+        $this->assertTrue($courseCard['batch_includes_intensive_final_coaching']);
     }
 
     public function test_admin_can_tag_subject_and_batch_for_intensive_final_coaching(): void
