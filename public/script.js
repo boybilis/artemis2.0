@@ -668,7 +668,7 @@ function renderTestBankWorkspace(workspace) {
             <button type="button" data-test-bank-tab="history"><i data-lucide="history"></i> Quiz History</button>
         </div>
         <section class="test-bank-tab-panel" data-test-bank-panel="premade">
-            <div class="test-bank-panel-heading"><div><h2>${escapeHtml(workspace.courseTitle)} Premade Tests by Subject</h2><p>Curated from approved questions in the course question bank.</p></div></div>
+            <div class="test-bank-panel-heading"><div><h2>${escapeHtml(workspace.courseTitle)} Premade Tests by Subject</h2><p>Curated from approved questions in the course question bank.</p></div><div id="test-bank-carousel-controls" class="subject-carousel-controls" aria-label="Premade test carousel controls"><span id="test-bank-carousel-range" class="subject-carousel-range" aria-live="polite"></span><button id="test-bank-carousel-prev" type="button" aria-label="Show previous premade tests"><i data-lucide="chevron-left"></i></button><button id="test-bank-carousel-next" type="button" aria-label="Show next premade tests"><i data-lucide="chevron-right"></i></button></div></div>
             <div class="test-bank-premade-grid">${premadeCards || '<div class="empty-course-filter"><p>No premade quizzes are available yet.</p></div>'}</div>
             <div class="test-bank-subject-grid">${subjectCards || '<div class="empty-course-filter"><p>No approved subject questions yet.</p></div>'}</div>
         </section>
@@ -681,7 +681,56 @@ function renderTestBankWorkspace(workspace) {
         workspaceArea.querySelectorAll('[data-test-bank-tab]').forEach(tab => tab.classList.toggle('active', tab === button));
         workspaceArea.querySelectorAll('[data-test-bank-panel]').forEach(panel => panel.classList.toggle('hidden', panel.dataset.testBankPanel !== button.dataset.testBankTab));
     }));
+    setupTestBankCarousel(workspaceArea);
     if (window.lucide) lucide.createIcons();
+}
+
+function setupTestBankCarousel(workspaceArea) {
+    const container = workspaceArea.querySelector('.test-bank-subject-grid');
+    const controls = $('test-bank-carousel-controls');
+    const range = $('test-bank-carousel-range');
+    const previous = $('test-bank-carousel-prev');
+    const next = $('test-bank-carousel-next');
+    if (!container || !controls || !range || !previous || !next) return;
+
+    const updateControls = () => {
+        const cards = container.querySelectorAll('.test-bank-subject-card');
+        if (!cards.length) {
+            controls.classList.add('hidden');
+            return null;
+        }
+        const gap = parseFloat(getComputedStyle(container).gap) || 0;
+        const cardWidth = cards[0].getBoundingClientRect().width || container.clientWidth;
+        const step = cardWidth + gap;
+        const visibleCount = Math.max(1, Math.round((container.clientWidth + gap) / step));
+        const pageCount = Math.max(1, Math.ceil(cards.length / visibleCount));
+        const currentPage = Math.min(pageCount - 1, Math.max(0, Math.round(container.scrollLeft / (step * visibleCount))));
+        const start = currentPage * visibleCount + 1;
+        const end = Math.min(cards.length, start + visibleCount - 1);
+        const overflow = container.scrollWidth > container.clientWidth + 2;
+        controls.classList.toggle('hidden', !overflow);
+        range.textContent = `Subjects ${start}–${end} of ${cards.length}`;
+        previous.disabled = !overflow || currentPage === 0;
+        next.disabled = !overflow || currentPage >= pageCount - 1;
+        return {currentPage, pageCount, visibleCount, step};
+    };
+    const slide = direction => {
+        const state = updateControls();
+        if (!state) return;
+        const targetPage = Math.min(state.pageCount - 1, Math.max(0, state.currentPage + direction));
+        container.scrollTo({left: targetPage * state.visibleCount * state.step, behavior: 'smooth'});
+    };
+
+    container.scrollLeft = 0;
+    previous.onclick = () => slide(-1);
+    next.onclick = () => slide(1);
+    container.onscroll = updateControls;
+    requestAnimationFrame(updateControls);
+    if (window.ResizeObserver) {
+        window.testBankCarouselObserver?.disconnect();
+        window.testBankCarouselObserver = new ResizeObserver(updateControls);
+        window.testBankCarouselObserver.observe(container);
+    }
 }
 
 async function loadTopicsIfNeeded(courseId) {

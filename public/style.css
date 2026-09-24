@@ -1449,3 +1449,9 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-code-btn
         font-size: 0.67rem;
     }
 }
+
+/* Test Bank premade-subject carousel */
+.test-bank-subject-grid{display:flex!important;grid-template-columns:none!important;flex-wrap:nowrap!important;gap:1rem;max-width:100%;overflow:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain}
+.test-bank-subject-card{flex:0 0 calc((100% - 2rem)/3);min-width:0;scroll-snap-align:start}
+@media(max-width:1000px){.test-bank-subject-card{flex-basis:calc((100% - 1rem)/2)}}
+@media(max-width:700px){.test-bank-panel-heading{align-items:center;gap:.75rem}.test-bank-subject-card{flex-basis:100%}}
