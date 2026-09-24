@@ -1503,21 +1503,33 @@ function renderSubjects() {
 function setupSubjectCarousel() {
     const container = $('subjects-container');
     const controls = $('subject-carousel-controls');
+    const range = $('subject-carousel-range');
     const previous = $('subject-carousel-prev');
     const next = $('subject-carousel-next');
-    if (!container || !controls || !previous || !next) return;
+    if (!container || !controls || !range || !previous || !next) return;
 
     const updateControls = () => {
-        const overflow = container.scrollWidth > container.clientWidth + 2;
-        controls.classList.toggle('hidden', !overflow);
-        previous.disabled = !overflow || container.scrollLeft <= 2;
-        next.disabled = !overflow || container.scrollLeft + container.clientWidth >= container.scrollWidth - 2;
-    };
-    const slide = direction => {
-        const firstCard = container.querySelector('.learner-subject-row');
+        const cards = container.querySelectorAll('.learner-subject-row');
+        const firstCard = cards[0];
         const gap = parseFloat(getComputedStyle(container).gap) || 0;
         const cardWidth = firstCard?.getBoundingClientRect().width || container.clientWidth;
-        container.scrollBy({left: direction * (cardWidth + gap), behavior: 'smooth'});
+        const step = cardWidth + gap;
+        const visibleCount = Math.max(1, Math.round((container.clientWidth + gap) / step));
+        const pageCount = Math.max(1, Math.ceil(cards.length / visibleCount));
+        const currentPage = Math.min(pageCount - 1, Math.max(0, Math.round(container.scrollLeft / (step * visibleCount))));
+        const start = cards.length ? currentPage * visibleCount + 1 : 0;
+        const end = Math.min(cards.length, start + visibleCount - 1);
+        const overflow = container.scrollWidth > container.clientWidth + 2;
+        controls.classList.toggle('hidden', !overflow);
+        range.textContent = `Subjects ${start}–${end} of ${cards.length}`;
+        previous.disabled = !overflow || currentPage === 0;
+        next.disabled = !overflow || currentPage >= pageCount - 1;
+        return {currentPage, pageCount, visibleCount, step};
+    };
+    const slide = direction => {
+        const {currentPage, pageCount, visibleCount, step} = updateControls();
+        const targetPage = Math.min(pageCount - 1, Math.max(0, currentPage + direction));
+        container.scrollTo({left: targetPage * visibleCount * step, behavior: 'smooth'});
     };
 
     container.scrollLeft = 0;
