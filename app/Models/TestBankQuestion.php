@@ -8,12 +8,12 @@ class TestBankQuestion extends Model
 {
     protected $fillable = [
         'test_bank_id', 'course_id', 'subject_id', 'question', 'options',
-        'correct_answer', 'rationale', 'status', 'created_by',
+        'correct_answer', 'points', 'rationale', 'status', 'created_by',
     ];
 
     protected function casts(): array
     {
-        return ['options' => 'array'];
+        return ['options' => 'array', 'points' => 'decimal:2'];
     }
 
     public function testBank() { return $this->belongsTo(TestBank::class); }

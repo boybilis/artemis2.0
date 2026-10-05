@@ -88,8 +88,10 @@ body.light-mode .btn-ghost:hover { color:#fff; border-color:#073b60; background:
 .field { display:flex; flex-direction:column; gap:.32rem; margin-bottom:.8rem; }
 .field label { font-size:.78rem; font-weight:600; color:var(--text-muted); }
 .field input, .field select { width:100%; background:rgba(255,255,255,.04); border:1.5px solid var(--border); padding:.75rem 1rem; border-radius:10px; color:var(--text); font-size:.875rem; font-family:inherit; outline:none; transition:all .3s; height:44px; }
+.field textarea { width:100%; min-height:96px; box-sizing:border-box; resize:vertical; background:rgba(255,255,255,.04); border:1.5px solid var(--border); padding:.75rem 1rem; border-radius:10px; color:var(--text); font-size:.875rem; font-family:inherit; line-height:1.55; outline:none; transition:all .3s; }
 .field select { appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238888a0' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 1rem center; padding-right:2.5rem; cursor:pointer; }
 .field input:focus, .field select:focus { border-color:var(--accent); background:rgba(244,81,11,.05); box-shadow:0 0 0 3px rgba(244,81,11,.12); }
+.field textarea:focus { border-color:var(--accent); background:rgba(244,81,11,.05); box-shadow:0 0 0 3px rgba(244,81,11,.12); }
 .field input::placeholder { color:#555; }
 
 /* Native dropdown menus need explicit palette values because browsers do not
@@ -1024,6 +1026,7 @@ body.light-mode .toast.success { background:rgba(5,150,105,.9); }
 body.light-mode .toast.info { background:rgba(37,99,235,.9); }
 body.light-mode .field input,
 body.light-mode .field select { background:rgba(7,81,118,.04); border-color:rgba(7,81,118,.18); color:var(--text); }
+body.light-mode .field textarea { background:rgba(7,81,118,.04); border-color:rgba(7,81,118,.18); color:var(--text); }
 body.light-mode .field input::placeholder { color:#888; }
 body.light-mode .option-btn { background:rgba(0,0,0,.04); }
 /* Removed light-mode quiz-box background */

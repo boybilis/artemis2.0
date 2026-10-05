@@ -31,19 +31,19 @@ class TestBankAuthoringTest extends TestCase
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.store', [$course, $bank]), [
             'subject_id' => $subject->id, 'question' => 'Which action is appropriate?',
             'options' => ['Assess first', 'Call immediately', 'Document only', ''],
-            'correct_answer' => 0, 'rationale' => 'Assessment comes first.',
+            'correct_answer' => 0, 'points' => 2.5, 'rationale' => 'Assessment comes first.',
         ])->assertSessionHas('success');
-        $this->assertDatabaseHas('test_bank_questions', ['test_bank_id' => $bank->id, 'subject_id' => $subject->id, 'correct_answer' => 0]);
+        $this->assertDatabaseHas('test_bank_questions', ['test_bank_id' => $bank->id, 'subject_id' => $subject->id, 'correct_answer' => 0, 'points' => 2.5]);
     }
 
     public function test_admin_can_import_course_subject_questions_from_csv(): void
     {
         extract($this->catalog());
-        $csv = "subject_code,question,option_a,option_b,option_c,option_d,correct_answer,rationale\nMEDSURG,What comes first?,Assessment,Intervention,Evaluation,Documentation,A,Assess first";
+        $csv = "subject_code,question,option_a,option_b,option_c,option_d,correct_answer,points,rationale\nMEDSURG,What comes first?,Assessment,Intervention,Evaluation,Documentation,A,3,Assess first";
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.import', [$course, $bank]), [
             'csv_file' => UploadedFile::fake()->createWithContent('questions.csv', $csv),
         ])->assertSessionHas('success');
-        $this->assertDatabaseHas('test_bank_questions', ['test_bank_id' => $bank->id, 'subject_id' => $subject->id]);
+        $this->assertDatabaseHas('test_bank_questions', ['test_bank_id' => $bank->id, 'subject_id' => $subject->id, 'points' => 3]);
     }
 
     public function test_quiz_builder_uses_all_available_questions_when_requested_count_is_higher(): void

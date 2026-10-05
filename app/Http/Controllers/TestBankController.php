@@ -230,6 +230,7 @@ class TestBankController extends Controller
             'options' => ['required', 'array', 'min:2', 'max:8'],
             'options.*' => ['nullable', 'string', 'max:3000'],
             'correct_answer' => ['required', 'integer', 'min:0', 'max:7'],
+            'points' => ['nullable', 'numeric', 'min:0.01', 'max:1000'],
             'rationale' => ['nullable', 'string', 'max:10000'],
         ]);
         $subject = $course->subjects()->findOrFail($data['subject_id']);
@@ -246,7 +247,8 @@ class TestBankController extends Controller
         $testBank->questions()->create([
             'course_id' => $course->id, 'subject_id' => $subject->id,
             'question' => $data['question'], 'options' => $options,
-            'correct_answer' => $data['correct_answer'], 'rationale' => $data['rationale'] ?? null,
+            'correct_answer' => $data['correct_answer'], 'points' => $data['points'] ?? 1,
+            'rationale' => $data['rationale'] ?? null,
             'status' => 'active', 'created_by' => $request->user()->id,
         ]);
 
@@ -278,13 +280,15 @@ class TestBankController extends Controller
             $options = collect(range('a', 'h'))->map(fn ($letter) => trim((string) ($row['option_'.$letter] ?? '')))->filter()->values()->all();
             $correct = strtoupper(trim((string) ($row['correct_answer'] ?? '')));
             $correctIndex = ord($correct) - ord('A');
-            if (!$subject || trim((string) ($row['question'] ?? '')) === '' || count($options) < 2 || $correctIndex < 0 || $correctIndex >= count($options)) {
+            $points = trim((string) ($row['points'] ?? '')) === '' ? 1 : filter_var($row['points'], FILTER_VALIDATE_FLOAT);
+            if (!$subject || trim((string) ($row['question'] ?? '')) === '' || count($options) < 2 || $correctIndex < 0 || $correctIndex >= count($options) || $points === false || $points < 0.01 || $points > 1000) {
                 fclose($handle);
-                return back()->withErrors(['csv_file' => "Invalid data on CSV row {$line}. Check the subject code, question, choices, and answer letter."]);
+                return back()->withErrors(['csv_file' => "Invalid data on CSV row {$line}. Check the subject code, question, choices, answer letter, and points."]);
             }
             $rows[] = [
                 'test_bank_id' => $testBank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
                 'question' => trim($row['question']), 'options' => json_encode($options), 'correct_answer' => $correctIndex,
+                'points' => $points,
                 'rationale' => trim((string) ($row['rationale'] ?? '')) ?: null,
                 'status' => 'active', 'created_by' => $request->user()->id, 'created_at' => now(), 'updated_at' => now(),
             ];
