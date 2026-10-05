@@ -615,6 +615,7 @@ async function openTestBankWorkspace(testBankId) {
         if (element) element.style.display = 'none';
     });
     document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
+    document.querySelectorAll('.learner-sidebar-subitem').forEach(item => item.classList.toggle('active', Number(item.dataset.testBankId) === Number(testBankId)));
     $('sidebar-enrolled-test-banks-btn')?.classList.add('active');
 
     try {
@@ -1066,6 +1067,7 @@ function renderDashboard() {
                     : 'View your enrolled courses or browse other available review courses.';
 
         document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
+        document.querySelectorAll('.learner-sidebar-subitem').forEach(item => item.classList.remove('active'));
         const activeSidebarButton = state.courseListFilter === 'enrolled'
             ? $('sidebar-enrolled-courses-btn')
             : state.courseListFilter === 'available'
@@ -3515,6 +3517,7 @@ function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
     });
     updateLearnerSidebarIdentity(isCourseOpen);
     document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
+    document.querySelectorAll('.learner-sidebar-subitem').forEach(item => item.classList.remove('active'));
     if (!isCourseOpen) {
         const listButton = state.courseListFilter === 'available'
             ? allCoursesButton

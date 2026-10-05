@@ -287,6 +287,8 @@ body.light-mode #landing-screen .landing-nav .nav-logo { background:none !import
 .learner-sidebar-submenu { display:flex; flex-direction:column; gap:.25rem; padding-left:1.2rem; }
 .learner-sidebar-subitem { width:100%; display:flex; align-items:flex-start; gap:.55rem; padding:.6rem .7rem; border:0; border-left:1px solid rgba(255,255,255,.2); color:rgba(255,255,255,.68); background:transparent; font:inherit; font-size:.72rem; text-align:left; cursor:pointer; }
 .learner-sidebar-subitem:hover { color:#fff; border-left-color:#f4510b; }
+.learner-sidebar-subitem.active { color:#fff; border-left:2px solid #fff; border-radius:0 9px 9px 0; background:rgba(255,255,255,.1); }
+.learner-sidebar-subitem.active small { color:rgba(255,255,255,.7); }
 .learner-sidebar-subitem svg { width:14px; height:14px; flex:none; margin-top:.08rem; }
 .learner-sidebar-subitem span { display:flex; flex-direction:column; gap:.12rem; }
 .learner-sidebar-subitem small { color:rgba(255,255,255,.44); font-size:.58rem; letter-spacing:.06em; }
