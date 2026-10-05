@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class TestBankController extends Controller
@@ -232,6 +233,7 @@ class TestBankController extends Controller
             'correct_answer' => ['required', 'integer', 'min:0', 'max:7'],
             'points' => ['nullable', 'numeric', 'min:0.01', 'max:1000'],
             'rationale' => ['nullable', 'string', 'max:10000'],
+            'question_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
         ]);
         $subject = $course->subjects()->findOrFail($data['subject_id']);
         $rawOptions = collect($data['options'])->map(fn ($option) => trim((string) $option));
@@ -244,13 +246,20 @@ class TestBankController extends Controller
             return back()->withErrors(['options' => 'Provide at least two choices and select a valid correct answer.'])->withInput();
         }
 
-        $testBank->questions()->create([
+        $questionData = [
             'course_id' => $course->id, 'subject_id' => $subject->id,
             'question' => $data['question'], 'options' => $options,
             'correct_answer' => $data['correct_answer'], 'points' => $data['points'] ?? 1,
             'rationale' => $data['rationale'] ?? null,
             'status' => 'active', 'created_by' => $request->user()->id,
-        ]);
+        ];
+        if ($request->hasFile('question_image')) {
+            $file = $request->file('question_image');
+            $questionData['image_path'] = $file->store('test-bank-question-images', 'public');
+            $questionData['image_filename'] = $file->getClientOriginalName();
+        }
+
+        $testBank->questions()->create($questionData);
 
         return back()->with('success', 'Multiple-choice question added to the Test Bank.');
     }
@@ -304,6 +313,9 @@ class TestBankController extends Controller
     {
         $this->guardCatalog($course, $testBank);
         abort_unless($question->test_bank_id === $testBank->id, 404);
+        if ($question->image_path) {
+            Storage::disk('public')->delete($question->image_path);
+        }
         $question->delete();
         return back()->with('success', 'Test Bank question deleted.');
     }

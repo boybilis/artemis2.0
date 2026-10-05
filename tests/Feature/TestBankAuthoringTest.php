@@ -9,6 +9,7 @@ use App\Models\TestBankQuestion;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TestBankAuthoringTest extends TestCase
@@ -27,13 +28,25 @@ class TestBankAuthoringTest extends TestCase
     public function test_admin_can_open_catalog_and_add_a_multiple_choice_question(): void
     {
         extract($this->catalog());
+        Storage::fake('public');
         $this->actingAs($admin)->get(route('admin.content.test-banks.manage', [$course, $bank]))->assertOk()->assertSee('Premade Quizzes');
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.store', [$course, $bank]), [
             'subject_id' => $subject->id, 'question' => 'Which action is appropriate?',
             'options' => ['Assess first', 'Call immediately', 'Document only', ''],
             'correct_answer' => 0, 'points' => 2.5, 'rationale' => 'Assessment comes first.',
+            'question_image' => UploadedFile::fake()->createWithContent(
+                'reference.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+            ),
         ])->assertSessionHas('success');
         $this->assertDatabaseHas('test_bank_questions', ['test_bank_id' => $bank->id, 'subject_id' => $subject->id, 'correct_answer' => 0, 'points' => 2.5]);
+        $question = TestBankQuestion::firstOrFail();
+        $this->assertSame('reference.png', $question->image_filename);
+        Storage::disk('public')->assertExists($question->image_path);
+
+        $this->actingAs($admin)->delete(route('admin.content.test-banks.questions.destroy', [$course, $bank, $question]))
+            ->assertSessionHas('success');
+        Storage::disk('public')->assertMissing($question->image_path);
     }
 
     public function test_admin_can_import_course_subject_questions_from_csv(): void

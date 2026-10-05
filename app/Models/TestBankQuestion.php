@@ -8,7 +8,8 @@ class TestBankQuestion extends Model
 {
     protected $fillable = [
         'test_bank_id', 'course_id', 'subject_id', 'question', 'options',
-        'correct_answer', 'points', 'rationale', 'status', 'created_by',
+        'correct_answer', 'points', 'rationale', 'image_path', 'image_filename',
+        'status', 'created_by',
     ];
 
     protected function casts(): array
