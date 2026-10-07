@@ -273,6 +273,61 @@ class TestBankAuthoringTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_learner_can_build_a_private_timed_quiz_and_all_attempts_are_numbered_in_history(): void
+    {
+        extract($this->catalog());
+        foreach (range(1, 3) as $number) {
+            $question = TestBankQuestion::create([
+                'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+                'question' => "Builder question {$number}", 'options' => ['Correct', 'Wrong'],
+                'correct_answer' => 0, 'points' => 1, 'status' => 'active', 'created_by' => $admin->id,
+            ]);
+            $question->subjects()->sync([$subject->id]);
+        }
+        $learner = User::factory()->create();
+        $otherLearner = User::factory()->create();
+        foreach ([$learner, $otherLearner] as $enrolledLearner) {
+            $bank->enrollments()->create([
+                'user_id' => $enrolledLearner->id, 'status' => 'active',
+                'enrolled_at' => now(), 'expires_at' => now()->addDays(30),
+            ]);
+        }
+
+        $created = $this->actingAs($learner)->postJson("/api/test-banks/{$bank->id}/quizzes", [
+            'subject_ids' => [$subject->id], 'item_count' => 2,
+            'timed' => true, 'time_limit_minutes' => 15,
+        ]);
+        $created->assertOk()->assertJson(['success' => true]);
+        $quiz = $bank->premadeQuizzes()->where('quiz_type', 'learner')->firstOrFail();
+        $this->assertSame($learner->id, $quiz->owner_user_id);
+        $this->assertSame(15, $quiz->time_limit_minutes);
+        $this->assertSame(2, $quiz->questions()->count());
+
+        for ($attempt = 1; $attempt <= 3; $attempt++) {
+            $this->actingAs($learner)
+                ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")
+                ->assertOk()->assertJsonPath('timeLimitMinutes', 15);
+            $this->actingAs($learner)
+                ->postJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/submit", ['answers' => [0, 0]])
+                ->assertOk();
+        }
+
+        $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
+        $workspace->assertOk()
+            ->assertJsonCount(1, 'workspace.learnerQuizzes')
+            ->assertJsonPath('workspace.learnerQuizzes.0.attemptCount', 3)
+            ->assertJsonCount(3, 'workspace.history')
+            ->assertJsonPath('workspace.history.0.attemptNumber', 3)
+            ->assertJsonPath('workspace.history.1.attemptNumber', 2)
+            ->assertJsonPath('workspace.history.2.attemptNumber', 1);
+
+        $otherWorkspace = $this->actingAs($otherLearner)->getJson("/api/test-banks/{$bank->id}/workspace");
+        $otherWorkspace->assertOk()->assertJsonCount(0, 'workspace.learnerQuizzes');
+        $this->actingAs($otherLearner)
+            ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")
+            ->assertNotFound();
+    }
+
     public function test_deleting_one_catalog_preserves_its_questions_for_another_catalog_in_the_same_course(): void
     {
         extract($this->catalog());

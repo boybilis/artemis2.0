@@ -656,11 +656,18 @@ function renderTestBankWorkspace(workspace) {
         const total = Number(attempt.total || 0).toLocaleString(undefined, {maximumFractionDigits:2});
         return `<article class="test-bank-history-card">
             <div class="test-bank-history-result ${attempt.passed ? 'passed' : 'completed'}"><i data-lucide="${attempt.passed ? 'circle-check' : 'clipboard-check'}"></i></div>
-            <div class="test-bank-history-copy"><small>${attempt.passed ? 'PASSED' : 'COMPLETED'}</small><h3>${escapeHtml(attempt.title)}</h3><p>${escapeHtml(takenAt)} · ${Number(attempt.correctItems || 0)} of ${Number(attempt.totalItems || 0)} correct</p></div>
+            <div class="test-bank-history-copy"><small>${attempt.passed ? 'PASSED' : 'COMPLETED'} · ATTEMPT ${Number(attempt.attemptNumber || 1)}</small><h3>${escapeHtml(attempt.title)}</h3><p>${escapeHtml(takenAt)} · ${Number(attempt.correctItems || 0)} of ${Number(attempt.totalItems || 0)} correct</p></div>
             <div class="test-bank-history-score"><strong>${score}/${total}</strong><span>points</span></div>
             <button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review Result</button>
         </article>`;
     }).join('');
+    const builderSubjects = (workspace.subjects || []).map(subject => `
+        <label class="test-bank-builder-subject"><input type="checkbox" name="subject_ids" value="${Number(subject.id)}" ${Number(subject.questionCount || 0) ? '' : 'disabled'}><span><strong>${escapeHtml(subject.title)}</strong><small>${Number(subject.questionCount || 0)} available questions</small></span></label>`).join('');
+    const learnerQuizCards = (workspace.learnerQuizzes || []).map(quiz => `
+        <article class="test-bank-builder-quiz-card">
+            <div><small>MY PRACTICE TEST</small><h3>${escapeHtml(quiz.title)}</h3><p>${Number(quiz.itemCount || 0)} questions · ${quiz.timed ? `${Number(quiz.timeLimitMinutes)} minutes` : 'Untimed'} · ${Number(quiz.attemptCount || 0)} attempt${Number(quiz.attemptCount || 0) === 1 ? '' : 's'}</p></div>
+            <button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(quiz.id)}">Start Test</button>
+        </article>`).join('');
 
     workspaceArea.innerHTML = `
         <div class="test-bank-workspace-topbar"><button type="button" class="btn-ghost" id="test-bank-back-btn"><i data-lucide="arrow-left"></i> Back to All Courses</button></div>
@@ -684,7 +691,17 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-premade-grid">${premadeCards || '<div class="empty-course-filter"><p>No premade quizzes are available yet.</p></div>'}</div>
             <div class="test-bank-subject-grid">${subjectCards || '<div class="empty-course-filter"><p>No approved subject questions yet.</p></div>'}</div>
         </section>
-        <section class="test-bank-tab-panel hidden" data-test-bank-panel="builder"><div class="test-bank-empty-panel"><i data-lucide="wand-sparkles"></i><h2>Quiz Builder</h2><p>Create a personalized practice test by subject, difficulty, and number of questions.</p></div></section>
+        <section class="test-bank-tab-panel hidden" data-test-bank-panel="builder">
+            <div class="test-bank-builder-layout">
+                <form id="test-bank-builder-form" class="test-bank-builder-form">
+                    <div class="test-bank-history-heading"><h2>Build a Practice Test</h2><p>Select one or more subjects, choose the number of questions, and optionally add a timer.</p></div>
+                    <fieldset><legend>Subjects</legend><div class="test-bank-builder-subjects">${builderSubjects}</div></fieldset>
+                    <div class="test-bank-builder-settings"><label><span>Number of questions</span><input class="form-control" type="number" name="item_count" min="1" max="500" value="25" required></label><label class="test-bank-builder-timed"><input type="checkbox" name="timed"><span>Timed exam</span></label><label id="test-bank-builder-minutes" class="hidden"><span>Time limit in minutes</span><input class="form-control" type="number" name="time_limit_minutes" min="1" max="600" value="30"></label></div>
+                    <button type="submit" class="test-bank-builder-create"><i data-lucide="wand-sparkles"></i> Create Practice Test</button>
+                </form>
+                <div class="test-bank-builder-saved"><div class="test-bank-history-heading"><h2>My Practice Tests</h2><p>Your saved tests can be taken again anytime while your subscription is active.</p></div><div class="test-bank-builder-list">${learnerQuizCards || '<div class="test-bank-empty-panel"><i data-lucide="clipboard-list"></i><h2>No saved practice tests</h2><p>Use the builder to create your first test.</p></div>'}</div></div>
+            </div>
+        </section>
         <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-history-heading"><h2>Quiz History</h2><p>Review your completed Test Bank attempts, scores, answers, and rationales.</p></div><div class="test-bank-history-list">${historyCards || '<div class="test-bank-empty-panel"><i data-lucide="history"></i><h2>No completed tests yet</h2><p>Your completed Test Bank attempts and scores will appear here.</p></div>'}</div></section>`;
 
     $('test-bank-back-btn')?.addEventListener('click', () => showDashboardCourseList('available'));
@@ -694,6 +711,38 @@ function renderTestBankWorkspace(workspace) {
         Number(button.dataset.testBankQuizId),
         button
     )));
+    const builderForm = $('test-bank-builder-form');
+    const timedInput = builderForm?.elements.namedItem('timed');
+    const minutesField = $('test-bank-builder-minutes');
+    timedInput?.addEventListener('change', () => {
+        minutesField?.classList.toggle('hidden', !timedInput.checked);
+        const minutesInput = builderForm.elements.namedItem('time_limit_minutes');
+        if (minutesInput) minutesInput.required = timedInput.checked;
+    });
+    builderForm?.addEventListener('submit', async event => {
+        event.preventDefault();
+        const submit = builderForm.querySelector('[type="submit"]');
+        const subjectIds = [...builderForm.querySelectorAll('[name="subject_ids"]:checked')].map(input => Number(input.value));
+        if (!subjectIds.length) { showToast('Select at least one subject.', 'error'); return; }
+        submit.disabled = true;
+        submit.textContent = 'Creating…';
+        try {
+            const result = await apiRequest(`/api/test-banks/${workspace.id}/quizzes`, 'POST', {
+                subject_ids: subjectIds,
+                item_count: Number(builderForm.elements.namedItem('item_count').value),
+                timed: Boolean(timedInput?.checked),
+                time_limit_minutes: timedInput?.checked ? Number(builderForm.elements.namedItem('time_limit_minutes').value) : null,
+            });
+            showToast(result.message || 'Practice test created.', 'success');
+            await openTestBankWorkspace(workspace.id);
+            document.querySelector('[data-test-bank-tab="builder"]')?.click();
+        } catch (error) {
+            submit.disabled = false;
+            submit.innerHTML = '<i data-lucide="wand-sparkles"></i> Create Practice Test';
+            showToast(error.message || 'Unable to create the practice test.', 'error');
+            if (window.lucide) lucide.createIcons({root: submit});
+        }
+    });
     workspaceArea.querySelectorAll('.test-bank-history-review').forEach(button => button.addEventListener('click', () => {
         const attempt = (workspace.history || []).find(item => Number(item.id) === Number(button.dataset.testBankAttempt));
         if (!attempt) return;
@@ -2819,7 +2868,7 @@ async function startTestBankPremadeQuiz(testBankId, quizId, button) {
         activeTestBankId = testBankId;
         activeTestBankQuizId = quizId;
         state.examType = 'test_bank';
-        startQuiz(data.questions, {title: data.title});
+        startQuiz(data.questions, {title: data.title, timeLimitMinutes: data.timeLimitMinutes});
     } catch (error) {
         if (button) { button.disabled = false; button.textContent = originalText; }
         showToast(error.message || 'Unable to start this premade test.', 'error');

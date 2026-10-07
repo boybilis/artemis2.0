@@ -63,6 +63,7 @@ Route::prefix('api')->group(function () {
         Route::get('/test-banks', [TestBankController::class, 'catalog']);
         Route::post('/test-banks/{testBank}/buy', [TestBankController::class, 'buy']);
         Route::get('/test-banks/{testBank}/workspace', [TestBankController::class, 'workspace']);
+        Route::post('/test-banks/{testBank}/quizzes', [TestBankController::class, 'storeLearnerQuiz']);
         Route::get('/test-banks/{testBank}/quizzes/{quiz}/questions', [TestBankController::class, 'quizQuestions']);
         Route::post('/test-banks/{testBank}/quizzes/{quiz}/submit', [TestBankController::class, 'submitQuiz']);
         Route::get('/test-banks/enrolled', [TestBankController::class, 'enrolled']);

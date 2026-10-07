@@ -145,22 +145,49 @@ class TestBankController extends Controller
 
         $testBank->load([
             'course.subjects' => fn ($query) => $query->where('status', 'approved')->orderBy('sort_order'),
-            'premadeQuizzes' => fn ($query) => $query->where('status', 'active')
+            'premadeQuizzes' => fn ($query) => $query->where('status', 'active')->where('quiz_type', 'premade')
                 ->withCount(['questions' => fn ($questions) => $questions->where('test_bank_questions.status', 'active')])
                 ->latest(),
         ]);
+        $learnerQuizzes = $testBank->premadeQuizzes()
+            ->where('quiz_type', 'learner')
+            ->where('owner_user_id', $user->id)
+            ->where('status', 'active')
+            ->withCount(['questions' => fn ($questions) => $questions->where('test_bank_questions.status', 'active')])
+            ->withCount(['attempts' => fn ($attempts) => $attempts->where('user_id', $user->id)])
+            ->latest()
+            ->get();
         $attempts = TestBankQuizAttempt::query()
             ->where('user_id', $user->id)
             ->where('test_bank_id', $testBank->id)
             ->with('quiz:id,title')
-            ->latest()
             ->get();
+        $attemptCounters = [];
+        $attemptHistory = $attempts->sortBy('created_at')->map(function (TestBankQuizAttempt $attempt) use (&$attemptCounters) {
+            $attemptNumber = ($attemptCounters[$attempt->test_bank_quiz_id] ?? 0) + 1;
+            $attemptCounters[$attempt->test_bank_quiz_id] = $attemptNumber;
+
+            return [
+                'id' => $attempt->id,
+                'quizId' => $attempt->test_bank_quiz_id,
+                'title' => $attempt->quiz?->title ?: 'Test Bank Quiz',
+                'attemptNumber' => $attemptNumber,
+                'score' => (float) $attempt->points_earned,
+                'total' => (float) $attempt->points_possible,
+                'correctItems' => $attempt->score,
+                'totalItems' => $attempt->total,
+                'passed' => $attempt->passed,
+                'takenAt' => $attempt->created_at?->toIso8601String(),
+                'questions' => $attempt->review_data ?: [],
+            ];
+        })->reverse()->values();
         $subjects = $testBank->course->subjects->map(function ($subject) use ($testBank) {
             $questionCount = TestBankQuestion::query()
                 ->where('course_id', $testBank->course_id)
                 ->whereHas('subjects', fn ($query) => $query->whereKey($subject->id))
                 ->where('status', 'active')->count();
             $testCount = $testBank->premadeQuizzes()->where('status', 'active')
+                ->where('quiz_type', 'premade')
                 ->whereJsonContains('subject_ids', $subject->id)->count();
 
             return [
@@ -192,26 +219,75 @@ class TestBankController extends Controller
                 'itemCount' => $quiz->questions_count, 'subjectIds' => $quiz->subject_ids,
                 'randomized' => $quiz->randomize_questions,
             ])->values(),
-            'history' => $attempts->map(fn (TestBankQuizAttempt $attempt) => [
-                'id' => $attempt->id,
-                'quizId' => $attempt->test_bank_quiz_id,
-                'title' => $attempt->quiz?->title ?: 'Premade Test',
-                'score' => (float) $attempt->points_earned,
-                'total' => (float) $attempt->points_possible,
-                'correctItems' => $attempt->score,
-                'totalItems' => $attempt->total,
-                'passed' => $attempt->passed,
-                'takenAt' => $attempt->created_at?->toIso8601String(),
-                'questions' => $attempt->review_data ?: [],
+            'learnerQuizzes' => $learnerQuizzes->map(fn (TestBankQuiz $quiz) => [
+                'id' => $quiz->id,
+                'title' => $quiz->title,
+                'itemCount' => $quiz->questions_count,
+                'subjectIds' => $quiz->subject_ids,
+                'timed' => $quiz->time_limit_minutes !== null,
+                'timeLimitMinutes' => $quiz->time_limit_minutes,
+                'attemptCount' => $quiz->attempts_count,
+                'createdAt' => $quiz->created_at?->toIso8601String(),
             ])->values(),
+            'history' => $attemptHistory,
         ]]);
+    }
+
+    public function storeLearnerQuiz(Request $request, TestBank $testBank)
+    {
+        $user = Auth::user();
+        $this->guardLearnerCatalog($user, $testBank);
+        $data = $request->validate([
+            'subject_ids' => ['required', 'array', 'min:1'],
+            'subject_ids.*' => ['integer', 'distinct'],
+            'item_count' => ['required', 'integer', 'min:1', 'max:500'],
+            'timed' => ['required', 'boolean'],
+            'time_limit_minutes' => ['nullable', 'required_if:timed,true', 'integer', 'min:1', 'max:600'],
+        ]);
+        $subjectIds = $testBank->course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
+        abort_unless($subjectIds->count() === count(array_unique($data['subject_ids'])), 422, 'One or more selected subjects are unavailable.');
+        $questionIds = TestBankQuestion::query()
+            ->where('course_id', $testBank->course_id)
+            ->where('status', 'active')
+            ->whereHas('subjects', fn ($query) => $query->whereIn('subjects.id', $subjectIds))
+            ->inRandomOrder()
+            ->limit($data['item_count'])
+            ->pluck('id');
+        if ($questionIds->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'The selected subjects do not have active questions yet.'], 422);
+        }
+
+        $quiz = DB::transaction(function () use ($testBank, $user, $data, $subjectIds, $questionIds) {
+            $quiz = $testBank->premadeQuizzes()->create([
+                'quiz_type' => 'learner',
+                'owner_user_id' => $user->id,
+                'title' => 'Custom Practice Test · '.now()->format('M j, Y g:i A'),
+                'description' => 'Learner-created practice test.',
+                'item_count' => $questionIds->count(),
+                'time_limit_minutes' => $data['timed'] ? $data['time_limit_minutes'] : null,
+                'subject_ids' => $subjectIds->values()->all(),
+                'randomize_questions' => true,
+                'status' => 'active',
+                'created_by' => $user->id,
+            ]);
+            $quiz->questions()->sync($questionIds);
+            return $quiz;
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => $questionIds->count() < $data['item_count']
+                ? "Practice test created with all {$questionIds->count()} available questions."
+                : 'Practice test created.',
+            'quizId' => $quiz->id,
+        ]);
     }
 
     public function quizQuestions(TestBank $testBank, TestBankQuiz $quiz)
     {
         $user = Auth::user();
         $this->guardLearnerCatalog($user, $testBank);
-        abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active', 404);
+        $this->guardLearnerQuiz($user, $testBank, $quiz);
 
         $questions = $quiz->questions()
             ->where('test_bank_questions.status', 'active')
@@ -222,10 +298,15 @@ class TestBankController extends Controller
         }
 
         session()->put("test_bank_quiz_{$user->id}_{$quiz->id}", $questions->pluck('id')->all());
+        session()->put(
+            "test_bank_quiz_deadline_{$user->id}_{$quiz->id}",
+            $quiz->time_limit_minutes ? now()->addMinutes($quiz->time_limit_minutes)->timestamp : null
+        );
 
         return response()->json([
             'success' => true,
             'title' => $quiz->title,
+            'timeLimitMinutes' => $quiz->time_limit_minutes,
             'questions' => $questions->map(fn (TestBankQuestion $question) => [
                 'id' => $question->id,
                 'question' => $question->question,
@@ -242,10 +323,14 @@ class TestBankController extends Controller
         $request->validate(['answers' => ['required', 'array']]);
         $user = Auth::user();
         $this->guardLearnerCatalog($user, $testBank);
-        abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active', 404);
+        $this->guardLearnerQuiz($user, $testBank, $quiz);
 
         $ids = session()->pull("test_bank_quiz_{$user->id}_{$quiz->id}", []);
+        $deadline = session()->pull("test_bank_quiz_deadline_{$user->id}_{$quiz->id}");
         if (!$ids) return response()->json(['success' => false, 'message' => 'No active Test Bank attempt was found. Please start the test again.'], 422);
+        if ($deadline && now()->timestamp > ((int) $deadline + 30)) {
+            return response()->json(['success' => false, 'message' => 'The time limit for this Test Bank attempt has expired.'], 422);
+        }
 
         $questions = TestBankQuestion::whereIn('id', $ids)
             ->where('course_id', $testBank->course_id)
@@ -352,7 +437,7 @@ class TestBankController extends Controller
             ? $request->query('sort') : 'created_at';
         $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
         $questions = $questionQuery->orderBy($sort, $direction)->orderByDesc('id')->paginate(20)->withQueryString();
-        $quizzes = $testBank->premadeQuizzes()
+        $quizzes = $testBank->premadeQuizzes()->where('quiz_type', 'premade')
             ->withCount(['questions' => fn ($query) => $query->where('test_bank_questions.status', 'active')])
             ->latest()->get();
         $questionPayload = $questions->mapWithKeys(fn (TestBankQuestion $question) => [$question->id => [
@@ -532,6 +617,7 @@ class TestBankController extends Controller
         DB::transaction(function () use ($request, $testBank, $data, $validSubjectIds, $questionIds) {
             $quiz = $testBank->premadeQuizzes()->create([
                 'title' => $data['title'], 'description' => $data['description'] ?? null,
+                'quiz_type' => 'premade',
                 'item_count' => $questionIds->count(), 'subject_ids' => $validSubjectIds->values()->all(),
                 'randomize_questions' => true, 'status' => 'active', 'created_by' => $request->user()->id,
             ]);
@@ -623,6 +709,13 @@ class TestBankController extends Controller
             ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->exists();
         abort_unless($hasAccess && $testBank->status === 'active', 403, 'An active Test Bank subscription is required.');
+    }
+
+    private function guardLearnerQuiz($user, TestBank $testBank, TestBankQuiz $quiz): void
+    {
+        $belongsToLearner = $quiz->quiz_type === 'premade'
+            || ($quiz->quiz_type === 'learner' && $quiz->owner_user_id === $user->id);
+        abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active' && $belongsToLearner, 404);
     }
 
     private function guardQuestion(Course $course, TestBank $testBank, TestBankQuestion $question): void
