@@ -386,6 +386,40 @@ class TestBankAuthoringTest extends TestCase
             ->assertOk()->assertJsonCount(0, 'workspace.learnerQuizzes');
     }
 
+    public function test_subject_cards_show_completed_attempt_count_and_average_percentage(): void
+    {
+        extract($this->catalog());
+        $question = TestBankQuestion::create([
+            'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+            'question' => 'Progress question', 'options' => ['A', 'B'],
+            'correct_answer' => 0, 'points' => 1, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $question->subjects()->sync([$subject->id]);
+        $quiz = $bank->premadeQuizzes()->create([
+            'title' => 'Subject Progress Quiz', 'item_count' => 10, 'subject_ids' => [$subject->id],
+            'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $learner = User::factory()->create();
+        $bank->enrollments()->create([
+            'user_id' => $learner->id, 'status' => 'active',
+            'enrolled_at' => now(), 'expires_at' => now()->addDays(30),
+        ]);
+        foreach ([10, 8, 6, 4, 2] as $score) {
+            TestBankQuizAttempt::create([
+                'user_id' => $learner->id, 'test_bank_id' => $bank->id,
+                'test_bank_quiz_id' => $quiz->id, 'score' => $score, 'total' => 10,
+                'points_earned' => $score, 'points_possible' => 10,
+                'passed' => $score >= 6, 'review_data' => [],
+            ]);
+        }
+
+        $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
+        $workspace->assertOk()
+            ->assertJsonPath('workspace.subjects.0.completedTests', 5)
+            ->assertJsonPath('workspace.subjects.0.averageScore', 60)
+            ->assertJsonPath('workspace.subjects.0.progress', 60);
+    }
+
     public function test_learner_can_build_a_private_timed_quiz_and_all_attempts_are_numbered_in_history(): void
     {
         extract($this->catalog());

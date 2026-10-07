@@ -160,7 +160,7 @@ class TestBankController extends Controller
         $attempts = TestBankQuizAttempt::query()
             ->where('user_id', $user->id)
             ->where('test_bank_id', $testBank->id)
-            ->with('quiz:id,title')
+            ->with('quiz:id,title,subject_ids')
             ->get();
         $attemptCounters = [];
         $attemptHistory = $attempts->sortBy('created_at')->map(function (TestBankQuizAttempt $attempt) use (&$attemptCounters) {
@@ -181,7 +181,7 @@ class TestBankController extends Controller
                 'questions' => $attempt->review_data ?: [],
             ];
         })->reverse()->values();
-        $subjects = $testBank->course->subjects->map(function ($subject) use ($testBank) {
+        $subjects = $testBank->course->subjects->map(function ($subject) use ($testBank, $attempts) {
             $questionCount = TestBankQuestion::query()
                 ->where('course_id', $testBank->course_id)
                 ->whereHas('subjects', fn ($query) => $query->whereKey($subject->id))
@@ -189,6 +189,15 @@ class TestBankController extends Controller
             $testCount = $testBank->premadeQuizzes()->where('status', 'active')
                 ->where('quiz_type', 'premade')
                 ->whereJsonContains('subject_ids', $subject->id)->count();
+            $subjectAttempts = $attempts->filter(fn (TestBankQuizAttempt $attempt) => in_array(
+                $subject->id,
+                array_map('intval', $attempt->quiz?->subject_ids ?: []),
+                true
+            ));
+            $averageScore = $subjectAttempts->isEmpty() ? null : round((float) $subjectAttempts
+                ->avg(fn (TestBankQuizAttempt $attempt) => (float) $attempt->points_possible > 0
+                    ? ((float) $attempt->points_earned / (float) $attempt->points_possible) * 100
+                    : 0), 1);
 
             return [
                 'id' => $subject->id,
@@ -197,9 +206,9 @@ class TestBankController extends Controller
                 'description' => $subject->description,
                 'questionCount' => $questionCount,
                 'premadeTestCount' => $testCount,
-                'completedTests' => 0,
-                'averageScore' => null,
-                'progress' => 0,
+                'completedTests' => $subjectAttempts->count(),
+                'averageScore' => $averageScore,
+                'progress' => $averageScore ?? 0,
             ];
         })->filter(fn ($subject) => $subject['questionCount'] > 0)->values();
         $subjectLookup = $testBank->course->subjects->keyBy('id');
