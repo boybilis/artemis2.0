@@ -208,7 +208,7 @@ class TestBankController extends Controller
                 'premadeTestCount' => $testCount,
                 'completedTests' => $subjectAttempts->count(),
                 'averageScore' => $averageScore,
-                'progress' => $averageScore ?? 0,
+                'progress' => min(100, $subjectAttempts->count() * 20),
             ];
         })->filter(fn ($subject) => $subject['questionCount'] > 0)->values();
         $subjectLookup = $testBank->course->subjects->keyBy('id');

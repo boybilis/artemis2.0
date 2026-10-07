@@ -417,7 +417,7 @@ class TestBankAuthoringTest extends TestCase
         $workspace->assertOk()
             ->assertJsonPath('workspace.subjects.0.completedTests', 5)
             ->assertJsonPath('workspace.subjects.0.averageScore', 60)
-            ->assertJsonPath('workspace.subjects.0.progress', 60);
+            ->assertJsonPath('workspace.subjects.0.progress', 100);
     }
 
     public function test_learner_can_build_a_private_timed_quiz_and_all_attempts_are_numbered_in_history(): void
