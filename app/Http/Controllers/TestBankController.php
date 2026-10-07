@@ -146,7 +146,9 @@ class TestBankController extends Controller
             'premadeQuizzes' => fn ($query) => $query->where('status', 'active')->withCount('questions')->latest(),
         ]);
         $subjects = $testBank->course->subjects->map(function ($subject) use ($testBank) {
-            $questionCount = $testBank->questions()->where('subject_id', $subject->id)->where('status', 'active')->count();
+            $questionCount = $testBank->questions()
+                ->whereHas('subjects', fn ($query) => $query->whereKey($subject->id))
+                ->where('status', 'active')->count();
             $testCount = $testBank->premadeQuizzes()->where('status', 'active')
                 ->whereJsonContains('subject_ids', $subject->id)->count();
 
@@ -216,7 +218,10 @@ class TestBankController extends Controller
     {
         $this->guardCatalog($course, $testBank);
         $subjects = $course->subjects()->where('status', 'approved')->orderBy('sort_order')->orderBy('title')->get();
-        $questions = $testBank->questions()->with('subject:id,subject_code,title')->latest()->paginate(15, ['*'], 'questions_page');
+        $questions = $testBank->questions()->with([
+            'subject:id,subject_code,title',
+            'subjects:id,subject_code,title',
+        ])->latest()->paginate(15, ['*'], 'questions_page');
         $quizzes = $testBank->premadeQuizzes()->withCount('questions')->latest()->get();
 
         return view('admin.content.test-bank-manage', compact('course', 'testBank', 'subjects', 'questions', 'quizzes'));
@@ -226,7 +231,8 @@ class TestBankController extends Controller
     {
         $this->guardCatalog($course, $testBank);
         $data = $request->validate([
-            'subject_id' => ['required', 'integer'],
+            'subject_ids' => ['required', 'array', 'min:1'],
+            'subject_ids.*' => ['required', 'integer', 'distinct'],
             'question' => ['required', 'string', 'max:10000'],
             'options' => ['required', 'array', 'min:2', 'max:8'],
             'options.*' => ['nullable', 'string', 'max:3000'],
@@ -235,7 +241,8 @@ class TestBankController extends Controller
             'rationale' => ['nullable', 'string', 'max:10000'],
             'question_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
         ]);
-        $subject = $course->subjects()->findOrFail($data['subject_id']);
+        $subjectIds = $course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
+        abort_unless($subjectIds->count() === count($data['subject_ids']), 404);
         $rawOptions = collect($data['options'])->map(fn ($option) => trim((string) $option));
         $lastOption = $rawOptions->search(fn ($option, $index) => $rawOptions->slice($index + 1)->filter()->isEmpty() && $option !== '');
         $options = $lastOption === false ? [] : $rawOptions->take($lastOption + 1)->all();
@@ -247,7 +254,7 @@ class TestBankController extends Controller
         }
 
         $questionData = [
-            'course_id' => $course->id, 'subject_id' => $subject->id,
+            'course_id' => $course->id, 'subject_id' => $subjectIds->first(),
             'question' => $data['question'], 'options' => $options,
             'correct_answer' => $data['correct_answer'], 'points' => $data['points'] ?? 1,
             'rationale' => $data['rationale'] ?? null,
@@ -259,7 +266,8 @@ class TestBankController extends Controller
             $questionData['image_filename'] = $file->getClientOriginalName();
         }
 
-        $testBank->questions()->create($questionData);
+        $question = $testBank->questions()->create($questionData);
+        $question->subjects()->sync($subjectIds);
 
         return back()->with('success', 'Multiple-choice question added to the Test Bank.');
     }
@@ -270,10 +278,11 @@ class TestBankController extends Controller
         $request->validate(['csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:10240']]);
         $handle = fopen($request->file('csv_file')->getRealPath(), 'rb');
         $headers = array_map(fn ($value) => strtolower(trim((string) $value)), fgetcsv($handle) ?: []);
-        $required = ['subject_code', 'question', 'option_a', 'option_b', 'correct_answer'];
+        $subjectHeader = in_array('subject_codes', $headers, true) ? 'subject_codes' : 'subject_code';
+        $required = [$subjectHeader, 'question', 'option_a', 'option_b', 'correct_answer'];
         if (array_diff($required, $headers)) {
             fclose($handle);
-            return back()->withErrors(['csv_file' => 'CSV must include: subject_code, question, option_a, option_b, and correct_answer.']);
+            return back()->withErrors(['csv_file' => 'CSV must include subject_codes (or subject_code), question, option_a, option_b, and correct_answer.']);
         }
 
         $subjects = $course->subjects()->get()->keyBy(fn ($subject) => strtolower(trim($subject->subject_code)));
@@ -285,17 +294,20 @@ class TestBankController extends Controller
             if (count($rows) >= 5000) { fclose($handle); return back()->withErrors(['csv_file' => 'A CSV upload is limited to 5,000 questions.']); }
             $values = array_pad($values, count($headers), null);
             $row = array_combine($headers, array_slice($values, 0, count($headers)));
-            $subject = $subjects->get(strtolower(trim((string) ($row['subject_code'] ?? ''))));
+            $subjectCodes = collect(explode('|', (string) ($row[$subjectHeader] ?? '')))
+                ->map(fn ($code) => strtolower(trim($code)))->filter()->unique()->values();
+            $rowSubjects = $subjectCodes->map(fn ($code) => $subjects->get($code))->filter();
             $options = collect(range('a', 'h'))->map(fn ($letter) => trim((string) ($row['option_'.$letter] ?? '')))->filter()->values()->all();
             $correct = strtoupper(trim((string) ($row['correct_answer'] ?? '')));
             $correctIndex = ord($correct) - ord('A');
             $points = trim((string) ($row['points'] ?? '')) === '' ? 1 : filter_var($row['points'], FILTER_VALIDATE_FLOAT);
-            if (!$subject || trim((string) ($row['question'] ?? '')) === '' || count($options) < 2 || $correctIndex < 0 || $correctIndex >= count($options) || $points === false || $points < 0.01 || $points > 1000) {
+            if ($subjectCodes->isEmpty() || $rowSubjects->count() !== $subjectCodes->count() || trim((string) ($row['question'] ?? '')) === '' || count($options) < 2 || $correctIndex < 0 || $correctIndex >= count($options) || $points === false || $points < 0.01 || $points > 1000) {
                 fclose($handle);
-                return back()->withErrors(['csv_file' => "Invalid data on CSV row {$line}. Check the subject code, question, choices, answer letter, and points."]);
+                return back()->withErrors(['csv_file' => "Invalid data on CSV row {$line}. Check the subject codes, question, choices, answer letter, and points."]);
             }
             $rows[] = [
-                'test_bank_id' => $testBank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+                'subject_ids' => $rowSubjects->pluck('id')->values()->all(),
+                'test_bank_id' => $testBank->id, 'course_id' => $course->id, 'subject_id' => $rowSubjects->first()->id,
                 'question' => trim($row['question']), 'options' => json_encode($options), 'correct_answer' => $correctIndex,
                 'points' => $points,
                 'rationale' => trim((string) ($row['rationale'] ?? '')) ?: null,
@@ -304,7 +316,14 @@ class TestBankController extends Controller
         }
         fclose($handle);
         if (!$rows) return back()->withErrors(['csv_file' => 'The CSV contains no question rows.']);
-        DB::transaction(fn () => collect($rows)->chunk(500)->each(fn ($chunk) => TestBankQuestion::insert($chunk->all())));
+        DB::transaction(function () use ($rows) {
+            foreach ($rows as $row) {
+                $subjectIds = $row['subject_ids'];
+                unset($row['subject_ids']);
+                $question = TestBankQuestion::create($row);
+                $question->subjects()->sync($subjectIds);
+            }
+        });
 
         return back()->with('success', count($rows).' Test Bank questions imported.');
     }
@@ -330,7 +349,8 @@ class TestBankController extends Controller
         ]);
         $validSubjectIds = $course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
         if ($validSubjectIds->count() !== count(array_unique($data['subject_ids']))) abort(422, 'One or more subjects do not belong to this course.');
-        $questionIds = $testBank->questions()->where('status', 'active')->whereIn('subject_id', $validSubjectIds)
+        $questionIds = $testBank->questions()->where('status', 'active')
+            ->whereHas('subjects', fn ($query) => $query->whereIn('subjects.id', $validSubjectIds))
             ->inRandomOrder()->limit($data['item_count'])->pluck('id');
         if ($questionIds->isEmpty()) return back()->withErrors(['subject_ids' => 'The selected subjects do not have active Test Bank questions yet.']);
 

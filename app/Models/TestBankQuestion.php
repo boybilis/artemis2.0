@@ -20,6 +20,7 @@ class TestBankQuestion extends Model
     public function testBank() { return $this->belongsTo(TestBank::class); }
     public function course() { return $this->belongsTo(Course::class); }
     public function subject() { return $this->belongsTo(Subject::class); }
+    public function subjects() { return $this->belongsToMany(Subject::class, 'test_bank_question_subject')->withTimestamps(); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
     public function quizzes() { return $this->belongsToMany(TestBankQuiz::class, 'test_bank_quiz_questions')->withTimestamps(); }
 }
