@@ -645,11 +645,13 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-subject-progress"><div><span>Subject progress</span><strong>${Number(subject.progress || 0)}%</strong></div><div><span style="width:${Number(subject.progress || 0)}%"></span></div></div>
             <div class="test-bank-subject-test-controls"><select class="test-bank-subject-test-type" aria-label="Select test type for ${escapeHtml(subject.title)}"><option value="warm_up">Warm-up</option><option value="mastery">Mastery Test</option></select><button type="button" class="test-bank-subject-start" data-test-bank-subject="${Number(subject.id)}" ${Number(subject.questionCount || 0) ? '' : 'disabled'}>Start Test</button></div>
         </article>`).join('');
-    const premadeCards = (workspace.premadeTests || []).map(test => `
+    const renderPremadeCard = test => `
         <article class="test-bank-premade-card">
             <div><small>${test.isSimulation ? 'SIMULATION TEST' : 'PREMADE QUIZ'}</small><h3>${escapeHtml(test.title)}</h3><p>${escapeHtml(test.description || 'Admin-curated randomized practice quiz.')}</p>${test.timeLimitMinutes ? `<p>${Number(test.timeLimitMinutes)} minute time limit</p>` : ''}</div>
             <div class="test-bank-premade-actions"><span>${Number(test.itemCount || 0)} items</span><button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(test.id)}" ${(Number(test.itemCount || 0) && !test.locked) ? '' : 'disabled'}>${test.locked ? 'Locked' : 'Start Test'}</button></div>
-        </article>`).join('');
+        </article>`;
+    const simulationCards = (workspace.premadeTests || []).filter(test => test.isSimulation).map(renderPremadeCard).join('');
+    const premadeCards = (workspace.premadeTests || []).filter(test => !test.isSimulation).map(renderPremadeCard).join('');
     const historyCards = (workspace.history || []).map(attempt => {
         const takenAt = attempt.takenAt ? new Date(attempt.takenAt).toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'}) : '';
         const score = Number(attempt.score || 0).toLocaleString(undefined, {maximumFractionDigits:2});
@@ -695,8 +697,9 @@ function renderTestBankWorkspace(workspace) {
             <button type="button" data-test-bank-tab="history"><i data-lucide="history"></i> Quiz History</button>
         </div>
         <section class="test-bank-tab-panel" data-test-bank-panel="premade">
+            ${simulationCards ? `<div class="test-bank-simulation-grid">${simulationCards}</div>` : ''}
             <div class="test-bank-panel-heading"><div><h2>${escapeHtml(workspace.courseTitle)} Premade Tests by Subject</h2><p>Curated from approved questions in the course question bank.</p></div><div id="test-bank-carousel-controls" class="subject-carousel-controls" aria-label="Premade test carousel controls"><span id="test-bank-carousel-range" class="subject-carousel-range" aria-live="polite"></span><button id="test-bank-carousel-prev" type="button" aria-label="Show previous premade tests"><i data-lucide="chevron-left"></i></button><button id="test-bank-carousel-next" type="button" aria-label="Show next premade tests"><i data-lucide="chevron-right"></i></button></div></div>
-            <div class="test-bank-premade-grid">${premadeCards || '<div class="empty-course-filter"><p>No premade quizzes are available yet.</p></div>'}</div>
+            ${premadeCards ? `<div class="test-bank-premade-grid">${premadeCards}</div>` : ''}
             <div class="test-bank-subject-grid">${subjectCards || '<div class="empty-course-filter"><p>No approved subject questions yet.</p></div>'}</div>
         </section>
         <section class="test-bank-tab-panel hidden" data-test-bank-panel="builder">
