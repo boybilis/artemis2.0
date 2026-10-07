@@ -703,7 +703,7 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-builder-layout">
                 <form id="test-bank-builder-form" class="test-bank-builder-form">
                     <div class="test-bank-history-heading"><h2>Build a Practice Test</h2><p>Select one or more subjects, choose the number of questions, and optionally add a timer.</p></div>
-                    <fieldset><legend>Subjects</legend><div class="test-bank-builder-subjects">${builderSubjects}</div></fieldset>
+                    <fieldset aria-labelledby="test-bank-builder-subject-title"><div class="test-bank-builder-subject-heading"><span id="test-bank-builder-subject-title">Subjects</span><label><input type="checkbox" id="test-bank-builder-select-all"> Select all</label></div><div class="test-bank-builder-subjects">${builderSubjects}</div></fieldset>
                     <div class="test-bank-builder-settings"><label><span>Quiz type</span><select class="form-control" name="item_count" required><option value="10">Warm-up</option><option value="25">Mastery Test</option></select></label><label class="test-bank-builder-timed"><input type="checkbox" name="timed"><span>Timed exam</span></label><label id="test-bank-builder-minutes" class="hidden"><span>Time limit in minutes</span><input class="form-control" type="number" name="time_limit_minutes" min="1" max="600" value="30"></label></div>
                     <div class="test-bank-builder-form-actions"><button type="button" id="test-bank-builder-cancel" class="test-bank-builder-cancel hidden">Cancel Edit</button><button type="submit" class="test-bank-builder-create"><i data-lucide="wand-sparkles"></i> Create Practice Test</button></div>
                 </form>
@@ -724,9 +724,23 @@ function renderTestBankWorkspace(workspace) {
     const timedInput = builderForm?.elements.namedItem('timed');
     const minutesField = $('test-bank-builder-minutes');
     const builderCancel = $('test-bank-builder-cancel');
+    const selectAllSubjects = $('test-bank-builder-select-all');
+    const subjectCheckboxes = [...(builderForm?.querySelectorAll('[name="subject_ids"]:not(:disabled)') || [])];
+    const syncSelectAllSubjects = () => {
+        if (!selectAllSubjects) return;
+        const selectedCount = subjectCheckboxes.filter(input => input.checked).length;
+        selectAllSubjects.checked = subjectCheckboxes.length > 0 && selectedCount === subjectCheckboxes.length;
+        selectAllSubjects.indeterminate = selectedCount > 0 && selectedCount < subjectCheckboxes.length;
+    };
+    selectAllSubjects?.addEventListener('change', () => {
+        subjectCheckboxes.forEach(input => { input.checked = selectAllSubjects.checked; });
+        syncSelectAllSubjects();
+    });
+    subjectCheckboxes.forEach(input => input.addEventListener('change', syncSelectAllSubjects));
     const resetBuilderForm = () => {
         builderEditingQuizId = null;
         builderForm?.reset();
+        syncSelectAllSubjects();
         minutesField?.classList.add('hidden');
         if (builderForm) builderForm.elements.namedItem('time_limit_minutes').required = false;
         builderCancel?.classList.add('hidden');
@@ -745,6 +759,7 @@ function renderTestBankWorkspace(workspace) {
         if (!quiz || !builderForm) return;
         builderEditingQuizId = Number(quiz.id);
         builderForm.querySelectorAll('[name="subject_ids"]').forEach(input => { input.checked = (quiz.subjectIds || []).map(Number).includes(Number(input.value)); });
+        syncSelectAllSubjects();
         const itemCountSelect = builderForm.elements.namedItem('item_count');
         const existingCount = String(Number(quiz.itemCount || 10));
         if (![...itemCountSelect.options].some(option => option.value === existingCount)) {
