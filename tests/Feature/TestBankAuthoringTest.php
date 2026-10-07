@@ -347,6 +347,45 @@ class TestBankAuthoringTest extends TestCase
         ])->assertOk()->assertJsonPath('score', 3)->assertJsonPath('total', 5)->assertJsonPath('passed', true);
     }
 
+    public function test_learner_can_start_a_random_subject_only_warm_up_test(): void
+    {
+        extract($this->catalog());
+        foreach (range(1, 12) as $number) {
+            $question = TestBankQuestion::create([
+                'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+                'question' => "Subject question {$number}", 'options' => ['A', 'B'],
+                'correct_answer' => 0, 'points' => 1, 'status' => 'active', 'created_by' => $admin->id,
+            ]);
+            $question->subjects()->sync([$subject->id]);
+        }
+        $otherQuestion = TestBankQuestion::create([
+            'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $secondSubject->id,
+            'question' => 'Other subject question', 'options' => ['A', 'B'],
+            'correct_answer' => 0, 'points' => 1, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $otherQuestion->subjects()->sync([$secondSubject->id]);
+        $learner = User::factory()->create();
+        $bank->enrollments()->create([
+            'user_id' => $learner->id, 'status' => 'active',
+            'enrolled_at' => now(), 'expires_at' => now()->addDays(30),
+        ]);
+
+        $response = $this->actingAs($learner)->postJson("/api/test-banks/{$bank->id}/subjects/{$subject->id}/quizzes", [
+            'quiz_type' => 'warm_up',
+        ]);
+        $response->assertOk();
+        $quiz = $bank->premadeQuizzes()->where('quiz_type', 'subject')->firstOrFail();
+        $this->assertSame(10, $quiz->questions()->count());
+        $this->assertSame([$subject->id], $quiz->subject_ids);
+        $this->assertFalse($quiz->questions()->whereKey($otherQuestion->id)->exists());
+
+        $this->actingAs($learner)
+            ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")
+            ->assertOk()->assertJsonCount(10, 'questions');
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace")
+            ->assertOk()->assertJsonCount(0, 'workspace.learnerQuizzes');
+    }
+
     public function test_learner_can_build_a_private_timed_quiz_and_all_attempts_are_numbered_in_history(): void
     {
         extract($this->catalog());

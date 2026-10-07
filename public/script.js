@@ -643,7 +643,7 @@ function renderTestBankWorkspace(workspace) {
             <p>${Number(subject.questionCount || 0)} approved practice questions with detailed rationales</p>
             <div class="test-bank-subject-stats"><span><strong>${Number(subject.completedTests || 0)}</strong><small>completed</small></span><span><strong>${subject.averageScore === null ? '--' : `${Number(subject.averageScore)}%`}</strong><small>average</small></span></div>
             <div class="test-bank-subject-progress"><div><span>Subject progress</span><strong>${Number(subject.progress || 0)}%</strong></div><div><span style="width:${Number(subject.progress || 0)}%"></span></div></div>
-            <button type="button" class="test-bank-subject-open" data-test-bank-subject="${Number(subject.id)}" ${Number(subject.questionCount || 0) ? '' : 'disabled'}>View Practice Tests <i data-lucide="chevron-right"></i></button>
+            <div class="test-bank-subject-test-controls"><select class="test-bank-subject-test-type" aria-label="Select test type for ${escapeHtml(subject.title)}"><option value="warm_up">Warm-up</option><option value="mastery">Mastery Test</option></select><button type="button" class="test-bank-subject-start" data-test-bank-subject="${Number(subject.id)}" ${Number(subject.questionCount || 0) ? '' : 'disabled'}>Start Test</button></div>
         </article>`).join('');
     const premadeCards = (workspace.premadeTests || []).map(test => `
         <article class="test-bank-premade-card">
@@ -719,6 +719,23 @@ function renderTestBankWorkspace(workspace) {
         Number(button.dataset.testBankQuizId),
         button
     )));
+    workspaceArea.querySelectorAll('.test-bank-subject-start').forEach(button => button.addEventListener('click', async () => {
+        const originalText = button.textContent;
+        const type = button.parentElement?.querySelector('.test-bank-subject-test-type')?.value || 'warm_up';
+        button.disabled = true;
+        button.textContent = 'Preparing…';
+        try {
+            const result = await apiRequest(`/api/test-banks/${workspace.id}/subjects/${Number(button.dataset.testBankSubject)}/quizzes`, 'POST', {quiz_type:type});
+            if (result.message && result.message !== 'Subject test ready.') showToast(result.message, 'info');
+            button.disabled = false;
+            button.textContent = originalText;
+            await startTestBankPremadeQuiz(workspace.id, Number(result.quizId), button);
+        } catch (error) {
+            button.disabled = false;
+            button.textContent = originalText;
+            showToast(error.message || 'Unable to prepare this subject test.', 'error');
+        }
+    }));
     const builderForm = $('test-bank-builder-form');
     let builderEditingQuizId = null;
     const timedInput = builderForm?.elements.namedItem('timed');

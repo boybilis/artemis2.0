@@ -271,6 +271,51 @@ class TestBankController extends Controller
         ]);
     }
 
+    public function storeSubjectQuiz(Request $request, TestBank $testBank, Subject $subject)
+    {
+        $user = Auth::user();
+        $this->guardLearnerCatalog($user, $testBank);
+        abort_unless($subject->course_id === $testBank->course_id && $subject->status === 'approved', 404);
+        $data = $request->validate(['quiz_type' => ['required', Rule::in(['warm_up', 'mastery'])]]);
+        $itemCount = $data['quiz_type'] === 'mastery' ? 25 : 10;
+        $questionIds = TestBankQuestion::query()
+            ->where('course_id', $testBank->course_id)
+            ->where('status', 'active')
+            ->whereHas('subjects', fn ($query) => $query->whereKey($subject->id))
+            ->inRandomOrder()
+            ->limit($itemCount)
+            ->pluck('id');
+        if ($questionIds->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'This subject does not have active questions yet.'], 422);
+        }
+
+        $quiz = DB::transaction(function () use ($testBank, $user, $subject, $data, $itemCount, $questionIds) {
+            $typeLabel = $data['quiz_type'] === 'mastery' ? 'Mastery Test' : 'Warm-up';
+            $quiz = $testBank->premadeQuizzes()->create([
+                'quiz_type' => 'subject',
+                'owner_user_id' => $user->id,
+                'title' => "{$subject->title} · {$typeLabel}",
+                'description' => 'Subject-focused learner practice test.',
+                'item_count' => $questionIds->count(),
+                'time_limit_minutes' => null,
+                'subject_ids' => [$subject->id],
+                'randomize_questions' => true,
+                'status' => 'active',
+                'created_by' => $user->id,
+            ]);
+            $quiz->questions()->sync($questionIds);
+            return $quiz;
+        });
+
+        return response()->json([
+            'success' => true,
+            'quizId' => $quiz->id,
+            'message' => $questionIds->count() < $itemCount
+                ? "Test created with all {$questionIds->count()} available questions from this subject."
+                : 'Subject test ready.',
+        ]);
+    }
+
     public function updateLearnerQuiz(Request $request, TestBank $testBank, TestBankQuiz $quiz)
     {
         $user = Auth::user();
@@ -742,7 +787,7 @@ class TestBankController extends Controller
     private function guardLearnerQuiz($user, TestBank $testBank, TestBankQuiz $quiz): void
     {
         $belongsToLearner = $quiz->quiz_type === 'premade'
-            || ($quiz->quiz_type === 'learner' && $quiz->owner_user_id === $user->id);
+            || (in_array($quiz->quiz_type, ['learner', 'subject'], true) && $quiz->owner_user_id === $user->id);
         abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active' && $belongsToLearner, 404);
     }
 
