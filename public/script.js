@@ -666,7 +666,7 @@ function renderTestBankWorkspace(workspace) {
     const learnerQuizCards = (workspace.learnerQuizzes || []).map(quiz => `
         <article class="test-bank-builder-quiz-card">
             <div><small>MY PRACTICE TEST</small><h3>${escapeHtml(quiz.title)}</h3><p>${Number(quiz.itemCount || 0)} questions · ${quiz.timed ? `${Number(quiz.timeLimitMinutes)} minutes` : 'Untimed'} · ${Number(quiz.attemptCount || 0)} attempt${Number(quiz.attemptCount || 0) === 1 ? '' : 's'}</p><p class="test-bank-builder-quiz-subjects"><strong>Subjects:</strong> ${(quiz.subjects || []).map(subject => escapeHtml(subject.title)).join(', ') || 'No subjects listed'}</p></div>
-            <button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(quiz.id)}">Start Test</button>
+            <div class="test-bank-builder-quiz-actions"><button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(quiz.id)}">Start Test</button><button type="button" class="test-bank-builder-edit" data-builder-edit="${Number(quiz.id)}">Edit</button><button type="button" class="test-bank-builder-delete" data-builder-delete="${Number(quiz.id)}">Delete</button></div>
         </article>`).join('');
 
     workspaceArea.innerHTML = `
@@ -697,7 +697,7 @@ function renderTestBankWorkspace(workspace) {
                     <div class="test-bank-history-heading"><h2>Build a Practice Test</h2><p>Select one or more subjects, choose the number of questions, and optionally add a timer.</p></div>
                     <fieldset><legend>Subjects</legend><div class="test-bank-builder-subjects">${builderSubjects}</div></fieldset>
                     <div class="test-bank-builder-settings"><label><span>Number of questions</span><input class="form-control" type="number" name="item_count" min="1" max="500" value="25" required></label><label class="test-bank-builder-timed"><input type="checkbox" name="timed"><span>Timed exam</span></label><label id="test-bank-builder-minutes" class="hidden"><span>Time limit in minutes</span><input class="form-control" type="number" name="time_limit_minutes" min="1" max="600" value="30"></label></div>
-                    <button type="submit" class="test-bank-builder-create"><i data-lucide="wand-sparkles"></i> Create Practice Test</button>
+                    <div class="test-bank-builder-form-actions"><button type="button" id="test-bank-builder-cancel" class="test-bank-builder-cancel hidden">Cancel Edit</button><button type="submit" class="test-bank-builder-create"><i data-lucide="wand-sparkles"></i> Create Practice Test</button></div>
                 </form>
                 <div class="test-bank-builder-saved"><div class="test-bank-history-heading"><h2>My Practice Tests</h2><p>Your saved tests can be taken again anytime while your subscription is active.</p></div><div class="test-bank-builder-list">${learnerQuizCards || '<div class="test-bank-empty-panel"><i data-lucide="clipboard-list"></i><h2>No saved practice tests</h2><p>Use the builder to create your first test.</p></div>'}</div></div>
             </div>
@@ -712,13 +712,55 @@ function renderTestBankWorkspace(workspace) {
         button
     )));
     const builderForm = $('test-bank-builder-form');
+    let builderEditingQuizId = null;
     const timedInput = builderForm?.elements.namedItem('timed');
     const minutesField = $('test-bank-builder-minutes');
+    const builderCancel = $('test-bank-builder-cancel');
+    const resetBuilderForm = () => {
+        builderEditingQuizId = null;
+        builderForm?.reset();
+        minutesField?.classList.add('hidden');
+        if (builderForm) builderForm.elements.namedItem('time_limit_minutes').required = false;
+        builderCancel?.classList.add('hidden');
+        const submit = builderForm?.querySelector('[type="submit"]');
+        if (submit) submit.innerHTML = '<i data-lucide="wand-sparkles"></i> Create Practice Test';
+        if (window.lucide && submit) lucide.createIcons({root: submit});
+    };
     timedInput?.addEventListener('change', () => {
         minutesField?.classList.toggle('hidden', !timedInput.checked);
         const minutesInput = builderForm.elements.namedItem('time_limit_minutes');
         if (minutesInput) minutesInput.required = timedInput.checked;
     });
+    builderCancel?.addEventListener('click', resetBuilderForm);
+    workspaceArea.querySelectorAll('[data-builder-edit]').forEach(button => button.addEventListener('click', () => {
+        const quiz = (workspace.learnerQuizzes || []).find(item => Number(item.id) === Number(button.dataset.builderEdit));
+        if (!quiz || !builderForm) return;
+        builderEditingQuizId = Number(quiz.id);
+        builderForm.querySelectorAll('[name="subject_ids"]').forEach(input => { input.checked = (quiz.subjectIds || []).map(Number).includes(Number(input.value)); });
+        builderForm.elements.namedItem('item_count').value = Number(quiz.itemCount || 1);
+        timedInput.checked = Boolean(quiz.timed);
+        builderForm.elements.namedItem('time_limit_minutes').value = Number(quiz.timeLimitMinutes || 30);
+        timedInput.dispatchEvent(new Event('change'));
+        builderCancel?.classList.remove('hidden');
+        const submit = builderForm.querySelector('[type="submit"]');
+        submit.innerHTML = '<i data-lucide="save"></i> Save Changes';
+        if (window.lucide) lucide.createIcons({root: submit});
+        builderForm.scrollIntoView({behavior:'smooth', block:'start'});
+    }));
+    workspaceArea.querySelectorAll('[data-builder-delete]').forEach(button => button.addEventListener('click', async () => {
+        const quiz = (workspace.learnerQuizzes || []).find(item => Number(item.id) === Number(button.dataset.builderDelete));
+        if (!quiz || !window.confirm(`Delete "${quiz.title}"? All attempt results and reviews for this test will also be deleted.`)) return;
+        button.disabled = true;
+        try {
+            const result = await apiRequest(`/api/test-banks/${workspace.id}/quizzes/${quiz.id}`, 'DELETE');
+            showToast(result.message || 'Practice test deleted.', 'success');
+            await openTestBankWorkspace(workspace.id);
+            document.querySelector('[data-test-bank-tab="builder"]')?.click();
+        } catch (error) {
+            button.disabled = false;
+            showToast(error.message || 'Unable to delete the practice test.', 'error');
+        }
+    }));
     builderForm?.addEventListener('submit', async event => {
         event.preventDefault();
         const submit = builderForm.querySelector('[type="submit"]');
@@ -727,13 +769,16 @@ function renderTestBankWorkspace(workspace) {
         submit.disabled = true;
         submit.textContent = 'Creating…';
         try {
-            const result = await apiRequest(`/api/test-banks/${workspace.id}/quizzes`, 'POST', {
+            const endpoint = builderEditingQuizId
+                ? `/api/test-banks/${workspace.id}/quizzes/${builderEditingQuizId}`
+                : `/api/test-banks/${workspace.id}/quizzes`;
+            const result = await apiRequest(endpoint, builderEditingQuizId ? 'PUT' : 'POST', {
                 subject_ids: subjectIds,
                 item_count: Number(builderForm.elements.namedItem('item_count').value),
                 timed: Boolean(timedInput?.checked),
                 time_limit_minutes: timedInput?.checked ? Number(builderForm.elements.namedItem('time_limit_minutes').value) : null,
             });
-            showToast(result.message || 'Practice test created.', 'success');
+            showToast(result.message || (builderEditingQuizId ? 'Practice test updated.' : 'Practice test created.'), 'success');
             await openTestBankWorkspace(workspace.id);
             document.querySelector('[data-test-bank-tab="builder"]')?.click();
         } catch (error) {

@@ -243,25 +243,7 @@ class TestBankController extends Controller
     {
         $user = Auth::user();
         $this->guardLearnerCatalog($user, $testBank);
-        $data = $request->validate([
-            'subject_ids' => ['required', 'array', 'min:1'],
-            'subject_ids.*' => ['integer', 'distinct'],
-            'item_count' => ['required', 'integer', 'min:1', 'max:500'],
-            'timed' => ['required', 'boolean'],
-            'time_limit_minutes' => ['nullable', 'required_if:timed,true', 'integer', 'min:1', 'max:600'],
-        ]);
-        $subjectIds = $testBank->course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
-        abort_unless($subjectIds->count() === count(array_unique($data['subject_ids'])), 422, 'One or more selected subjects are unavailable.');
-        $questionIds = TestBankQuestion::query()
-            ->where('course_id', $testBank->course_id)
-            ->where('status', 'active')
-            ->whereHas('subjects', fn ($query) => $query->whereIn('subjects.id', $subjectIds))
-            ->inRandomOrder()
-            ->limit($data['item_count'])
-            ->pluck('id');
-        if ($questionIds->isEmpty()) {
-            return response()->json(['success' => false, 'message' => 'The selected subjects do not have active questions yet.'], 422);
-        }
+        [$data, $subjectIds, $questionIds] = $this->learnerQuizSelection($request, $testBank);
 
         $quiz = DB::transaction(function () use ($testBank, $user, $data, $subjectIds, $questionIds) {
             $quiz = $testBank->premadeQuizzes()->create([
@@ -286,6 +268,43 @@ class TestBankController extends Controller
                 ? "Practice test created with all {$questionIds->count()} available questions."
                 : 'Practice test created.',
             'quizId' => $quiz->id,
+        ]);
+    }
+
+    public function updateLearnerQuiz(Request $request, TestBank $testBank, TestBankQuiz $quiz)
+    {
+        $user = Auth::user();
+        $this->guardLearnerCatalog($user, $testBank);
+        $this->guardOwnedLearnerQuiz($user, $testBank, $quiz);
+        [$data, $subjectIds, $questionIds] = $this->learnerQuizSelection($request, $testBank);
+
+        DB::transaction(function () use ($quiz, $data, $subjectIds, $questionIds) {
+            $quiz->update([
+                'item_count' => $questionIds->count(),
+                'time_limit_minutes' => $data['timed'] ? $data['time_limit_minutes'] : null,
+                'subject_ids' => $subjectIds->values()->all(),
+            ]);
+            $quiz->questions()->sync($questionIds);
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => $questionIds->count() < $data['item_count']
+                ? "Practice test updated with all {$questionIds->count()} available questions."
+                : 'Practice test updated.',
+        ]);
+    }
+
+    public function destroyLearnerQuiz(TestBank $testBank, TestBankQuiz $quiz)
+    {
+        $user = Auth::user();
+        $this->guardLearnerCatalog($user, $testBank);
+        $this->guardOwnedLearnerQuiz($user, $testBank, $quiz);
+        $quiz->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Practice test and all of its attempt results were deleted.',
         ]);
     }
 
@@ -722,6 +741,39 @@ class TestBankController extends Controller
         $belongsToLearner = $quiz->quiz_type === 'premade'
             || ($quiz->quiz_type === 'learner' && $quiz->owner_user_id === $user->id);
         abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active' && $belongsToLearner, 404);
+    }
+
+    private function guardOwnedLearnerQuiz($user, TestBank $testBank, TestBankQuiz $quiz): void
+    {
+        abort_unless(
+            $quiz->test_bank_id === $testBank->id
+            && $quiz->quiz_type === 'learner'
+            && $quiz->owner_user_id === $user->id,
+            404
+        );
+    }
+
+    private function learnerQuizSelection(Request $request, TestBank $testBank): array
+    {
+        $data = $request->validate([
+            'subject_ids' => ['required', 'array', 'min:1'],
+            'subject_ids.*' => ['integer', 'distinct'],
+            'item_count' => ['required', 'integer', 'min:1', 'max:500'],
+            'timed' => ['required', 'boolean'],
+            'time_limit_minutes' => ['nullable', 'required_if:timed,true', 'integer', 'min:1', 'max:600'],
+        ]);
+        $subjectIds = $testBank->course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
+        abort_unless($subjectIds->count() === count(array_unique($data['subject_ids'])), 422, 'One or more selected subjects are unavailable.');
+        $questionIds = TestBankQuestion::query()
+            ->where('course_id', $testBank->course_id)
+            ->where('status', 'active')
+            ->whereHas('subjects', fn ($query) => $query->whereIn('subjects.id', $subjectIds))
+            ->inRandomOrder()
+            ->limit($data['item_count'])
+            ->pluck('id');
+        abort_if($questionIds->isEmpty(), 422, 'The selected subjects do not have active questions yet.');
+
+        return [$data, $subjectIds, $questionIds];
     }
 
     private function guardQuestion(Course $course, TestBank $testBank, TestBankQuestion $question): void

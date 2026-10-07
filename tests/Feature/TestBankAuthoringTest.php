@@ -327,6 +327,24 @@ class TestBankAuthoringTest extends TestCase
         $this->actingAs($otherLearner)
             ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")
             ->assertNotFound();
+
+        $this->actingAs($learner)->putJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}", [
+            'subject_ids' => [$subject->id], 'item_count' => 1,
+            'timed' => false, 'time_limit_minutes' => null,
+        ])->assertOk()->assertJsonPath('message', 'Practice test updated.');
+        $quiz->refresh();
+        $this->assertNull($quiz->time_limit_minutes);
+        $this->assertSame(1, $quiz->questions()->count());
+        $this->actingAs($otherLearner)->putJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}", [
+            'subject_ids' => [$subject->id], 'item_count' => 1,
+            'timed' => false, 'time_limit_minutes' => null,
+        ])->assertNotFound();
+
+        $this->actingAs($learner)
+            ->deleteJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}")
+            ->assertOk();
+        $this->assertDatabaseMissing('test_bank_quizzes', ['id' => $quiz->id]);
+        $this->assertDatabaseMissing('test_bank_quiz_attempts', ['test_bank_quiz_id' => $quiz->id]);
     }
 
     public function test_deleting_one_catalog_preserves_its_questions_for_another_catalog_in_the_same_course(): void
