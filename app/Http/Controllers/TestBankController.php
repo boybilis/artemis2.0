@@ -8,6 +8,7 @@ use App\Models\Subject;
 use App\Models\TestBank;
 use App\Models\TestBankQuestion;
 use App\Models\TestBankQuiz;
+use App\Models\TestBankQuizAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -187,6 +188,96 @@ class TestBankController extends Controller
             ])->values(),
             'history' => [],
         ]]);
+    }
+
+    public function quizQuestions(TestBank $testBank, TestBankQuiz $quiz)
+    {
+        $user = Auth::user();
+        $this->guardLearnerCatalog($user, $testBank);
+        abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active', 404);
+
+        $questions = $quiz->questions()
+            ->where('test_bank_questions.status', 'active')
+            ->get();
+        if ($quiz->randomize_questions) $questions = $questions->shuffle();
+        if ($questions->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'This premade test does not have active questions yet.'], 422);
+        }
+
+        session()->put("test_bank_quiz_{$user->id}_{$quiz->id}", $questions->pluck('id')->all());
+
+        return response()->json([
+            'success' => true,
+            'title' => $quiz->title,
+            'questions' => $questions->map(fn (TestBankQuestion $question) => [
+                'id' => $question->id,
+                'question' => $question->question,
+                'imageUrl' => $question->image_path ? asset('storage/'.$question->image_path) : null,
+                'options' => $question->options,
+                'responseType' => 'single',
+                'maximumPoints' => (float) $question->points,
+            ])->values(),
+        ]);
+    }
+
+    public function submitQuiz(Request $request, TestBank $testBank, TestBankQuiz $quiz)
+    {
+        $request->validate(['answers' => ['required', 'array']]);
+        $user = Auth::user();
+        $this->guardLearnerCatalog($user, $testBank);
+        abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active', 404);
+
+        $ids = session()->pull("test_bank_quiz_{$user->id}_{$quiz->id}", []);
+        if (!$ids) return response()->json(['success' => false, 'message' => 'No active Test Bank attempt was found. Please start the test again.'], 422);
+
+        $questions = TestBankQuestion::whereIn('id', $ids)
+            ->where('course_id', $testBank->course_id)
+            ->where('status', 'active')
+            ->get()->keyBy('id');
+        $score = 0;
+        $earned = 0.0;
+        $possible = 0.0;
+        $review = [];
+        foreach ($ids as $index => $id) {
+            if (!$question = $questions->get($id)) continue;
+            $submitted = $request->input("answers.$index");
+            $correct = (int) $submitted === (int) $question->correct_answer;
+            $points = (float) $question->points;
+            $possible += $points;
+            if ($correct) { $score++; $earned += $points; }
+            $options = $question->options;
+            $review[] = [
+                'question' => $question->question,
+                'imageUrl' => $question->image_path ? asset('storage/'.$question->image_path) : null,
+                'learnerAnswer' => is_numeric($submitted) ? ($options[(int) $submitted] ?? 'No answer') : 'No answer',
+                'correctAnswer' => $options[$question->correct_answer] ?? '',
+                'rationale' => $question->rationale ?: 'No rationale was provided.',
+                'rationaleImageUrl' => $question->rationale_image_path ? asset('storage/'.$question->rationale_image_path) : null,
+                'rationaleVideoUrl' => $question->rationale_video_url,
+                'correct' => $correct,
+            ];
+        }
+        $passed = $possible > 0 && ($earned / $possible) >= .80;
+        TestBankQuizAttempt::create([
+            'user_id' => $user->id,
+            'test_bank_id' => $testBank->id,
+            'test_bank_quiz_id' => $quiz->id,
+            'score' => $score,
+            'total' => count($review),
+            'points_earned' => $earned,
+            'points_possible' => $possible,
+            'passed' => $passed,
+            'review_data' => $review,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'passed' => $passed,
+            'score' => $earned,
+            'total' => $possible,
+            'questions' => $review,
+            'incorrectQuestions' => collect($review)->where('correct', false)->values(),
+        ]);
     }
 
     public function enrolled()
@@ -505,6 +596,16 @@ class TestBankController extends Controller
     private function guardCatalog(Course $course, TestBank $testBank): void
     {
         abort_unless($testBank->course_id === $course->id, 404);
+    }
+
+    private function guardLearnerCatalog($user, TestBank $testBank): void
+    {
+        $hasAccess = $user->testBankEnrollments()
+            ->where('test_bank_id', $testBank->id)
+            ->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->exists();
+        abort_unless($hasAccess && $testBank->status === 'active', 403, 'An active Test Bank subscription is required.');
     }
 
     private function guardQuestion(Course $course, TestBank $testBank, TestBankQuestion $question): void

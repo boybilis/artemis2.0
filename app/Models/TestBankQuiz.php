@@ -19,4 +19,5 @@ class TestBankQuiz extends Model
     public function testBank() { return $this->belongsTo(TestBank::class); }
     public function creator() { return $this->belongsTo(User::class, 'created_by'); }
     public function questions() { return $this->belongsToMany(TestBankQuestion::class, 'test_bank_quiz_questions')->withTimestamps(); }
+    public function attempts() { return $this->hasMany(TestBankQuizAttempt::class); }
 }

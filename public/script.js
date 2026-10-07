@@ -648,7 +648,7 @@ function renderTestBankWorkspace(workspace) {
     const premadeCards = (workspace.premadeTests || []).map(test => `
         <article class="test-bank-premade-card">
             <div><small>PREMADE QUIZ</small><h3>${escapeHtml(test.title)}</h3><p>${escapeHtml(test.description || 'Admin-curated randomized practice quiz.')}</p></div>
-            <span>${Number(test.itemCount || 0)} items</span>
+            <div class="test-bank-premade-actions"><span>${Number(test.itemCount || 0)} items</span><button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(test.id)}" ${Number(test.itemCount || 0) ? '' : 'disabled'}>Start Test</button></div>
         </article>`).join('');
 
     workspaceArea.innerHTML = `
@@ -678,6 +678,11 @@ function renderTestBankWorkspace(workspace) {
 
     $('test-bank-back-btn')?.addEventListener('click', () => showDashboardCourseList('available'));
     $('extend-test-bank-btn')?.addEventListener('click', event => startTestBankCheckout(workspace.id, event.currentTarget));
+    workspaceArea.querySelectorAll('.test-bank-start-test').forEach(button => button.addEventListener('click', () => startTestBankPremadeQuiz(
+        Number(button.dataset.testBankId),
+        Number(button.dataset.testBankQuizId),
+        button
+    )));
     workspaceArea.querySelectorAll('[data-test-bank-tab]').forEach(button => button.addEventListener('click', () => {
         workspaceArea.querySelectorAll('[data-test-bank-tab]').forEach(tab => tab.classList.toggle('active', tab === button));
         workspaceArea.querySelectorAll('[data-test-bank-panel]').forEach(panel => panel.classList.toggle('hidden', panel.dataset.testBankPanel !== button.dataset.testBankTab));
@@ -2774,6 +2779,23 @@ let assessmentReviewActive = false;
 let editingQuestionFromReview = false;
 let quizTimerInterval = null;
 let quizTimerSeconds = 1200;
+let activeTestBankId = null;
+let activeTestBankQuizId = null;
+
+async function startTestBankPremadeQuiz(testBankId, quizId, button) {
+    const originalText = button?.textContent || 'Start Test';
+    if (button) { button.disabled = true; button.textContent = 'Loading…'; }
+    try {
+        const data = await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/questions`);
+        activeTestBankId = testBankId;
+        activeTestBankQuizId = quizId;
+        state.examType = 'test_bank';
+        startQuiz(data.questions, {title: data.title});
+    } catch (error) {
+        if (button) { button.disabled = false; button.textContent = originalText; }
+        showToast(error.message || 'Unable to start this premade test.', 'error');
+    }
+}
 
 function formatTime(sec) {
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
@@ -2791,9 +2813,9 @@ function startQuiz(data, settings = {}) {
     if ($('quiz-question-panel')) $('quiz-question-panel').style.display = '';
     if ($('assessment-review-panel')) $('assessment-review-panel').style.display = 'none';
     const assessmentTitle = $('quiz-assessment-title');
-    if (assessmentTitle) assessmentTitle.textContent = state.examType === 'subtopic_assessment'
+    if (assessmentTitle) assessmentTitle.textContent = settings.title || (state.examType === 'subtopic_assessment'
         ? (topics[state.currentTopicIndex]?.subtopics?.find(item => item.id === activeSubtopicAssessmentId)?.title || 'Assessment')
-        : (state.examType === 'final' ? 'Mock Exam' : (state.examType === 'mid' ? 'Practice Test' : 'Topic Quiz'));
+        : (state.examType === 'final' ? 'Mock Exam' : (state.examType === 'mid' ? 'Practice Test' : (state.examType === 'test_bank' ? 'Test Bank' : 'Topic Quiz'))));
     const totalQEl = $('total-q');
     if (totalQEl) totalQEl.textContent = data.length;
     
@@ -3073,7 +3095,8 @@ if (quizCloseBtn) {
         clearInterval(quizTimerInterval);
         answersList = [];
         showScreen('dashboard-screen');
-        renderDashboard();
+        if (state.examType === 'test_bank' && activeTestBankId) openTestBankWorkspace(activeTestBankId);
+        else renderDashboard();
     });
 }
 if (nextQBtn) {
@@ -3214,8 +3237,9 @@ function renderAssessmentSummaryQuestion(index) {
         <h3>${escapeHtml(item.question || 'Question')}</h3>
         <div class="assessment-summary-answer-card ${item.correct ? 'answer-correct' : 'answer-wrong'}"><span>Your answer</span><p>${escapeHtml(item.learnerAnswer || 'No answer')}</p></div>
         <div class="assessment-summary-answer-card answer-correct"><span>Correct answer</span><p>${escapeHtml(item.correctAnswer || '')}</p></div>
-        <div class="assessment-summary-rationale-card"><span>Rationale</span><p>${escapeHtml(item.rationale || 'No rationale was provided.')}</p></div>`;
+        <div class="assessment-summary-rationale-card"><span>Rationale</span><p>${escapeHtml(item.rationale || 'No rationale was provided.')}</p>${item.rationaleImageUrl ? `<img class="assessment-summary-rationale-image" src="${escapeHtml(item.rationaleImageUrl)}" alt="Rationale reference">` : ''}${item.rationaleVideoUrl ? `<a class="assessment-summary-rationale-video" href="${escapeHtml(item.rationaleVideoUrl)}" target="_blank" rel="noopener noreferrer"><i data-lucide="play-circle"></i> Watch rationale video</a>` : ''}</div>`;
     detail.scrollTop = 0;
+    if (window.lucide) lucide.createIcons({root: detail});
 }
 
 const assessmentSummaryContinue = $('assessment-summary-continue');
@@ -3228,6 +3252,21 @@ if (assessmentSummaryContinue) assessmentSummaryContinue.addEventListener('click
 
 async function finishQuiz() {
     clearInterval(quizTimerInterval);
+    if (state.examType === 'test_bank' && activeTestBankId && activeTestBankQuizId) {
+        const testBankId = activeTestBankId;
+        const quizId = activeTestBankQuizId;
+        try {
+            const data = await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/submit`, 'POST', {answers: answersList});
+            showToast(`Test submitted. Score: ${data.score}/${data.total}`, data.passed ? 'success' : 'info');
+            showAssessmentSummary(data, () => {
+                showScreen('dashboard-screen');
+                openTestBankWorkspace(testBankId);
+            });
+        } catch (error) {
+            showToast(error.message || 'Unable to submit this Test Bank attempt.', 'error');
+        }
+        return;
+    }
     if (state.examType === 'subtopic_assessment' && activeSubtopicAssessmentId) {
         const completedLearningItemIndex = window.currentLearningItemIndex;
         const assessmentContext = activeSubtopicAssessmentContext;

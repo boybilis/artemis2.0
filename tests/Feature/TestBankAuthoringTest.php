@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Subject;
 use App\Models\TestBank;
 use App\Models\TestBankQuestion;
+use App\Models\TestBankQuizAttempt;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -203,6 +204,65 @@ class TestBankAuthoringTest extends TestCase
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.status', [$course, $secondBank, $question]))
             ->assertSessionHas('success');
         $this->assertSame('inactive', $question->fresh()->status);
+    }
+
+    public function test_enrolled_learner_can_take_a_premade_test_and_review_the_result(): void
+    {
+        extract($this->catalog());
+        Storage::fake('public');
+        $question = TestBankQuestion::create([
+            'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+            'question' => 'Which answer is correct?', 'options' => ['Correct answer', 'Wrong answer'],
+            'correct_answer' => 0, 'points' => 2, 'rationale' => 'This explains the correct answer.',
+            'rationale_video_url' => 'https://www.youtube.com/watch?v=example123',
+            'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $question->subjects()->sync([$subject->id]);
+        $quiz = $bank->premadeQuizzes()->create([
+            'title' => 'Pre Test 1', 'item_count' => 1, 'subject_ids' => [$subject->id],
+            'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $quiz->questions()->sync([$question->id]);
+        $learner = User::factory()->create();
+        $bank->enrollments()->create([
+            'user_id' => $learner->id, 'status' => 'active',
+            'enrolled_at' => now(), 'expires_at' => now()->addDays(30),
+        ]);
+
+        $questions = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions");
+        $questions->assertOk()
+            ->assertJsonPath('title', 'Pre Test 1')
+            ->assertJsonPath('questions.0.question', 'Which answer is correct?')
+            ->assertJsonMissing(['correct_answer' => 0]);
+
+        $result = $this->actingAs($learner)->postJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/submit", [
+            'answers' => [0],
+        ]);
+        $result->assertOk()
+            ->assertJsonPath('passed', true)
+            ->assertJsonPath('score', 2)
+            ->assertJsonPath('total', 2)
+            ->assertJsonPath('questions.0.correct', true)
+            ->assertJsonPath('questions.0.rationale', 'This explains the correct answer.')
+            ->assertJsonPath('questions.0.rationaleVideoUrl', 'https://www.youtube.com/watch?v=example123');
+        $this->assertDatabaseHas('test_bank_quiz_attempts', [
+            'user_id' => $learner->id, 'test_bank_id' => $bank->id,
+            'test_bank_quiz_id' => $quiz->id, 'score' => 1, 'passed' => true,
+        ]);
+        $this->assertCount(1, TestBankQuizAttempt::firstOrFail()->review_data);
+    }
+
+    public function test_learner_without_active_test_bank_access_cannot_start_a_premade_test(): void
+    {
+        extract($this->catalog());
+        $quiz = $bank->premadeQuizzes()->create([
+            'title' => 'Protected Test', 'item_count' => 1, 'subject_ids' => [$subject->id],
+            'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+
+        $this->actingAs(User::factory()->create())
+            ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")
+            ->assertForbidden();
     }
 
     public function test_deleting_one_catalog_preserves_its_questions_for_another_catalog_in_the_same_course(): void
