@@ -658,8 +658,11 @@ class TestBankController extends Controller
     {
         $this->guardCatalog($course, $testBank);
         abort_unless($quiz->test_bank_id === $testBank->id, 404);
-        $quiz->delete();
-        return back()->with('success', 'Premade quiz deleted.');
+        DB::transaction(function () use ($quiz) {
+            $quiz->attempts()->delete();
+            $quiz->delete();
+        });
+        return back()->with('success', 'Premade quiz and all learner test results deleted.');
     }
 
     public function store(Request $request, Course $course)

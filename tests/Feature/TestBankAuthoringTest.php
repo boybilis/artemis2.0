@@ -167,6 +167,29 @@ class TestBankAuthoringTest extends TestCase
         $this->assertTrue($quiz->randomize_questions);
     }
 
+    public function test_deleting_an_admin_premade_quiz_removes_all_learner_results(): void
+    {
+        extract($this->catalog());
+        $learner = User::factory()->create();
+        $quiz = $bank->premadeQuizzes()->create([
+            'title' => 'Quiz to Delete', 'item_count' => 1, 'subject_ids' => [$subject->id],
+            'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $attempt = TestBankQuizAttempt::create([
+            'user_id' => $learner->id, 'test_bank_id' => $bank->id,
+            'test_bank_quiz_id' => $quiz->id, 'score' => 1, 'total' => 1,
+            'points_earned' => 1, 'points_possible' => 1, 'passed' => true,
+            'review_data' => [['question' => 'Saved review']],
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.content.test-banks.quizzes.destroy', [$course, $bank, $quiz]))
+            ->assertSessionHas('success', 'Premade quiz and all learner test results deleted.');
+
+        $this->assertDatabaseMissing('test_bank_quizzes', ['id' => $quiz->id]);
+        $this->assertDatabaseMissing('test_bank_quiz_attempts', ['id' => $attempt->id]);
+    }
+
     public function test_catalogs_for_the_same_course_share_the_course_question_bank(): void
     {
         extract($this->catalog());
