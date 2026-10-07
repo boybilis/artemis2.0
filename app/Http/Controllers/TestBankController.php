@@ -217,14 +217,32 @@ class TestBankController extends Controller
         ]);
     }
 
-    public function manage(Course $course, TestBank $testBank)
+    public function manage(Request $request, Course $course, TestBank $testBank)
     {
         $this->guardCatalog($course, $testBank);
         $subjects = $course->subjects()->where('status', 'approved')->orderBy('sort_order')->orderBy('title')->get();
-        $questions = $testBank->questions()->with([
+        $questionTotal = $testBank->questions()->count();
+        $questionQuery = $testBank->questions()->with([
             'subject:id,subject_code,title',
             'subjects:id,subject_code,title',
-        ])->latest()->get();
+        ]);
+        if ($search = trim((string) $request->query('search'))) {
+            $questionQuery->where(function ($query) use ($search) {
+                $query->where('question', 'like', "%{$search}%")
+                    ->orWhere('rationale', 'like', "%{$search}%")
+                    ->orWhere('options', 'like', "%{$search}%")
+                    ->orWhereHas('subjects', fn ($subjects) => $subjects
+                        ->where('subject_code', 'like', "%{$search}%")
+                        ->orWhere('title', 'like', "%{$search}%"));
+            });
+        }
+        if (in_array($request->query('status'), ['active', 'inactive'], true)) {
+            $questionQuery->where('status', $request->query('status'));
+        }
+        $sort = in_array($request->query('sort'), ['question', 'points', 'status'], true)
+            ? $request->query('sort') : 'created_at';
+        $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
+        $questions = $questionQuery->orderBy($sort, $direction)->orderByDesc('id')->paginate(20)->withQueryString();
         $quizzes = $testBank->premadeQuizzes()
             ->withCount(['questions' => fn ($query) => $query->where('test_bank_questions.status', 'active')])
             ->latest()->get();
@@ -244,7 +262,7 @@ class TestBankController extends Controller
             ])->values(),
         ]]);
 
-        return view('admin.content.test-bank-manage', compact('course', 'testBank', 'subjects', 'questions', 'quizzes', 'questionPayload'));
+        return view('admin.content.test-bank-manage', compact('course', 'testBank', 'subjects', 'questions', 'quizzes', 'questionPayload', 'questionTotal'));
     }
 
     public function storeQuestion(Request $request, Course $course, TestBank $testBank)

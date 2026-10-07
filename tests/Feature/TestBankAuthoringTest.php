@@ -94,6 +94,27 @@ class TestBankAuthoringTest extends TestCase
         $this->assertEqualsCanonicalizing([$subject->id, $secondSubject->id], $question->subjects()->pluck('subjects.id')->all());
     }
 
+    public function test_admin_question_table_loads_twenty_rows_and_searches_the_entire_bank(): void
+    {
+        extract($this->catalog());
+        foreach (range(1, 21) as $number) {
+            $question = TestBankQuestion::create([
+                'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+                'question' => $number === 1 ? 'Oldest uniquely searchable question' : "Recent question {$number}",
+                'options' => ['A', 'B'], 'correct_answer' => 0, 'status' => 'active', 'created_by' => $admin->id,
+            ]);
+            $question->subjects()->sync([$subject->id]);
+        }
+
+        $firstPage = $this->actingAs($admin)->get(route('admin.content.test-banks.manage', [$course, $bank]));
+        $firstPage->assertOk()->assertSee('Showing 1–20 of 21')->assertDontSee('Oldest uniquely searchable question');
+
+        $searchUrl = route('admin.content.test-banks.manage', [$course, $bank])
+            .'?search='.urlencode('Oldest uniquely searchable');
+        $search = $this->actingAs($admin)->get($searchUrl);
+        $search->assertOk()->assertSee('Oldest uniquely searchable question')->assertSee('1 matching questions');
+    }
+
     public function test_quiz_builder_uses_all_available_questions_when_requested_count_is_higher(): void
     {
         extract($this->catalog());
