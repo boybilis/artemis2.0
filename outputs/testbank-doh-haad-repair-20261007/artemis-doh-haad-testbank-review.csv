@@ -1,0 +1,130 @@
+status,source_record,source_category,suggested_subject_codes,question,option_a,option_b,option_c,option_d,option_e,option_f,option_g,option_h,source_correct_answer,issue,rationale,source_points
+EXCLUDED,38,INFECTION CONTROL,DOH-SUBJ-12,"A patient was admitted due to Lyme's disease, which of the following data in the patient's history would mots likely support the diagnosis?",Living in an old house,Exposure to asbestos,Exposure to deer ticks,Alcoholism,,,,,D,Source answer D conflicts with rationale stating C,"The answer is c. Exposure to deer ticks. Lyme's disease is usually transmitted thru the bite of black legged ticks, which where initially found in LYME, CONNECTICUT, hence the name... Lyme's disease!",1
+INCLUDED_WITH_CORRECTION,99,MATERNAL & CHILD NURSING / DIAGNOSTIC PROCEDURE,DOH-SUBJ-08|DOH-SUBJ-01,"[Alpha Feto Protein Levels]
+
+Which of the following diagnostic test results from a pregnant client needs to be reported to the physician immediately?",Contraction stress test: Negative,Non stress test: Positive,Urinalysis: Increased glucose levels,Alpha-feto protein level: 45 mg/dL,,,,,D,Source points '11' normalized to 1,"The normal alpha feto protein level is 15-30 mg/dL. Elevated levels indicate neural tube defects while decreased levels indicate Down's syndrome.
+
+Remember:
+
+- A negative contraction stress test indicates that the fetal heart rate remains normal during uterine contraction.
+- A positive nonstress test indicates a reactive fetus.
+- An increase in glucose in the urine of a pregnant client can be due to accidental spilling of glucose in the urine during pregnancy.",11
+INCLUDED_WITH_CORRECTION,112,MCN,DOH-SUBJ-08,"[Fetal Distress]
+
+Which of the following statements made by a client in labor reflects a need for further evaluation?","""I had a greenish discharge when my water broke.""","""I'm having backache for a couple of hours now.""","""My baby keeps moving.""","My contractions come and go.""",,,,,"""I had a greenish discharge when my water broke.""",Source points '11' normalized to 1,"""I had a greenish discharge when my water broke"" is indicative of meconium stained fluid reflective of fetal distress.
+
+Remember:
+
+Signs and symptoms of fetal distress
+
+- Increase or decrease in intensity or frequency of fetal movement (FHR above 160 or below 120 beats per minute)
+- Meconium stained fluid
+- Variable or late deceleration pattern
+
+- PRIORITY: Position mother to the left side and administer oxygen.",11
+EXCLUDED,218,MS / RENAL / NORMAL VALUES / ENDOCRINE,DOH-SUBJ-03|DOH-SUBJ-01,"[ Cushing's Syndrome ]
+
+Which of the following is/are the manifestation/s of Cushing's syndrome? Select all that apply:",Rounded face,Hypotension,Buffalo hump,Hypoglycemia,Weight gain,Bulking of skeletal muscles,,,"Rounded face
+Buffalo hump
+Weight gain",Multiple correct choices are listed; Artemis currently supports one correct answer,"Rounded face, buffalo hump, and obesity are among the clinical manifestations of Cushing's syndrome.
+
+Remember:
+
+- Cushing's syndrome is due to the hypersecretion of glucocorticoids by the adrenal glands.
+- Characterized by central type or truncal obesity with thin extremities, moon face, buffalo hump, and hirsutism
+- Elevated serum cortisol levels, hypernatremia, hypokalemia, hypertension, hyperglycemia
+- Maintain the client on high potassium and low sodium diet.
+- Instruct the client that treatment will involve lifelong administration of glucocorticoid synthesis inhibitors (example: mitotane).
+- Inform the client that there will be slow wound healing.",1
+EXCLUDED,219,,,,,,,,,,,,,Question is blank; Fewer than two choices; Missing category; Correct answer could not be matched safely,,
+EXCLUDED,227,MS / ENDOCRINE,DOH-SUBJ-03,"[ Thyroid Crisis ]
+
+Which of the following should be the priority goals of care for clients after thyroid surgery? Select all that apply:",To maintain normal body temperature,To promote bowel elimination,To increase urine output,To prevent joint contracture deformity,To maintain normal heart rate,,,,"To maintain normal body temperature
+
+To maintain normal heart rate",Multiple correct choices are listed; Artemis currently supports one correct answer,"An elevated temperature and heart rate after thyroid surgery are indicative of thyroid crisis.
+
+Remember:
+
+Manifestations of thyroid crisis
+
+1. High fever (above 38.5  degreesC)
+2. Exaggerated manifestations of hyperthyroidism
+3. Altered neurologic function
+4. Tachycardia (more than 130 beats/minute)
+
+- Thyroid crisis is usually precipitated by:
+- stress
+- injury
+- infection
+- tooth extraction
+
+- PRIORITY: Provide a cool environment.",1
+EXCLUDED,228,MS / ONCO / SAFETY AND SECURITY,DOH-SUBJ-05|DOH-SUBJ-12,"[ Radioactive Iodine 131 ]
+
+After the administration of radioactive iodine 131 to a client, the nurse should be careful in handling which of the following?
+
+Select all that apply:",Blood,Sputum,Bedpans,Urinals,Linens,,,,"Bedpans
+Urinals
+Linens",Multiple correct choices are listed; Artemis currently supports one correct answer,"Radioactive iodine is highly toxic. Therefore, any materials that might have been contaminated by this drug should be handled carefully.
+
+Remember:
+
+- Iodine 131 is an antithyroid; it limits thyroid hormone secretion.
+- Normal heart rate and adequate sleep are indicators of effectiveness of treatment.
+- Instruct patient to fast overnight before administration because food delays its absorption.
+- It will take several weeks (usually 6 weeks) before therapeutic effects become noticeable.
+- Urine and saliva are slightly radioactive for 24 hours after administration.",1
+EXCLUDED,263,MS / MUSCULOSKELETAL,DOH-SUBJ-04,"[Dunlop's Traction]
+
+Which of the following is/are the purpose/s of Dunlop's traction?",To decrease backache,To maintain proper alignment of the forearm,To align fractures of the humerus,To hyperextend the hip and knees,,,,,"To maintain proper alignment of the forearm
+
+To align fractures of the humerus",Multiple correct choices are listed; Artemis currently supports one correct answer,"To promote proper alignment of humeral and forearm fractures, Dunlop's traction is utilized.",1
+EXCLUDED,265,MS / MUSCULOSKELETAL / PEDIA,DOH-SUBJ-04|DOH-SUBJ-09,"[Juvenile Rheumatoid Arthritis (JRA)]
+
+Which of the following activities are indicated for a client with juvenile rheumatoid arthritis?",Volleyball,Swimming,Throwing balls,Riding a bike,,,,,"Swimming
+
+Throwing ball
+s
+Riding a bike",Multiple correct choices are listed; Artemis currently supports one correct answer,"Activities such as swimming, throwing balls, and riding a bicycle that preserve joint mobility are allowed in a client with juvenile rheumatoid arthritis. Finger deformities resulting from the condition will limit the client's ability to play volleyball.
+
+Remember:
+
+- The goal of care for clients with JRA is to preserve joint function.
+- The focus of physical therapy is on strengthening muscles, mobilizing restricted joint motion, and preventing deformities.
+- Occupational therapy focus on general mobility and performance of activities of daily living.
+- Examples of exercises for children with JRA include: kicking a ball, hanging from monkey bars, and stretching",1
+EXCLUDED,279,MS / NEUROLOGIC / MUSCULOSKELETAL,DOH-SUBJ-04,"[Carpal Tunnel Syndrome]
+
+Carpal tunnel syndrome is usually associated with which of the following jobs?
+
+Select all that apply:",Typists,Computer operators,Assembly line workers,Truck drivers,Carpenters,Cheer leaders,Singers,,"Typists
+
+Computer operators
+
+Assembly line workers
+
+Truck drivers
+
+Carpenters",Multiple correct choices are listed; Artemis currently supports one correct answer,"Activities or jobs that require repetitive flexion and extension of the wrist (eg. keyboard use) may pose an occupational risk. Often, no underlying cause is found.",1
+EXCLUDED,283,PHARMA / PSYCHE,DOH-SUBJ-07|DOH-SUBJ-10,"[Buspar (Buspirone)]
+
+In a client taking Buspar (buspirone), the nurse should evaluate for the therapeutic effects at which of the following times?",immediately after administering the drug,within 6 months of taking the drug,in 1 to 2 weeks of taking the drug,in 1 to 2 weeks of taking the drug,,,,,in 1 to 2 weeks of taking the drug,Answer text matches more than one identical choice,"It will take until 2 weeks for the drug to achieve full therapeutic effect, in which a noticeable change in the client's behavior can be seen.
+
+Remember:
+
+Evidence of therapeutic effects of certain drugs:
+
+- Heparin - 1-2 days
+- Coumadin (warfarin) - 2-5 days
+- Antiparkinsonian - 1-3 days
+- Lithium - 7-10 days
+- Allopurinol - 1-3 weeks
+- Tricyclic Antidepressants (TCA) - 2-4 weeks
+- Iron - 2-4 weeks
+- Thyroid agents - 2-4 weeks",1
+EXCLUDED,335,MS / ONCO / DIAGNOSTIC PROCEDURE,DOH-SUBJ-05|DOH-SUBJ-01,Which of the following statements should a nurse include when preparing a female patient for a cone biopsy?,"""You may experience vaginal bleeding after the procedure,""","""Take nothing by mouth for eight hours prior to the procedure.""","""There will be a catheter in your bladder after the procedure.""","""Douche with vinegar the evening before the procedure.""",,,,,,Correct answer could not be matched safely,"Short-term side effects can happen during, immediately after or a few weeks after a cone biopsy. They are usually temporary. Short-term side effects of a cone biopsy include:
+- mild cramping and discomfort
+- spotting or bleeding
+- dark-brown or yellow discharge
+- infection",1
+INCLUDED_WITH_CORRECTION,350,MCN / INFECTIOUS,DOH-SUBJ-08|DOH-SUBJ-05,The initial prenatal laboratory screening results of a client at 12 weeks gestation indicate a rubella titer status of nonimmune. What will the nurse anticipate as the plan of care for this client?,1. Administer measles-mumps-rubella (MMR) vaccine now,2. Administer MMR vaccine immediately postpartum,3. Administer MMR vaccine in the third trimester,4. An MMR vaccine is not indicated for this client,,,,,4,Source points 'blank' normalized to 1,"MMR vaccine, a live-attenuated vaccine, is teratogenic when given to pregnant mothers. When someone of fertile age is given MMR vaccine, they are recommended not to get pregnant w/in 3months",
