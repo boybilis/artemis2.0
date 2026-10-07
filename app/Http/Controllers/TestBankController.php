@@ -149,6 +149,12 @@ class TestBankController extends Controller
                 ->withCount(['questions' => fn ($questions) => $questions->where('test_bank_questions.status', 'active')])
                 ->latest(),
         ]);
+        $attempts = TestBankQuizAttempt::query()
+            ->where('user_id', $user->id)
+            ->where('test_bank_id', $testBank->id)
+            ->with('quiz:id,title')
+            ->latest()
+            ->get();
         $subjects = $testBank->course->subjects->map(function ($subject) use ($testBank) {
             $questionCount = TestBankQuestion::query()
                 ->where('course_id', $testBank->course_id)
@@ -186,7 +192,18 @@ class TestBankController extends Controller
                 'itemCount' => $quiz->questions_count, 'subjectIds' => $quiz->subject_ids,
                 'randomized' => $quiz->randomize_questions,
             ])->values(),
-            'history' => [],
+            'history' => $attempts->map(fn (TestBankQuizAttempt $attempt) => [
+                'id' => $attempt->id,
+                'quizId' => $attempt->test_bank_quiz_id,
+                'title' => $attempt->quiz?->title ?: 'Premade Test',
+                'score' => (float) $attempt->points_earned,
+                'total' => (float) $attempt->points_possible,
+                'correctItems' => $attempt->score,
+                'totalItems' => $attempt->total,
+                'passed' => $attempt->passed,
+                'takenAt' => $attempt->created_at?->toIso8601String(),
+                'questions' => $attempt->review_data ?: [],
+            ])->values(),
         ]]);
     }
 

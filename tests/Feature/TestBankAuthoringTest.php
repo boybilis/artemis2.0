@@ -250,6 +250,14 @@ class TestBankAuthoringTest extends TestCase
             'test_bank_quiz_id' => $quiz->id, 'score' => 1, 'passed' => true,
         ]);
         $this->assertCount(1, TestBankQuizAttempt::firstOrFail()->review_data);
+
+        $history = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
+        $history->assertOk()
+            ->assertJsonCount(1, 'workspace.history')
+            ->assertJsonPath('workspace.history.0.title', 'Pre Test 1')
+            ->assertJsonPath('workspace.history.0.passed', true)
+            ->assertJsonPath('workspace.history.0.correctItems', 1)
+            ->assertJsonPath('workspace.history.0.questions.0.rationale', 'This explains the correct answer.');
     }
 
     public function test_learner_without_active_test_bank_access_cannot_start_a_premade_test(): void

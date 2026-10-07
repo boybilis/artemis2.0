@@ -650,6 +650,17 @@ function renderTestBankWorkspace(workspace) {
             <div><small>PREMADE QUIZ</small><h3>${escapeHtml(test.title)}</h3><p>${escapeHtml(test.description || 'Admin-curated randomized practice quiz.')}</p></div>
             <div class="test-bank-premade-actions"><span>${Number(test.itemCount || 0)} items</span><button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(test.id)}" ${Number(test.itemCount || 0) ? '' : 'disabled'}>Start Test</button></div>
         </article>`).join('');
+    const historyCards = (workspace.history || []).map(attempt => {
+        const takenAt = attempt.takenAt ? new Date(attempt.takenAt).toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'}) : '';
+        const score = Number(attempt.score || 0).toLocaleString(undefined, {maximumFractionDigits:2});
+        const total = Number(attempt.total || 0).toLocaleString(undefined, {maximumFractionDigits:2});
+        return `<article class="test-bank-history-card">
+            <div class="test-bank-history-result ${attempt.passed ? 'passed' : 'completed'}"><i data-lucide="${attempt.passed ? 'circle-check' : 'clipboard-check'}"></i></div>
+            <div class="test-bank-history-copy"><small>${attempt.passed ? 'PASSED' : 'COMPLETED'}</small><h3>${escapeHtml(attempt.title)}</h3><p>${escapeHtml(takenAt)} · ${Number(attempt.correctItems || 0)} of ${Number(attempt.totalItems || 0)} correct</p></div>
+            <div class="test-bank-history-score"><strong>${score}/${total}</strong><span>points</span></div>
+            <button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review Result</button>
+        </article>`;
+    }).join('');
 
     workspaceArea.innerHTML = `
         <div class="test-bank-workspace-topbar"><button type="button" class="btn-ghost" id="test-bank-back-btn"><i data-lucide="arrow-left"></i> Back to All Courses</button></div>
@@ -674,7 +685,7 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-subject-grid">${subjectCards || '<div class="empty-course-filter"><p>No approved subject questions yet.</p></div>'}</div>
         </section>
         <section class="test-bank-tab-panel hidden" data-test-bank-panel="builder"><div class="test-bank-empty-panel"><i data-lucide="wand-sparkles"></i><h2>Quiz Builder</h2><p>Create a personalized practice test by subject, difficulty, and number of questions.</p></div></section>
-        <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-empty-panel"><i data-lucide="history"></i><h2>Quiz History</h2><p>Your completed Test Bank attempts and scores will appear here.</p></div></section>`;
+        <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-history-heading"><h2>Quiz History</h2><p>Review your completed Test Bank attempts, scores, answers, and rationales.</p></div><div class="test-bank-history-list">${historyCards || '<div class="test-bank-empty-panel"><i data-lucide="history"></i><h2>No completed tests yet</h2><p>Your completed Test Bank attempts and scores will appear here.</p></div>'}</div></section>`;
 
     $('test-bank-back-btn')?.addEventListener('click', () => showDashboardCourseList('available'));
     $('extend-test-bank-btn')?.addEventListener('click', event => startTestBankCheckout(workspace.id, event.currentTarget));
@@ -683,6 +694,24 @@ function renderTestBankWorkspace(workspace) {
         Number(button.dataset.testBankQuizId),
         button
     )));
+    workspaceArea.querySelectorAll('.test-bank-history-review').forEach(button => button.addEventListener('click', () => {
+        const attempt = (workspace.history || []).find(item => Number(item.id) === Number(button.dataset.testBankAttempt));
+        if (!attempt) return;
+        const title = $('quiz-assessment-title');
+        if (title) title.textContent = attempt.title || 'Premade Test';
+        showAssessmentSummary({
+            score: attempt.score,
+            total: attempt.total,
+            passed: attempt.passed,
+            questions: attempt.questions || [],
+            incorrectQuestions: (attempt.questions || []).filter(question => !question.correct),
+        }, () => {
+            showScreen('dashboard-screen');
+            openTestBankWorkspace(workspace.id).then(() => {
+                document.querySelector('[data-test-bank-tab="history"]')?.click();
+            });
+        });
+    }));
     workspaceArea.querySelectorAll('[data-test-bank-tab]').forEach(button => button.addEventListener('click', () => {
         workspaceArea.querySelectorAll('[data-test-bank-tab]').forEach(tab => tab.classList.toggle('active', tab === button));
         workspaceArea.querySelectorAll('[data-test-bank-panel]').forEach(panel => panel.classList.toggle('hidden', panel.dataset.testBankPanel !== button.dataset.testBankTab));
