@@ -384,7 +384,7 @@ class TestBankController extends Controller
                 'correct' => $correct,
             ];
         }
-        $passed = $possible > 0 && ($earned / $possible) >= .80;
+        $passed = $possible > 0 && ($earned / $possible) >= .60;
         TestBankQuizAttempt::create([
             'user_id' => $user->id,
             'test_bank_id' => $testBank->id,

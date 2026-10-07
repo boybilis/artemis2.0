@@ -295,6 +295,35 @@ class TestBankAuthoringTest extends TestCase
             ->assertJsonMissing(['id' => $secondSubject->id]);
     }
 
+    public function test_test_bank_quizzes_pass_at_sixty_percent(): void
+    {
+        extract($this->catalog());
+        $questionIds = collect(range(1, 5))->map(function ($number) use ($bank, $course, $subject, $admin) {
+            $question = TestBankQuestion::create([
+                'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+                'question' => "Passing question {$number}", 'options' => ['Correct', 'Wrong'],
+                'correct_answer' => 0, 'points' => 1, 'status' => 'active', 'created_by' => $admin->id,
+            ]);
+            $question->subjects()->sync([$subject->id]);
+            return $question->id;
+        });
+        $quiz = $bank->premadeQuizzes()->create([
+            'title' => 'Passing Score Test', 'item_count' => 5, 'subject_ids' => [$subject->id],
+            'randomize_questions' => false, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $quiz->questions()->sync($questionIds);
+        $learner = User::factory()->create();
+        $bank->enrollments()->create([
+            'user_id' => $learner->id, 'status' => 'active',
+            'enrolled_at' => now(), 'expires_at' => now()->addDays(30),
+        ]);
+
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")->assertOk();
+        $this->actingAs($learner)->postJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/submit", [
+            'answers' => [0, 0, 0, 1, 1],
+        ])->assertOk()->assertJsonPath('score', 3)->assertJsonPath('total', 5)->assertJsonPath('passed', true);
+    }
+
     public function test_learner_can_build_a_private_timed_quiz_and_all_attempts_are_numbered_in_history(): void
     {
         extract($this->catalog());

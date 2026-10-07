@@ -685,7 +685,7 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-study-path-heading"><h2>Guided study path</h2><p>Work through each phase at your own pace.</p></div>
             <div class="test-bank-study-path-grid">
                 <article class="test-bank-study-phase active"><small>PHASE 01</small><h3>Warm Up Quizzes</h3><p>Create unlimited 10-item quizzes to start your daily review journey.</p><button type="button" data-guided-builder="10">Select Warm Up</button></article>
-                <article class="test-bank-study-phase"><small>PHASE 02</small><h3>Mastery Tests</h3><p>Create unlimited 25-item tests for mastery. Aim for at least 80% and review every rationale to strengthen your understanding.</p><button type="button" data-guided-builder="25">Select Mastery Tests</button></article>
+                <article class="test-bank-study-phase"><small>PHASE 02</small><h3>Mastery Tests</h3><p>Create unlimited 25-item tests for mastery. The passing score is 60%. Review every rationale to strengthen your understanding.</p><button type="button" data-guided-builder="25">Select Mastery Tests</button></article>
                 <article class="test-bank-study-phase locked"><small>PHASE 03</small><h3>Exam Simulation</h3><p>Practice in a structured, timed exam environment after building confidence with Warm Up and Mastery Tests.</p><strong><i data-lucide="lock-keyhole"></i> Simulation locked</strong></article>
             </div>
         </section>
