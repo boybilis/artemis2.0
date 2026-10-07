@@ -424,6 +424,58 @@ class TestBankAuthoringTest extends TestCase
             ->assertJsonPath('workspace.simulationProgress.unlocked', false);
     }
 
+    public function test_only_named_simulation_tests_are_locked_until_progress_requirements_are_met(): void
+    {
+        extract($this->catalog());
+        $question = TestBankQuestion::create([
+            'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+            'question' => 'Simulation question', 'options' => ['A', 'B'],
+            'correct_answer' => 0, 'points' => 1, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $question->subjects()->sync([$subject->id]);
+        $regular = $bank->premadeQuizzes()->create([
+            'title' => 'Final Practice Test', 'item_count' => 1, 'subject_ids' => [$subject->id],
+            'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $simulation = $bank->premadeQuizzes()->create([
+            'title' => 'Simulation Test 1', 'item_count' => 1, 'subject_ids' => [$subject->id],
+            'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $regular->questions()->sync([$question->id]);
+        $simulation->questions()->sync([$question->id]);
+        $learner = User::factory()->create();
+        $bank->enrollments()->create([
+            'user_id' => $learner->id, 'status' => 'active',
+            'enrolled_at' => now(), 'expires_at' => now()->addDays(30),
+        ]);
+
+        $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
+        $simulationIndex = collect($workspace->json('workspace.premadeTests'))->search(fn ($test) => $test['title'] === 'Simulation Test 1');
+        $regularIndex = collect($workspace->json('workspace.premadeTests'))->search(fn ($test) => $test['title'] === 'Final Practice Test');
+        $workspace->assertJsonPath("workspace.premadeTests.{$simulationIndex}.locked", true)
+            ->assertJsonPath("workspace.premadeTests.{$regularIndex}.locked", false);
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$regular->id}/questions")->assertOk();
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$simulation->id}/questions")->assertForbidden();
+
+        foreach ([10 => 10, 25 => 5] as $itemCount => $attemptCount) {
+            $progressQuiz = $bank->premadeQuizzes()->create([
+                'quiz_type' => 'subject', 'owner_user_id' => $learner->id,
+                'title' => "Progress {$itemCount}", 'item_count' => $itemCount, 'subject_ids' => [$subject->id],
+                'randomize_questions' => true, 'status' => 'active', 'created_by' => $learner->id,
+            ]);
+            foreach (range(1, $attemptCount) as $attempt) {
+                TestBankQuizAttempt::create([
+                    'user_id' => $learner->id, 'test_bank_id' => $bank->id,
+                    'test_bank_quiz_id' => $progressQuiz->id, 'score' => $itemCount, 'total' => $itemCount,
+                    'points_earned' => $itemCount, 'points_possible' => $itemCount,
+                    'passed' => true, 'review_data' => [],
+                ]);
+            }
+        }
+
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$simulation->id}/questions")->assertOk();
+    }
+
     public function test_learner_can_build_a_private_timed_quiz_and_all_attempts_are_numbered_in_history(): void
     {
         extract($this->catalog());

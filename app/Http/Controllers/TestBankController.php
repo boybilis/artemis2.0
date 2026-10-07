@@ -241,6 +241,8 @@ class TestBankController extends Controller
                 'id' => $quiz->id, 'title' => $quiz->title, 'description' => $quiz->description,
                 'itemCount' => $quiz->questions_count, 'subjectIds' => $quiz->subject_ids,
                 'randomized' => $quiz->randomize_questions,
+                'isSimulation' => $this->isSimulationQuiz($quiz),
+                'locked' => $this->isSimulationQuiz($quiz) && ! ($warmUpPassed >= 10 && $masteryPassed >= 5),
             ])->values(),
             'learnerQuizzes' => $learnerQuizzes->map(fn (TestBankQuiz $quiz) => [
                 'id' => $quiz->id,
@@ -811,6 +813,24 @@ class TestBankController extends Controller
         $belongsToLearner = $quiz->quiz_type === 'premade'
             || (in_array($quiz->quiz_type, ['learner', 'subject'], true) && $quiz->owner_user_id === $user->id);
         abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active' && $belongsToLearner, 404);
+        if ($this->isSimulationQuiz($quiz)) {
+            $attempts = TestBankQuizAttempt::query()
+                ->where('user_id', $user->id)
+                ->where('test_bank_id', $testBank->id)
+                ->where('passed', true)
+                ->with('quiz:id,quiz_type,item_count')
+                ->get();
+            $warmUpPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
+                && (int) $attempt->quiz?->item_count === 10)->count();
+            $masteryPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
+                && (int) $attempt->quiz?->item_count === 25)->count();
+            abort_unless($warmUpPassed >= 10 && $masteryPassed >= 5, 403, 'Pass 10 Warm Up Quizzes and 5 Mastery Tests to unlock Simulation Tests.');
+        }
+    }
+
+    private function isSimulationQuiz(TestBankQuiz $quiz): bool
+    {
+        return in_array(strtolower(trim($quiz->title)), ['simulation test 1', 'simulation test 2'], true);
     }
 
     private function guardOwnedLearnerQuiz($user, TestBank $testBank, TestBankQuiz $quiz): void

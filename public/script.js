@@ -647,8 +647,8 @@ function renderTestBankWorkspace(workspace) {
         </article>`).join('');
     const premadeCards = (workspace.premadeTests || []).map(test => `
         <article class="test-bank-premade-card">
-            <div><small>PREMADE QUIZ</small><h3>${escapeHtml(test.title)}</h3><p>${escapeHtml(test.description || 'Admin-curated randomized practice quiz.')}</p></div>
-            <div class="test-bank-premade-actions"><span>${Number(test.itemCount || 0)} items</span><button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(test.id)}" ${Number(test.itemCount || 0) ? '' : 'disabled'}>Start Test</button></div>
+            <div><small>${test.isSimulation ? 'SIMULATION TEST' : 'PREMADE QUIZ'}</small><h3>${escapeHtml(test.title)}</h3><p>${escapeHtml(test.description || 'Admin-curated randomized practice quiz.')}</p></div>
+            <div class="test-bank-premade-actions"><span>${Number(test.itemCount || 0)} items</span><button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(test.id)}" ${(Number(test.itemCount || 0) && !test.locked) ? '' : 'disabled'}>${test.locked ? 'Locked' : 'Start Test'}</button></div>
         </article>`).join('');
     const historyCards = (workspace.history || []).map(attempt => {
         const takenAt = attempt.takenAt ? new Date(attempt.takenAt).toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'}) : '';
@@ -686,7 +686,7 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-study-path-grid">
                 <article class="test-bank-study-phase active"><small>PHASE 01</small><h3>Warm Up Quizzes</h3><p>Create unlimited 10-item quizzes to start your daily review journey.</p><button type="button" data-guided-builder="10">Select Warm Up</button></article>
                 <article class="test-bank-study-phase"><small>PHASE 02</small><h3>Mastery Tests</h3><p>Create unlimited 25-item tests for mastery. 60% is the passing score. Aim for 100% to gain confidence that you have mastered the concepts and are on the right track.</p><button type="button" data-guided-builder="25">Select Mastery Tests</button></article>
-                <article class="test-bank-study-phase locked"><small>PHASE 03</small><h3>Simulation Test</h3><p>Practice in an exam setting with Simulation 1 and Simulation 2. Retakes are unlimited. Each timed test has 100–150 items and cannot be paused. Unlock after passing at least 10 Warm Up Quizzes and 5 Mastery Tests.</p><b>${Number(workspace.simulationProgress?.warmUpPassed || 0)}/10 Warm Up passed · ${Number(workspace.simulationProgress?.masteryPassed || 0)}/5 Mastery Tests passed</b><strong><i data-lucide="lock-keyhole"></i> Simulation locked</strong></article>
+                <article class="test-bank-study-phase ${workspace.simulationProgress?.unlocked ? '' : 'locked'}"><small>PHASE 03</small><h3>Simulation Test</h3><p>Practice in an exam setting with Simulation 1 and Simulation 2. Retakes are unlimited. Each timed test has 100–150 items and cannot be paused. Unlock after passing at least 10 Warm Up Quizzes and 5 Mastery Tests.</p><b>${Number(workspace.simulationProgress?.warmUpPassed || 0)}/10 Warm Up passed · ${Number(workspace.simulationProgress?.masteryPassed || 0)}/5 Mastery Tests passed</b><strong><i data-lucide="${workspace.simulationProgress?.unlocked ? 'lock-keyhole-open' : 'lock-keyhole'}"></i> Simulation ${workspace.simulationProgress?.unlocked ? 'unlocked' : 'locked'}</strong></article>
             </div>
         </section>
         <div class="test-bank-workspace-tabs" role="tablist">
