@@ -3691,6 +3691,8 @@ function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
     const subjectsButton = $('sidebar-subjects-btn');
     const progressButton = $('sidebar-progress-report-btn');
     const testBanksGroup = $('sidebar-enrolled-test-banks-group');
+    const testBanksButton = $('sidebar-enrolled-test-banks-btn');
+    const testBanksList = $('sidebar-enrolled-test-banks-list');
     if (allCoursesButton) allCoursesButton.classList.toggle('hidden', isCourseOpen);
     if (packagesButton) packagesButton.classList.toggle('hidden', isCourseOpen);
     if (testBanksGroup) testBanksGroup.classList.toggle('hidden', isCourseOpen || enrolledTestBanks.length === 0);
@@ -3701,6 +3703,8 @@ function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
     document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
     document.querySelectorAll('.learner-sidebar-subitem').forEach(item => item.classList.remove('active'));
     if (!isCourseOpen) {
+        if (testBanksButton) testBanksButton.setAttribute('aria-expanded', 'false');
+        if (testBanksList) testBanksList.classList.add('hidden');
         const listButton = state.courseListFilter === 'available'
             ? allCoursesButton
             : state.courseListFilter === 'packages'
