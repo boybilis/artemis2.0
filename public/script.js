@@ -2978,6 +2978,7 @@ let quizTimerInterval = null;
 let quizTimerSeconds = 1200;
 let activeTestBankId = null;
 let activeTestBankQuizId = null;
+let testBankLazyLoading = false;
 
 async function startTestBankPremadeQuiz(testBankId, quizId, button) {
     const originalText = button?.textContent || 'Start Test';
@@ -2987,7 +2988,7 @@ async function startTestBankPremadeQuiz(testBankId, quizId, button) {
         activeTestBankId = testBankId;
         activeTestBankQuizId = quizId;
         state.examType = 'test_bank';
-        startQuiz(data.questions, {title: data.title, timeLimitMinutes: data.timeLimitMinutes});
+        startQuiz(data.questions, {title: data.title, timeLimitMinutes: data.timeLimitMinutes, lazyLoad: data.lazyLoad, totalQuestions: data.totalQuestions});
     } catch (error) {
         if (button) { button.disabled = false; button.textContent = originalText; }
         showToast(error.message || 'Unable to start this premade test.', 'error');
@@ -3005,7 +3006,10 @@ function startQuiz(data, settings = {}) {
         showToast('No approved questions are available for this assessment yet.', 'info');
         return;
     }
-    quizData = data; qIndex = 0; score = 0; answersList = []; reviewQuestions = new Set();
+    testBankLazyLoading = Boolean(settings.lazyLoad && state.examType === 'test_bank');
+    quizData = testBankLazyLoading ? Array.from({length:Number(settings.totalQuestions || data.length)}) : data;
+    if (testBankLazyLoading) data.forEach((question, index) => { quizData[index] = question; });
+    qIndex = 0; score = 0; answersList = []; reviewQuestions = new Set();
     assessmentReviewActive = false; editingQuestionFromReview = false;
     if ($('quiz-question-panel')) $('quiz-question-panel').style.display = '';
     if ($('assessment-review-panel')) $('assessment-review-panel').style.display = 'none';
@@ -3014,7 +3018,7 @@ function startQuiz(data, settings = {}) {
         ? (topics[state.currentTopicIndex]?.subtopics?.find(item => item.id === activeSubtopicAssessmentId)?.title || 'Assessment')
         : (state.examType === 'final' ? 'Mock Exam' : (state.examType === 'mid' ? 'Practice Test' : (state.examType === 'test_bank' ? 'Test Bank' : 'Topic Quiz'))));
     const totalQEl = $('total-q');
-    if (totalQEl) totalQEl.textContent = data.length;
+    if (totalQEl) totalQEl.textContent = quizData.length;
     
     clearInterval(quizTimerInterval);
     const timerEl = $('quiz-timer');
@@ -3054,8 +3058,27 @@ function startQuiz(data, settings = {}) {
     showScreen('quiz-screen');
 }
 
-function renderQuestion() {
-    const q = quizData[qIndex];
+async function loadTestBankQuestionBatch(offset) {
+    const data = await apiRequest(`/api/test-banks/${activeTestBankId}/quizzes/${activeTestBankQuizId}/questions?offset=${offset}`);
+    (data.questions || []).forEach((question, index) => { quizData[offset + index] = question; });
+}
+
+async function renderQuestion() {
+    let q = quizData[qIndex];
+    if (!q && testBankLazyLoading) {
+        const batchOffset = Math.floor(qIndex / 20) * 20;
+        const nextBtn = $('next-q-btn');
+        if (nextBtn) nextBtn.disabled = true;
+        if ($('question-text')) $('question-text').textContent = 'Loading questions…';
+        try {
+            await loadTestBankQuestionBatch(batchOffset);
+            q = quizData[qIndex];
+        } catch (error) {
+            showToast(error.message || 'Unable to load the next Simulation Test questions.', 'error');
+            return;
+        }
+    }
+    if (!q) return;
     const isSata = q.responseType === 'sata';
     const isGrid = q.responseType === 'grid';
     const isCloze = q.responseType === 'cloze';

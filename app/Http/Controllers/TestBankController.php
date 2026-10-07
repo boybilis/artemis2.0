@@ -378,11 +378,40 @@ class TestBankController extends Controller
         ]);
     }
 
-    public function quizQuestions(TestBank $testBank, TestBankQuiz $quiz)
+    public function quizQuestions(Request $request, TestBank $testBank, TestBankQuiz $quiz)
     {
         $user = Auth::user();
         $this->guardLearnerCatalog($user, $testBank);
         $this->guardLearnerQuiz($user, $testBank, $quiz);
+
+        $attemptKey = "test_bank_quiz_{$user->id}_{$quiz->id}";
+        $deadlineKey = "test_bank_quiz_deadline_{$user->id}_{$quiz->id}";
+        $offset = max(0, (int) $request->query('offset', 0));
+        $lazyLoad = $this->isSimulationQuiz($quiz);
+        $serialize = fn (TestBankQuestion $question) => [
+            'id' => $question->id,
+            'question' => $question->question,
+            'imageUrl' => $question->image_path ? asset('storage/'.$question->image_path) : null,
+            'options' => $question->options,
+            'responseType' => 'single',
+            'maximumPoints' => (float) $question->points,
+        ];
+
+        if ($lazyLoad && $offset > 0) {
+            $questionIds = session()->get($attemptKey, []);
+            if (!$questionIds) {
+                return response()->json(['success' => false, 'message' => 'No active Simulation Test attempt was found. Please start the test again.'], 422);
+            }
+            $batchIds = array_slice($questionIds, $offset, 20);
+            $questionLookup = TestBankQuestion::whereIn('id', $batchIds)
+                ->where('course_id', $testBank->course_id)->where('status', 'active')->get()->keyBy('id');
+            $questions = collect($batchIds)->map(fn ($id) => $questionLookup->get($id))->filter()->map($serialize)->values();
+
+            return response()->json([
+                'success' => true, 'title' => $quiz->title, 'timeLimitMinutes' => $quiz->time_limit_minutes,
+                'lazyLoad' => true, 'offset' => $offset, 'totalQuestions' => count($questionIds), 'questions' => $questions,
+            ]);
+        }
 
         $questions = $quiz->questions()
             ->where('test_bank_questions.status', 'active')
@@ -392,24 +421,23 @@ class TestBankController extends Controller
             return response()->json(['success' => false, 'message' => 'This premade test does not have active questions yet.'], 422);
         }
 
-        session()->put("test_bank_quiz_{$user->id}_{$quiz->id}", $questions->pluck('id')->all());
+        $questionIds = $questions->pluck('id')->all();
+        session()->put($attemptKey, $questionIds);
         session()->put(
-            "test_bank_quiz_deadline_{$user->id}_{$quiz->id}",
+            $deadlineKey,
             $quiz->time_limit_minutes ? now()->addMinutes($quiz->time_limit_minutes)->timestamp : null
         );
+
+        if ($lazyLoad) $questions = $questions->take(20);
 
         return response()->json([
             'success' => true,
             'title' => $quiz->title,
             'timeLimitMinutes' => $quiz->time_limit_minutes,
-            'questions' => $questions->map(fn (TestBankQuestion $question) => [
-                'id' => $question->id,
-                'question' => $question->question,
-                'imageUrl' => $question->image_path ? asset('storage/'.$question->image_path) : null,
-                'options' => $question->options,
-                'responseType' => 'single',
-                'maximumPoints' => (float) $question->points,
-            ])->values(),
+            'lazyLoad' => $lazyLoad,
+            'offset' => 0,
+            'totalQuestions' => count($questionIds),
+            'questions' => $questions->map($serialize)->values(),
         ]);
     }
 

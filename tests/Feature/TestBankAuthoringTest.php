@@ -441,11 +441,21 @@ class TestBankAuthoringTest extends TestCase
             'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
         ]);
         $simulation = $bank->premadeQuizzes()->create([
-            'title' => 'Simulation Test 1', 'item_count' => 1, 'subject_ids' => [$subject->id],
+            'title' => 'Simulation Test 1', 'item_count' => 25, 'subject_ids' => [$subject->id],
             'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
         ]);
         $regular->questions()->sync([$question->id]);
-        $simulation->questions()->sync([$question->id]);
+        $simulationQuestionIds = collect([$question->id]);
+        foreach (range(2, 25) as $number) {
+            $extraQuestion = TestBankQuestion::create([
+                'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+                'question' => "Simulation question {$number}", 'options' => ['A', 'B'],
+                'correct_answer' => 0, 'points' => 1, 'status' => 'active', 'created_by' => $admin->id,
+            ]);
+            $extraQuestion->subjects()->sync([$subject->id]);
+            $simulationQuestionIds->push($extraQuestion->id);
+        }
+        $simulation->questions()->sync($simulationQuestionIds);
         $learner = User::factory()->create();
         $bank->enrollments()->create([
             'user_id' => $learner->id, 'status' => 'active',
@@ -476,7 +486,12 @@ class TestBankAuthoringTest extends TestCase
             }
         }
 
-        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$simulation->id}/questions")->assertOk();
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$simulation->id}/questions")
+            ->assertOk()->assertJsonPath('lazyLoad', true)->assertJsonPath('totalQuestions', 25)
+            ->assertJsonCount(20, 'questions');
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$simulation->id}/questions?offset=20")
+            ->assertOk()->assertJsonPath('offset', 20)->assertJsonPath('totalQuestions', 25)
+            ->assertJsonCount(5, 'questions');
     }
 
     public function test_learner_can_build_a_private_timed_quiz_and_all_attempts_are_numbered_in_history(): void
