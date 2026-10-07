@@ -1,7 +1,8 @@
 @php
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Admin';
     $isAdmin = Auth::user()->is_admin || trim(strtolower(Auth::user()->role)) === 'admin';
-    $workspaceRole = $isAdmin ? 'Admin' : 'Instructor';
+    $role = $isAdmin ? 'admin' : trim(strtolower((string) Auth::user()->role));
+    $workspaceRole = ucfirst($role);
     
     $pendingContentCount = 0;
     if ($isAdmin) {
@@ -9,22 +10,24 @@
                              + \App\Models\QuizQuestion::where('status', 'pending')->count();
     }
 
-    $navItems = [
-        ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
-        ['label' => 'Course Management', 'route' => 'admin.content.index', 'active' => 'admin.content.*', 'icon' => 'book-open', 'badge' => $pendingContentCount > 0 ? $pendingContentCount : null],
-        ['label' => 'Class Management', 'route' => 'admin.classes.index', 'active' => 'admin.classes.*', 'icon' => 'calendar-days'],
-    ];
+    $navItems = [['label' => 'Dashboard', 'route' => 'admin.dashboard', 'active' => 'admin.dashboard', 'icon' => 'layout-dashboard']];
+    if ($isAdmin || $role === 'staff') {
+        $navItems[] = ['label' => 'Users', 'route' => 'admin.users.index', 'active' => 'admin.users.*', 'icon' => 'users'];
+    }
+    if ($isAdmin || in_array($role, ['instructor','encoder'], true)) {
+        $navItems[] = ['label' => 'Course Management', 'route' => 'admin.content.index', 'active' => 'admin.content.*', 'icon' => 'book-open', 'badge' => $pendingContentCount > 0 ? $pendingContentCount : null];
+    }
+    if ($isAdmin || in_array($role, ['instructor','staff'], true)) {
+        $navItems[] = ['label' => 'Class Management', 'route' => 'admin.classes.index', 'active' => 'admin.classes.*', 'icon' => 'calendar-days'];
+    }
     if ($isAdmin) {
-        array_splice($navItems, 1, 0, [[
-            'label' => 'Users', 'route' => 'admin.users.index', 'active' => 'admin.users.*', 'icon' => 'users'
-        ]]);
         $navItems[] = ['label' => 'Packages', 'route' => 'admin.packages.index', 'active' => 'admin.packages.*', 'icon' => 'package-open'];
     }
     
     $newVouchersCount = 0;
     $newCertificatesCount = 0;
     
-    if ($isAdmin || trim(strtolower(Auth::user()->role)) === 'instructor') {
+    if ($isAdmin || in_array($role, ['instructor','staff'], true)) {
         $lastVouchersViewed = Auth::user()->last_vouchers_viewed_at ?? '1970-01-01 00:00:00';
         $lastCertificatesViewed = Auth::user()->last_certificates_viewed_at ?? '1970-01-01 00:00:00';
         
@@ -33,6 +36,10 @@
         
         $navItems[] = ['label' => 'Vouchers', 'route' => 'admin.vouchers.index', 'active' => 'admin.vouchers.*', 'icon' => 'ticket', 'badge' => $newVouchersCount > 0 ? $newVouchersCount : null];
         $navItems[] = ['label' => 'Certificates', 'route' => 'admin.certificates.index', 'active' => 'admin.certificates.*', 'icon' => 'award', 'badge' => $newCertificatesCount > 0 ? $newCertificatesCount : null];
+    }
+    if ($isAdmin || $role === 'staff') {
+        $navItems[] = ['label' => 'Progress', 'route' => 'admin.progress.index', 'active' => 'admin.progress.*', 'icon' => 'chart-no-axes-column-increasing'];
+        $navItems[] = ['label' => 'Reports', 'route' => 'admin.reports.index', 'active' => 'admin.reports.*', 'icon' => 'file-chart-column'];
     }
 @endphp
 <!DOCTYPE html>

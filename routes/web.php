@@ -10,6 +10,7 @@ use App\Http\Controllers\PackageController;
 use App\Http\Controllers\TestBankController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AdministratorMiddleware;
+use App\Http\Middleware\RoleMiddleware;
 
 // ─── CUSTOMER FRONTEND LANDING ───────────────────────────────
 Route::get('/', function () {
@@ -141,18 +142,24 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
 
         // Users
-        Route::middleware(AdministratorMiddleware::class)->group(function () {
+        Route::middleware(RoleMiddleware::class.':admin,staff')->group(function () {
             Route::get('/users', [AdminController::class, 'users'])->name('users.index');
             Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');
             Route::post('/users/{user}/toggle', [AdminController::class, 'toggleUserStatus'])->name('users.toggle');
+        });
+        Route::middleware(AdministratorMiddleware::class)->group(function () {
             Route::post('/users/{user}/role', [AdminController::class, 'updateUserRole'])->name('users.role');
-            Route::post('/classes/batches', [AdminController::class, 'storeClassBatch'])->name('classes.batches.store');
-            Route::put('/classes/batches/{batch}', [AdminController::class, 'updateClassBatch'])->name('classes.batches.update');
-            Route::delete('/classes/batches/{batch}', [AdminController::class, 'destroyClassBatch'])->name('classes.batches.destroy');
             Route::get('/packages', [AdminController::class, 'packages'])->name('packages.index');
             Route::post('/packages', [AdminController::class, 'storePackage'])->name('packages.store');
             Route::put('/packages/{package}', [AdminController::class, 'updatePackage'])->name('packages.update');
             Route::delete('/packages/{package}', [AdminController::class, 'destroyPackage'])->name('packages.destroy');
+        });
+        Route::middleware(RoleMiddleware::class.':admin,staff')->group(function () {
+            Route::post('/classes/batches', [AdminController::class, 'storeClassBatch'])->name('classes.batches.store');
+            Route::put('/classes/batches/{batch}', [AdminController::class, 'updateClassBatch'])->name('classes.batches.update');
+            Route::delete('/classes/batches/{batch}', [AdminController::class, 'destroyClassBatch'])->name('classes.batches.destroy');
+        });
+        Route::middleware(RoleMiddleware::class.':admin,encoder')->group(function () {
             Route::get('/content/courses/{course}/test-banks', [TestBankController::class, 'adminIndex'])->name('content.test-banks.index');
             Route::post('/content/courses/{course}/test-banks', [TestBankController::class, 'store'])->name('content.test-banks.store');
             Route::put('/content/courses/{course}/test-banks/{testBank}', [TestBankController::class, 'update'])->name('content.test-banks.update');
@@ -168,33 +175,34 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Content
-        Route::get('/content', [AdminController::class, 'contentCourses'])->name('content.index');
-        Route::get('/classes', [AdminController::class, 'classManagement'])->name('classes.index');
-        Route::get('/classes/batches/{batch}/zoom-sessions', [AdminController::class, 'classBatchZoomSessions'])->name('classes.batches.zoom-sessions');
-        Route::post('/classes/batches/{batch}/zoom-sessions', [AdminController::class, 'storeClassBatchZoomSession'])->name('classes.batches.zoom-sessions.store');
-        Route::put('/classes/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'updateClassBatchZoomSession'])->name('classes.batches.zoom-sessions.update');
-        Route::delete('/classes/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'destroyClassBatchZoomSession'])->name('classes.batches.zoom-sessions.destroy');
+        Route::get('/content', [AdminController::class, 'contentCourses'])->middleware(RoleMiddleware::class.':admin,instructor,encoder')->name('content.index');
+        Route::get('/classes', [AdminController::class, 'classManagement'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('classes.index');
+        Route::get('/classes/batches/{batch}/zoom-sessions', [AdminController::class, 'classBatchZoomSessions'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('classes.batches.zoom-sessions');
+        Route::post('/classes/batches/{batch}/zoom-sessions', [AdminController::class, 'storeClassBatchZoomSession'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('classes.batches.zoom-sessions.store');
+        Route::put('/classes/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'updateClassBatchZoomSession'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('classes.batches.zoom-sessions.update');
+        Route::delete('/classes/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'destroyClassBatchZoomSession'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('classes.batches.zoom-sessions.destroy');
         
         // Course specific content
         Route::prefix('/content/courses/{course}')->group(function () {
-            Route::get('/topics', [AdminController::class, 'contentTopics'])->name('content.topics');
-            Route::get('/subjects', [AdminController::class, 'contentSubjects'])->name('content.subjects');
-            Route::get('/quizzes', [AdminController::class, 'contentQuizzes'])->name('content.quizzes');
-            Route::get('/enrollments', [AdminController::class, 'courseEnrollments'])->name('content.enrollments');
-            Route::get('/rankings', [AdminController::class, 'courseRankings'])->name('content.rankings');
-            Route::get('/batches', [AdminController::class, 'courseBatches'])->name('content.batches');
-            Route::post('/batches', [AdminController::class, 'storeCourseBatch'])->name('content.batches.store');
-            Route::post('/batches/{batch}', [AdminController::class, 'updateCourseBatch'])->name('content.batches.update');
-            Route::get('/batches/{batch}/zoom-sessions', [AdminController::class, 'batchZoomSessions'])->name('content.batches.zoom-sessions');
-            Route::post('/batches/{batch}/zoom-sessions', [AdminController::class, 'storeBatchZoomSession'])->name('content.batches.zoom-sessions.store');
-            Route::put('/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'updateBatchZoomSession'])->name('content.batches.zoom-sessions.update');
-            Route::delete('/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'destroyBatchZoomSession'])->name('content.batches.zoom-sessions.destroy');
-            Route::post('/enrollments/{user}/batch', [AdminController::class, 'reassignEnrollmentBatch'])->name('content.enrollments.batch');
-            Route::post('/enrollments/{user}/unenroll', [AdminController::class, 'unenrollCourseStudent'])->name('content.enrollments.unenroll');
-            Route::post('/assessment-attempts/reset', [AdminController::class, 'resetCourseAssessmentAttempt'])->name('content.assessment-attempts.reset');
-            Route::post('/mock-exam/settings', [AdminController::class, 'updateMockExamSettings'])->name('content.mock-exam.settings');
-            Route::post('/assessments/pass-rule', [AdminController::class, 'updateAssessmentPassRule'])->name('content.assessments.pass-rule');
+            Route::get('/topics', [AdminController::class, 'contentTopics'])->middleware(RoleMiddleware::class.':admin,instructor,encoder')->name('content.topics');
+            Route::get('/subjects', [AdminController::class, 'contentSubjects'])->middleware(RoleMiddleware::class.':admin,instructor,encoder')->name('content.subjects');
+            Route::get('/quizzes', [AdminController::class, 'contentQuizzes'])->middleware(RoleMiddleware::class.':admin,instructor,encoder')->name('content.quizzes');
+            Route::get('/enrollments', [AdminController::class, 'courseEnrollments'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('content.enrollments');
+            Route::get('/rankings', [AdminController::class, 'courseRankings'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('content.rankings');
+            Route::get('/batches', [AdminController::class, 'courseBatches'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('content.batches');
+            Route::post('/batches', [AdminController::class, 'storeCourseBatch'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('content.batches.store');
+            Route::post('/batches/{batch}', [AdminController::class, 'updateCourseBatch'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('content.batches.update');
+            Route::get('/batches/{batch}/zoom-sessions', [AdminController::class, 'batchZoomSessions'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('content.batches.zoom-sessions');
+            Route::post('/batches/{batch}/zoom-sessions', [AdminController::class, 'storeBatchZoomSession'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('content.batches.zoom-sessions.store');
+            Route::put('/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'updateBatchZoomSession'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('content.batches.zoom-sessions.update');
+            Route::delete('/batches/{batch}/zoom-sessions/{session}', [AdminController::class, 'destroyBatchZoomSession'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('content.batches.zoom-sessions.destroy');
+            Route::post('/enrollments/{user}/batch', [AdminController::class, 'reassignEnrollmentBatch'])->middleware(RoleMiddleware::class.':admin,staff')->name('content.enrollments.batch');
+            Route::post('/enrollments/{user}/unenroll', [AdminController::class, 'unenrollCourseStudent'])->middleware(RoleMiddleware::class.':admin,staff')->name('content.enrollments.unenroll');
+            Route::post('/assessment-attempts/reset', [AdminController::class, 'resetCourseAssessmentAttempt'])->middleware(RoleMiddleware::class.':admin,instructor,encoder')->name('content.assessment-attempts.reset');
+            Route::post('/mock-exam/settings', [AdminController::class, 'updateMockExamSettings'])->middleware(RoleMiddleware::class.':admin,instructor,encoder')->name('content.mock-exam.settings');
+            Route::post('/assessments/pass-rule', [AdminController::class, 'updateAssessmentPassRule'])->middleware(RoleMiddleware::class.':admin,instructor,encoder')->name('content.assessments.pass-rule');
 
+            Route::middleware(RoleMiddleware::class.':admin,instructor,encoder')->group(function () {
             // Subjects CRUD
             Route::post('/subjects', [AdminController::class, 'storeSubject'])->name('content.subjects.store');
             Route::post('/subjects/{subject}', [AdminController::class, 'updateSubject'])->name('content.subjects.update');
@@ -222,26 +230,27 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/quizzes/bulk-import', [AdminController::class, 'bulkImportMultipleChoiceQuestions'])->name('content.quizzes.bulk-import');
             Route::post('/quizzes/{quiz}', [AdminController::class, 'updateQuiz'])->name('content.quizzes.update');
             Route::delete('/quizzes/{quiz}', [AdminController::class, 'destroyQuiz'])->name('content.quizzes.destroy');
+            });
         });
 
         // Courses CRUD
-        Route::post('/content/courses', [AdminController::class, 'storeCourse'])->name('content.courses.store');
-        Route::post('/content/courses/{course}', [AdminController::class, 'updateCourse'])->name('content.courses.update');
-        Route::delete('/content/courses/{course}', [AdminController::class, 'destroyCourse'])->name('content.courses.destroy');
+        Route::post('/content/courses', [AdminController::class, 'storeCourse'])->middleware(RoleMiddleware::class.':admin,instructor,encoder')->name('content.courses.store');
+        Route::post('/content/courses/{course}', [AdminController::class, 'updateCourse'])->middleware(RoleMiddleware::class.':admin,instructor,encoder')->name('content.courses.update');
+        Route::delete('/content/courses/{course}', [AdminController::class, 'destroyCourse'])->middleware(RoleMiddleware::class.':admin,instructor,encoder')->name('content.courses.destroy');
 
         // Activity Logs
-        Route::get('/progress', [AdminController::class, 'progress'])->name('progress.index');
-        Route::get('/vouchers', [AdminController::class, 'vouchers'])->name('vouchers.index');
-        Route::post('/vouchers/generate', [AdminController::class, 'generateVouchers'])->name('vouchers.generate');
+        Route::get('/progress', [AdminController::class, 'progress'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('progress.index');
+        Route::get('/vouchers', [AdminController::class, 'vouchers'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('vouchers.index');
+        Route::post('/vouchers/generate', [AdminController::class, 'generateVouchers'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('vouchers.generate');
         
-        Route::get('/certificates', [AdminController::class, 'certificates'])->name('certificates.index');
-        Route::get('/reports', [AdminController::class, 'reports'])->name('reports.index');
+        Route::get('/certificates', [AdminController::class, 'certificates'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('certificates.index');
+        Route::get('/reports', [AdminController::class, 'reports'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('reports.index');
         
         // Notifications
-        Route::get('/notifications', [AdminController::class, 'announcements'])->name('notifications.index');
-        Route::post('/notifications/create', [AdminController::class, 'createAnnouncement'])->name('notifications.create');
+        Route::get('/notifications', [AdminController::class, 'announcements'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('notifications.index');
+        Route::post('/notifications/create', [AdminController::class, 'createAnnouncement'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('notifications.create');
         
-        Route::get('/audit-logs', [AdminController::class, 'auditLogs'])->name('audit-logs.index');
-        Route::get('/settings', [AdminController::class, 'settings'])->name('settings.index');
+        Route::get('/audit-logs', [AdminController::class, 'auditLogs'])->middleware(RoleMiddleware::class.':admin,instructor')->name('audit-logs.index');
+        Route::get('/settings', [AdminController::class, 'settings'])->middleware(RoleMiddleware::class.':admin,instructor')->name('settings.index');
     });
 });

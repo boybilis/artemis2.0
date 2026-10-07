@@ -73,6 +73,8 @@
                                     <select name="role" class="role-select" data-original="{{ strtolower($user['role']) }}">
                                         <option value="student" {{ strtolower($user['role']) === 'student' ? 'selected' : '' }}>Student</option>
                                         <option value="instructor" {{ strtolower($user['role']) === 'instructor' ? 'selected' : '' }}>Instructor</option>
+                                        <option value="encoder" {{ strtolower($user['role']) === 'encoder' ? 'selected' : '' }}>Encoder</option>
+                                        <option value="staff" {{ strtolower($user['role']) === 'staff' ? 'selected' : '' }}>Staff</option>
                                         <option value="admin" {{ strtolower($user['role']) === 'admin' ? 'selected' : '' }}>Admin</option>
                                     </select>
                                 </form>

@@ -1,6 +1,6 @@
 @extends('admin.layouts.app')
 
-@section('title', (Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin') ? 'Admin Dashboard' : 'Instructor Dashboard')
+@section('title', (Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin') ? 'Admin Dashboard' : ucfirst((string) Auth::user()->role).' Dashboard')
 @section('kicker', 'Overview')
 
 

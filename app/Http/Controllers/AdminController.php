@@ -87,7 +87,7 @@ class AdminController extends Controller
     // ─── AUTHENTICATION ──────────────────────────────────────────
     public function showLogin()
     {
-        if (Auth::check() && (Auth::user()->is_admin || in_array(trim(strtolower(Auth::user()->role)), ['admin', 'instructor']))) {
+        if (Auth::check() && (Auth::user()->is_admin || in_array(trim(strtolower(Auth::user()->role)), ['admin', 'instructor', 'encoder', 'staff'], true))) {
             return redirect()->route('admin.dashboard');
         }
         return view('admin.auth.login');
@@ -104,7 +104,7 @@ class AdminController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
-            if ($user->is_admin || in_array(trim(strtolower($user->role)), ['admin', 'instructor'])) {
+            if ($user->is_admin || in_array(trim(strtolower($user->role)), ['admin', 'instructor', 'encoder', 'staff'], true)) {
                 AuditLog::create([
                     'user_id' => $user->id,
                     'action' => 'Admin Login',
@@ -114,7 +114,7 @@ class AdminController extends Controller
                 return redirect()->intended(route('admin.dashboard'));
             } else {
                 Auth::logout();
-                return back()->withErrors(['email' => 'Unauthorized access. You are not an administrator or instructor.']);
+                return back()->withErrors(['email' => 'This account does not have access to the management portal.']);
             }
         }
 
@@ -172,7 +172,7 @@ class AdminController extends Controller
 
         // Recent Users for Dashboard
         $recentUsersQuery = User::query();
-        if (trim(strtolower(Auth::user()->role)) === 'instructor' && !Auth::user()->is_admin) {
+        if (in_array(trim(strtolower(Auth::user()->role)), ['instructor', 'staff'], true) && !Auth::user()->is_admin) {
             $recentUsersQuery->where(function($q) {
                 $q->where('role', 'student')->orWhereNull('role');
             });
@@ -187,7 +187,7 @@ class AdminController extends Controller
     {
         $query = User::query();
 
-        if (trim(strtolower(Auth::user()->role)) === 'instructor' && !Auth::user()->is_admin) {
+        if (in_array(trim(strtolower(Auth::user()->role)), ['instructor', 'staff'], true) && !Auth::user()->is_admin) {
             $query->where(function($q) {
                 $q->where('role', 'student')->orWhereNull('role');
             });
@@ -255,6 +255,7 @@ class AdminController extends Controller
     public function showUser($id)
     {
         $user = User::findOrFail($id);
+        if (strtolower((string) Auth::user()->role) === 'staff' && strtolower((string) $user->role) !== 'student') abort(404);
         
         $totalTopicsCount = Topic::count() ?: 1;
         $completed = UserProgress::where('user_id', $user->id)->count();
@@ -325,6 +326,7 @@ class AdminController extends Controller
     public function toggleUserStatus($id, Request $request)
     {
         $user = User::findOrFail($id);
+        if (strtolower((string) Auth::user()->role) === 'staff' && strtolower((string) $user->role) !== 'student') abort(404);
         $user->is_active = !$user->is_active;
         $user->save();
 
@@ -345,7 +347,7 @@ class AdminController extends Controller
         }
 
         $request->validate([
-            'role' => 'required|in:admin,instructor,student'
+            'role' => 'required|in:admin,instructor,encoder,staff,student'
         ]);
 
         $user = User::findOrFail($id);
@@ -483,7 +485,7 @@ class AdminController extends Controller
 
     public function storeCourseBatch(Request $request, $courseId)
     {
-        abort_unless(Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin', 403, 'Only administrators can create batches.');
+        abort_unless(Auth::user()->is_admin || in_array(strtolower((string) Auth::user()->role), ['admin', 'staff'], true), 403, 'Only administrators and staff can create batches.');
         $request->validate(['course_id'=>'required|integer|exists:courses,id']);
         $course = Course::findOrFail($request->integer('course_id'));
         $data = $request->validate(['name'=>'required|string|max:255','code'=>'required|string|max:80|unique:course_batches,code','description'=>'nullable|string|max:2000','starts_at'=>'nullable|date','ends_at'=>'nullable|date|after_or_equal:starts_at','schedule_day'=>'nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday','start_time'=>'nullable|date_format:H:i','end_time'=>'nullable|date_format:H:i|after:start_time','modality'=>'nullable|in:Online,Blended,Live via Zoom','price'=>'required|numeric|min:0','usd_price'=>'nullable|numeric|min:0','capacity'=>'nullable|integer|min:1|max:100000','status'=>'required|in:draft,open,closed,completed']);
@@ -494,7 +496,7 @@ class AdminController extends Controller
 
     public function updateCourseBatch(Request $request, $courseId, $batchId)
     {
-        abort_unless(Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin', 403, 'Only administrators can edit batches.');
+        abort_unless(Auth::user()->is_admin || in_array(strtolower((string) Auth::user()->role), ['admin', 'staff'], true), 403, 'Only administrators and staff can edit batches.');
         $course = Course::findOrFail($courseId);
         $batch = CourseBatch::forCourse($course->id)->findOrFail($batchId);
         $request->validate(['course_id'=>'required|integer|exists:courses,id']);
@@ -674,7 +676,7 @@ class AdminController extends Controller
     public function unenrollCourseStudent(Request $request, $courseId, User $user)
     {
         $actor = Auth::user();
-        abort_unless($actor->is_admin || strtolower((string) $actor->role) === 'admin', 403, 'Only administrators can unenroll students.');
+        abort_unless($actor->is_admin || in_array(strtolower((string) $actor->role), ['admin', 'staff'], true), 403, 'Only administrators and staff can unenroll students.');
         $course = Course::findOrFail($courseId);
         $enrollment = CourseEnrollment::whereHas('batch.courses', fn ($query) => $query->where('courses.id', $course->id))->where('user_id', $user->id)->firstOrFail();
         $enrollment->delete();

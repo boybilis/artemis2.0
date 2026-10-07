@@ -1,6 +1,6 @@
 @extends('admin.layouts.app', ['pageTitle' => 'Class Management'])
 @section('kicker', 'Batch Delivery')
-@php($isAdmin = Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin')
+@php($isAdmin = Auth::user()->is_admin || in_array(strtolower((string) Auth::user()->role), ['admin','staff'], true))
 
 @section('content')
 <style>.class-page-actions{display:flex;justify-content:flex-end;margin-bottom:1rem}.class-page-actions .btn-primary{display:inline-flex;align-items:center;gap:.45rem}.class-page-actions svg{width:17px;height:17px}@media(max-width:640px){.class-page-actions{justify-content:stretch}.class-page-actions .btn-primary{width:100%;justify-content:center}}</style>
