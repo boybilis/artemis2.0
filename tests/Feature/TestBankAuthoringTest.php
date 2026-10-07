@@ -88,7 +88,7 @@ class TestBankAuthoringTest extends TestCase
         Storage::disk('public')->assertExists($question->image_path);
 
         $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
-        $this->assertSame(0, collect($workspace->json('workspace.subjects'))->pluck('questionCount', 'id')->get($secondSubject->id));
+        $this->assertFalse(collect($workspace->json('workspace.subjects'))->pluck('questionCount', 'id')->has($secondSubject->id));
 
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.status', [$course, $bank, $question]))
             ->assertSessionHas('success');
@@ -271,6 +271,28 @@ class TestBankAuthoringTest extends TestCase
         $this->actingAs(User::factory()->create())
             ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")
             ->assertForbidden();
+    }
+
+    public function test_workspace_hides_subjects_without_active_questions(): void
+    {
+        extract($this->catalog());
+        $question = TestBankQuestion::create([
+            'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+            'question' => 'Visible subject question', 'options' => ['A', 'B'],
+            'correct_answer' => 0, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $question->subjects()->sync([$subject->id]);
+        $learner = User::factory()->create();
+        $bank->enrollments()->create([
+            'user_id' => $learner->id, 'status' => 'active',
+            'enrolled_at' => now(), 'expires_at' => now()->addDays(30),
+        ]);
+
+        $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
+        $workspace->assertOk()
+            ->assertJsonCount(1, 'workspace.subjects')
+            ->assertJsonPath('workspace.subjects.0.id', $subject->id)
+            ->assertJsonMissing(['id' => $secondSubject->id]);
     }
 
     public function test_learner_can_build_a_private_timed_quiz_and_all_attempts_are_numbered_in_history(): void

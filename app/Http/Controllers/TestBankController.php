@@ -201,7 +201,7 @@ class TestBankController extends Controller
                 'averageScore' => null,
                 'progress' => 0,
             ];
-        })->values();
+        })->filter(fn ($subject) => $subject['questionCount'] > 0)->values();
         $subjectLookup = $testBank->course->subjects->keyBy('id');
 
         return response()->json(['success' => true, 'workspace' => [

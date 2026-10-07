@@ -245,9 +245,7 @@ class TestBankEnrollmentTest extends TestCase
             ->assertOk()
             ->assertJsonPath('workspace.title', 'NCLEX Bank')
             ->assertJsonPath('workspace.courseTitle', 'NCLEX Review')
-            ->assertJsonPath('workspace.subjects.0.id', $subject->id)
-            ->assertJsonPath('workspace.subjects.0.title', 'Fundamentals of Nursing')
-            ->assertJsonPath('workspace.subjects.0.questionCount', 0);
+            ->assertJsonCount(0, 'workspace.subjects');
     }
 
     public function test_workspace_rejects_a_learner_without_active_test_bank_access(): void
