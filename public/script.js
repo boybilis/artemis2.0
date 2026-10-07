@@ -704,7 +704,7 @@ function renderTestBankWorkspace(workspace) {
                 <form id="test-bank-builder-form" class="test-bank-builder-form">
                     <div class="test-bank-history-heading"><h2>Build a Practice Test</h2><p>Select one or more subjects, choose the number of questions, and optionally add a timer.</p></div>
                     <fieldset><legend>Subjects</legend><div class="test-bank-builder-subjects">${builderSubjects}</div></fieldset>
-                    <div class="test-bank-builder-settings"><label><span>Number of questions</span><input class="form-control" type="number" name="item_count" min="1" max="500" value="25" required></label><label class="test-bank-builder-timed"><input type="checkbox" name="timed"><span>Timed exam</span></label><label id="test-bank-builder-minutes" class="hidden"><span>Time limit in minutes</span><input class="form-control" type="number" name="time_limit_minutes" min="1" max="600" value="30"></label></div>
+                    <div class="test-bank-builder-settings"><label><span>Quiz type</span><select class="form-control" name="item_count" required><option value="10">Warm-up Quiz — 10 questions</option><option value="20">Mastery Test — 20 questions</option></select></label><label class="test-bank-builder-timed"><input type="checkbox" name="timed"><span>Timed exam</span></label><label id="test-bank-builder-minutes" class="hidden"><span>Time limit in minutes</span><input class="form-control" type="number" name="time_limit_minutes" min="1" max="600" value="30"></label></div>
                     <div class="test-bank-builder-form-actions"><button type="button" id="test-bank-builder-cancel" class="test-bank-builder-cancel hidden">Cancel Edit</button><button type="submit" class="test-bank-builder-create"><i data-lucide="wand-sparkles"></i> Create Practice Test</button></div>
                 </form>
                 <div class="test-bank-builder-saved"><div class="test-bank-history-heading"><h2>My Practice Tests</h2><p>Your saved tests can be taken again anytime while your subscription is active.</p></div><div class="test-bank-builder-list">${learnerQuizCards || '<div class="test-bank-empty-panel"><i data-lucide="clipboard-list"></i><h2>No saved practice tests</h2><p>Use the builder to create your first test.</p></div>'}</div>${(workspace.learnerQuizzes || []).length > 5 ? '<div class="test-bank-builder-pagination"><span id="test-bank-builder-page-range"></span><div><button type="button" id="test-bank-builder-prev"><i data-lucide="chevron-left"></i> Previous</button><button type="button" id="test-bank-builder-next">Next <i data-lucide="chevron-right"></i></button></div></div>' : ''}</div>
@@ -745,7 +745,12 @@ function renderTestBankWorkspace(workspace) {
         if (!quiz || !builderForm) return;
         builderEditingQuizId = Number(quiz.id);
         builderForm.querySelectorAll('[name="subject_ids"]').forEach(input => { input.checked = (quiz.subjectIds || []).map(Number).includes(Number(input.value)); });
-        builderForm.elements.namedItem('item_count').value = Number(quiz.itemCount || 1);
+        const itemCountSelect = builderForm.elements.namedItem('item_count');
+        const existingCount = String(Number(quiz.itemCount || 10));
+        if (![...itemCountSelect.options].some(option => option.value === existingCount)) {
+            itemCountSelect.add(new Option(`Existing Test — ${existingCount} questions`, existingCount));
+        }
+        itemCountSelect.value = existingCount;
         timedInput.checked = Boolean(quiz.timed);
         builderForm.elements.namedItem('time_limit_minutes').value = Number(quiz.timeLimitMinutes || 30);
         timedInput.dispatchEvent(new Event('change'));
