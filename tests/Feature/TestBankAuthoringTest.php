@@ -10,6 +10,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class TestBankAuthoringTest extends TestCase
@@ -92,6 +93,25 @@ class TestBankAuthoringTest extends TestCase
         $this->assertDatabaseHas('test_bank_questions', ['test_bank_id' => $bank->id, 'subject_id' => $subject->id, 'points' => 3]);
         $question = TestBankQuestion::firstOrFail();
         $this->assertEqualsCanonicalizing([$subject->id, $secondSubject->id], $question->subjects()->pluck('subjects.id')->all());
+    }
+
+    public function test_legacy_double_encoded_options_are_normalized_for_editing(): void
+    {
+        extract($this->catalog());
+        $question = TestBankQuestion::create([
+            'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+            'question' => 'Which intervention is appropriate?', 'options' => ['Short A', 'Short B'],
+            'correct_answer' => 1, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $question->subjects()->sync([$subject->id]);
+        $paragraph = 'This answer contains a full paragraph with the complete clinical intervention and supporting context.';
+        DB::table('test_bank_questions')->where('id', $question->id)->update([
+            'options' => json_encode(json_encode(['First answer', $paragraph])),
+        ]);
+
+        $this->assertSame(['First answer', $paragraph], $question->fresh()->options);
+        $response = $this->actingAs($admin)->get(route('admin.content.test-banks.manage', [$course, $bank]));
+        $response->assertOk()->assertSee($paragraph)->assertSee('textarea id="editOption0"', false);
     }
 
     public function test_admin_question_table_loads_twenty_rows_and_searches_the_entire_bank(): void

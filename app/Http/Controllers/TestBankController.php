@@ -355,7 +355,7 @@ class TestBankController extends Controller
             $rows[] = [
                 'subject_ids' => $rowSubjects->pluck('id')->values()->all(),
                 'test_bank_id' => $testBank->id, 'course_id' => $course->id, 'subject_id' => $rowSubjects->first()->id,
-                'question' => trim($row['question']), 'options' => json_encode($options), 'correct_answer' => $correctIndex,
+                'question' => trim($row['question']), 'options' => $options, 'correct_answer' => $correctIndex,
                 'points' => $points,
                 'rationale' => trim((string) ($row['rationale'] ?? '')) ?: null,
                 'status' => 'active', 'created_by' => $request->user()->id, 'created_at' => now(), 'updated_at' => now(),
