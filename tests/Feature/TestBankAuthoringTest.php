@@ -33,7 +33,8 @@ class TestBankAuthoringTest extends TestCase
         extract($this->catalog());
         Storage::fake('public');
         $this->actingAs($admin)->get(route('admin.content.test-banks.manage', [$course, $bank]))
-            ->assertOk()->assertSee('Premade Quizzes')->assertSee('Preview')->assertSee('Archive');
+            ->assertOk()->assertSee('Premade Quizzes')->assertSee('Preview')->assertSee('Archive')
+            ->assertSee('quizSelectAllSubjects')->assertSee('Select All');
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.store', [$course, $bank]), [
             'subject_ids' => [$subject->id, $secondSubject->id], 'question' => 'Which action is appropriate?',
             'options' => ['Assess first', 'Call immediately', 'Document only', ''],
