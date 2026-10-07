@@ -161,7 +161,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/content/courses/{course}/test-banks/{testBank}/manage', [TestBankController::class, 'manage'])->name('content.test-banks.manage');
             Route::post('/content/courses/{course}/test-banks/{testBank}/questions', [TestBankController::class, 'storeQuestion'])->name('content.test-banks.questions.store');
             Route::post('/content/courses/{course}/test-banks/{testBank}/questions/import', [TestBankController::class, 'importQuestions'])->name('content.test-banks.questions.import');
-            Route::delete('/content/courses/{course}/test-banks/{testBank}/questions/{question}', [TestBankController::class, 'destroyQuestion'])->name('content.test-banks.questions.destroy');
+            Route::put('/content/courses/{course}/test-banks/{testBank}/questions/{question}', [TestBankController::class, 'updateQuestion'])->name('content.test-banks.questions.update');
+            Route::post('/content/courses/{course}/test-banks/{testBank}/questions/{question}/status', [TestBankController::class, 'toggleQuestionStatus'])->name('content.test-banks.questions.status');
             Route::post('/content/courses/{course}/test-banks/{testBank}/quizzes', [TestBankController::class, 'storeQuiz'])->name('content.test-banks.quizzes.store');
             Route::delete('/content/courses/{course}/test-banks/{testBank}/quizzes/{quiz}', [TestBankController::class, 'destroyQuiz'])->name('content.test-banks.quizzes.destroy');
         });

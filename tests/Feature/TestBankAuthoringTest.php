@@ -30,7 +30,8 @@ class TestBankAuthoringTest extends TestCase
     {
         extract($this->catalog());
         Storage::fake('public');
-        $this->actingAs($admin)->get(route('admin.content.test-banks.manage', [$course, $bank]))->assertOk()->assertSee('Premade Quizzes');
+        $this->actingAs($admin)->get(route('admin.content.test-banks.manage', [$course, $bank]))
+            ->assertOk()->assertSee('Premade Quizzes')->assertSee('Preview')->assertSee('Archive');
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.store', [$course, $bank]), [
             'subject_ids' => [$subject->id, $secondSubject->id], 'question' => 'Which action is appropriate?',
             'options' => ['Assess first', 'Call immediately', 'Document only', ''],
@@ -59,9 +60,26 @@ class TestBankAuthoringTest extends TestCase
         $this->assertSame('reference.png', $question->image_filename);
         Storage::disk('public')->assertExists($question->image_path);
 
-        $this->actingAs($admin)->delete(route('admin.content.test-banks.questions.destroy', [$course, $bank, $question]))
+        $this->actingAs($admin)->put(route('admin.content.test-banks.questions.update', [$course, $bank, $question]), [
+            'subject_ids' => [$secondSubject->id], 'question' => 'Which medication action is appropriate?',
+            'options' => ['Verify the order', 'Administer immediately', '', ''], 'correct_answer' => 0,
+            'points' => 3, 'rationale' => 'Verify the order first.',
+        ])->assertSessionHas('success');
+        $question->refresh();
+        $this->assertSame('Which medication action is appropriate?', $question->question);
+        $this->assertEqualsCanonicalizing([$secondSubject->id], $question->subjects()->pluck('subjects.id')->all());
+
+        $this->actingAs($admin)->post(route('admin.content.test-banks.questions.status', [$course, $bank, $question]))
             ->assertSessionHas('success');
-        Storage::disk('public')->assertMissing($question->image_path);
+        $this->assertDatabaseHas('test_bank_questions', ['id' => $question->id, 'status' => 'inactive']);
+        Storage::disk('public')->assertExists($question->image_path);
+
+        $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
+        $this->assertSame(0, collect($workspace->json('workspace.subjects'))->pluck('questionCount', 'id')->get($secondSubject->id));
+
+        $this->actingAs($admin)->post(route('admin.content.test-banks.questions.status', [$course, $bank, $question]))
+            ->assertSessionHas('success');
+        $this->assertDatabaseHas('test_bank_questions', ['id' => $question->id, 'status' => 'active']);
     }
 
     public function test_admin_can_import_course_subject_questions_from_csv(): void

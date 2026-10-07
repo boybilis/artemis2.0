@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class TestBankController extends Controller
 {
@@ -143,7 +144,9 @@ class TestBankController extends Controller
 
         $testBank->load([
             'course.subjects' => fn ($query) => $query->where('status', 'approved')->orderBy('sort_order'),
-            'premadeQuizzes' => fn ($query) => $query->where('status', 'active')->withCount('questions')->latest(),
+            'premadeQuizzes' => fn ($query) => $query->where('status', 'active')
+                ->withCount(['questions' => fn ($questions) => $questions->where('test_bank_questions.status', 'active')])
+                ->latest(),
         ]);
         $subjects = $testBank->course->subjects->map(function ($subject) use ($testBank) {
             $questionCount = $testBank->questions()
@@ -221,37 +224,33 @@ class TestBankController extends Controller
         $questions = $testBank->questions()->with([
             'subject:id,subject_code,title',
             'subjects:id,subject_code,title',
-        ])->latest()->paginate(15, ['*'], 'questions_page');
-        $quizzes = $testBank->premadeQuizzes()->withCount('questions')->latest()->get();
+        ])->latest()->get();
+        $quizzes = $testBank->premadeQuizzes()
+            ->withCount(['questions' => fn ($query) => $query->where('test_bank_questions.status', 'active')])
+            ->latest()->get();
+        $questionPayload = $questions->mapWithKeys(fn (TestBankQuestion $question) => [$question->id => [
+            'id' => $question->id,
+            'question' => $question->question,
+            'options' => $question->options,
+            'correctAnswer' => $question->correct_answer,
+            'points' => (float) $question->points,
+            'rationale' => $question->rationale,
+            'status' => $question->status,
+            'imageUrl' => $question->image_path ? asset('storage/'.$question->image_path) : null,
+            'imageFilename' => $question->image_filename,
+            'subjectIds' => $question->subjects->pluck('id')->values(),
+            'subjects' => $question->subjects->map(fn (Subject $subject) => [
+                'id' => $subject->id, 'code' => $subject->subject_code, 'title' => $subject->title,
+            ])->values(),
+        ]]);
 
-        return view('admin.content.test-bank-manage', compact('course', 'testBank', 'subjects', 'questions', 'quizzes'));
+        return view('admin.content.test-bank-manage', compact('course', 'testBank', 'subjects', 'questions', 'quizzes', 'questionPayload'));
     }
 
     public function storeQuestion(Request $request, Course $course, TestBank $testBank)
     {
         $this->guardCatalog($course, $testBank);
-        $data = $request->validate([
-            'subject_ids' => ['required', 'array', 'min:1'],
-            'subject_ids.*' => ['required', 'integer', 'distinct'],
-            'question' => ['required', 'string', 'max:10000'],
-            'options' => ['required', 'array', 'min:2', 'max:8'],
-            'options.*' => ['nullable', 'string', 'max:3000'],
-            'correct_answer' => ['required', 'integer', 'min:0', 'max:7'],
-            'points' => ['nullable', 'numeric', 'min:0.01', 'max:1000'],
-            'rationale' => ['nullable', 'string', 'max:10000'],
-            'question_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
-        ]);
-        $subjectIds = $course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
-        abort_unless($subjectIds->count() === count($data['subject_ids']), 404);
-        $rawOptions = collect($data['options'])->map(fn ($option) => trim((string) $option));
-        $lastOption = $rawOptions->search(fn ($option, $index) => $rawOptions->slice($index + 1)->filter()->isEmpty() && $option !== '');
-        $options = $lastOption === false ? [] : $rawOptions->take($lastOption + 1)->all();
-        if (in_array('', $options, true)) {
-            return back()->withErrors(['options' => 'Choices must be entered in order without empty choices between them.'])->withInput();
-        }
-        if (count($options) < 2 || !array_key_exists($data['correct_answer'], $options)) {
-            return back()->withErrors(['options' => 'Provide at least two choices and select a valid correct answer.'])->withInput();
-        }
+        [$data, $subjectIds, $options] = $this->validatedQuestionData($request, $course);
 
         $questionData = [
             'course_id' => $course->id, 'subject_id' => $subjectIds->first(),
@@ -270,6 +269,36 @@ class TestBankController extends Controller
         $question->subjects()->sync($subjectIds);
 
         return back()->with('success', 'Multiple-choice question added to the Test Bank.');
+    }
+
+    public function updateQuestion(Request $request, Course $course, TestBank $testBank, TestBankQuestion $question)
+    {
+        $this->guardQuestion($course, $testBank, $question);
+        [$data, $subjectIds, $options] = $this->validatedQuestionData($request, $course);
+        $questionData = [
+            'subject_id' => $subjectIds->first(),
+            'question' => $data['question'],
+            'options' => $options,
+            'correct_answer' => $data['correct_answer'],
+            'points' => $data['points'] ?? 1,
+            'rationale' => $data['rationale'] ?? null,
+        ];
+
+        if ($request->hasFile('question_image')) {
+            if ($question->image_path) Storage::disk('public')->delete($question->image_path);
+            $file = $request->file('question_image');
+            $questionData['image_path'] = $file->store('test-bank-question-images', 'public');
+            $questionData['image_filename'] = $file->getClientOriginalName();
+        } elseif ($request->boolean('remove_question_image')) {
+            if ($question->image_path) Storage::disk('public')->delete($question->image_path);
+            $questionData['image_path'] = null;
+            $questionData['image_filename'] = null;
+        }
+
+        $question->update($questionData);
+        $question->subjects()->sync($subjectIds);
+
+        return back()->with('success', 'Test Bank question updated.');
     }
 
     public function importQuestions(Request $request, Course $course, TestBank $testBank)
@@ -328,15 +357,14 @@ class TestBankController extends Controller
         return back()->with('success', count($rows).' Test Bank questions imported.');
     }
 
-    public function destroyQuestion(Course $course, TestBank $testBank, TestBankQuestion $question)
+    public function toggleQuestionStatus(Course $course, TestBank $testBank, TestBankQuestion $question)
     {
-        $this->guardCatalog($course, $testBank);
-        abort_unless($question->test_bank_id === $testBank->id, 404);
-        if ($question->image_path) {
-            Storage::disk('public')->delete($question->image_path);
-        }
-        $question->delete();
-        return back()->with('success', 'Test Bank question deleted.');
+        $this->guardQuestion($course, $testBank, $question);
+        $question->update(['status' => $question->status === 'active' ? 'inactive' : 'active']);
+
+        return back()->with('success', $question->status === 'active'
+            ? 'Test Bank question restored.'
+            : 'Test Bank question archived and removed from learner tests.');
     }
 
     public function storeQuiz(Request $request, Course $course, TestBank $testBank)
@@ -428,5 +456,40 @@ class TestBankController extends Controller
     private function guardCatalog(Course $course, TestBank $testBank): void
     {
         abort_unless($testBank->course_id === $course->id, 404);
+    }
+
+    private function guardQuestion(Course $course, TestBank $testBank, TestBankQuestion $question): void
+    {
+        $this->guardCatalog($course, $testBank);
+        abort_unless($question->test_bank_id === $testBank->id && $question->course_id === $course->id, 404);
+    }
+
+    private function validatedQuestionData(Request $request, Course $course): array
+    {
+        $data = $request->validate([
+            'subject_ids' => ['required', 'array', 'min:1'],
+            'subject_ids.*' => ['required', 'integer', 'distinct'],
+            'question' => ['required', 'string', 'max:10000'],
+            'options' => ['required', 'array', 'min:2', 'max:8'],
+            'options.*' => ['nullable', 'string', 'max:3000'],
+            'correct_answer' => ['required', 'integer', 'min:0', 'max:7'],
+            'points' => ['nullable', 'numeric', 'min:0.01', 'max:1000'],
+            'rationale' => ['nullable', 'string', 'max:10000'],
+            'question_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
+            'remove_question_image' => ['nullable', 'boolean'],
+        ]);
+        $subjectIds = $course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
+        abort_unless($subjectIds->count() === count($data['subject_ids']), 404);
+        $rawOptions = collect($data['options'])->map(fn ($option) => trim((string) $option));
+        $lastOption = $rawOptions->search(fn ($option, $index) => $rawOptions->slice($index + 1)->filter()->isEmpty() && $option !== '');
+        $options = $lastOption === false ? [] : $rawOptions->take($lastOption + 1)->all();
+        if (in_array('', $options, true)) {
+            throw ValidationException::withMessages(['options' => 'Choices must be entered in order without empty choices between them.']);
+        }
+        if (count($options) < 2 || !array_key_exists($data['correct_answer'], $options)) {
+            throw ValidationException::withMessages(['correct_answer' => 'Provide at least two choices and select a valid correct answer.']);
+        }
+
+        return [$data, $subjectIds, $options];
     }
 }
