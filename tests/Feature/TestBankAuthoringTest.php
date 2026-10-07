@@ -159,12 +159,14 @@ class TestBankAuthoringTest extends TestCase
             $question->subjects()->sync([$subject->id, $secondSubject->id]);
         }
         $this->actingAs($admin)->post(route('admin.content.test-banks.quizzes.store', [$course, $bank]), [
-            'title' => 'Medical Surgical Drill', 'item_count' => 10, 'subject_ids' => [$subject->id],
+            'title' => 'Medical Surgical Drill', 'item_count' => 10, 'time_limit_minutes' => 45,
+            'subject_ids' => [$subject->id],
         ])->assertSessionHas('success');
         $quiz = $bank->premadeQuizzes()->firstOrFail();
         $this->assertSame(3, $quiz->item_count);
         $this->assertSame(3, $quiz->questions()->count());
         $this->assertTrue($quiz->randomize_questions);
+        $this->assertSame(45, $quiz->time_limit_minutes);
     }
 
     public function test_deleting_an_admin_premade_quiz_removes_all_learner_results(): void

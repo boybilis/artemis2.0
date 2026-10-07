@@ -647,7 +647,7 @@ function renderTestBankWorkspace(workspace) {
         </article>`).join('');
     const premadeCards = (workspace.premadeTests || []).map(test => `
         <article class="test-bank-premade-card">
-            <div><small>${test.isSimulation ? 'SIMULATION TEST' : 'PREMADE QUIZ'}</small><h3>${escapeHtml(test.title)}</h3><p>${escapeHtml(test.description || 'Admin-curated randomized practice quiz.')}</p></div>
+            <div><small>${test.isSimulation ? 'SIMULATION TEST' : 'PREMADE QUIZ'}</small><h3>${escapeHtml(test.title)}</h3><p>${escapeHtml(test.description || 'Admin-curated randomized practice quiz.')}</p>${test.timeLimitMinutes ? `<p>${Number(test.timeLimitMinutes)} minute time limit</p>` : ''}</div>
             <div class="test-bank-premade-actions"><span>${Number(test.itemCount || 0)} items</span><button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(test.id)}" ${(Number(test.itemCount || 0) && !test.locked) ? '' : 'disabled'}>${test.locked ? 'Locked' : 'Start Test'}</button></div>
         </article>`).join('');
     const historyCards = (workspace.history || []).map(attempt => {

@@ -241,6 +241,7 @@ class TestBankController extends Controller
                 'id' => $quiz->id, 'title' => $quiz->title, 'description' => $quiz->description,
                 'itemCount' => $quiz->questions_count, 'subjectIds' => $quiz->subject_ids,
                 'randomized' => $quiz->randomize_questions,
+                'timeLimitMinutes' => $quiz->time_limit_minutes,
                 'isSimulation' => $this->isSimulationQuiz($quiz),
                 'locked' => $this->isSimulationQuiz($quiz) && ! ($warmUpPassed >= 10 && $masteryPassed >= 5),
             ])->values(),
@@ -699,6 +700,7 @@ class TestBankController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'], 'description' => ['nullable', 'string', 'max:5000'],
             'item_count' => ['required', 'integer', 'min:1', 'max:500'],
+            'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:600'],
             'subject_ids' => ['required', 'array', 'min:1'], 'subject_ids.*' => ['integer'],
         ]);
         $validSubjectIds = $course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
@@ -713,6 +715,7 @@ class TestBankController extends Controller
                 'title' => $data['title'], 'description' => $data['description'] ?? null,
                 'quiz_type' => 'premade',
                 'item_count' => $questionIds->count(), 'subject_ids' => $validSubjectIds->values()->all(),
+                'time_limit_minutes' => $data['time_limit_minutes'] ?? null,
                 'randomize_questions' => true, 'status' => 'active', 'created_by' => $request->user()->id,
             ]);
             $quiz->questions()->sync($questionIds);
