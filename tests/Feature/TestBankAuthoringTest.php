@@ -166,6 +166,69 @@ class TestBankAuthoringTest extends TestCase
         $this->assertTrue($quiz->randomize_questions);
     }
 
+    public function test_catalogs_for_the_same_course_share_the_course_question_bank(): void
+    {
+        extract($this->catalog());
+        $secondBank = TestBank::create([
+            'course_id' => $course->id, 'title' => 'DOH Practice Bank', 'code' => 'DOH-TB-2',
+            'price' => 1200, 'access_days' => 60, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $otherCourse = Course::create(['title' => 'Prometrics']);
+        $otherBank = TestBank::create([
+            'course_id' => $otherCourse->id, 'title' => 'Prometrics Bank', 'code' => 'PROM-TB',
+            'price' => 1000, 'access_days' => 30, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $question = TestBankQuestion::create([
+            'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+            'question' => 'Shared DOH course question', 'options' => ['A', 'B'],
+            'correct_answer' => 0, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $question->subjects()->sync([$subject->id]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.content.test-banks.manage', [$course, $secondBank]))
+            ->assertOk()
+            ->assertSee('Shared DOH course question');
+        $this->actingAs($admin)
+            ->get(route('admin.content.test-banks.manage', [$otherCourse, $otherBank]))
+            ->assertOk()
+            ->assertDontSee('Shared DOH course question');
+
+        $this->actingAs($admin)->post(route('admin.content.test-banks.quizzes.store', [$course, $secondBank]), [
+            'title' => 'Shared Question Quiz', 'item_count' => 1, 'subject_ids' => [$subject->id],
+        ])->assertSessionHas('success');
+        $quiz = $secondBank->premadeQuizzes()->firstOrFail();
+        $this->assertTrue($quiz->questions()->whereKey($question->id)->exists());
+
+        $this->actingAs($admin)->post(route('admin.content.test-banks.questions.status', [$course, $secondBank, $question]))
+            ->assertSessionHas('success');
+        $this->assertSame('inactive', $question->fresh()->status);
+    }
+
+    public function test_deleting_one_catalog_preserves_its_questions_for_another_catalog_in_the_same_course(): void
+    {
+        extract($this->catalog());
+        $secondBank = TestBank::create([
+            'course_id' => $course->id, 'title' => 'DOH Practice Bank', 'code' => 'DOH-TB-2',
+            'price' => 1200, 'access_days' => 60, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $question = TestBankQuestion::create([
+            'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
+            'question' => 'Question that must survive', 'options' => ['A', 'B'],
+            'correct_answer' => 0, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $question->subjects()->sync([$subject->id]);
+
+        $this->actingAs($admin)->delete(route('admin.content.test-banks.destroy', [$course, $bank]))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('test_bank_questions', [
+            'id' => $question->id,
+            'test_bank_id' => $secondBank->id,
+            'course_id' => $course->id,
+        ]);
+    }
+
     public function test_catalog_cannot_use_a_subject_from_another_course(): void
     {
         extract($this->catalog());

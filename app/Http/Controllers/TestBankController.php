@@ -149,7 +149,8 @@ class TestBankController extends Controller
                 ->latest(),
         ]);
         $subjects = $testBank->course->subjects->map(function ($subject) use ($testBank) {
-            $questionCount = $testBank->questions()
+            $questionCount = TestBankQuestion::query()
+                ->where('course_id', $testBank->course_id)
                 ->whereHas('subjects', fn ($query) => $query->whereKey($subject->id))
                 ->where('status', 'active')->count();
             $testCount = $testBank->premadeQuizzes()->where('status', 'active')
@@ -221,8 +222,8 @@ class TestBankController extends Controller
     {
         $this->guardCatalog($course, $testBank);
         $subjects = $course->subjects()->where('status', 'approved')->orderBy('sort_order')->orderBy('title')->get();
-        $questionTotal = $testBank->questions()->count();
-        $questionQuery = $testBank->questions()->with([
+        $questionTotal = TestBankQuestion::where('course_id', $course->id)->count();
+        $questionQuery = TestBankQuestion::where('course_id', $course->id)->with([
             'subject:id,subject_code,title',
             'subjects:id,subject_code,title',
         ]);
@@ -415,7 +416,7 @@ class TestBankController extends Controller
         ]);
         $validSubjectIds = $course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
         if ($validSubjectIds->count() !== count(array_unique($data['subject_ids']))) abort(422, 'One or more subjects do not belong to this course.');
-        $questionIds = $testBank->questions()->where('status', 'active')
+        $questionIds = TestBankQuestion::where('course_id', $course->id)->where('status', 'active')
             ->whereHas('subjects', fn ($query) => $query->whereIn('subjects.id', $validSubjectIds))
             ->inRandomOrder()->limit($data['item_count'])->pluck('id');
         if ($questionIds->isEmpty()) return back()->withErrors(['subject_ids' => 'The selected subjects do not have active Test Bank questions yet.']);
@@ -464,6 +465,16 @@ class TestBankController extends Controller
     public function destroy(Course $course, TestBank $testBank)
     {
         abort_unless($testBank->course_id === $course->id, 404);
+
+        $replacementCatalog = $course->testBanks()
+            ->whereKeyNot($testBank->id)
+            ->orderBy('id')
+            ->first();
+
+        if ($replacementCatalog) {
+            $testBank->questions()->update(['test_bank_id' => $replacementCatalog->id]);
+        }
+
         $testBank->delete();
 
         return back()->with('success', 'Test Bank catalog deleted.');
@@ -499,7 +510,7 @@ class TestBankController extends Controller
     private function guardQuestion(Course $course, TestBank $testBank, TestBankQuestion $question): void
     {
         $this->guardCatalog($course, $testBank);
-        abort_unless($question->test_bank_id === $testBank->id && $question->course_id === $course->id, 404);
+        abort_unless($question->course_id === $course->id, 404);
     }
 
     private function validatedQuestionData(Request $request, Course $course): array
