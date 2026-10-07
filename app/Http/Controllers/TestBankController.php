@@ -160,8 +160,14 @@ class TestBankController extends Controller
         $attempts = TestBankQuizAttempt::query()
             ->where('user_id', $user->id)
             ->where('test_bank_id', $testBank->id)
-            ->with('quiz:id,title,subject_ids')
+            ->with('quiz:id,title,subject_ids,quiz_type,item_count')
             ->get();
+        $warmUpPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->passed
+            && in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
+            && (int) $attempt->quiz?->item_count === 10)->count();
+        $masteryPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->passed
+            && in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
+            && (int) $attempt->quiz?->item_count === 25)->count();
         $attemptCounters = [];
         $attemptHistory = $attempts->sortBy('created_at')->map(function (TestBankQuizAttempt $attempt) use (&$attemptCounters) {
             $attemptNumber = ($attemptCounters[$attempt->test_bank_quiz_id] ?? 0) + 1;
@@ -223,6 +229,13 @@ class TestBankController extends Controller
             'expiresAt' => $enrollment->expires_at?->toIso8601String(),
             'daysRemaining' => $enrollment->expires_at ? max(0, (int) ceil(now()->diffInDays($enrollment->expires_at, false))) : null,
             'readiness' => 0,
+            'simulationProgress' => [
+                'warmUpPassed' => $warmUpPassed,
+                'warmUpRequired' => 10,
+                'masteryPassed' => $masteryPassed,
+                'masteryRequired' => 5,
+                'unlocked' => $warmUpPassed >= 10 && $masteryPassed >= 5,
+            ],
             'subjects' => $subjects,
             'premadeTests' => $testBank->premadeQuizzes->map(fn ($quiz) => [
                 'id' => $quiz->id, 'title' => $quiz->title, 'description' => $quiz->description,

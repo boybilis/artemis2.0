@@ -400,6 +400,7 @@ class TestBankAuthoringTest extends TestCase
             'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
         ]);
         $learner = User::factory()->create();
+        $quiz->update(['quiz_type' => 'subject', 'owner_user_id' => $learner->id]);
         $bank->enrollments()->create([
             'user_id' => $learner->id, 'status' => 'active',
             'enrolled_at' => now(), 'expires_at' => now()->addDays(30),
@@ -417,7 +418,10 @@ class TestBankAuthoringTest extends TestCase
         $workspace->assertOk()
             ->assertJsonPath('workspace.subjects.0.completedTests', 5)
             ->assertJsonPath('workspace.subjects.0.averageScore', 60)
-            ->assertJsonPath('workspace.subjects.0.progress', 100);
+            ->assertJsonPath('workspace.subjects.0.progress', 100)
+            ->assertJsonPath('workspace.simulationProgress.warmUpPassed', 3)
+            ->assertJsonPath('workspace.simulationProgress.masteryPassed', 0)
+            ->assertJsonPath('workspace.simulationProgress.unlocked', false);
     }
 
     public function test_learner_can_build_a_private_timed_quiz_and_all_attempts_are_numbered_in_history(): void

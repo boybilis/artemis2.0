@@ -686,7 +686,7 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-study-path-grid">
                 <article class="test-bank-study-phase active"><small>PHASE 01</small><h3>Warm Up Quizzes</h3><p>Create unlimited 10-item quizzes to start your daily review journey.</p><button type="button" data-guided-builder="10">Select Warm Up</button></article>
                 <article class="test-bank-study-phase"><small>PHASE 02</small><h3>Mastery Tests</h3><p>Create unlimited 25-item tests for mastery. 60% is the passing score. Aim for 100% to gain confidence that you have mastered the concepts and are on the right track.</p><button type="button" data-guided-builder="25">Select Mastery Tests</button></article>
-                <article class="test-bank-study-phase locked"><small>PHASE 03</small><h3>Exam Simulation</h3><p>Practice in a structured, timed exam environment after building confidence with Warm Up and Mastery Tests.</p><strong><i data-lucide="lock-keyhole"></i> Simulation locked</strong></article>
+                <article class="test-bank-study-phase locked"><small>PHASE 03</small><h3>Simulation Test</h3><p>Practice in an exam setting with Simulation 1 and Simulation 2. Retakes are unlimited. Each timed test has 100–150 items and cannot be paused. Unlock after passing at least 10 Warm Up Quizzes and 5 Mastery Tests.</p><b>${Number(workspace.simulationProgress?.warmUpPassed || 0)}/10 Warm Up passed · ${Number(workspace.simulationProgress?.masteryPassed || 0)}/5 Mastery Tests passed</b><strong><i data-lucide="lock-keyhole"></i> Simulation locked</strong></article>
             </div>
         </section>
         <div class="test-bank-workspace-tabs" role="tablist">
