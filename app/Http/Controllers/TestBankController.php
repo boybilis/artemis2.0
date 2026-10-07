@@ -167,7 +167,7 @@ class TestBankController extends Controller
             && (int) $attempt->quiz?->item_count === 10)->count();
         $masteryPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->passed
             && in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
-            && (int) $attempt->quiz?->item_count === 25)->count();
+            && (int) $attempt->quiz?->item_count === 20)->count();
         $attemptCounters = [];
         $attemptHistory = $attempts->sortBy('created_at')->map(function (TestBankQuizAttempt $attempt) use (&$attemptCounters) {
             $attemptNumber = ($attemptCounters[$attempt->test_bank_quiz_id] ?? 0) + 1;
@@ -302,7 +302,7 @@ class TestBankController extends Controller
         $this->guardLearnerCatalog($user, $testBank);
         abort_unless($subject->course_id === $testBank->course_id && $subject->status === 'approved', 404);
         $data = $request->validate(['quiz_type' => ['required', Rule::in(['warm_up', 'mastery'])]]);
-        $itemCount = $data['quiz_type'] === 'mastery' ? 25 : 10;
+        $itemCount = $data['quiz_type'] === 'mastery' ? 20 : 10;
         $questionIds = TestBankQuestion::query()
             ->where('course_id', $testBank->course_id)
             ->where('status', 'active')
@@ -854,7 +854,7 @@ class TestBankController extends Controller
             $warmUpPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
                 && (int) $attempt->quiz?->item_count === 10)->count();
             $masteryPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
-                && (int) $attempt->quiz?->item_count === 25)->count();
+                && (int) $attempt->quiz?->item_count === 20)->count();
             abort_unless($warmUpPassed >= 10 && $masteryPassed >= 5, 403, 'Pass 10 Warm Up Quizzes and 5 Mastery Tests to unlock Simulation Tests.');
         }
     }

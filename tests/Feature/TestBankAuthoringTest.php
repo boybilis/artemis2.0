@@ -470,7 +470,7 @@ class TestBankAuthoringTest extends TestCase
         $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$regular->id}/questions")->assertOk();
         $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$simulation->id}/questions")->assertForbidden();
 
-        foreach ([10 => 10, 25 => 5] as $itemCount => $attemptCount) {
+        foreach ([10 => 10, 20 => 5] as $itemCount => $attemptCount) {
             $progressQuiz = $bank->premadeQuizzes()->create([
                 'quiz_type' => 'subject', 'owner_user_id' => $learner->id,
                 'title' => "Progress {$itemCount}", 'item_count' => $itemCount, 'subject_ids' => [$subject->id],
