@@ -681,6 +681,14 @@ function renderTestBankWorkspace(workspace) {
             <div><small>YOUR ${escapeHtml(workspace.courseTitle).toUpperCase()} SUBSCRIPTION</small><h3>${Number(workspace.accessDays)}-Day Test Bank Access</h3><p>Until ${expiresAt}${workspace.daysRemaining === null ? '' : ` · ${Number(workspace.daysRemaining)} days remaining`}</p></div>
             <button type="button" class="btn-ghost" id="extend-test-bank-btn">Extend Subscription</button>
         </section>
+        <section class="test-bank-study-path">
+            <div class="test-bank-study-path-heading"><h2>Guided study path</h2><p>Work through each phase at your own pace.</p></div>
+            <div class="test-bank-study-path-grid">
+                <article class="test-bank-study-phase active"><small>PHASE 01</small><h3>Warm Up Quizzes</h3><p>Create unlimited 10-item quizzes to start your daily review journey.</p><button type="button" data-guided-builder="10">Select Warm Up</button></article>
+                <article class="test-bank-study-phase"><small>PHASE 02</small><h3>Mastery Tests</h3><p>Create unlimited 20-item tests for mastery. Aim for at least 80% and review every rationale to strengthen your understanding.</p><button type="button" data-guided-builder="20">Select Mastery Tests</button></article>
+                <article class="test-bank-study-phase locked"><small>PHASE 03</small><h3>Exam Simulation</h3><p>Practice in a structured, timed exam environment after building confidence with Warm Up and Mastery Tests.</p><strong><i data-lucide="lock-keyhole"></i> Simulation locked</strong></article>
+            </div>
+        </section>
         <div class="test-bank-workspace-tabs" role="tablist">
             <button type="button" class="active" data-test-bank-tab="premade"><i data-lucide="book-open"></i> Premade Tests</button>
             <button type="button" data-test-bank-tab="builder"><i data-lucide="wand-sparkles"></i> Quiz Builder</button>
@@ -829,6 +837,12 @@ function renderTestBankWorkspace(workspace) {
     workspaceArea.querySelectorAll('[data-test-bank-tab]').forEach(button => button.addEventListener('click', () => {
         workspaceArea.querySelectorAll('[data-test-bank-tab]').forEach(tab => tab.classList.toggle('active', tab === button));
         workspaceArea.querySelectorAll('[data-test-bank-panel]').forEach(panel => panel.classList.toggle('hidden', panel.dataset.testBankPanel !== button.dataset.testBankTab));
+    }));
+    workspaceArea.querySelectorAll('[data-guided-builder]').forEach(button => button.addEventListener('click', () => {
+        workspaceArea.querySelector('[data-test-bank-tab="builder"]')?.click();
+        const itemCount = builderForm?.elements.namedItem('item_count');
+        if (itemCount) itemCount.value = Number(button.dataset.guidedBuilder);
+        builderForm?.scrollIntoView({behavior:'smooth', block:'start'});
     }));
     setupTestBankCarousel(workspaceArea);
     if (window.lucide) lucide.createIcons();
