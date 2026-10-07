@@ -664,7 +664,7 @@ function renderTestBankWorkspace(workspace) {
     const builderSubjects = (workspace.subjects || []).map(subject => `
         <label class="test-bank-builder-subject"><input type="checkbox" name="subject_ids" value="${Number(subject.id)}" ${Number(subject.questionCount || 0) ? '' : 'disabled'}><span><strong>${escapeHtml(subject.title)}</strong><small>${Number(subject.questionCount || 0)} available questions</small></span></label>`).join('');
     const learnerQuizCards = (workspace.learnerQuizzes || []).map(quiz => `
-        <article class="test-bank-builder-quiz-card">
+        <article class="test-bank-builder-quiz-card" data-builder-quiz-card>
             <div><small>MY PRACTICE TEST</small><h3>${escapeHtml(quiz.title)}</h3><p>${Number(quiz.itemCount || 0)} questions · ${quiz.timed ? `${Number(quiz.timeLimitMinutes)} minutes` : 'Untimed'} · ${Number(quiz.attemptCount || 0)} attempt${Number(quiz.attemptCount || 0) === 1 ? '' : 's'}</p><p class="test-bank-builder-quiz-subjects"><strong>Subjects:</strong> ${(quiz.subjects || []).map(subject => escapeHtml(subject.title)).join(', ') || 'No subjects listed'}</p></div>
             <div class="test-bank-builder-quiz-actions"><button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(quiz.id)}">Start Test</button><button type="button" class="test-bank-builder-edit" data-builder-edit="${Number(quiz.id)}">Edit</button><button type="button" class="test-bank-builder-delete" data-builder-delete="${Number(quiz.id)}">Delete</button></div>
         </article>`).join('');
@@ -699,7 +699,7 @@ function renderTestBankWorkspace(workspace) {
                     <div class="test-bank-builder-settings"><label><span>Number of questions</span><input class="form-control" type="number" name="item_count" min="1" max="500" value="25" required></label><label class="test-bank-builder-timed"><input type="checkbox" name="timed"><span>Timed exam</span></label><label id="test-bank-builder-minutes" class="hidden"><span>Time limit in minutes</span><input class="form-control" type="number" name="time_limit_minutes" min="1" max="600" value="30"></label></div>
                     <div class="test-bank-builder-form-actions"><button type="button" id="test-bank-builder-cancel" class="test-bank-builder-cancel hidden">Cancel Edit</button><button type="submit" class="test-bank-builder-create"><i data-lucide="wand-sparkles"></i> Create Practice Test</button></div>
                 </form>
-                <div class="test-bank-builder-saved"><div class="test-bank-history-heading"><h2>My Practice Tests</h2><p>Your saved tests can be taken again anytime while your subscription is active.</p></div><div class="test-bank-builder-list">${learnerQuizCards || '<div class="test-bank-empty-panel"><i data-lucide="clipboard-list"></i><h2>No saved practice tests</h2><p>Use the builder to create your first test.</p></div>'}</div></div>
+                <div class="test-bank-builder-saved"><div class="test-bank-history-heading"><h2>My Practice Tests</h2><p>Your saved tests can be taken again anytime while your subscription is active.</p></div><div class="test-bank-builder-list">${learnerQuizCards || '<div class="test-bank-empty-panel"><i data-lucide="clipboard-list"></i><h2>No saved practice tests</h2><p>Use the builder to create your first test.</p></div>'}</div>${(workspace.learnerQuizzes || []).length > 5 ? '<div class="test-bank-builder-pagination"><span id="test-bank-builder-page-range"></span><div><button type="button" id="test-bank-builder-prev"><i data-lucide="chevron-left"></i> Previous</button><button type="button" id="test-bank-builder-next">Next <i data-lucide="chevron-right"></i></button></div></div>' : ''}</div>
             </div>
         </section>
         <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-history-heading"><h2>Quiz History</h2><p>Review your completed Test Bank attempts, scores, answers, and rationales.</p></div><div class="test-bank-history-list">${historyCards || '<div class="test-bank-empty-panel"><i data-lucide="history"></i><h2>No completed tests yet</h2><p>Your completed Test Bank attempts and scores will appear here.</p></div>'}</div></section>`;
@@ -761,6 +761,26 @@ function renderTestBankWorkspace(workspace) {
             showToast(error.message || 'Unable to delete the practice test.', 'error');
         }
     }));
+    const builderQuizCards = [...workspaceArea.querySelectorAll('[data-builder-quiz-card]')];
+    if (builderQuizCards.length > 5) {
+        let builderPage = 0;
+        const pageSize = 5;
+        const pageCount = Math.ceil(builderQuizCards.length / pageSize);
+        const previous = $('test-bank-builder-prev');
+        const next = $('test-bank-builder-next');
+        const range = $('test-bank-builder-page-range');
+        const renderBuilderPage = () => {
+            const start = builderPage * pageSize;
+            const end = Math.min(builderQuizCards.length, start + pageSize);
+            builderQuizCards.forEach((card, index) => card.classList.toggle('hidden', index < start || index >= end));
+            if (range) range.textContent = `Showing ${start + 1}–${end} of ${builderQuizCards.length}`;
+            if (previous) previous.disabled = builderPage === 0;
+            if (next) next.disabled = builderPage >= pageCount - 1;
+        };
+        previous?.addEventListener('click', () => { if (builderPage > 0) { builderPage--; renderBuilderPage(); } });
+        next?.addEventListener('click', () => { if (builderPage < pageCount - 1) { builderPage++; renderBuilderPage(); } });
+        renderBuilderPage();
+    }
     builderForm?.addEventListener('submit', async event => {
         event.preventDefault();
         const submit = builderForm.querySelector('[type="submit"]');
