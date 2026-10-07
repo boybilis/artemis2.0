@@ -37,8 +37,13 @@ class TestBankAuthoringTest extends TestCase
             'subject_ids' => [$subject->id, $secondSubject->id], 'question' => 'Which action is appropriate?',
             'options' => ['Assess first', 'Call immediately', 'Document only', ''],
             'correct_answer' => 0, 'points' => 2.5, 'rationale' => 'Assessment comes first.',
+            'rationale_video_url' => 'https://www.youtube.com/watch?v=example123',
             'question_image' => UploadedFile::fake()->createWithContent(
                 'reference.png',
+                base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
+            ),
+            'rationale_image' => UploadedFile::fake()->createWithContent(
+                'rationale.png',
                 base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
             ),
         ])->assertSessionHas('success');
@@ -60,15 +65,21 @@ class TestBankAuthoringTest extends TestCase
         $this->assertSame(1, $subjectCounts->get($secondSubject->id));
         $this->assertSame('reference.png', $question->image_filename);
         Storage::disk('public')->assertExists($question->image_path);
+        Storage::disk('public')->assertExists($question->rationale_image_path);
+        $this->assertSame('rationale.png', $question->rationale_image_filename);
+        $this->assertSame('https://www.youtube.com/watch?v=example123', $question->rationale_video_url);
 
         $this->actingAs($admin)->put(route('admin.content.test-banks.questions.update', [$course, $bank, $question]), [
             'subject_ids' => [$secondSubject->id], 'question' => 'Which medication action is appropriate?',
             'options' => ['Verify the order', 'Administer immediately', '', ''], 'correct_answer' => 0,
             'points' => 3, 'rationale' => 'Verify the order first.',
+            'rationale_video_url' => 'https://vimeo.com/123456789',
         ])->assertSessionHas('success');
         $question->refresh();
         $this->assertSame('Which medication action is appropriate?', $question->question);
         $this->assertEqualsCanonicalizing([$secondSubject->id], $question->subjects()->pluck('subjects.id')->all());
+        $this->assertSame('https://vimeo.com/123456789', $question->rationale_video_url);
+        Storage::disk('public')->assertExists($question->rationale_image_path);
 
         $this->actingAs($admin)->post(route('admin.content.test-banks.questions.status', [$course, $bank, $question]))
             ->assertSessionHas('success');

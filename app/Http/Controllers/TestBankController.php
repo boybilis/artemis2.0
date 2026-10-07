@@ -253,6 +253,9 @@ class TestBankController extends Controller
             'correctAnswer' => $question->correct_answer,
             'points' => (float) $question->points,
             'rationale' => $question->rationale,
+            'rationaleVideoUrl' => $question->rationale_video_url,
+            'rationaleImageUrl' => $question->rationale_image_path ? asset('storage/'.$question->rationale_image_path) : null,
+            'rationaleImageFilename' => $question->rationale_image_filename,
             'status' => $question->status,
             'imageUrl' => $question->image_path ? asset('storage/'.$question->image_path) : null,
             'imageFilename' => $question->image_filename,
@@ -275,12 +278,18 @@ class TestBankController extends Controller
             'question' => $data['question'], 'options' => $options,
             'correct_answer' => $data['correct_answer'], 'points' => $data['points'] ?? 1,
             'rationale' => $data['rationale'] ?? null,
+            'rationale_video_url' => $data['rationale_video_url'] ?? null,
             'status' => 'active', 'created_by' => $request->user()->id,
         ];
         if ($request->hasFile('question_image')) {
             $file = $request->file('question_image');
             $questionData['image_path'] = $file->store('test-bank-question-images', 'public');
             $questionData['image_filename'] = $file->getClientOriginalName();
+        }
+        if ($request->hasFile('rationale_image')) {
+            $file = $request->file('rationale_image');
+            $questionData['rationale_image_path'] = $file->store('test-bank-rationale-images', 'public');
+            $questionData['rationale_image_filename'] = $file->getClientOriginalName();
         }
 
         $question = $testBank->questions()->create($questionData);
@@ -300,6 +309,7 @@ class TestBankController extends Controller
             'correct_answer' => $data['correct_answer'],
             'points' => $data['points'] ?? 1,
             'rationale' => $data['rationale'] ?? null,
+            'rationale_video_url' => $data['rationale_video_url'] ?? null,
         ];
 
         if ($request->hasFile('question_image')) {
@@ -311,6 +321,16 @@ class TestBankController extends Controller
             if ($question->image_path) Storage::disk('public')->delete($question->image_path);
             $questionData['image_path'] = null;
             $questionData['image_filename'] = null;
+        }
+        if ($request->hasFile('rationale_image')) {
+            if ($question->rationale_image_path) Storage::disk('public')->delete($question->rationale_image_path);
+            $file = $request->file('rationale_image');
+            $questionData['rationale_image_path'] = $file->store('test-bank-rationale-images', 'public');
+            $questionData['rationale_image_filename'] = $file->getClientOriginalName();
+        } elseif ($request->boolean('remove_rationale_image')) {
+            if ($question->rationale_image_path) Storage::disk('public')->delete($question->rationale_image_path);
+            $questionData['rationale_image_path'] = null;
+            $questionData['rationale_image_filename'] = null;
         }
 
         $question->update($questionData);
@@ -493,6 +513,9 @@ class TestBankController extends Controller
             'correct_answer' => ['required', 'integer', 'min:0', 'max:7'],
             'points' => ['nullable', 'numeric', 'min:0.01', 'max:1000'],
             'rationale' => ['nullable', 'string', 'max:10000'],
+            'rationale_video_url' => ['nullable', 'url:http,https', 'max:2048'],
+            'rationale_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
+            'remove_rationale_image' => ['nullable', 'boolean'],
             'question_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
             'remove_question_image' => ['nullable', 'boolean'],
         ]);

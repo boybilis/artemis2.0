@@ -9,7 +9,8 @@ class TestBankQuestion extends Model
 {
     protected $fillable = [
         'test_bank_id', 'course_id', 'subject_id', 'question', 'options',
-        'correct_answer', 'points', 'rationale', 'image_path', 'image_filename',
+        'correct_answer', 'points', 'rationale', 'rationale_video_url',
+        'rationale_image_path', 'rationale_image_filename', 'image_path', 'image_filename',
         'status', 'created_by',
     ];
 
