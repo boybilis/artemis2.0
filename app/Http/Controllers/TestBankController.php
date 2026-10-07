@@ -202,6 +202,7 @@ class TestBankController extends Controller
                 'progress' => 0,
             ];
         })->values();
+        $subjectLookup = $testBank->course->subjects->keyBy('id');
 
         return response()->json(['success' => true, 'workspace' => [
             'id' => $testBank->id,
@@ -224,6 +225,11 @@ class TestBankController extends Controller
                 'title' => $quiz->title,
                 'itemCount' => $quiz->questions_count,
                 'subjectIds' => $quiz->subject_ids,
+                'subjects' => collect($quiz->subject_ids)->map(fn ($subjectId) => [
+                    'id' => $subjectId,
+                    'code' => $subjectLookup->get($subjectId)?->subject_code,
+                    'title' => $subjectLookup->get($subjectId)?->title,
+                ])->filter(fn ($subject) => filled($subject['title']))->values(),
                 'timed' => $quiz->time_limit_minutes !== null,
                 'timeLimitMinutes' => $quiz->time_limit_minutes,
                 'attemptCount' => $quiz->attempts_count,

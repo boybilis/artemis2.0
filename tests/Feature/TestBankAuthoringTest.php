@@ -316,6 +316,7 @@ class TestBankAuthoringTest extends TestCase
         $workspace->assertOk()
             ->assertJsonCount(1, 'workspace.learnerQuizzes')
             ->assertJsonPath('workspace.learnerQuizzes.0.attemptCount', 3)
+            ->assertJsonPath('workspace.learnerQuizzes.0.subjects.0.title', 'Medical Surgical Nursing')
             ->assertJsonCount(3, 'workspace.history')
             ->assertJsonPath('workspace.history.0.attemptNumber', 3)
             ->assertJsonPath('workspace.history.1.attemptNumber', 2)

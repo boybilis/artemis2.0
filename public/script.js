@@ -665,7 +665,7 @@ function renderTestBankWorkspace(workspace) {
         <label class="test-bank-builder-subject"><input type="checkbox" name="subject_ids" value="${Number(subject.id)}" ${Number(subject.questionCount || 0) ? '' : 'disabled'}><span><strong>${escapeHtml(subject.title)}</strong><small>${Number(subject.questionCount || 0)} available questions</small></span></label>`).join('');
     const learnerQuizCards = (workspace.learnerQuizzes || []).map(quiz => `
         <article class="test-bank-builder-quiz-card">
-            <div><small>MY PRACTICE TEST</small><h3>${escapeHtml(quiz.title)}</h3><p>${Number(quiz.itemCount || 0)} questions · ${quiz.timed ? `${Number(quiz.timeLimitMinutes)} minutes` : 'Untimed'} · ${Number(quiz.attemptCount || 0)} attempt${Number(quiz.attemptCount || 0) === 1 ? '' : 's'}</p></div>
+            <div><small>MY PRACTICE TEST</small><h3>${escapeHtml(quiz.title)}</h3><p>${Number(quiz.itemCount || 0)} questions · ${quiz.timed ? `${Number(quiz.timeLimitMinutes)} minutes` : 'Untimed'} · ${Number(quiz.attemptCount || 0)} attempt${Number(quiz.attemptCount || 0) === 1 ? '' : 's'}</p><p class="test-bank-builder-quiz-subjects"><strong>Subjects:</strong> ${(quiz.subjects || []).map(subject => escapeHtml(subject.title)).join(', ') || 'No subjects listed'}</p></div>
             <button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(quiz.id)}">Start Test</button>
         </article>`).join('');
 
