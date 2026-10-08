@@ -726,7 +726,7 @@ function renderTestBankWorkspace(workspace) {
                 <div class="test-bank-builder-saved"><div class="test-bank-history-heading"><h2>My Practice Tests</h2><p>Your saved tests can be taken again anytime while your subscription is active.</p></div><div class="test-bank-builder-list">${learnerQuizCards || '<div class="test-bank-empty-panel"><i data-lucide="clipboard-list"></i><h2>No saved practice tests</h2><p>Use the builder to create your first test.</p></div>'}</div>${(workspace.learnerQuizzes || []).length > 5 ? '<div class="test-bank-builder-pagination"><span id="test-bank-builder-page-range"></span><div><button type="button" id="test-bank-builder-prev"><i data-lucide="chevron-left"></i> Previous</button><button type="button" id="test-bank-builder-next">Next <i data-lucide="chevron-right"></i></button></div></div>' : ''}</div>
             </div>
         </section>
-        <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-history-heading"><h2>Progress Report</h2><p>${escapeHtml(workspace.courseTitle)} · Test Bank Quiz History</p></div>${simulationEligibilityCard}<section class="test-bank-progress-report"><div class="test-bank-progress-report-head"><div><span class="test-bank-progress-report-icon"><i data-lucide="chart-no-axes-column-increasing"></i></span><div><small>REQUIRED CUSTOM TESTS</small><h2>Progress Tracker</h2><p>Passed required tests ÷ total required tests × 100</p></div></div><div><strong>${requirementProgress}%</strong><span>${requiredPassed} of ${totalRequired} required tests passed</span><div><i style="width:${requirementProgress}%"></i></div></div></div><div class="test-bank-progress-stats"><div><strong>${totalRequired}</strong><span>Total required</span></div><div><strong>${completedAttempts}</strong><span>Completed attempts</span></div><div><strong>${cancelledAttempts}</strong><span>Cancelled</span></div><div><strong>${requiredPassed}</strong><span>Requirements passed</span></div></div><div class="test-bank-history-table-wrap"><table class="test-bank-history-table"><thead><tr><th>Test</th><th>Status</th><th>Result</th><th>Score</th><th>Attempt</th><th>Date taken</th><th>Action</th></tr></thead><tbody>${historyRows || '<tr><td colspan="7" class="test-bank-history-empty">No Test Bank attempts yet.</td></tr>'}</tbody></table></div></section></section>`;
+        <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-history-heading"><h2>Progress Report</h2><p>${escapeHtml(workspace.courseTitle)} · Test Bank Quiz History</p></div>${simulationEligibilityCard}<section class="test-bank-progress-report"><div class="test-bank-progress-report-head"><div><span class="test-bank-progress-report-icon"><i data-lucide="chart-no-axes-column-increasing"></i></span><div><small>REQUIRED CUSTOM TESTS</small><h2>Progress Tracker</h2><p>Passed required tests ÷ total required tests × 100</p></div></div><div><strong>${requirementProgress}%</strong><span>${requiredPassed} of ${totalRequired} required tests passed</span><div><i style="width:${requirementProgress}%"></i></div></div></div><div class="test-bank-progress-stats"><div><strong>${totalRequired}</strong><span>Total required</span></div><div><strong>${completedAttempts}</strong><span>Completed attempts</span></div><div><strong>${cancelledAttempts}</strong><span>Cancelled</span></div><div><strong>${requiredPassed}</strong><span>Requirements passed</span></div></div><div class="test-bank-history-table-tools"><label><i data-lucide="search"></i><input id="test-bank-history-search" type="search" placeholder="Search quiz history" aria-label="Search quiz history"></label><span id="test-bank-history-count"></span></div><div class="test-bank-history-table-wrap"><table class="test-bank-history-table"><thead><tr><th>Test</th><th>Status</th><th>Result</th><th>Score</th><th>Attempt</th><th>Date taken</th><th>Action</th></tr></thead><tbody>${historyRows || '<tr><td colspan="7" class="test-bank-history-empty">No Test Bank attempts yet.</td></tr>'}</tbody></table></div><div id="test-bank-history-pagination" class="test-bank-history-pagination"><span id="test-bank-history-range"></span><div><button type="button" id="test-bank-history-prev"><i data-lucide="chevron-left"></i> Previous</button><span id="test-bank-history-pages"></span><button type="button" id="test-bank-history-next">Next <i data-lucide="chevron-right"></i></button></div></div></section></section>`;
 
     $('test-bank-back-btn')?.addEventListener('click', () => showDashboardCourseList('available'));
     $('extend-test-bank-btn')?.addEventListener('click', event => startTestBankCheckout(workspace.id, event.currentTarget));
@@ -916,7 +916,38 @@ function renderTestBankWorkspace(workspace) {
         builderForm?.scrollIntoView({behavior:'smooth', block:'start'});
     }));
     setupTestBankCarousel(workspaceArea);
+    setupTestBankHistoryTable(workspaceArea);
     if (window.lucide) lucide.createIcons();
+}
+
+function setupTestBankHistoryTable(workspaceArea) {
+    const body = workspaceArea.querySelector('.test-bank-history-table tbody');
+    const search = $('test-bank-history-search');
+    const pagination = $('test-bank-history-pagination');
+    if (!body || !search || !pagination) return;
+    const rows = [...body.querySelectorAll('tr')].filter(row => !row.querySelector('.test-bank-history-empty'));
+    const perPage = 10;
+    let page = 1;
+    const render = () => {
+        const query = search.value.trim().toLowerCase();
+        const filtered = rows.filter(row => row.textContent.toLowerCase().includes(query));
+        const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
+        page = Math.min(page, pageCount);
+        rows.forEach(row => { row.hidden = true; });
+        filtered.slice((page - 1) * perPage, page * perPage).forEach(row => { row.hidden = false; });
+        const first = filtered.length ? ((page - 1) * perPage) + 1 : 0;
+        const last = Math.min(page * perPage, filtered.length);
+        $('test-bank-history-count').textContent = `${filtered.length} record${filtered.length === 1 ? '' : 's'}`;
+        $('test-bank-history-range').textContent = `Showing ${first}–${last} of ${filtered.length}`;
+        $('test-bank-history-pages').textContent = `Page ${page} of ${pageCount}`;
+        $('test-bank-history-prev').disabled = page <= 1;
+        $('test-bank-history-next').disabled = page >= pageCount;
+        pagination.classList.toggle('hidden', filtered.length <= perPage);
+    };
+    search.addEventListener('input', () => { page = 1; render(); });
+    $('test-bank-history-prev').addEventListener('click', () => { if (page > 1) { page--; render(); } });
+    $('test-bank-history-next').addEventListener('click', () => { page++; render(); });
+    render();
 }
 
 function showTestBankInstructions({title, itemCount, timeLimitMinutes, coverage = []}) {
