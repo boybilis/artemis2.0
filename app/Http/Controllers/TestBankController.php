@@ -163,10 +163,10 @@ class TestBankController extends Controller
             ->with('quiz:id,title,subject_ids,quiz_type,item_count')
             ->get();
         $warmUpPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->passed
-            && in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
+            && $attempt->quiz?->quiz_type === 'learner'
             && (int) $attempt->quiz?->item_count === 10)->count();
         $masteryPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->passed
-            && in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
+            && $attempt->quiz?->quiz_type === 'learner'
             && (int) $attempt->quiz?->item_count === 20)->count();
         $attemptCounters = [];
         $attemptHistory = $attempts->sortBy('created_at')->map(function (TestBankQuizAttempt $attempt) use (&$attemptCounters) {
@@ -851,9 +851,9 @@ class TestBankController extends Controller
                 ->where('passed', true)
                 ->with('quiz:id,quiz_type,item_count')
                 ->get();
-            $warmUpPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
+            $warmUpPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->quiz?->quiz_type === 'learner'
                 && (int) $attempt->quiz?->item_count === 10)->count();
-            $masteryPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
+            $masteryPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->quiz?->quiz_type === 'learner'
                 && (int) $attempt->quiz?->item_count === 20)->count();
             abort_unless($warmUpPassed >= 10 && $masteryPassed >= 5, 403, 'Pass 10 Warm Up Quizzes and 5 Mastery Tests to unlock Simulation Tests.');
         }

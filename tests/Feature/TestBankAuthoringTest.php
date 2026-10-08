@@ -422,7 +422,7 @@ class TestBankAuthoringTest extends TestCase
             ->assertJsonPath('workspace.subjects.0.completedTests', 5)
             ->assertJsonPath('workspace.subjects.0.averageScore', 60)
             ->assertJsonPath('workspace.subjects.0.progress', 100)
-            ->assertJsonPath('workspace.simulationProgress.warmUpPassed', 3)
+            ->assertJsonPath('workspace.simulationProgress.warmUpPassed', 0)
             ->assertJsonPath('workspace.simulationProgress.masteryPassed', 0)
             ->assertJsonPath('workspace.simulationProgress.unlocked', false);
     }
@@ -472,7 +472,7 @@ class TestBankAuthoringTest extends TestCase
 
         foreach ([10 => 10, 20 => 5] as $itemCount => $attemptCount) {
             $progressQuiz = $bank->premadeQuizzes()->create([
-                'quiz_type' => 'subject', 'owner_user_id' => $learner->id,
+                'quiz_type' => 'learner', 'owner_user_id' => $learner->id,
                 'title' => "Progress {$itemCount}", 'item_count' => $itemCount, 'subject_ids' => [$subject->id],
                 'randomize_questions' => true, 'status' => 'active', 'created_by' => $learner->id,
             ]);
