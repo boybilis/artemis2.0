@@ -3631,7 +3631,7 @@ function showAssessmentSummary(data, continueAction) {
     const list = $('assessment-summary-question-list');
     list.innerHTML = assessmentSummaryQuestions.map((item, index) => `
         <button type="button" class="assessment-summary-question-button ${item.correct ? 'is-correct' : 'is-wrong'}" data-summary-question="${index}" aria-label="Question ${index + 1}, ${item.correct ? 'correct' : 'incorrect'}">
-            <strong>${index + 1}</strong><span>${item.correct ? 'Correct' : 'Incorrect'}</span>
+            <strong>${index + 1}</strong><span class="summary-status-icon" aria-hidden="true">${item.correct ? '&#10003;' : '&times;'}</span>
         </button>`).join('');
     list.querySelectorAll('[data-summary-question]').forEach(button => button.addEventListener('click', () => {
         renderAssessmentSummaryQuestion(Number(button.dataset.summaryQuestion));
@@ -3644,9 +3644,11 @@ function showAssessmentSummary(data, continueAction) {
 function renderAssessmentSummaryQuestion(index) {
     const item = assessmentSummaryQuestions[index];
     if (!item) return;
-    document.querySelectorAll('[data-summary-question]').forEach(button =>
-        button.classList.toggle('active', Number(button.dataset.summaryQuestion) === index)
-    );
+    document.querySelectorAll('[data-summary-question]').forEach(button => {
+        const selected = Number(button.dataset.summaryQuestion) === index;
+        button.classList.toggle('active', selected);
+        button.setAttribute('aria-current', selected ? 'true' : 'false');
+    });
     const detail = $('assessment-summary-question-detail');
     detail.innerHTML = `
         <div class="assessment-summary-detail-heading"><span>Question ${index + 1} of ${assessmentSummaryQuestions.length}</span><strong class="${item.correct ? 'result-correct' : 'result-wrong'}">${item.correct ? 'Correct' : 'Incorrect'}</strong></div>

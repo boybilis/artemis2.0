@@ -1489,6 +1489,26 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 /* Test Bank premade-subject carousel */
 .test-bank-subject-grid{display:flex!important;grid-template-columns:none!important;flex-wrap:nowrap!important;gap:1rem;max-width:100%;overflow:hidden;scroll-snap-type:x mandatory;scroll-behavior:smooth;overscroll-behavior-x:contain}
 .test-bank-subject-card{flex:0 0 calc((100% - 2rem)/3);min-width:0;scroll-snap-align:start}
+.assessment-result-review{grid-template-columns:320px minmax(0,1fr);margin-top:1.25rem}
+.assessment-summary-navigation{min-width:0;padding:1.25rem;border:1px solid var(--border);border-radius:14px;background:var(--surface)}
+.assessment-summary-navigation h3{margin:0;font-size:1.35rem}
+.assessment-result-legend{gap:1rem;margin:1.1rem 0 1.4rem;flex-wrap:wrap}
+.assessment-result-legend>span{display:flex;align-items:center;gap:.45rem;padding:0;background:transparent;color:var(--text-muted);font-size:.85rem}
+.summary-status-icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;border-radius:50%;color:#fff;font-size:1.15rem;font-weight:800;font-style:normal;line-height:1}
+.summary-correct .summary-status-icon,.is-correct .summary-status-icon{background:#00b85a}
+.summary-wrong .summary-status-icon,.is-wrong .summary-status-icon{background:#ff1929}
+.assessment-summary-question-list{grid-template-columns:repeat(4,minmax(0,1fr));gap:.7rem;padding:0;border:0;background:transparent;max-height:520px}
+.assessment-summary-question-button{gap:.6rem;min-height:80px;border-radius:11px;color:var(--text);transition:transform .15s,border-color .15s}
+.assessment-summary-question-button.is-correct{background:rgba(0,184,90,.09)}
+.assessment-summary-question-button.is-wrong{background:rgba(255,25,41,.10)}
+.assessment-summary-question-button strong{font-size:1.15rem}
+.assessment-summary-question-button .summary-status-icon{display:inline-flex;font-size:1.15rem}
+.assessment-summary-question-button.active{box-shadow:none}
+.assessment-summary-question-button.is-correct.active{border-color:#00b85a}
+.assessment-summary-question-button.is-wrong.active{border-color:#ff1929}
+.assessment-summary-question-button:hover{transform:translateY(-2px)}
+.assessment-summary-question-button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media(max-width:760px){.assessment-result-review{grid-template-columns:1fr}.assessment-summary-navigation{padding:1rem}.assessment-summary-question-list{max-height:270px}.assessment-summary-question-button{min-height:76px}}
 @media(max-width:1000px){.test-bank-subject-card{flex-basis:calc((100% - 1rem)/2)}}
 @media(max-width:700px){.test-bank-panel-heading{align-items:center;gap:.75rem}.test-bank-subject-card{flex-basis:100%}}
 .test-bank-tracker-list{display:grid;gap:.65rem}.test-bank-tracker-row{display:grid;grid-template-columns:minmax(0,1fr) 75px 85px 55px 140px;align-items:center;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--bg2)}.test-bank-tracker-row[hidden]{display:none}.test-bank-tracker-copy h3{margin:0;font-size:.8rem}.test-bank-tracker-copy p{margin:.25rem 0 0;font-size:.64rem;color:var(--text-muted)}.test-bank-tracker-metric{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-metric small{color:var(--text-muted);font-size:.58rem;font-weight:800;letter-spacing:.04em}.test-bank-tracker-metric strong{font-size:.75rem}.test-bank-tracker-row .passed{color:#078b79}.test-bank-tracker-row .failed,.test-bank-tracker-row .cancelled{color:#c94f00}.test-bank-tracker-action{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-action small{font-size:.6rem}.test-bank-tracker-action button{border-color:#08a7bf;color:#078b9b;background:var(--surface);min-height:42px}.test-bank-tracker-action button:hover{background:#078b9b;color:#fff}@media(max-width:900px){.test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-tracker-copy{grid-column:1/-1}.test-bank-tracker-action{grid-column:1/-1;align-items:flex-start}.test-bank-tracker-action button{min-width:140px}}

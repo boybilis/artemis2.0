@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-        <link rel="stylesheet" href="style.css?v=113" />
+        <link rel="stylesheet" href="style.css?v=114" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -1167,9 +1167,12 @@
                 <div class="assessment-summary-shell">
                     <div class="assessment-summary-header"><span>Assessment Summary</span><h2 id="assessment-summary-title">Your Result</h2><p id="assessment-summary-score"></p></div>
                     <div id="assessment-summary-perfect" class="assessment-summary-perfect" style="display:none">Excellent—there are no incorrect answers to review.</div>
-                    <div class="assessment-result-legend"><span class="summary-correct">Correct</span><span class="summary-wrong">Incorrect</span></div>
                     <div class="assessment-result-review">
+                        <section class="assessment-summary-navigation">
+                            <h3>Question Review</h3>
+                            <div class="assessment-result-legend"><span class="summary-correct"><i class="summary-status-icon" aria-hidden="true">&#10003;</i>Correct</span><span class="summary-wrong"><i class="summary-status-icon" aria-hidden="true">&times;</i>Incorrect</span></div>
                         <nav id="assessment-summary-question-list" class="assessment-summary-question-list" aria-label="Assessment questions"></nav>
+                        </section>
                         <article id="assessment-summary-question-detail" class="assessment-summary-question-detail"></article>
                     </div>
                 </div>
@@ -1441,7 +1444,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=128"></script>
+        <script src="script.js?v=129"></script>
         <script>
             lucide.createIcons();
         </script>
