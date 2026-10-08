@@ -1416,10 +1416,10 @@ function renderDashboard() {
             cContainer.innerHTML = `<div class="empty-course-filter"><i data-lucide="book-open"></i><p>${isEnrolledView ? 'No enrolled courses yet.' : 'No available courses at this time.'}</p><span>${isEnrolledView ? 'Browse Available Courses to choose a review batch.' : 'Please check again when a new batch becomes available.'}</span></div>`;
         }
 
-        visibleCourses.forEach(course => {
+        visibleCourses.forEach((course, courseIndex) => {
             const card = document.createElement('div');
             const isLocked = !course.is_enrolled;
-            card.className = `topic-card learner-course-card ${isLocked ? 'course-locked' : 'course-enrolled'}`;
+            card.className = `topic-card learner-course-card ${isLocked ? `course-locked available-course-tone-${(courseIndex % 3) + 1}` : 'course-enrolled'}`;
             card.style.cursor = 'pointer';
 
             let lockMsg = '';
@@ -1467,23 +1467,21 @@ function renderDashboard() {
                     </div>
                     <div class="course-card-open-label"><span>Open ${escapeHtml(course.title)}</span><i data-lucide="arrow-right"></i></div>`;
             } else {
-
+                const availabilityLabel = course.batch_modality || 'Review Course';
                 card.innerHTML = `
-                <div class="course-card-heading">
-                    <p class="topic-num">Batch ${escapeHtml(course.batch_code || '')}</p>
-                    <span class="course-card-status ${isLocked ? 'available' : 'enrolled'}">${isLocked ? 'Available' : 'Enrolled'}</span>
+                <div class="available-course-content">
+                    <div class="available-course-head">
+                        <span class="available-course-icon"><i data-lucide="book-open"></i></span>
+                        <span class="available-course-badge">${escapeHtml(availabilityLabel)}</span>
+                    </div>
+                    <h3>${escapeHtml(course.batch_name)}</h3>
+                    <p class="available-course-program">${escapeHtml(course.title)}</p>
+                    <p class="available-course-detail"><i data-lucide="clock-3"></i><span>${escapeHtml(course.batch_modality || 'Online learning')}${course.batch_includes_intensive_final_coaching ? ' + Final Coaching' : ''}</span></p>
+                    <div class="available-course-dates">
+                        <span>Starts ${formatCourseDate(course.batch_starts_at) || 'to be announced'}</span>
+                        <span>Access until ${formatCourseDate(course.batch_ends_at) || 'further notice'}</span>
+                    </div>
                 </div>
-                <h3>${escapeHtml(course.batch_name)}</h3>
-                <div class="course-card-master"><i data-lucide="graduation-cap"></i><span>${escapeHtml(course.title)}</span></div>
-                <p class="course-card-description">${escapeHtml(course.batch_description || course.description || '')}</p>
-                ${course.batch_includes_intensive_final_coaching ? '<div class="course-coaching-phase available"><i data-lucide="badge-check"></i><span>With Intensive Final Coaching Phase</span></div>' : ''}
-                <div class="course-availability-dates">
-                    <p><i data-lucide="calendar-days"></i><span>Starts</span> ${formatCourseDate(course.batch_starts_at) || 'To be announced'}</p>
-                    <p><i data-lucide="calendar-check"></i><span>Access until</span> ${formatCourseDate(course.batch_ends_at) || 'No end date'}</p>
-                </div>
-                ${rankingLabel}
-                ${certificateLabel}
-                ${isLocked ? '' : '<div class="course-card-open-label">Open course <i data-lucide="arrow-right"></i></div>'}
                 ${lockMsg}
             `;
             }
