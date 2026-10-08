@@ -1553,13 +1553,15 @@ function renderDashboard() {
                     <p>Practice with course-specific question banks. Access begins separately when your Test Bank subscription is activated.</p>
                 </div>
                 <div class="test-bank-catalog-grid">
-                    ${availableTestBanks.map(testBank => `
+                    ${availableTestBanks.map((testBank, index) => `
                         <article class="test-bank-catalog-card">
-                            <div class="test-bank-catalog-icon"><i data-lucide="file-question"></i></div>
+                            <div class="test-bank-catalog-visual tone-${(index % 3) + 1}">
+                                <div class="test-bank-catalog-icon"><i data-lucide="${['brain', 'graduation-cap', 'shield-check'][index % 3]}"></i></div>
+                                <span>TEST BANK</span>
+                            </div>
                             <div class="test-bank-catalog-copy">
-                                <small>${escapeHtml(testBank.code || 'TEST BANK')}</small>
+                                <small>${escapeHtml(testBank.course?.title || testBank.code || 'PROFESSIONAL REVIEW')}</small>
                                 <h3>${escapeHtml(testBank.title)}</h3>
-                                <p class="test-bank-course-name"><i data-lucide="graduation-cap"></i>${escapeHtml(testBank.course?.title || 'Master Course')}</p>
                                 <p>${escapeHtml(testBank.description || 'Course-focused practice questions and review activities.')}</p>
                             </div>
                             <div class="test-bank-catalog-meta">
