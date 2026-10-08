@@ -729,14 +729,32 @@ function renderTestBankWorkspace(workspace) {
 
     $('test-bank-back-btn')?.addEventListener('click', () => showDashboardCourseList('available'));
     $('extend-test-bank-btn')?.addEventListener('click', event => startTestBankCheckout(workspace.id, event.currentTarget));
-    workspaceArea.querySelectorAll('.test-bank-start-test').forEach(button => button.addEventListener('click', () => startTestBankPremadeQuiz(
-        Number(button.dataset.testBankId),
-        Number(button.dataset.testBankQuizId),
-        button
-    )));
+    workspaceArea.querySelectorAll('.test-bank-start-test').forEach(button => button.addEventListener('click', async () => {
+        const quizId = Number(button.dataset.testBankQuizId);
+        const premade = (workspace.premadeTests || []).find(test => Number(test.id) === quizId);
+        const learnerQuiz = (workspace.learnerQuizzes || []).find(test => Number(test.id) === quizId);
+        const subjectTitles = premade
+            ? (workspace.subjects || []).filter(subject => (premade.subjectIds || []).map(Number).includes(Number(subject.id))).map(subject => subject.title)
+            : (learnerQuiz?.subjects || []).map(subject => subject.title);
+        const shouldStart = await showTestBankInstructions({
+            title: premade?.title || learnerQuiz?.title || 'Test Bank Exam',
+            itemCount: premade?.itemCount ?? learnerQuiz?.itemCount ?? 0,
+            timeLimitMinutes: premade?.timeLimitMinutes ?? learnerQuiz?.timeLimitMinutes ?? null,
+            coverage: subjectTitles,
+        });
+        if (shouldStart) startTestBankPremadeQuiz(Number(button.dataset.testBankId), quizId, button);
+    }));
     workspaceArea.querySelectorAll('.test-bank-subject-start').forEach(button => button.addEventListener('click', async () => {
         const originalText = button.textContent;
         const type = button.parentElement?.querySelector('.test-bank-subject-test-type')?.value || 'warm_up';
+        const subject = (workspace.subjects || []).find(item => Number(item.id) === Number(button.dataset.testBankSubject));
+        const shouldStart = await showTestBankInstructions({
+            title: `${subject?.title || 'Subject'} · ${type === 'mastery' ? 'Mastery Test' : 'Warm-up'}`,
+            itemCount: type === 'mastery' ? 20 : 10,
+            timeLimitMinutes: null,
+            coverage: subject ? [subject.title] : [],
+        });
+        if (!shouldStart) return;
         button.disabled = true;
         button.textContent = 'Preparing…';
         try {
@@ -898,6 +916,36 @@ function renderTestBankWorkspace(workspace) {
     }));
     setupTestBankCarousel(workspaceArea);
     if (window.lucide) lucide.createIcons();
+}
+
+function showTestBankInstructions({title, itemCount, timeLimitMinutes, coverage = []}) {
+    return new Promise(resolve => {
+        document.querySelector('.test-bank-instructions-backdrop')?.remove();
+        const backdrop = document.createElement('div');
+        backdrop.className = 'test-bank-instructions-backdrop';
+        backdrop.innerHTML = `<section class="test-bank-instructions-modal" role="dialog" aria-modal="true" aria-labelledby="test-bank-instructions-title">
+            <div class="test-bank-instructions-icon"><i data-lucide="clipboard-check"></i></div>
+            <small>BEFORE YOU BEGIN</small>
+            <h2 id="test-bank-instructions-title">${escapeHtml(title)}</h2>
+            <p>Read the exam details carefully before starting.</p>
+            <div class="test-bank-instructions-grid">
+                <div><i data-lucide="list-checks"></i><span><small>ITEMS</small><strong>${Number(itemCount || 0)} questions</strong></span></div>
+                <div><i data-lucide="${timeLimitMinutes ? 'timer' : 'infinity'}"></i><span><small>TIME LIMIT</small><strong>${timeLimitMinutes ? `${Number(timeLimitMinutes)} minutes` : 'Untimed exam'}</strong></span></div>
+                <div class="full"><i data-lucide="book-open"></i><span><small>EXAM COVERAGE</small><strong>${escapeHtml(coverage.filter(Boolean).join(', ') || 'All selected subjects')}</strong></span></div>
+            </div>
+            <div class="test-bank-answer-instruction"><strong>How to answer</strong><p>Select the single best answer for each question. Use Previous and Save &amp; Continue to review or change answers before submitting the exam.</p></div>
+            <div class="test-bank-instructions-actions"><button type="button" class="test-bank-instructions-cancel">Cancel Exam</button><button type="button" class="test-bank-instructions-start">Start Exam</button></div>
+        </section>`;
+        document.body.appendChild(backdrop);
+        if (window.lucide) lucide.createIcons({root:backdrop});
+        const finish = value => { document.removeEventListener('keydown', onKeydown); backdrop.remove(); resolve(value); };
+        const onKeydown = event => { if (event.key === 'Escape') finish(false); };
+        backdrop.querySelector('.test-bank-instructions-cancel').addEventListener('click', () => finish(false));
+        backdrop.querySelector('.test-bank-instructions-start').addEventListener('click', () => finish(true));
+        backdrop.addEventListener('click', event => { if (event.target === backdrop) finish(false); });
+        document.addEventListener('keydown', onKeydown);
+        backdrop.querySelector('.test-bank-instructions-start').focus();
+    });
 }
 
 function setupTestBankCarousel(workspaceArea) {
