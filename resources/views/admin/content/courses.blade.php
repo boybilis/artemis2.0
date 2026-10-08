@@ -10,7 +10,6 @@
 
 @section('content')
 @php($isAdmin = Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin')
-@php($canManageTestBanks = $isAdmin || strtolower((string) Auth::user()->role) === 'encoder')
 <style>
     .course-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
     .course-info { flex: 1 1 auto; min-width: 0; padding-right: 1rem; }
@@ -51,7 +50,6 @@
                         <button class="btn-ghost" type="button" onclick="openBatchListModal({{ $course->id }})">Manage Batches</button>
                         @else
                         <a href="{{ route('admin.content.subjects', $course->id) }}" class="btn-primary" style="text-decoration:none;">Manage Content</a>
-                        @if($canManageTestBanks)<a href="{{ route('admin.content.test-banks.index', $course->id) }}" class="btn-ghost" style="text-decoration:none;">Test Banks</a>@endif
                         <button class="btn-ghost" type="button" onclick='openEditCourseModal(@json($course->id), @json($course->title), @json($course->description), @json($course->approval_status))'>Edit</button>
                         <form action="{{ route('admin.content.courses.destroy', $course->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this course?');">
                             @csrf
