@@ -15,7 +15,7 @@
 @media(max-width:700px){.tb-summary,.tb-grid{grid-template-columns:1fr}.tb-tools,.tb-pagination,.tb-quiz{align-items:stretch;flex-direction:column}.tb-filters,.tb-filter{width:100%}.tb-filter .form-control,.tb-search .form-control{width:100%;min-width:0}.tb-page-actions button{flex:1}.tb-page-actions{width:100%}.tb-table{min-width:920px}.admin-modal-content.tb-question-modal{width:calc(100% - 1rem);max-height:calc(100vh - 1rem);margin:.5rem}}
 </style>
 
-<a class="btn-ghost" href="{{ route('admin.content.test-banks.index', $course) }}" style="display:inline-flex;text-decoration:none;margin-bottom:1rem">← Test Bank Catalogs</a>
+<a class="btn-ghost" href="{{ route('admin.test-banks.index') }}" style="display:inline-flex;text-decoration:none;margin-bottom:1rem">← Test Bank Catalogs</a>
 <p class="panel-label">{{ $testBank->code }} · {{ $course->title }}</p><h2 class="panel-title">{{ $testBank->title }}</h2><p class="panel-subtitle">Build the multiple-choice question bank and learner-facing premade quizzes.</p>
 <div class="tb-summary"><div class="tb-stat"><small>Questions</small><strong>{{ $questionTotal }}</strong></div><div class="tb-stat"><small>Premade quizzes</small><strong>{{ $quizzes->count() }}</strong></div><div class="tb-stat"><small>Question format</small><strong>Multiple choice</strong></div></div>
 

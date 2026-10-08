@@ -32,6 +32,14 @@ class TestBankEnrollmentTest extends TestCase
         }
     }
 
+    public function test_old_catalog_page_redirects_to_the_new_directory(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $course = Course::create(['title' => 'Master Course']);
+        $this->actingAs($admin)->get(route('admin.content.test-banks.index', $course))
+            ->assertRedirect(route('admin.test-banks.index'));
+    }
+
     public function test_directory_can_create_and_rename_a_bank_without_renaming_the_course(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

@@ -596,10 +596,7 @@ class TestBankController extends Controller
 
     public function adminIndex(Course $course)
     {
-        return view('admin.content.test-banks', [
-            'course' => $course,
-            'testBanks' => $course->testBanks()->latest()->get(),
-        ]);
+        return redirect()->route('admin.test-banks.index');
     }
 
     public function manage(Request $request, Course $course, TestBank $testBank)
