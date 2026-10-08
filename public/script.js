@@ -670,6 +670,18 @@ function renderTestBankWorkspace(workspace) {
             <div><small>MY PRACTICE TEST</small><h3>${escapeHtml(quiz.title)}</h3><p>${Number(quiz.itemCount || 0)} questions · ${quiz.timed ? `${Number(quiz.timeLimitMinutes)} minutes` : 'Untimed'} · ${Number(quiz.attemptCount || 0)} attempt${Number(quiz.attemptCount || 0) === 1 ? '' : 's'}</p><p class="test-bank-builder-quiz-subjects"><strong>Subjects:</strong> ${(quiz.subjects || []).map(subject => escapeHtml(subject.title)).join(', ') || 'No subjects listed'}</p></div>
             <div class="test-bank-builder-quiz-actions"><button type="button" class="test-bank-start-test" data-test-bank-id="${Number(workspace.id)}" data-test-bank-quiz-id="${Number(quiz.id)}">Start Test</button><button type="button" class="test-bank-builder-edit" data-builder-edit="${Number(quiz.id)}">Edit</button><button type="button" class="test-bank-builder-delete" data-builder-delete="${Number(quiz.id)}">Delete</button></div>
         </article>`).join('');
+    const warmUpPassed = Number(workspace.simulationProgress?.warmUpPassed || 0);
+    const warmUpRequired = Number(workspace.simulationProgress?.warmUpRequired || 10);
+    const masteryPassed = Number(workspace.simulationProgress?.masteryPassed || 0);
+    const masteryRequired = Number(workspace.simulationProgress?.masteryRequired || 5);
+    const simulationUnlocked = Boolean(workspace.simulationProgress?.unlocked);
+    const simulationEligibilityCard = `<article class="test-bank-simulation-eligibility ${simulationUnlocked ? 'unlocked' : 'locked'}">
+        <div class="test-bank-simulation-eligibility-head"><div><small>SIMULATION TEST ELIGIBILITY</small><h2>${simulationUnlocked ? 'Simulation Tests Unlocked' : 'Complete the requirements to unlock'}</h2><p>Only passed custom exams created in Quiz Builder count toward these requirements.</p></div><span><i data-lucide="${simulationUnlocked ? 'lock-keyhole-open' : 'lock-keyhole'}"></i>${simulationUnlocked ? 'Unlocked' : 'Locked'}</span></div>
+        <div class="test-bank-simulation-criteria">
+            <div><div><strong>Warm Up exams</strong><span>${warmUpPassed}/${warmUpRequired} passed</span></div><div class="test-bank-simulation-progress"><span style="width:${Math.min(100, warmUpRequired ? (warmUpPassed / warmUpRequired) * 100 : 100)}%"></span></div><small>Pass ${warmUpRequired} custom 10-item Warm Up exams.</small></div>
+            <div><div><strong>Mastery Tests</strong><span>${masteryPassed}/${masteryRequired} passed</span></div><div class="test-bank-simulation-progress"><span style="width:${Math.min(100, masteryRequired ? (masteryPassed / masteryRequired) * 100 : 100)}%"></span></div><small>Pass ${masteryRequired} custom 20-item Mastery Tests.</small></div>
+        </div>
+    </article>`;
 
     workspaceArea.innerHTML = `
         <div class="test-bank-workspace-topbar"><button type="button" class="btn-ghost" id="test-bank-back-btn"><i data-lucide="arrow-left"></i> Back to All Courses</button></div>
@@ -713,7 +725,7 @@ function renderTestBankWorkspace(workspace) {
                 <div class="test-bank-builder-saved"><div class="test-bank-history-heading"><h2>My Practice Tests</h2><p>Your saved tests can be taken again anytime while your subscription is active.</p></div><div class="test-bank-builder-list">${learnerQuizCards || '<div class="test-bank-empty-panel"><i data-lucide="clipboard-list"></i><h2>No saved practice tests</h2><p>Use the builder to create your first test.</p></div>'}</div>${(workspace.learnerQuizzes || []).length > 5 ? '<div class="test-bank-builder-pagination"><span id="test-bank-builder-page-range"></span><div><button type="button" id="test-bank-builder-prev"><i data-lucide="chevron-left"></i> Previous</button><button type="button" id="test-bank-builder-next">Next <i data-lucide="chevron-right"></i></button></div></div>' : ''}</div>
             </div>
         </section>
-        <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-history-heading"><h2>Quiz History</h2><p>Review your completed Test Bank attempts, scores, answers, and rationales.</p></div><div class="test-bank-history-list">${historyCards || '<div class="test-bank-empty-panel"><i data-lucide="history"></i><h2>No completed tests yet</h2><p>Your completed Test Bank attempts and scores will appear here.</p></div>'}</div></section>`;
+        <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-history-heading"><h2>Quiz History</h2><p>Review your completed Test Bank attempts, scores, answers, and rationales.</p></div>${simulationEligibilityCard}<div class="test-bank-history-list">${historyCards || '<div class="test-bank-empty-panel"><i data-lucide="history"></i><h2>No completed tests yet</h2><p>Your completed Test Bank attempts and scores will appear here.</p></div>'}</div></section>`;
 
     $('test-bank-back-btn')?.addEventListener('click', () => showDashboardCourseList('available'));
     $('extend-test-bank-btn')?.addEventListener('click', event => startTestBankCheckout(workspace.id, event.currentTarget));
