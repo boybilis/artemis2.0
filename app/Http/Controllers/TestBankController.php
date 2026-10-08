@@ -256,6 +256,9 @@ class TestBankController extends Controller
                 'title' => $quiz->title,
                 'itemCount' => $quiz->questions_count,
                 'subjectIds' => $quiz->subject_ids,
+                'coverageLabel' => count($quiz->subject_ids ?: []) > 1
+                    ? 'Mixed'
+                    : $subjectLookup->get(collect($quiz->subject_ids)->first())?->title,
                 'subjects' => collect($quiz->subject_ids)->map(fn ($subjectId) => [
                     'id' => $subjectId,
                     'code' => $subjectLookup->get($subjectId)?->subject_code,
@@ -277,11 +280,20 @@ class TestBankController extends Controller
         [$data, $subjectIds, $questionIds] = $this->learnerQuizSelection($request, $testBank);
 
         $quiz = DB::transaction(function () use ($testBank, $user, $data, $subjectIds, $questionIds) {
+            $isMastery = (int) $data['item_count'] === 20;
+            $titlePrefix = $isMastery ? 'Mastery Test #' : 'Warm Up Quiz Set ';
+            $sequence = $testBank->premadeQuizzes()
+                ->where('quiz_type', 'learner')
+                ->where('owner_user_id', $user->id)
+                ->where('title', 'like', $titlePrefix.'%')
+                ->count() + 1;
             $quiz = $testBank->premadeQuizzes()->create([
                 'quiz_type' => 'learner',
                 'owner_user_id' => $user->id,
-                'title' => 'Custom Practice Test · '.now()->format('M j, Y g:i A'),
-                'description' => 'Learner-created practice test.',
+                'title' => $titlePrefix.$sequence,
+                'description' => $subjectIds->count() > 1
+                    ? 'Mixed'
+                    : 'Subject-focused practice test.',
                 'item_count' => $questionIds->count(),
                 'time_limit_minutes' => $data['timed'] ? $data['time_limit_minutes'] : null,
                 'subject_ids' => $subjectIds->values()->all(),

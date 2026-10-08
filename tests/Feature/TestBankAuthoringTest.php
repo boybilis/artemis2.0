@@ -599,6 +599,40 @@ class TestBankAuthoringTest extends TestCase
         $this->assertDatabaseMissing('test_bank_quiz_attempts', ['test_bank_quiz_id' => $quiz->id]);
     }
 
+    public function test_learner_quiz_names_are_numbered_by_type_and_multiple_subjects_show_as_mixed(): void
+    {
+        extract($this->catalog());
+        foreach ([$subject, $secondSubject] as $index => $quizSubject) {
+            $question = TestBankQuestion::create([
+                'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $quizSubject->id,
+                'question' => "Naming question {$index}", 'options' => ['Correct', 'Wrong'],
+                'correct_answer' => 0, 'points' => 1, 'status' => 'active', 'created_by' => $admin->id,
+            ]);
+            $question->subjects()->sync([$quizSubject->id]);
+        }
+        $learner = User::factory()->create();
+        $bank->enrollments()->create([
+            'user_id' => $learner->id, 'status' => 'active',
+            'enrolled_at' => now(), 'expires_at' => now()->addDays(30),
+        ]);
+
+        foreach ([10, 10, 20] as $itemCount) {
+            $this->actingAs($learner)->postJson("/api/test-banks/{$bank->id}/quizzes", [
+                'subject_ids' => [$subject->id, $secondSubject->id],
+                'item_count' => $itemCount, 'timed' => false, 'time_limit_minutes' => null,
+            ])->assertOk();
+        }
+
+        $this->assertSame(
+            ['Warm Up Quiz Set 1', 'Warm Up Quiz Set 2', 'Mastery Test #1'],
+            $bank->premadeQuizzes()->where('quiz_type', 'learner')->oldest('id')->pluck('title')->all()
+        );
+        $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace")->assertOk();
+        $mastery = collect($workspace->json('workspace.learnerQuizzes'))->firstWhere('title', 'Mastery Test #1');
+        $this->assertNotNull($mastery);
+        $this->assertSame('Mixed', $mastery['coverageLabel']);
+    }
+
     public function test_deleting_one_catalog_preserves_its_questions_for_another_catalog_in_the_same_course(): void
     {
         extract($this->catalog());
