@@ -17,6 +17,20 @@ class TestBankEnrollmentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_test_bank_directory_is_accessible_to_admin_and_encoder_only(): void
+    {
+        Course::create(['title' => 'Directory Course']);
+        foreach (['admin', 'encoder'] as $role) {
+            $user = User::factory()->create(['role' => $role, 'is_admin' => $role === 'admin']);
+            $this->actingAs($user)->get(route('admin.test-banks.index'))->assertOk()
+                ->assertSee('Directory Course')->assertSee('Manage Test Banks');
+        }
+        foreach (['instructor', 'staff', 'student'] as $role) {
+            $user = User::factory()->create(['role' => $role, 'is_admin' => false]);
+            $this->actingAs($user)->get(route('admin.test-banks.index'))->assertNotFound();
+        }
+    }
+
     public function test_each_test_bank_belongs_to_a_course_and_activation_uses_its_access_duration(): void
     {
         Carbon::setTestNow('2026-09-23 09:00:00');

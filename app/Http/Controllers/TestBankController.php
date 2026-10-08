@@ -20,6 +20,13 @@ use Illuminate\Validation\ValidationException;
 
 class TestBankController extends Controller
 {
+    public function adminDirectory()
+    {
+        return view('admin.content.test-bank-directory', [
+            'courses' => Course::withCount('testBanks')->orderBy('title')->paginate(20),
+        ]);
+    }
+
     public function catalog()
     {
         $user = Auth::user();

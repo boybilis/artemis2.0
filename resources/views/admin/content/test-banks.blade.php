@@ -15,7 +15,7 @@
 
 <div class="toolbar">
     <div>
-        <a href="{{ route('admin.content.index') }}" class="btn-ghost" style="display:inline-flex;margin-bottom:1rem;text-decoration:none">← Back to Courses</a>
+        <a href="{{ route('admin.test-banks.index') }}" class="btn-ghost" style="display:inline-flex;margin-bottom:1rem;text-decoration:none">← Back to Test Banks</a>
         <p class="panel-label">{{ $course->title }}</p>
         <h2 class="panel-title">Course Test Bank Catalogs</h2>
         <p class="panel-subtitle">Create separately paid question-bank products for this master course.</p>

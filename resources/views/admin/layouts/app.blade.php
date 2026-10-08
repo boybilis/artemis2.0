@@ -17,6 +17,9 @@
     if ($isAdmin || in_array($role, ['instructor','encoder'], true)) {
         $navItems[] = ['label' => 'Course Management', 'route' => 'admin.content.index', 'active' => 'admin.content.*', 'icon' => 'book-open', 'badge' => $pendingContentCount > 0 ? $pendingContentCount : null];
     }
+    if ($isAdmin || $role === 'encoder') {
+        $navItems[] = ['label' => 'Test Banks', 'route' => 'admin.test-banks.index', 'active' => ['admin.test-banks.*', 'admin.content.test-banks.*'], 'icon' => 'notebook-tabs'];
+    }
     if ($isAdmin || in_array($role, ['instructor','staff'], true)) {
         $navItems[] = ['label' => 'Class Management', 'route' => 'admin.classes.index', 'active' => 'admin.classes.*', 'icon' => 'calendar-days'];
     }
@@ -234,7 +237,7 @@
         <aside class="sidebar" id="admin-sidebar" aria-label="{{ $workspaceRole }} menu">
             <nav class="nav-list" aria-label="{{ $workspaceRole }} navigation">
                 @foreach ($navItems as $item)
-                    <a class="nav-link {{ request()->routeIs($item['active']) ? 'active' : '' }}" href="{{ route($item['route']) }}">
+                    <a class="nav-link {{ request()->routeIs(...(array) $item['active']) && !($item['route'] === 'admin.content.index' && request()->routeIs('admin.content.test-banks.*')) ? 'active' : '' }}" href="{{ route($item['route']) }}">
                         <i data-lucide="{{ $item['icon'] }}" style="width: 18px; height: 18px; opacity: 0.9;"></i>
                         <span style="flex-grow: 1;">{{ $item['label'] }}</span>
                         @if(isset($item['badge']) && $item['badge'])

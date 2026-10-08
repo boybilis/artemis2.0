@@ -167,6 +167,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/classes/batches/{batch}', [AdminController::class, 'destroyClassBatch'])->name('classes.batches.destroy');
         });
         Route::middleware(RoleMiddleware::class.':admin,encoder')->group(function () {
+            Route::get('/test-banks', [TestBankController::class, 'adminDirectory'])->name('test-banks.index');
             Route::get('/content/courses/{course}/test-banks', [TestBankController::class, 'adminIndex'])->name('content.test-banks.index');
             Route::post('/content/courses/{course}/test-banks', [TestBankController::class, 'store'])->name('content.test-banks.store');
             Route::put('/content/courses/{course}/test-banks/{testBank}', [TestBankController::class, 'update'])->name('content.test-banks.update');
