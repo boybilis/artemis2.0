@@ -652,16 +652,12 @@ function renderTestBankWorkspace(workspace) {
         </article>`;
     const simulationCards = (workspace.premadeTests || []).filter(test => test.isSimulation).map(renderPremadeCard).join('');
     const premadeCards = (workspace.premadeTests || []).filter(test => !test.isSimulation).map(renderPremadeCard).join('');
-    const historyCards = (workspace.history || []).map(attempt => {
+    const historyRows = (workspace.history || []).map(attempt => {
         const takenAt = attempt.takenAt ? new Date(attempt.takenAt).toLocaleString('en-US', {month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit'}) : '';
         const score = Number(attempt.score || 0).toLocaleString(undefined, {maximumFractionDigits:2});
         const total = Number(attempt.total || 0).toLocaleString(undefined, {maximumFractionDigits:2});
-        return `<article class="test-bank-history-card">
-            <div class="test-bank-history-result ${attempt.cancelled ? 'cancelled' : (attempt.passed ? 'passed' : 'completed')}"><i data-lucide="${attempt.cancelled ? 'circle-x' : (attempt.passed ? 'circle-check' : 'clipboard-check')}"></i></div>
-            <div class="test-bank-history-copy"><small>${attempt.cancelled ? 'CANCELLED' : (attempt.passed ? 'PASSED' : 'COMPLETED')} · ATTEMPT ${Number(attempt.attemptNumber || 1)}</small><h3>${escapeHtml(attempt.title)}</h3><p>${escapeHtml(takenAt)}${attempt.cancelled ? ' · Exam closed before submission' : ` · ${Number(attempt.correctItems || 0)} of ${Number(attempt.totalItems || 0)} correct`}</p></div>
-            <div class="test-bank-history-score"><strong>${score}/${total}</strong><span>points</span></div>
-            ${attempt.cancelled ? '<span class="test-bank-history-cancelled-label">No result</span>' : `<button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review Result</button>`}
-        </article>`;
+        const percentage = Number(attempt.total || 0) > 0 ? Math.round((Number(attempt.score || 0) / Number(attempt.total)) * 100) : 0;
+        return `<tr><td><strong>${escapeHtml(attempt.title)}</strong><small>${attempt.cancelled ? 'Exam closed before submission' : `${Number(attempt.correctItems || 0)} of ${Number(attempt.totalItems || 0)} correct`}</small></td><td><span class="test-bank-history-status ${attempt.cancelled ? 'cancelled' : 'taken'}">${attempt.cancelled ? 'Cancelled' : 'Taken'}</span></td><td><span class="test-bank-history-status ${attempt.cancelled ? 'cancelled' : (attempt.passed ? 'passed' : 'failed')}">${attempt.cancelled ? 'No Result' : (attempt.passed ? 'Pass' : 'Not Passed')}</span></td><td>${attempt.cancelled ? '—' : `${score}/${total} · ${percentage}%`}</td><td>${Number(attempt.attemptNumber || 1)}</td><td>${escapeHtml(takenAt)}</td><td>${attempt.cancelled ? '<span class="test-bank-history-cancelled-label">No review</span>' : `<button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review</button>`}</td></tr>`;
     }).join('');
     const builderSubjects = (workspace.subjects || []).map(subject => `
         <label class="test-bank-builder-subject"><input type="checkbox" name="subject_ids" value="${Number(subject.id)}" ${Number(subject.questionCount || 0) ? '' : 'disabled'}><span><strong>${escapeHtml(subject.title)}</strong><small>${Number(subject.questionCount || 0)} available questions</small></span></label>`).join('');
@@ -675,6 +671,11 @@ function renderTestBankWorkspace(workspace) {
     const masteryPassed = Number(workspace.simulationProgress?.masteryPassed || 0);
     const masteryRequired = Number(workspace.simulationProgress?.masteryRequired || 5);
     const simulationUnlocked = Boolean(workspace.simulationProgress?.unlocked);
+    const requiredPassed = Math.min(warmUpPassed, warmUpRequired) + Math.min(masteryPassed, masteryRequired);
+    const totalRequired = warmUpRequired + masteryRequired;
+    const requirementProgress = totalRequired ? Math.round((requiredPassed / totalRequired) * 100) : 100;
+    const completedAttempts = (workspace.history || []).filter(attempt => !attempt.cancelled).length;
+    const cancelledAttempts = (workspace.history || []).filter(attempt => attempt.cancelled).length;
     const simulationEligibilityCard = `<article class="test-bank-simulation-eligibility ${simulationUnlocked ? 'unlocked' : 'locked'}">
         <div class="test-bank-simulation-eligibility-head"><div><small>SIMULATION TEST ELIGIBILITY</small><h2>${simulationUnlocked ? 'Simulation Tests Unlocked' : 'Complete the requirements to unlock'}</h2><p>Only passed custom exams created in Quiz Builder count toward these requirements.</p></div><span><i data-lucide="${simulationUnlocked ? 'lock-keyhole-open' : 'lock-keyhole'}"></i>${simulationUnlocked ? 'Unlocked' : 'Locked'}</span></div>
         <div class="test-bank-simulation-criteria">
@@ -725,7 +726,7 @@ function renderTestBankWorkspace(workspace) {
                 <div class="test-bank-builder-saved"><div class="test-bank-history-heading"><h2>My Practice Tests</h2><p>Your saved tests can be taken again anytime while your subscription is active.</p></div><div class="test-bank-builder-list">${learnerQuizCards || '<div class="test-bank-empty-panel"><i data-lucide="clipboard-list"></i><h2>No saved practice tests</h2><p>Use the builder to create your first test.</p></div>'}</div>${(workspace.learnerQuizzes || []).length > 5 ? '<div class="test-bank-builder-pagination"><span id="test-bank-builder-page-range"></span><div><button type="button" id="test-bank-builder-prev"><i data-lucide="chevron-left"></i> Previous</button><button type="button" id="test-bank-builder-next">Next <i data-lucide="chevron-right"></i></button></div></div>' : ''}</div>
             </div>
         </section>
-        <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-history-heading"><h2>Quiz History</h2><p>Review your completed Test Bank attempts, scores, answers, and rationales.</p></div>${simulationEligibilityCard}<div class="test-bank-history-list">${historyCards || '<div class="test-bank-empty-panel"><i data-lucide="history"></i><h2>No completed tests yet</h2><p>Your completed Test Bank attempts and scores will appear here.</p></div>'}</div></section>`;
+        <section class="test-bank-tab-panel hidden" data-test-bank-panel="history"><div class="test-bank-history-heading"><h2>Progress Report</h2><p>${escapeHtml(workspace.courseTitle)} · Test Bank Quiz History</p></div>${simulationEligibilityCard}<section class="test-bank-progress-report"><div class="test-bank-progress-report-head"><div><span class="test-bank-progress-report-icon"><i data-lucide="chart-no-axes-column-increasing"></i></span><div><small>REQUIRED CUSTOM TESTS</small><h2>Progress Tracker</h2><p>Passed required tests ÷ total required tests × 100</p></div></div><div><strong>${requirementProgress}%</strong><span>${requiredPassed} of ${totalRequired} required tests passed</span><div><i style="width:${requirementProgress}%"></i></div></div></div><div class="test-bank-progress-stats"><div><strong>${totalRequired}</strong><span>Total required</span></div><div><strong>${completedAttempts}</strong><span>Completed attempts</span></div><div><strong>${cancelledAttempts}</strong><span>Cancelled</span></div><div><strong>${requiredPassed}</strong><span>Requirements passed</span></div></div><div class="test-bank-history-table-wrap"><table class="test-bank-history-table"><thead><tr><th>Test</th><th>Status</th><th>Result</th><th>Score</th><th>Attempt</th><th>Date taken</th><th>Action</th></tr></thead><tbody>${historyRows || '<tr><td colspan="7" class="test-bank-history-empty">No Test Bank attempts yet.</td></tr>'}</tbody></table></div></section></section>`;
 
     $('test-bank-back-btn')?.addEventListener('click', () => showDashboardCourseList('available'));
     $('extend-test-bank-btn')?.addEventListener('click', event => startTestBankCheckout(workspace.id, event.currentTarget));
