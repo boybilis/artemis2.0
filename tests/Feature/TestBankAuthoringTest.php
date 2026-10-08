@@ -263,6 +263,11 @@ class TestBankAuthoringTest extends TestCase
 
         $this->actingAs($learner)->deleteJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/attempt")
             ->assertOk()->assertJsonPath('success', true);
+        $this->assertDatabaseHas('test_bank_quiz_attempts', [
+            'user_id' => $learner->id, 'test_bank_quiz_id' => $quiz->id, 'passed' => false,
+        ]);
+        $cancelledAttempt = TestBankQuizAttempt::latest('id')->firstOrFail();
+        $this->assertTrue((bool) data_get($cancelledAttempt->review_data, 'cancelled'));
         $this->actingAs($learner)->postJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/submit", ['answers' => [0]])
             ->assertUnprocessable();
         $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")->assertOk();
@@ -285,11 +290,13 @@ class TestBankAuthoringTest extends TestCase
 
         $history = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
         $history->assertOk()
-            ->assertJsonCount(1, 'workspace.history')
+            ->assertJsonCount(2, 'workspace.history')
             ->assertJsonPath('workspace.history.0.title', 'Pre Test 1')
             ->assertJsonPath('workspace.history.0.passed', true)
             ->assertJsonPath('workspace.history.0.correctItems', 1)
-            ->assertJsonPath('workspace.history.0.questions.0.rationale', 'This explains the correct answer.');
+            ->assertJsonPath('workspace.history.0.questions.0.rationale', 'This explains the correct answer.')
+            ->assertJsonPath('workspace.history.1.cancelled', true)
+            ->assertJsonCount(0, 'workspace.history.1.questions');
     }
 
     public function test_learner_without_active_test_bank_access_cannot_start_a_premade_test(): void

@@ -172,6 +172,7 @@ class TestBankController extends Controller
         $attemptHistory = $attempts->sortBy('created_at')->map(function (TestBankQuizAttempt $attempt) use (&$attemptCounters) {
             $attemptNumber = ($attemptCounters[$attempt->test_bank_quiz_id] ?? 0) + 1;
             $attemptCounters[$attempt->test_bank_quiz_id] = $attemptNumber;
+            $cancelled = (bool) data_get($attempt->review_data, 'cancelled', false);
 
             return [
                 'id' => $attempt->id,
@@ -183,8 +184,9 @@ class TestBankController extends Controller
                 'correctItems' => $attempt->score,
                 'totalItems' => $attempt->total,
                 'passed' => $attempt->passed,
+                'cancelled' => $cancelled,
                 'takenAt' => $attempt->created_at?->toIso8601String(),
-                'questions' => $attempt->review_data ?: [],
+                'questions' => $cancelled ? [] : ($attempt->review_data ?: []),
             ];
         })->reverse()->values();
         $subjects = $testBank->course->subjects->map(function ($subject) use ($testBank, $attempts) {
@@ -510,8 +512,23 @@ class TestBankController extends Controller
         $user = Auth::user();
         $this->guardLearnerCatalog($user, $testBank);
         $this->guardLearnerQuiz($user, $testBank, $quiz);
+        $attemptKey = "test_bank_quiz_{$user->id}_{$quiz->id}";
+        $questionIds = session()->get($attemptKey, []);
+        if ($questionIds) {
+            TestBankQuizAttempt::create([
+                'user_id' => $user->id,
+                'test_bank_id' => $testBank->id,
+                'test_bank_quiz_id' => $quiz->id,
+                'score' => 0,
+                'total' => count($questionIds),
+                'points_earned' => 0,
+                'points_possible' => 0,
+                'passed' => false,
+                'review_data' => ['cancelled' => true],
+            ]);
+        }
         session()->forget([
-            "test_bank_quiz_{$user->id}_{$quiz->id}",
+            $attemptKey,
             "test_bank_quiz_deadline_{$user->id}_{$quiz->id}",
         ]);
 

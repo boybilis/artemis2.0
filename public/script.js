@@ -657,10 +657,10 @@ function renderTestBankWorkspace(workspace) {
         const score = Number(attempt.score || 0).toLocaleString(undefined, {maximumFractionDigits:2});
         const total = Number(attempt.total || 0).toLocaleString(undefined, {maximumFractionDigits:2});
         return `<article class="test-bank-history-card">
-            <div class="test-bank-history-result ${attempt.passed ? 'passed' : 'completed'}"><i data-lucide="${attempt.passed ? 'circle-check' : 'clipboard-check'}"></i></div>
-            <div class="test-bank-history-copy"><small>${attempt.passed ? 'PASSED' : 'COMPLETED'} · ATTEMPT ${Number(attempt.attemptNumber || 1)}</small><h3>${escapeHtml(attempt.title)}</h3><p>${escapeHtml(takenAt)} · ${Number(attempt.correctItems || 0)} of ${Number(attempt.totalItems || 0)} correct</p></div>
+            <div class="test-bank-history-result ${attempt.cancelled ? 'cancelled' : (attempt.passed ? 'passed' : 'completed')}"><i data-lucide="${attempt.cancelled ? 'circle-x' : (attempt.passed ? 'circle-check' : 'clipboard-check')}"></i></div>
+            <div class="test-bank-history-copy"><small>${attempt.cancelled ? 'CANCELLED' : (attempt.passed ? 'PASSED' : 'COMPLETED')} · ATTEMPT ${Number(attempt.attemptNumber || 1)}</small><h3>${escapeHtml(attempt.title)}</h3><p>${escapeHtml(takenAt)}${attempt.cancelled ? ' · Exam closed before submission' : ` · ${Number(attempt.correctItems || 0)} of ${Number(attempt.totalItems || 0)} correct`}</p></div>
             <div class="test-bank-history-score"><strong>${score}/${total}</strong><span>points</span></div>
-            <button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review Result</button>
+            ${attempt.cancelled ? '<span class="test-bank-history-cancelled-label">No result</span>' : `<button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review Result</button>`}
         </article>`;
     }).join('');
     const builderSubjects = (workspace.subjects || []).map(subject => `
@@ -3056,6 +3056,7 @@ let testBankLazyLoading = false;
 let testBankExamActive = false;
 let testBankFullscreenExitAllowed = false;
 let testBankAttemptInvalidating = false;
+let testBankExitWarningOpen = false;
 
 function currentFullscreenElement() {
     return document.fullscreenElement || document.webkitFullscreenElement;
@@ -3083,9 +3084,47 @@ async function invalidateActiveTestBankExam(message = 'The exam was invalidated 
     openTestBankWorkspace(testBankId);
 }
 
+function showTestBankExitWarning(fullscreenExited = false) {
+    if (testBankExitWarningOpen || !testBankExamActive) return;
+    testBankExitWarningOpen = true;
+    const backdrop = document.createElement('div');
+    backdrop.className = 'test-bank-instructions-backdrop test-bank-exit-warning-backdrop';
+    backdrop.innerHTML = `<section class="test-bank-instructions-modal test-bank-exit-warning" role="alertdialog" aria-modal="true" aria-labelledby="test-bank-exit-warning-title">
+        <div class="test-bank-instructions-icon warning"><i data-lucide="triangle-alert"></i></div><small>EXAM IN PROGRESS</small>
+        <h2 id="test-bank-exit-warning-title">Closing will cancel this exam</h2>
+        <p>${fullscreenExited ? 'You exited full-screen mode. Press Escape again or choose Cancel Exam to cancel and record this attempt.' : 'Your answers have not been submitted. Cancelling now will record this attempt as cancelled.'}</p>
+        <div class="test-bank-answer-instruction"><strong>Do you want to continue?</strong><p>Choose Continue Exam to return to full-screen mode and keep answering.</p></div>
+        <div class="test-bank-instructions-actions"><button type="button" class="test-bank-exit-cancel">Cancel Exam</button><button type="button" class="test-bank-exit-continue">Continue Exam</button></div>
+    </section>`;
+    document.body.appendChild(backdrop);
+    if (window.lucide) lucide.createIcons({root:backdrop});
+    const cleanup = () => { document.removeEventListener('keydown', onKeydown); backdrop.remove(); testBankExitWarningOpen = false; };
+    const cancelExam = async () => { cleanup(); await invalidateActiveTestBankExam('Exam cancelled and recorded in Quiz History.'); await exitTestBankFullscreen(); };
+    const continueExam = async () => {
+        const button = backdrop.querySelector('.test-bank-exit-continue');
+        button.disabled = true;
+        try {
+            if (!currentFullscreenElement()) {
+                const requestFullscreen = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+                if (!requestFullscreen) throw new Error('Fullscreen unavailable');
+                await requestFullscreen.call(document.documentElement);
+            }
+            cleanup();
+        } catch (error) {
+            button.disabled = false;
+            showToast('Return to full-screen mode to continue the exam.', 'error');
+        }
+    };
+    const onKeydown = event => { if (event.key === 'Escape') { event.preventDefault(); cancelExam(); } };
+    backdrop.querySelector('.test-bank-exit-cancel').addEventListener('click', cancelExam);
+    backdrop.querySelector('.test-bank-exit-continue').addEventListener('click', continueExam);
+    document.addEventListener('keydown', onKeydown);
+    backdrop.querySelector('.test-bank-exit-continue').focus();
+}
+
 async function handleTestBankFullscreenChange() {
     if (testBankExamActive && !currentFullscreenElement() && !testBankFullscreenExitAllowed) {
-        await invalidateActiveTestBankExam();
+        showTestBankExitWarning(true);
     }
     if (!currentFullscreenElement()) testBankFullscreenExitAllowed = false;
 }
@@ -3427,14 +3466,13 @@ function showAssessmentReview() {
 const quizCloseBtn = $('quiz-close-btn');
 if (quizCloseBtn) {
     quizCloseBtn.addEventListener('click', async () => {
+        if (state.examType === 'test_bank' && activeTestBankId && activeTestBankQuizId) {
+            showTestBankExitWarning(false);
+            return;
+        }
         if (!window.confirm('Exit this assessment? Your current unanswered progress will not be submitted.')) return;
         clearInterval(quizTimerInterval);
         answersList = [];
-        if (state.examType === 'test_bank' && activeTestBankId && activeTestBankQuizId) {
-            await invalidateActiveTestBankExam('Exam cancelled. The attempt was invalidated.');
-            await exitTestBankFullscreen();
-            return;
-        }
         showScreen('dashboard-screen');
         if (state.examType === 'test_bank' && activeTestBankId) openTestBankWorkspace(activeTestBankId);
         else renderDashboard();
