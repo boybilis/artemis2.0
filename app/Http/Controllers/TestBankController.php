@@ -23,7 +23,8 @@ class TestBankController extends Controller
     public function adminDirectory()
     {
         return view('admin.content.test-bank-directory', [
-            'courses' => Course::withCount('testBanks')->orderBy('title')->paginate(20),
+            'courses' => Course::orderBy('title')->get(['id', 'title']),
+            'testBanks' => TestBank::with('course:id,title')->orderBy('title')->paginate(20),
         ]);
     }
 

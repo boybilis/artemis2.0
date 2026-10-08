@@ -19,16 +19,35 @@ class TestBankEnrollmentTest extends TestCase
 
     public function test_test_bank_directory_is_accessible_to_admin_and_encoder_only(): void
     {
-        Course::create(['title' => 'Directory Course']);
+        $course = Course::create(['title' => 'Directory Course']);
+        TestBank::create(['course_id' => $course->id, 'title' => 'Independent Bank', 'code' => 'DIR-TB', 'price' => 100, 'access_days' => 30, 'status' => 'active']);
         foreach (['admin', 'encoder'] as $role) {
             $user = User::factory()->create(['role' => $role, 'is_admin' => $role === 'admin']);
             $this->actingAs($user)->get(route('admin.test-banks.index'))->assertOk()
-                ->assertSee('Directory Course')->assertSee('Manage Test Banks');
+                ->assertSee('Directory Course')->assertSee('Independent Bank')->assertSee('Manage Test Bank')->assertSee('Create Test Bank');
         }
         foreach (['instructor', 'staff', 'student'] as $role) {
             $user = User::factory()->create(['role' => $role, 'is_admin' => false]);
             $this->actingAs($user)->get(route('admin.test-banks.index'))->assertNotFound();
         }
+    }
+
+    public function test_directory_can_create_and_rename_a_bank_without_renaming_the_course(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $course = Course::create(['title' => 'Original Master Course']);
+        $directory = route('admin.test-banks.index');
+        $data = ['title' => 'Separate Test Bank', 'code' => 'RENAME-TB', 'price' => 500, 'access_days' => 30];
+        $this->actingAs($admin)->from($directory)->post(route('admin.content.test-banks.store', $course), $data)
+            ->assertRedirect($directory)->assertSessionHasNoErrors();
+        $bank = TestBank::where('code', 'RENAME-TB')->firstOrFail();
+        $data['title'] = 'Renamed Test Bank';
+        $this->actingAs($admin)->from($directory)->put(route('admin.content.test-banks.update', [$course, $bank]), $data)
+            ->assertRedirect($directory)->assertSessionHasNoErrors();
+        $this->assertSame('Renamed Test Bank', $bank->fresh()->title);
+        $this->assertSame($course->id, $bank->fresh()->course_id);
+        $this->assertSame('Original Master Course', $course->fresh()->title);
+        $this->get($directory)->assertOk()->assertSee('Renamed Test Bank');
     }
 
     public function test_each_test_bank_belongs_to_a_course_and_activation_uses_its_access_duration(): void
