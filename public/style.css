@@ -941,6 +941,7 @@ body.light-mode #quiz-screen,body.light-mode .exam-environment-body{background:#
 /* Keep assessment chrome fixed; only the question canvas scrolls. */
 #quiz-screen{height:100dvh;max-height:100dvh;flex-direction:column;overflow:hidden;overscroll-behavior:none}
 #quiz-screen.active{display:flex;flex-direction:column}
+body.test-bank-exam-mode{overflow:hidden}body.test-bank-exam-mode #quiz-screen{position:fixed;inset:0;z-index:5000;width:100vw;height:100dvh;max-height:100dvh}
 .exam-environment-header{position:sticky;top:0;flex-shrink:0;z-index:20}
 .exam-environment-body{flex:1 1 0;min-height:0;overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .exam-environment-footer{position:sticky;bottom:0;flex-shrink:0;z-index:20}
