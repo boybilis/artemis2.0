@@ -713,7 +713,7 @@ function renderTestBankWorkspace(workspace) {
     const completedAttempts = (workspace.history || []).filter(attempt => !attempt.cancelled).length;
     const cancelledAttempts = (workspace.history || []).filter(attempt => attempt.cancelled).length;
     const simulationEligibilityCard = `<article class="test-bank-simulation-eligibility ${simulationUnlocked ? 'unlocked' : 'locked'}">
-        <div class="test-bank-simulation-eligibility-head"><div><small>SIMULATION TEST ELIGIBILITY</small><h2>${simulationUnlocked ? 'Simulation Tests Unlocked' : 'Complete the requirements to unlock'}</h2><p>Only passed custom exams created in Quiz Builder count toward these requirements.</p></div><span><i data-lucide="${simulationUnlocked ? 'lock-keyhole-open' : 'lock-keyhole'}"></i>${simulationUnlocked ? 'Unlocked' : 'Locked'}</span></div>
+        <div class="test-bank-simulation-eligibility-head"><div><small>SIMULATION TEST ELIGIBILITY</small><h2>${simulationUnlocked ? 'Simulation Tests Unlocked' : 'Complete the requirements to unlock'}</h2><p>Only passed custom exams created in Test Builder count toward these requirements.</p></div><span><i data-lucide="${simulationUnlocked ? 'lock-keyhole-open' : 'lock-keyhole'}"></i>${simulationUnlocked ? 'Unlocked' : 'Locked'}</span></div>
         <div class="test-bank-simulation-criteria">
             <div><div><strong>Warm Up exams</strong><span>${warmUpPassed}/${warmUpRequired} passed</span></div><div class="test-bank-simulation-progress"><span style="width:${Math.min(100, warmUpRequired ? (warmUpPassed / warmUpRequired) * 100 : 100)}%"></span></div><small>Pass ${warmUpRequired} custom 10-item Warm Up exams.</small></div>
             <div><div><strong>Mastery Tests</strong><span>${masteryPassed}/${masteryRequired} passed</span></div><div class="test-bank-simulation-progress"><span style="width:${Math.min(100, masteryRequired ? (masteryPassed / masteryRequired) * 100 : 100)}%"></span></div><small>Pass ${masteryRequired} custom 20-item Mastery Tests.</small></div>
@@ -742,7 +742,7 @@ function renderTestBankWorkspace(workspace) {
         </section>
         <div class="test-bank-workspace-tabs" role="tablist">
             <button type="button" class="active" data-test-bank-tab="premade"><i data-lucide="book-open"></i> Premade Tests</button>
-            <button type="button" data-test-bank-tab="builder"><i data-lucide="wand-sparkles"></i> Quiz Builder</button>
+            <button type="button" data-test-bank-tab="builder"><i data-lucide="wand-sparkles"></i> Test Builder</button>
             <button type="button" data-test-bank-tab="progress"><i data-lucide="chart-no-axes-column-increasing"></i> Progress Tracker</button>
         </div>
         <section class="test-bank-tab-panel" data-test-bank-panel="premade">
