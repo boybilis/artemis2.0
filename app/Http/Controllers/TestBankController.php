@@ -252,6 +252,7 @@ class TestBankController extends Controller
             'title' => $testBank->title,
             'code' => $testBank->code,
             'courseTitle' => $testBank->course->title,
+            'description' => $testBank->description,
             'accessDays' => $testBank->access_days,
             'enrolledAt' => $enrollment->enrolled_at?->toIso8601String(),
             'expiresAt' => $enrollment->expires_at?->toIso8601String(),
