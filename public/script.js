@@ -34,6 +34,38 @@ let currentBatchId = null;
 let selectedPurchaseCourseId = null;
 let selectedPurchaseBatchId = null;
 
+function resetLearnerSessionState() {
+    courses = [];
+    reviewPackages = [];
+    enrolledTestBanks = [];
+    availableTestBanks = [];
+    topics = [];
+    subjects = [];
+    currentSubjectId = null;
+    currentCourseId = null;
+    currentBatchId = null;
+    selectedPurchaseCourseId = null;
+    selectedPurchaseBatchId = null;
+    finalExam = [];
+    courseMockExamQuestionCount = 0;
+    courseMockExamLatestResult = null;
+    courseMockExamAttemptsUsed = 0;
+    courseMockExamMaximumAttempts = null;
+    courseMockExamTimeLimitMinutes = null;
+    courseMockExamPassed = false;
+    courseMockExamCertificateAvailable = false;
+    state.currentTopicIndex = null;
+    state.currentLessonIndex = 0;
+    state.completedTopics = [];
+    state.topicProgressMap = {};
+    state.hasPassedMidterm = false;
+    state.certificates = [];
+    state.courseUnlocked = false;
+    state.hasCertificate = false;
+    state.isSubscribed = false;
+    state.subscriptionExpiresAt = null;
+}
+
 // ─── CSRF & API Helpers ───────────────────────────────────
 function getCsrfToken() {
     const name = 'XSRF-TOKEN=';
@@ -521,8 +553,8 @@ if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
         try {
             await apiRequest('/api/auth/logout', 'POST');
+            resetLearnerSessionState();
             state.user = null;
-            state.completedTopics = [];
             showScreen('landing-screen');
             showToast('Logged out successfully.', 'info');
         } catch (err) {}
@@ -1110,6 +1142,10 @@ async function loginUser(user) {
         return;
     }
 
+    // A learner may sign in or register another account without reloading the
+    // single-page app. Discard all data fetched for the previous account so
+    // enrollment flags and progress are always loaded for this user.
+    resetLearnerSessionState();
     state.user = user;
     state.courseListFilter = 'dashboard';
     const layoutKey = `artemis_course_layout_${String(user.email || 'learner').toLowerCase()}`;
