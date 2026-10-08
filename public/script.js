@@ -602,7 +602,7 @@ function renderEnrolledTestBankSidebar() {
     list.innerHTML = enrolledTestBanks.map(testBank => `
         <button type="button" class="learner-sidebar-subitem" data-test-bank-id="${Number(testBank.id)}">
             <i data-lucide="file-question"></i>
-            <span>${escapeHtml(testBank.title)}<small>${escapeHtml(testBank.course?.title || testBank.code || 'TEST BANK')}</small></span>
+            <span>${escapeHtml(testBank.title)}</span>
         </button>
     `).join('');
 
