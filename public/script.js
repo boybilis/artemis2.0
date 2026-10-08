@@ -724,7 +724,7 @@ function renderTestBankWorkspace(workspace) {
         <div class="test-bank-workspace-topbar"><button type="button" class="btn-ghost" id="test-bank-back-btn"><i data-lucide="arrow-left"></i> Back to All Courses</button></div>
         <section class="test-bank-workspace-hero">
             <span class="test-bank-workspace-mark"><i data-lucide="book-open"></i></span>
-            <div><small>ACTIVE TEST BANK</small><h1>${escapeHtml(workspace.title)}</h1><p>Only your ${escapeHtml(workspace.courseTitle)} questions, scores, and progress are shown on this page.</p></div>
+            <div><small>ACTIVE TEST BANK</small><h1>${escapeHtml(workspace.title)}</h1><p>Build exam confidence with practice tests, detailed rationales, and progress tracking.</p></div>
             <div class="test-bank-readiness"><strong>${Number(workspace.readiness || 0)}%</strong><span>Exam readiness</span></div>
         </section>
         <section class="test-bank-subscription-panel">
