@@ -201,7 +201,8 @@ class TestBankController extends Controller
                 $subject->id,
                 array_map('intval', $attempt->quiz?->subject_ids ?: []),
                 true
-            ))->reject(fn (TestBankQuizAttempt $attempt) => (bool) data_get($attempt->review_data, 'cancelled', false));
+            ))->reject(fn (TestBankQuizAttempt $attempt) => (bool) data_get($attempt->review_data, 'cancelled', false)
+                || (float) $attempt->points_possible <= 0);
             $averageScore = $subjectAttempts->isEmpty() ? null : round((float) $subjectAttempts
                 ->avg(fn (TestBankQuizAttempt $attempt) => (float) $attempt->points_possible > 0
                     ? ((float) $attempt->points_earned / (float) $attempt->points_possible) * 100

@@ -433,7 +433,7 @@ class TestBankAuthoringTest extends TestCase
             'user_id' => $learner->id, 'test_bank_id' => $bank->id,
             'test_bank_quiz_id' => $quiz->id, 'score' => 0, 'total' => 10,
             'points_earned' => 0, 'points_possible' => 0,
-            'passed' => false, 'review_data' => ['cancelled' => true],
+            'passed' => false, 'review_data' => [],
         ]);
 
         $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
