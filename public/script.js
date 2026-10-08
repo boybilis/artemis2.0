@@ -601,7 +601,7 @@ function renderEnrolledTestBankSidebar() {
     group.classList.toggle('hidden', enrolledTestBanks.length === 0);
     list.innerHTML = enrolledTestBanks.map(testBank => `
         <button type="button" class="learner-sidebar-subitem" data-test-bank-id="${Number(testBank.id)}">
-            <i data-lucide="file-question"></i>
+            <i data-lucide="notebook-tabs"></i>
             <span>${escapeHtml(testBank.title)}</span>
         </button>
     `).join('');
