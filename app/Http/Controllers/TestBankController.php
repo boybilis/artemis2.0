@@ -197,11 +197,14 @@ class TestBankController extends Controller
             $testCount = $testBank->premadeQuizzes()->where('status', 'active')
                 ->where('quiz_type', 'premade')
                 ->whereJsonContains('subject_ids', $subject->id)->count();
-            $subjectAttempts = $attempts->filter(fn (TestBankQuizAttempt $attempt) => in_array(
-                $subject->id,
-                array_map('intval', $attempt->quiz?->subject_ids ?: []),
-                true
-            ))->reject(fn (TestBankQuizAttempt $attempt) => (bool) data_get($attempt->review_data, 'cancelled', false)
+            $subjectAttempts = $attempts->filter(fn (TestBankQuizAttempt $attempt) =>
+                $attempt->quiz?->quiz_type === 'subject'
+                && in_array(
+                    $subject->id,
+                    array_map('intval', $attempt->quiz?->subject_ids ?: []),
+                    true
+                )
+            )->reject(fn (TestBankQuizAttempt $attempt) => (bool) data_get($attempt->review_data, 'cancelled', false)
                 || (float) $attempt->points_possible <= 0);
             $averageScore = $subjectAttempts->isEmpty() ? null : round((float) $subjectAttempts
                 ->avg(fn (TestBankQuizAttempt $attempt) => (float) $attempt->points_possible > 0

@@ -435,13 +435,25 @@ class TestBankAuthoringTest extends TestCase
             'points_earned' => 0, 'points_possible' => 0,
             'passed' => false, 'review_data' => [],
         ]);
+        $customQuiz = $bank->premadeQuizzes()->create([
+            'quiz_type' => 'learner', 'owner_user_id' => $learner->id,
+            'title' => 'Custom Warm-up', 'item_count' => 10,
+            'subject_ids' => [$subject->id, $secondSubject->id],
+            'randomize_questions' => true, 'status' => 'active', 'created_by' => $learner->id,
+        ]);
+        TestBankQuizAttempt::create([
+            'user_id' => $learner->id, 'test_bank_id' => $bank->id,
+            'test_bank_quiz_id' => $customQuiz->id, 'score' => 10, 'total' => 10,
+            'points_earned' => 10, 'points_possible' => 10,
+            'passed' => true, 'review_data' => [],
+        ]);
 
         $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
         $workspace->assertOk()
             ->assertJsonPath('workspace.subjects.0.completedTests', 5)
             ->assertJsonPath('workspace.subjects.0.averageScore', 60)
             ->assertJsonPath('workspace.subjects.0.progress', 100)
-            ->assertJsonPath('workspace.simulationProgress.warmUpPassed', 0)
+            ->assertJsonPath('workspace.simulationProgress.warmUpPassed', 1)
             ->assertJsonPath('workspace.simulationProgress.masteryPassed', 0)
             ->assertJsonPath('workspace.simulationProgress.unlocked', false);
     }
