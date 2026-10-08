@@ -169,7 +169,18 @@ class TestBankController extends Controller
             && $attempt->quiz?->quiz_type === 'learner'
             && (int) $attempt->quiz?->item_count === 20)->count();
         $attemptCounters = [];
-        $attemptHistory = $attempts->sortBy('created_at')->map(function (TestBankQuizAttempt $attempt) use (&$attemptCounters) {
+        $historySubjects = $testBank->course->subjects->keyBy('id');
+        $bestPercentages = TestBankQuizAttempt::where('test_bank_id', $testBank->id)
+            ->whereIn('user_id', $testBank->enrollments()->select('user_id'))
+            ->get(['user_id', 'score', 'total', 'points_possible', 'review_data'])
+            ->reject(fn ($attempt) => data_get($attempt->review_data, 'cancelled', false)
+                || (float) $attempt->points_possible <= 0 || $attempt->total <= 0)
+            ->groupBy('user_id')
+            ->map(fn ($learnerAttempts) => $learnerAttempts->max(fn ($attempt) => round($attempt->score / $attempt->total * 100, 6)));
+        $bestPercentage = $bestPercentages->get($user->id);
+        $learnerRank = $bestPercentage === null ? null
+            : $bestPercentages->filter(fn ($percentage) => $percentage > $bestPercentage)->count() + 1;
+        $attemptHistory = $attempts->sortBy('created_at')->map(function (TestBankQuizAttempt $attempt) use (&$attemptCounters, $learnerRank, $historySubjects) {
             $attemptNumber = ($attemptCounters[$attempt->test_bank_quiz_id] ?? 0) + 1;
             $attemptCounters[$attempt->test_bank_quiz_id] = $attemptNumber;
             $cancelled = (bool) data_get($attempt->review_data, 'cancelled', false);
@@ -179,6 +190,9 @@ class TestBankController extends Controller
                 'quizId' => $attempt->test_bank_quiz_id,
                 'title' => $attempt->quiz?->title ?: 'Test Bank Quiz',
                 'attemptNumber' => $attemptNumber,
+                'rank' => $cancelled ? null : $learnerRank,
+                'coverage' => count($attempt->quiz?->subject_ids ?: []) > 1 ? 'Mixed'
+                    : $historySubjects->get(collect($attempt->quiz?->subject_ids)->first())?->title,
                 'score' => (float) $attempt->points_earned,
                 'total' => (float) $attempt->points_possible,
                 'correctItems' => $attempt->score,

@@ -633,6 +633,32 @@ class TestBankAuthoringTest extends TestCase
         $this->assertSame('Mixed', $mastery['coverageLabel']);
     }
 
+    public function test_tracker_rank_uses_each_subscribers_best_completed_item_percentage(): void
+    {
+        extract($this->catalog());
+        $quiz = $bank->premadeQuizzes()->create([
+            'title' => 'Ranking test', 'item_count' => 10, 'subject_ids' => [$subject->id],
+            'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $learners = User::factory()->count(4)->create();
+        foreach ($learners->take(3) as $learner) {
+            $bank->enrollments()->create(['user_id' => $learner->id, 'status' => 'active', 'enrolled_at' => now()]);
+        }
+        foreach ([[0, 6, false], [0, 8, false], [1, 9, false], [1, 10, true], [2, 8, false], [3, 10, false]] as [$index, $score, $cancelled]) {
+            TestBankQuizAttempt::create([
+                'user_id' => $learners[$index]->id, 'test_bank_id' => $bank->id,
+                'test_bank_quiz_id' => $quiz->id, 'score' => $score, 'total' => 10,
+                'points_earned' => $score, 'points_possible' => 10, 'passed' => true,
+                'review_data' => $cancelled ? ['cancelled' => true] : [],
+            ]);
+        }
+        $history = $this->actingAs($learners[0])->getJson("/api/test-banks/{$bank->id}/workspace")
+            ->assertOk()->json('workspace.history');
+        $this->assertSame([2, 2], array_column($history, 'rank'));
+        $this->actingAs($learners[2])->getJson("/api/test-banks/{$bank->id}/workspace")
+            ->assertOk()->assertJsonPath('workspace.history.0.rank', 2);
+    }
+
     public function test_deleting_one_catalog_preserves_its_questions_for_another_catalog_in_the_same_course(): void
     {
         extract($this->catalog());
