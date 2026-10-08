@@ -941,7 +941,21 @@ function showTestBankInstructions({title, itemCount, timeLimitMinutes, coverage 
         const finish = value => { document.removeEventListener('keydown', onKeydown); backdrop.remove(); resolve(value); };
         const onKeydown = event => { if (event.key === 'Escape') finish(false); };
         backdrop.querySelector('.test-bank-instructions-cancel').addEventListener('click', () => finish(false));
-        backdrop.querySelector('.test-bank-instructions-start').addEventListener('click', () => finish(true));
+        backdrop.querySelector('.test-bank-instructions-start').addEventListener('click', async event => {
+            const button = event.currentTarget;
+            button.disabled = true;
+            button.textContent = 'Opening Exam…';
+            try {
+                const requestFullscreen = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+                if (!requestFullscreen) throw new Error('Fullscreen unavailable');
+                await requestFullscreen.call(document.documentElement);
+                finish(true);
+            } catch (error) {
+                button.disabled = false;
+                button.textContent = 'Start Exam';
+                showToast('Full-screen mode is required to start this exam.', 'error');
+            }
+        });
         backdrop.addEventListener('click', event => { if (event.target === backdrop) finish(false); });
         document.addEventListener('keydown', onKeydown);
         backdrop.querySelector('.test-bank-instructions-start').focus();
@@ -3040,11 +3054,20 @@ let activeTestBankId = null;
 let activeTestBankQuizId = null;
 let testBankLazyLoading = false;
 let testBankExamActive = false;
+let testBankFullscreenExitAllowed = false;
 let testBankAttemptInvalidating = false;
 let testBankExitWarningOpen = false;
 
+function currentFullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement;
+}
+
 async function exitTestBankFullscreen() {
     document.body.classList.remove('test-bank-exam-mode');
+    if (!currentFullscreenElement()) return;
+    testBankFullscreenExitAllowed = true;
+    const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exitFullscreen) await exitFullscreen.call(document);
 }
 
 async function invalidateActiveTestBankExam(message = 'The exam was invalidated because full-screen mode was exited.') {
@@ -3079,8 +3102,20 @@ function showTestBankExitWarning(fullscreenExited = false) {
     const cleanup = () => { document.removeEventListener('keydown', onKeydown); backdrop.remove(); testBankExitWarningOpen = false; };
     const cancelExam = async () => { cleanup(); await invalidateActiveTestBankExam('Exam cancelled and recorded in Quiz History.'); await exitTestBankFullscreen(); };
     const continueExam = async () => {
-        document.body.classList.add('test-bank-exam-mode');
-        cleanup();
+        const button = backdrop.querySelector('.test-bank-exit-continue');
+        button.disabled = true;
+        button.textContent = 'Returning…';
+        try {
+            const requestFullscreen = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+            if (!requestFullscreen) throw new Error('Fullscreen unavailable');
+            await requestFullscreen.call(document.documentElement);
+            document.body.classList.add('test-bank-exam-mode');
+            cleanup();
+        } catch (error) {
+            button.disabled = false;
+            button.textContent = 'Continue Exam';
+            showToast('Return to full-screen mode to continue the exam.', 'error');
+        }
     };
     const onKeydown = event => { if (event.key === 'Escape') { event.preventDefault(); cancelExam(); } };
     backdrop.querySelector('.test-bank-exit-cancel').addEventListener('click', cancelExam);
@@ -3089,13 +3124,14 @@ function showTestBankExitWarning(fullscreenExited = false) {
     backdrop.querySelector('.test-bank-exit-continue').focus();
 }
 
-document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && testBankExamActive && !testBankExitWarningOpen) {
-        event.preventDefault();
-        event.stopPropagation();
-        showTestBankExitWarning(false);
+async function handleTestBankFullscreenChange() {
+    if (testBankExamActive && !currentFullscreenElement() && !testBankFullscreenExitAllowed) {
+        showTestBankExitWarning(true);
     }
-}, true);
+    if (!currentFullscreenElement()) testBankFullscreenExitAllowed = false;
+}
+document.addEventListener('fullscreenchange', handleTestBankFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleTestBankFullscreenChange);
 
 async function startTestBankPremadeQuiz(testBankId, quizId, button) {
     const originalText = button?.textContent || 'Start Test';
@@ -3104,6 +3140,7 @@ async function startTestBankPremadeQuiz(testBankId, quizId, button) {
         const data = await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/questions`);
         activeTestBankId = testBankId;
         activeTestBankQuizId = quizId;
+        testBankFullscreenExitAllowed = false;
         testBankExamActive = true;
         document.body.classList.add('test-bank-exam-mode');
         state.examType = 'test_bank';
