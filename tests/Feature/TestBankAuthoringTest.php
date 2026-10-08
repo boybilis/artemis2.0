@@ -261,6 +261,12 @@ class TestBankAuthoringTest extends TestCase
             ->assertJsonPath('questions.0.question', 'Which answer is correct?')
             ->assertJsonMissing(['correct_answer' => 0]);
 
+        $this->actingAs($learner)->deleteJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/attempt")
+            ->assertOk()->assertJsonPath('success', true);
+        $this->actingAs($learner)->postJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/submit", ['answers' => [0]])
+            ->assertUnprocessable();
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")->assertOk();
+
         $result = $this->actingAs($learner)->postJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/submit", [
             'answers' => [0],
         ]);

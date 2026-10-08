@@ -68,6 +68,7 @@ Route::prefix('api')->group(function () {
         Route::put('/test-banks/{testBank}/quizzes/{quiz}', [TestBankController::class, 'updateLearnerQuiz']);
         Route::delete('/test-banks/{testBank}/quizzes/{quiz}', [TestBankController::class, 'destroyLearnerQuiz']);
         Route::get('/test-banks/{testBank}/quizzes/{quiz}/questions', [TestBankController::class, 'quizQuestions']);
+        Route::delete('/test-banks/{testBank}/quizzes/{quiz}/attempt', [TestBankController::class, 'invalidateQuizAttempt']);
         Route::post('/test-banks/{testBank}/quizzes/{quiz}/submit', [TestBankController::class, 'submitQuiz']);
         Route::get('/test-banks/enrolled', [TestBankController::class, 'enrolled']);
 

@@ -505,6 +505,19 @@ class TestBankController extends Controller
         ]);
     }
 
+    public function invalidateQuizAttempt(TestBank $testBank, TestBankQuiz $quiz)
+    {
+        $user = Auth::user();
+        $this->guardLearnerCatalog($user, $testBank);
+        $this->guardLearnerQuiz($user, $testBank, $quiz);
+        session()->forget([
+            "test_bank_quiz_{$user->id}_{$quiz->id}",
+            "test_bank_quiz_deadline_{$user->id}_{$quiz->id}",
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'The exam attempt was invalidated.']);
+    }
+
     public function enrolled()
     {
         $enrollments = Auth::user()->testBankEnrollments()
