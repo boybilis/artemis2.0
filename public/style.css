@@ -1687,7 +1687,7 @@ body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-hero-grid .test-bank-workspace-hero{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-wrap:wrap;align-content:center;gap:1.15rem;padding:2.5rem;border:1px solid rgba(255,255,255,.12);border-radius:24px;background:#11a7c0;box-shadow:0 15px 35px rgba(7,59,99,.16);margin:0;min-height:280px;color:#fff}
 .test-bank-hero-grid .test-bank-workspace-hero::after{content:'';position:absolute;z-index:-1;right:-55px;top:-80px;width:250px;height:250px;border:1px solid rgba(255,255,255,.12);border-radius:50%;pointer-events:none}
 .test-bank-hero-grid .test-bank-workspace-hero h1{font-size:clamp(1.65rem,2.4vw,2.4rem);line-height:1.2;margin:.65rem 0 1rem;color:#fff}
-.test-bank-hero-grid .test-bank-workspace-hero small{color:#ffad73}
+.test-bank-hero-grid .test-bank-workspace-hero small{color:#062a43}
 .test-bank-hero-grid .test-bank-workspace-hero p{color:#d6e8f0;line-height:1.7}
 .test-bank-hero-grid .test-bank-workspace-mark{background:rgba(255,255,255,.12);align-self:flex-start}
 .test-bank-hero-grid .test-bank-workspace-hero .test-bank-readiness{flex-basis:100%;margin:0 0 0 64px;align-items:flex-start}
