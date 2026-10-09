@@ -1698,7 +1698,9 @@ body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-hero-grid .test-bank-subscription-panel{display:flex;flex-wrap:wrap;align-content:center;align-items:flex-start;padding:2rem;border-radius:24px;border-top:4px solid #11a7c0;box-shadow:0 12px 28px rgba(7,59,99,.07);margin:0;gap:1rem}
 .test-bank-hero-grid .test-bank-subscription-panel>div{flex:1;min-width:180px}
 .test-bank-hero-grid .test-bank-subscription-panel h3{font-size:1.25rem;line-height:1.4}
-.test-bank-hero-grid .test-bank-subscription-panel .btn-ghost{width:100%;margin:.6rem 0 0}
+.test-bank-hero-grid .test-bank-subscription-panel .test-bank-subscription-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;flex:0 0 100%;min-width:0;margin-top:.6rem}
+.test-bank-enrolled-capsule{display:inline-flex;align-items:center;padding:.5rem .9rem;border-radius:999px;background:rgba(8,184,159,.12);color:#08b89f;font-size:.85rem;font-weight:600}
+.test-bank-hero-grid .test-bank-subscription-panel .btn-ghost{width:auto;margin:0;border-radius:999px;padding:.65rem 1.1rem;background:transparent}
 @media(max-width:950px){.test-bank-hero-grid{grid-template-columns:1fr}.test-bank-hero-grid .test-bank-workspace-hero{padding:2rem}}
 @media(max-width:600px){.test-bank-hero-grid .test-bank-workspace-hero,.test-bank-hero-grid .test-bank-subscription-panel{padding:1.4rem}.test-bank-hero-grid .test-bank-workspace-hero .test-bank-readiness{margin-left:0}}
 .test-bank-builder-settings + fieldset{margin-top:1.25rem}
