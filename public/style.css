@@ -1531,7 +1531,7 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 .test-bank-subject-test-type,.test-bank-subject-start{font-size:.9rem;min-height:48px;padding:.7rem .8rem}
 @media(min-width:701px) and (max-width:1200px){.test-bank-subject-test-controls{grid-template-columns:1fr}.test-bank-subject-start{width:100%}}
 .test-bank-workspace-hero{padding:1rem 0;border:0;border-radius:0;background:transparent;box-shadow:none}
-.test-bank-workspace-hero p{font-size:calc(.75rem + 2pt);line-height:1.6}
+.test-bank-workspace-hero p,.test-bank-subscription-panel p{font-size:calc(.75rem + 2pt);line-height:1.6}
 .test-bank-workspace-hero>div:nth-child(2){flex:1}
 .test-bank-workspace-hero .test-bank-readiness{flex-shrink:0}
 @media(max-width:700px){.test-bank-workspace-hero>div:nth-child(2){flex-basis:calc(100% - 64px)}.test-bank-workspace-hero .test-bank-readiness{margin-left:64px}}
