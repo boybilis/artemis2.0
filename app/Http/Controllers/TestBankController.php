@@ -197,6 +197,12 @@ class TestBankController extends Controller
                 'id' => $attempt->id,
                 'quizId' => $attempt->test_bank_quiz_id,
                 'title' => $attempt->quiz?->title ?: 'Test Bank Quiz',
+                'quizType' => $attempt->quiz?->quiz_type,
+                'testTypeLabel' => in_array($attempt->quiz?->quiz_type, ['learner', 'subject'], true)
+                    ? ($attempt->quiz->quiz_type === 'subject'
+                        ? (str_ends_with($attempt->quiz->title, 'Mastery Test') ? 'Mastery Test' : 'Warm-up')
+                        : ((int) $attempt->quiz->item_count <= 10 ? 'Warm-up' : 'Mastery Test'))
+                    : ($attempt->quiz && $this->isSimulationQuiz($attempt->quiz) ? 'Simulation Test' : 'Premade Test'),
                 'attemptNumber' => $attemptNumber,
                 'rank' => $cancelled ? null : $learnerRank,
                 'coverage' => count($attempt->quiz?->subject_ids ?: []) > 1 ? 'Mixed'
