@@ -1686,10 +1686,11 @@ body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-workspace-tabs button svg{color:#c4510b}
 .test-bank-tab-panel .test-bank-simulation-eligibility,.test-bank-tab-panel .test-bank-simulation-eligibility.unlocked{border:calc(1px + 1pt) solid #9ca3af}
 .test-bank-simulation-eligibility header.test-bank-simulation-eligibility-head{border-bottom:calc(1px + 1pt) solid #9ca3af}
-.test-bank-simulation-eligibility .test-bank-simulation-eligibility-head{margin:-1.5rem -1.5rem 0;padding:1.5rem;background:#f1f3f5;border-bottom:1px solid #bac4cd;border-radius:12px 12px 0 0;color:#263746}
-.test-bank-simulation-eligibility .test-bank-simulation-eligibility-head p{color:#536b7b}
-body:not(.light-mode) .test-bank-simulation-eligibility .test-bank-simulation-eligibility-head{background:#293d4c;border-color:#536b7b;color:#f7fbfd}
-body:not(.light-mode) .test-bank-simulation-eligibility .test-bank-simulation-eligibility-head p{color:#c2d0da}
+.test-bank-simulation-eligibility .test-bank-simulation-eligibility-head{margin:-1.5rem -1.5rem 0;padding:1.5rem;background:#9ca3af;border-bottom:1px solid #9ca3af;border-radius:12px 12px 0 0;color:#062a43}
+.test-bank-simulation-eligibility .test-bank-simulation-eligibility-head p{color:#263746}
+.test-bank-simulation-eligibility .test-bank-simulation-eligibility-head h2{color:#062a43}
+.test-bank-simulation-eligibility .test-bank-simulation-eligibility-head small{color:#703007}
+.test-bank-simulation-eligibility .test-bank-simulation-eligibility-head>span{background:#ffeddc;color:#8b3c0a}
 @media(max-width:700px){.test-bank-simulation-eligibility .test-bank-simulation-eligibility-head{margin:-1rem -1rem 0;padding:1rem}}
 .test-bank-builder-layout .test-bank-builder-card-header{background:#e6f5f8;border-bottom:1px solid rgba(10,167,191,.18);padding:1.15rem;margin:-1.15rem -1.15rem 1.15rem;border-radius:13px 13px 0 0}
 .test-bank-builder-card-header h2{color:#263746}
