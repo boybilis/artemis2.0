@@ -16,7 +16,7 @@
             place-items: center;
             padding: 24px;
             color: #082b45;
-            background: #f4f7fa;
+            background: #eff8fc;
             font-family: Arial, Helvetica, sans-serif;
         }
 
