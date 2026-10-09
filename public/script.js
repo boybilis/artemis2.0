@@ -1554,6 +1554,33 @@ function renderDashboard() {
             cContainer.appendChild(card);
         });
 
+        if (state.courseListFilter === 'enrolled') {
+            const section = document.createElement('section');
+            section.className = 'test-bank-catalog-section enrolled-test-bank-section';
+            section.innerHTML = `
+                <div class="test-bank-catalog-heading"><h2>Your Enrolled Test Banks</h2><p>Continue practicing with your active Test Bank subscriptions.</p></div>
+                <div class="test-bank-catalog-grid">
+                    ${enrolledTestBanks.map(testBank => {
+                        const expiresAt = testBank.expiresAt
+                            ? new Date(testBank.expiresAt).toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'})
+                            : 'further notice';
+                        return `<article class="topic-card learner-course-card course-enrolled">
+                            <div class="enrolled-card-content">
+                                <div class="enrolled-card-eyebrow"><span class="enrolled-card-icon"><i data-lucide="notebook-tabs"></i></span><span><strong>Active Test Bank</strong><small>${escapeHtml(testBank.code || 'Subscription')}</small></span></div>
+                                <h3>${escapeHtml(testBank.title)}</h3>
+                                <p class="enrolled-card-until">Access until ${escapeHtml(expiresAt)}</p>
+                                <p class="enrolled-test-bank-description">${escapeHtml(testBank.description || 'Practice tests with detailed rationales and progress tracking.')}</p>
+                            </div>
+                            <button type="button" class="course-card-open-label enrolled-test-bank-open" data-enrolled-test-bank="${Number(testBank.id)}"><span>Open ${escapeHtml(testBank.title)}</span><i data-lucide="arrow-right"></i></button>
+                        </article>`;
+                    }).join('') || '<div class="empty-course-filter"><i data-lucide="notebook-tabs"></i><p>No enrolled Test Banks yet.</p><span>Browse All Courses to find available Test Bank subscriptions.</span></div>'}
+                </div>`;
+            cContainer.appendChild(section);
+            section.querySelectorAll('[data-enrolled-test-bank]').forEach(button => button.addEventListener('click', () => {
+                openTestBankWorkspace(Number(button.dataset.enrolledTestBank));
+            }));
+        }
+
         if (state.courseListFilter === 'available' && availableTestBanks.length) {
             const section = document.createElement('section');
             section.className = 'test-bank-catalog-section';
