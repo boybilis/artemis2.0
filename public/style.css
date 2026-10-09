@@ -1512,3 +1512,30 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 @media(max-width:1000px){.test-bank-subject-card{flex-basis:calc((100% - 1rem)/2)}}
 @media(max-width:700px){.test-bank-panel-heading{align-items:center;gap:.75rem}.test-bank-subject-card{flex-basis:100%}}
 .test-bank-tracker-list{display:grid;gap:.65rem}.test-bank-tracker-row{display:grid;grid-template-columns:minmax(0,1fr) 75px 85px 55px 140px;align-items:center;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--bg2)}.test-bank-tracker-row[hidden]{display:none}.test-bank-tracker-copy h3{margin:0;font-size:.8rem}.test-bank-tracker-copy p{margin:.25rem 0 0;font-size:.64rem;color:var(--text-muted)}.test-bank-tracker-metric{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-metric small{color:var(--text-muted);font-size:.58rem;font-weight:800;letter-spacing:.04em}.test-bank-tracker-metric strong{font-size:.75rem}.test-bank-tracker-row .passed{color:#078b79}.test-bank-tracker-row .failed,.test-bank-tracker-row .cancelled{color:#c94f00}.test-bank-tracker-action{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-action small{font-size:.6rem}.test-bank-tracker-action button{border-color:#08a7bf;color:#078b9b;background:var(--surface);min-height:42px}.test-bank-tracker-action button:hover{background:#078b9b;color:#fff}@media(max-width:900px){.test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-tracker-copy{grid-column:1/-1}.test-bank-tracker-action{grid-column:1/-1;align-items:flex-start}.test-bank-tracker-action button{min-width:140px}}
+/* Larger, comfortably spaced Test Bank progress records. */
+[data-test-bank-panel="progress"]>.test-bank-history-heading h2{font-size:1.5rem}
+[data-test-bank-panel="progress"]>.test-bank-history-heading p{font-size:.95rem;line-height:1.6}
+.test-bank-progress-report{padding:1.5rem}
+.test-bank-progress-report-head h2{font-size:1.3rem;line-height:1.4}
+.test-bank-progress-report-head small{font-size:.8rem}
+.test-bank-progress-report-head p,.test-bank-progress-report-head>div:last-child>span{font-size:.85rem;line-height:1.5}
+.test-bank-progress-report-head>div:last-child>strong{font-size:2rem}
+.test-bank-progress-stats{gap:.85rem;margin:1.25rem 0}
+.test-bank-progress-stats>div{padding:1rem;gap:.35rem}
+.test-bank-progress-stats strong{font-size:1.2rem}
+.test-bank-progress-stats span{font-size:.85rem;line-height:1.5}
+.test-bank-progress-report .test-bank-history-table-tools label{width:min(440px,100%);min-height:48px}
+.test-bank-progress-report .test-bank-history-table-tools input{font-size:.95rem}
+.test-bank-progress-report .test-bank-history-table-tools>span,.test-bank-progress-report .test-bank-history-pagination>span,.test-bank-progress-report .test-bank-history-pagination>div>span{font-size:.85rem}
+.test-bank-tracker-list{gap:.85rem}
+.test-bank-tracker-row{grid-template-columns:minmax(0,1fr) 90px 115px 65px 180px;gap:1.25rem;padding:1.25rem;min-height:110px}
+.test-bank-tracker-copy h3{font-size:1rem;line-height:1.5;overflow-wrap:anywhere}
+.test-bank-tracker-copy p{font-size:.85rem;line-height:1.5;margin-top:.4rem}
+.test-bank-tracker-metric small{font-size:.8rem}
+.test-bank-tracker-metric strong{font-size:1.05rem;line-height:1.5}
+.test-bank-tracker-action small{font-size:.85rem;line-height:1.5}
+.test-bank-tracker-action button,.test-bank-progress-report .test-bank-history-pagination button{min-height:48px;font-size:.9rem;padding:.65rem .85rem;line-height:1.4}
+.test-bank-progress-report .test-bank-history-pagination{flex-wrap:wrap;gap:.85rem}
+.test-bank-progress-report .test-bank-history-pagination>div{flex-wrap:wrap}
+@media(max-width:1150px){.test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-tracker-copy{grid-column:1/-1}.test-bank-tracker-action{grid-column:1/-1;align-items:flex-start}.test-bank-tracker-action button{min-width:180px}}
+@media(max-width:700px){.test-bank-progress-report{padding:1rem}.test-bank-tracker-row{padding:1rem;gap:1rem}.test-bank-progress-report .test-bank-history-table-tools label{width:100%}}
