@@ -1532,7 +1532,6 @@ body.light-mode .dashboard-hero-panel .hero-metric{background:#eff8fc}
 .dashboard-overview-primary>.dashboard-overview-card:nth-child(1){--overview-color:#073b63;--overview-rgb:7,59,99}
 .dashboard-overview-primary>.dashboard-overview-card:nth-child(2){--overview-color:#f47721;--overview-rgb:244,119,33}
 .dashboard-overview-primary>.dashboard-overview-card:nth-child(3){--overview-color:#08b89f;--overview-rgb:8,184,159}
-.dashboard-overview-card::before{content:'';position:absolute;z-index:-1;pointer-events:none;top:-65px;right:-60px;width:170px;height:170px;border:22px solid rgba(var(--overview-rgb),.055);border-radius:50%}
 .dashboard-overview-card:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(var(--overview-rgb),.13)}
 .dashboard-overview-card header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
 .dashboard-overview-card header>svg{width:48px;height:48px;padding:9px;box-sizing:border-box;flex-shrink:0;border-radius:12px;color:var(--overview-color);background:rgba(var(--overview-rgb),.1)}
