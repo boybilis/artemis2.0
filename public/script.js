@@ -750,7 +750,7 @@ function renderTestBankWorkspace(workspace) {
     </article>`;
 
     workspaceArea.innerHTML = `
-        <div class="test-bank-workspace-topbar"><button type="button" class="btn-ghost" id="test-bank-back-btn"><i data-lucide="arrow-left"></i> Back to Enrolled Courses</button></div>
+        <div class="test-bank-workspace-topbar"><button type="button" class="btn-ghost" id="test-bank-back-btn"><i data-lucide="arrow-left"></i> Back to My Courses</button></div>
         <section class="test-bank-workspace-hero">
             <span class="test-bank-workspace-mark"><i data-lucide="book-open"></i></span>
             <div><small>ACTIVE TEST BANK</small><h1>${escapeHtml(workspace.title)}</h1><p style="white-space:pre-line">${escapeHtml(workspace.description?.trim() || 'Build exam confidence with practice tests, detailed rationales, and progress tracking.')}</p></div>
@@ -4196,6 +4196,24 @@ function updateLearnerSidebarIdentity(isCourseOpen = false) {
 }
 
 const dashboardSidebarBtn = $('sidebar-dashboard-btn');
+$('sidebar-my-progress-btn')?.addEventListener('click', async () => {
+    const workspace = $('test-bank-workspace-area');
+    if (workspace && !workspace.classList.contains('hidden')) {
+        workspace.querySelector('[data-test-bank-tab="progress"]')?.click();
+    } else if ($('course-details-area')?.style.display !== 'none' && currentCourseId) {
+        $('sidebar-progress-report-btn')?.click();
+    } else {
+        await showDashboardCourseList('dashboard');
+        document.querySelector('[data-overview-action="progress"]')?.click();
+    }
+    setLearnerSidebarOpen(false);
+});
+$('sidebar-announcements-btn')?.addEventListener('click', () => {
+    showSystemAlert(dashboardAnnouncements.length
+        ? dashboardAnnouncements.map(item => `${item.title}\n${item.message}`).join('\n\n')
+        : 'No announcements at this time.');
+    setLearnerSidebarOpen(false);
+});
 const enrolledCoursesSidebarBtn = $('sidebar-enrolled-courses-btn');
 const enrolledTestBanksSidebarBtn = $('sidebar-enrolled-test-banks-btn');
 const availableCoursesSidebarBtn = $('sidebar-available-courses-btn');
