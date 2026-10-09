@@ -18,6 +18,7 @@ let courses = [];
 let reviewPackages = [];
 let enrolledTestBanks = [];
 let availableTestBanks = [];
+let dashboardAnnouncements = [];
 let topics = [];
 let subjects = [];
 let courseMockExamQuestionCount = 0;
@@ -39,6 +40,7 @@ function resetLearnerSessionState() {
     reviewPackages = [];
     enrolledTestBanks = [];
     availableTestBanks = [];
+    dashboardAnnouncements = [];
     topics = [];
     subjects = [];
     currentSubjectId = null;
@@ -643,7 +645,7 @@ async function openTestBankWorkspace(testBankId) {
     if (!workspaceArea) return;
     workspaceArea.classList.remove('hidden');
     workspaceArea.innerHTML = '<div class="test-bank-workspace-loading">Loading your Test Bank…</div>';
-    [$('dashboard-hero'), $('dashboard-courses-head'), $('courses-container'), $('course-details-area')].forEach(element => {
+    [$('dashboard-hero'), $('dashboard-overview-cards'), $('dashboard-courses-head'), $('courses-container'), $('course-details-area')].forEach(element => {
         if (element) element.style.display = 'none';
     });
     document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
@@ -1402,6 +1404,50 @@ function fadeTransition(elementsToHide, elementsToShow, showDisplays) {
 }
 
 // ─── Dashboard ───────────────────────────────────────────
+function renderDashboardOverview() {
+    const container = $('dashboard-overview-cards');
+    if (!container) return;
+    container.style.display = '';
+    container.classList.toggle('hidden', state.courseListFilter !== 'dashboard');
+    const enrolled = courses.filter(course => course.is_enrolled);
+    const totalTopics = enrolled.reduce((sum, course) => sum + Number(course.topic_count || 0), 0);
+    const completed = enrolled.reduce((sum, course) => sum + Number(course.completed_topic_count || 0), 0);
+    const upcoming = enrolled.flatMap(course => (course.zoom_sessions || []).map(session => ({...session, courseTitle:course.title})))
+        .filter(session => session.status === 'scheduled' && session.starts_at && new Date(session.ends_at || session.starts_at) >= new Date())
+        .sort((left, right) => new Date(left.starts_at) - new Date(right.starts_at));
+    const next = upcoming[0];
+    const announcement = dashboardAnnouncements[0];
+    const card = (icon, title, value, description, action, label, wide = false) => `<article class="dashboard-overview-card ${wide ? 'dashboard-overview-wide' : ''}"><header><i data-lucide="${icon}"></i><h2>${title}</h2></header><strong class="dashboard-overview-value">${escapeHtml(String(value))}</strong><p>${escapeHtml(description)}</p>${action ? `<button type="button" data-overview-action="${action}">${label}<i data-lucide="arrow-right"></i></button>` : ''}</article>`;
+    container.innerHTML = `<div class="dashboard-overview-primary">
+        ${card('book-open', 'My Courses', enrolled.length || 'None', enrolled.length ? `${enrolled.length} active course ${enrolled.length === 1 ? 'enrollment' : 'enrollments'}.` : 'No enrolled courses yet.', 'courses', 'View My Courses')}
+        ${card('notebook-tabs', 'My Test Bank', enrolledTestBanks.length || 'None', enrolledTestBanks.length ? `${enrolledTestBanks.length} active Test Bank ${enrolledTestBanks.length === 1 ? 'subscription' : 'subscriptions'}.` : 'No active test bank subscription.', 'banks', 'View My Test Bank')}
+        ${card('chart-no-axes-column-increasing', 'My Progress', completed > 0 && totalTopics ? `${Math.round(completed / totalTopics * 100)}%` : 'None', completed > 0 ? `${completed} of ${totalTopics} course topics completed.` : 'Your progress appears after you start learning.', 'progress', 'View My Progress')}
+    </div><div class="dashboard-overview-secondary">
+        ${card('calendar-days', 'Upcoming Live Online Review', next ? next.title : 'None', next ? `${next.courseTitle} · ${new Date(next.starts_at).toLocaleString('en-US', {month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZone:'Asia/Manila'})}` : 'No upcoming live review for your enrolled courses.', next ? 'courses' : 'browse', next ? 'View My Courses' : 'Browse Courses', true)}
+        ${card('megaphone', 'Announcements', announcement ? announcement.title : 'None', announcement ? announcement.message : 'No announcements at this time.', announcement ? 'announcements' : null, 'View Announcements', true)}
+    </div>`;
+    container.querySelectorAll('[data-overview-action]').forEach(button => button.addEventListener('click', async () => {
+        const action = button.dataset.overviewAction;
+        if (action === 'browse') return showDashboardCourseList('available');
+        if (action === 'banks' || (action === 'progress' && !enrolled.length && enrolledTestBanks.length)) {
+            await showDashboardCourseList('enrolled');
+            if (action === 'progress') {
+                await openTestBankWorkspace(enrolledTestBanks[0].id);
+                document.querySelector('[data-test-bank-tab="progress"]')?.click();
+            } else {
+                document.querySelector('.enrolled-test-bank-section')?.scrollIntoView({behavior:'smooth', block:'start'});
+            }
+            return;
+        }
+        if (action === 'announcements') {
+            showSystemAlert(dashboardAnnouncements.map(item => `${item.title}\n${item.message}`).join('\n\n'));
+            return;
+        }
+        await showDashboardCourseList('enrolled');
+        if (action === 'progress' && enrolled.length) showToast('Open a course to view its Progress Report.', 'info');
+    }));
+}
+
 function renderDashboard() {
     // Reset view to courses menu
     const cdArea = $('course-details-area');
@@ -1418,6 +1464,7 @@ function renderDashboard() {
     if (dashboardHero) dashboardHero.style.display = isDashboardOverview ? 'grid' : 'none';
     if (dcHead) { dcHead.style.display = isDashboardOverview ? 'none' : ''; dcHead.style.opacity = '1'; dcHead.style.transform = 'none'; }
     if (cCont) { cCont.style.display = isDashboardOverview ? 'none' : ''; cCont.style.opacity = '1'; cCont.style.transform = 'none'; }
+    renderDashboardOverview();
 
     const resumeBtn = $('resume-module-btn');
     if (resumeBtn) resumeBtn.classList.add('hidden');
@@ -1584,7 +1631,7 @@ function renderDashboard() {
                 if (contextNav) contextNav.classList.remove('hidden');
                 setCourseSidebarMode(true, 'subjects');
                 fadeTransition(
-                    [$('dashboard-hero'), $('dashboard-courses-head'), cContainer],
+                    [$('dashboard-hero'), $('dashboard-overview-cards'), $('dashboard-courses-head'), cContainer],
                     [$('course-details-area')],
                     ['block']
                 );
@@ -4193,6 +4240,8 @@ async function fetchNotifications() {
     try {
         const data = await apiRequest('/api/notifications');
         if (data && data.success) {
+            dashboardAnnouncements = data.notifications || [];
+            if ($('dashboard-hero')?.style.display !== 'none') renderDashboardOverview();
             renderNotifications(data.notifications);
         }
     } catch (e) {
