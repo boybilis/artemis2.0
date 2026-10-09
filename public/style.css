@@ -1610,7 +1610,7 @@ body.light-mode .test-bank-study-phase p,body.light-mode .test-bank-study-phase>
 .test-bank-progress-stats>div{padding:.8rem;gap:.2rem}
 .test-bank-progress-stats strong{font-size:calc(1.2rem - 1pt)}
 .test-bank-progress-stats span{font-size:calc(.85rem - 1pt);line-height:1.5}
-.test-bank-progress-report .test-bank-history-table-tools label{width:min(440px,100%);min-height:48px}
+.test-bank-progress-report .test-bank-history-table-tools label{width:min(440px,100%);min-height:48px;background:transparent;border-color:#11a7c0}
 .test-bank-progress-report .test-bank-history-table-tools input{font-size:.95rem}
 .test-bank-progress-report .test-bank-history-table-tools>span,.test-bank-progress-report .test-bank-history-pagination>span,.test-bank-progress-report .test-bank-history-pagination>div>span{font-size:.85rem}
 .test-bank-tracker-list{gap:.65rem;background:transparent}
