@@ -11,7 +11,7 @@ let state = {
     hasBoughtVoucher: false,
     certificates: [],
     courseListFilter: 'dashboard',
-    courseLayout: 'list'
+    courseLayout: 'grid'
 };
 
 let courses = [];
@@ -1211,7 +1211,7 @@ async function loginUser(user) {
     state.user = user;
     state.courseListFilter = 'dashboard';
     const layoutKey = `artemis_course_layout_${String(user.email || 'learner').toLowerCase()}`;
-    state.courseLayout = localStorage.getItem(layoutKey) === 'grid' ? 'grid' : 'list';
+    state.courseLayout = localStorage.getItem(layoutKey) === 'list' ? 'list' : 'grid';
     state.courseUnlocked = user.isCourseUnlocked || false;
     state.isSubscribed = user.isSubscribed || false;
     state.subscriptionExpiresAt = user.subscriptionExpiresAt || null;
@@ -4040,6 +4040,7 @@ function renderReviewPackages(container) {
 }
 
 async function showDashboardCourseList(filter) {
+    if (filter === 'enrolled' || filter === 'available') state.courseLayout = 'grid';
     state.courseListFilter = ['enrolled', 'available', 'packages'].includes(filter) ? filter : 'dashboard';
     if (state.courseListFilter === 'packages') {
         try { await loadReviewPackages(); } catch (error) { reviewPackages = []; }
