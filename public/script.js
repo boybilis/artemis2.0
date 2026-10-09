@@ -959,6 +959,9 @@ function renderTestBankWorkspace(workspace) {
         workspaceArea.querySelectorAll('[data-test-bank-panel]').forEach(panel => panel.classList.toggle('hidden', panel.dataset.testBankPanel !== button.dataset.testBankTab));
     }));
     workspaceArea.querySelectorAll('[data-guided-builder]').forEach(button => button.addEventListener('click', () => {
+        workspaceArea.querySelectorAll('.test-bank-study-phase').forEach(card => {
+            card.classList.toggle('active', card === button.closest('.test-bank-study-phase'));
+        });
         workspaceArea.querySelector('[data-test-bank-tab="builder"]')?.click();
         const itemCount = builderForm?.elements.namedItem('item_count');
         if (itemCount) itemCount.value = Number(button.dataset.guidedBuilder);
