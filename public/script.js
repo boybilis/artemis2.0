@@ -4205,9 +4205,10 @@ if (dashboardSidebarBtn) dashboardSidebarBtn.addEventListener('click', async () 
     window.scrollTo({top: 0, behavior: 'smooth'});
     setLearnerSidebarOpen(false);
 });
-if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click', () => {
+if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click', async () => {
     const list = $('sidebar-enrolled-courses-list');
     const expanded = enrolledCoursesSidebarBtn.getAttribute('aria-expanded') === 'true';
+    await showDashboardCourseList('enrolled');
     enrolledCoursesSidebarBtn.setAttribute('aria-expanded', String(!expanded));
     list?.classList.toggle('hidden', expanded);
 });
