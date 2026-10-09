@@ -4167,8 +4167,16 @@ function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
         if (listButton) listButton.classList.add('active');
         return;
     }
-    const activeButton = activePage === 'progress' ? progressButton : subjectsButton;
-    if (activeButton) activeButton.classList.add('active');
+    const enrolledButton = $('sidebar-enrolled-courses-btn');
+    const enrolledList = $('sidebar-enrolled-courses-list');
+    enrolledButton?.classList.add('active');
+    enrolledButton?.setAttribute('aria-expanded', 'true');
+    enrolledList?.classList.remove('hidden');
+    const enrolled = courses.filter(course => course.is_enrolled);
+    enrolledList?.querySelectorAll('[data-enrolled-course-index]').forEach(item => {
+        const course = enrolled[Number(item.dataset.enrolledCourseIndex)];
+        item.classList.toggle('active', Number(course?.id) === Number(currentCourseId));
+    });
 }
 
 function updateLearnerSidebarIdentity(isCourseOpen = false) {
