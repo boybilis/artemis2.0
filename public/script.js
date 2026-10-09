@@ -700,7 +700,7 @@ function renderTestBankWorkspace(workspace) {
         const timing = attempt.timeLimitMinutes ? `Timed (${Number(attempt.timeLimitMinutes)} minutes)` : 'Untimed';
         const subtitle = [attempt.testTypeLabel, `${Number(attempt.totalItems || 0)} questions`, timing, `${attemptCount} ${attemptCount === 1 ? 'attempt' : 'attempts'}`].filter(Boolean).join(' · ');
         const percentage = Number(attempt.totalItems || 0) > 0 ? Math.round(Number(attempt.correctItems || 0) / Number(attempt.totalItems) * 100) : 0;
-        return `<article class="test-bank-tracker-row" data-tracker-record>
+        return `<article class="test-bank-tracker-row" data-tracker-record data-cancelled="${attempt.cancelled ? 'true' : 'false'}">
             <div class="test-bank-tracker-copy"><h3>${escapeHtml(title)}${takenAt ? ` <span class="test-bank-tracker-taken-date">· (${escapeHtml(takenAt)})</span>` : ''}</h3><div class="test-bank-tracker-subtitle">${escapeHtml(subtitle)}</div><p class="test-bank-tracker-coverage"><strong>SUBJECTS:</strong> ${escapeHtml(attempt.coverage || 'Not specified')}</p></div>
             <div class="test-bank-tracker-metric"><small>SCORE</small><strong>${attempt.cancelled ? '—' : `${percentage}%`}</strong></div>
             <div class="test-bank-tracker-metric"><small>RESULT</small><strong class="${attempt.cancelled ? 'cancelled' : attempt.passed ? 'passed' : 'failed'}">${attempt.cancelled ? 'Cancelled' : attempt.passed ? 'Passed' : 'Failed'}</strong></div>
@@ -775,7 +775,7 @@ function renderTestBankWorkspace(workspace) {
                 <div class="test-bank-builder-saved"><div class="test-bank-history-heading"><h2>My Practice Tests</h2><p>Your saved tests can be taken again anytime while your subscription is active.</p></div><div class="test-bank-builder-list">${learnerQuizCards || '<div class="test-bank-empty-panel"><i data-lucide="clipboard-list"></i><h2>No saved practice tests</h2><p>Use the builder to create your first test.</p></div>'}</div>${(workspace.learnerQuizzes || []).length > 5 ? '<div class="test-bank-builder-pagination"><span id="test-bank-builder-page-range"></span><div><button type="button" id="test-bank-builder-prev"><i data-lucide="chevron-left"></i> Previous</button><button type="button" id="test-bank-builder-next">Next <i data-lucide="chevron-right"></i></button></div></div>' : ''}</div>
             </div>
         </section>
-        <section class="test-bank-tab-panel hidden" data-test-bank-panel="progress"><div class="test-bank-history-heading"><h2>Progress Tracker</h2><p>Every test taken, with its result and rank. Passing score is 60%. Rank compares each subscribed learner’s highest completed score percentage in this Test Bank.</p></div>${simulationEligibilityCard}<section class="test-bank-progress-report"><div class="test-bank-progress-report-head"><div><span class="test-bank-progress-report-icon"><i data-lucide="chart-no-axes-column-increasing"></i></span><div><small>REQUIRED CUSTOM TESTS</small><h2>Progress Tracker</h2><p>Passed required tests ÷ total required tests × 100</p></div></div><div><strong>${requirementProgress}%</strong><span>${requiredPassed} of ${totalRequired} required tests passed</span><div><i style="width:${requirementProgress}%"></i></div></div></div><div class="test-bank-progress-stats"><div><strong>${totalRequired}</strong><span>Total required</span></div><div><strong>${completedAttempts}</strong><span>Completed attempts</span></div><div><strong>${cancelledAttempts}</strong><span>Cancelled</span></div><div><strong>${requiredPassed}</strong><span>Requirements passed</span></div></div><div class="test-bank-history-table-tools"><label><i data-lucide="search"></i><input id="test-bank-history-search" type="search" placeholder="Search progress records" aria-label="Search progress records"></label><span id="test-bank-history-count"></span></div><div class="test-bank-tracker-list">${historyRows || '<p class="test-bank-history-empty">No Test Bank attempts yet.</p>'}</div><div id="test-bank-history-pagination" class="test-bank-history-pagination"><span id="test-bank-history-range"></span><div><button type="button" id="test-bank-history-prev"><i data-lucide="chevron-left"></i> Previous</button><span id="test-bank-history-pages"></span><button type="button" id="test-bank-history-next">Next <i data-lucide="chevron-right"></i></button></div></div></section></section>`;
+        <section class="test-bank-tab-panel hidden" data-test-bank-panel="progress"><div class="test-bank-history-heading"><h2>Progress Tracker</h2><p>Every test taken, with its result and rank. Passing score is 60%. Rank compares each subscribed learner’s highest completed score percentage in this Test Bank.</p></div>${simulationEligibilityCard}<section class="test-bank-progress-report"><div class="test-bank-progress-report-head"><div><span class="test-bank-progress-report-icon"><i data-lucide="chart-no-axes-column-increasing"></i></span><div><small>REQUIRED CUSTOM TESTS</small><h2>Progress Tracker</h2><p>Passed required tests ÷ total required tests × 100</p></div></div><div><strong>${requirementProgress}%</strong><span>${requiredPassed} of ${totalRequired} required tests passed</span><div><i style="width:${requirementProgress}%"></i></div></div></div><div class="test-bank-progress-stats"><div><strong>${totalRequired}</strong><span>Total required</span></div><div><strong>${completedAttempts}</strong><span>Completed attempts</span></div><div><strong>${cancelledAttempts}</strong><span>Cancelled</span></div><div><strong>${requiredPassed}</strong><span>Requirements passed</span></div></div><div class="test-bank-history-table-tools"><label><i data-lucide="search"></i><input id="test-bank-history-search" type="search" placeholder="Search progress records" aria-label="Search progress records"></label><div class="test-bank-history-filters"><button type="button" id="test-bank-show-cancelled" class="test-bank-cancelled-toggle" role="switch" aria-checked="false"><span class="test-bank-toggle-track" aria-hidden="true"></span>Show Cancelled Tests</button><span id="test-bank-history-count" aria-live="polite"></span></div></div><div class="test-bank-tracker-list">${historyRows || '<p class="test-bank-history-empty">No Test Bank attempts yet.</p>'}</div><div id="test-bank-history-pagination" class="test-bank-history-pagination"><span id="test-bank-history-range"></span><div><button type="button" id="test-bank-history-prev"><i data-lucide="chevron-left"></i> Previous</button><span id="test-bank-history-pages"></span><button type="button" id="test-bank-history-next">Next <i data-lucide="chevron-right"></i></button></div></div></section></section>`;
 
     $('test-bank-back-btn')?.addEventListener('click', () => showDashboardCourseList('available'));
     $('extend-test-bank-btn')?.addEventListener('click', event => startTestBankCheckout(workspace.id, event.currentTarget));
@@ -989,13 +989,23 @@ function setupTestBankHistoryTable(workspaceArea) {
     const body = workspaceArea.querySelector('.test-bank-tracker-list');
     const search = $('test-bank-history-search');
     const pagination = $('test-bank-history-pagination');
+    const cancelledToggle = $('test-bank-show-cancelled');
     if (!body || !search || !pagination) return;
     const rows = [...body.querySelectorAll('[data-tracker-record]')];
     const perPage = 10;
     let page = 1;
+    let showCancelled = false;
+    const empty = document.createElement('p');
+    empty.className = 'test-bank-history-empty';
+    body.querySelector('.test-bank-history-empty')?.remove();
+    body.appendChild(empty);
     const render = () => {
         const query = search.value.trim().toLowerCase();
-        const filtered = rows.filter(row => row.textContent.toLowerCase().includes(query));
+        const filtered = rows.filter(row => (showCancelled || row.dataset.cancelled !== 'true')
+            && row.textContent.toLowerCase().includes(query));
+        empty.hidden = filtered.length > 0;
+        empty.textContent = query ? 'No matching tests found.'
+            : showCancelled ? 'No Test Bank attempts yet.' : 'No completed tests yet.';
         const pageCount = Math.max(1, Math.ceil(filtered.length / perPage));
         page = Math.min(page, pageCount);
         rows.forEach(row => { row.hidden = true; });
@@ -1010,6 +1020,12 @@ function setupTestBankHistoryTable(workspaceArea) {
         pagination.classList.toggle('hidden', filtered.length <= perPage);
     };
     search.addEventListener('input', () => { page = 1; render(); });
+    cancelledToggle?.addEventListener('click', () => {
+        showCancelled = !showCancelled;
+        cancelledToggle.setAttribute('aria-checked', String(showCancelled));
+        page = 1;
+        render();
+    });
     $('test-bank-history-prev').addEventListener('click', () => { if (page > 1) { page--; render(); } });
     $('test-bank-history-next').addEventListener('click', () => { page++; render(); });
     render();
