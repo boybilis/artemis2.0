@@ -962,6 +962,10 @@ function renderTestBankWorkspace(workspace) {
         workspaceArea.querySelector('[data-test-bank-tab="builder"]')?.click();
         const itemCount = builderForm?.elements.namedItem('item_count');
         if (itemCount) itemCount.value = Number(button.dataset.guidedBuilder);
+        const subjectTestType = Number(button.dataset.guidedBuilder) === 20 ? 'mastery' : 'warm_up';
+        workspaceArea.querySelectorAll('.test-bank-subject-test-type').forEach(select => {
+            select.value = subjectTestType;
+        });
         builderForm?.scrollIntoView({behavior:'smooth', block:'start'});
     }));
     setupTestBankCarousel(workspaceArea);
