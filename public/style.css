@@ -1514,8 +1514,15 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 .test-bank-tracker-list{display:grid;gap:.65rem}.test-bank-tracker-row{display:grid;grid-template-columns:minmax(0,1fr) 75px 85px 55px 140px;align-items:center;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:10px;background:transparent}.test-bank-tracker-row[hidden]{display:none}.test-bank-tracker-copy h3{margin:0;font-size:.8rem}.test-bank-tracker-copy p{margin:.25rem 0 0;font-size:.64rem;color:var(--text-muted)}.test-bank-tracker-metric{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-metric small{color:var(--text-muted);font-size:.58rem;font-weight:800;letter-spacing:.04em}.test-bank-tracker-metric strong{font-size:.75rem}.test-bank-tracker-row .passed{color:#078b79}.test-bank-tracker-row .failed,.test-bank-tracker-row .cancelled{color:#f47721}.test-bank-tracker-action{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-action small{font-size:.6rem}.test-bank-tracker-action button{border-color:#08a7bf;color:#078b9b;background:var(--surface);min-height:42px}.test-bank-tracker-action button:hover{background:#078b9b;color:#fff}@media(max-width:900px){.test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-tracker-copy{grid-column:1/-1}.test-bank-tracker-action{grid-column:1/-1;align-items:flex-start}.test-bank-tracker-action button{min-width:140px}}
 /* Larger, comfortably spaced Test Bank progress records. */
 .test-bank-study-path{border:0}
+.test-bank-study-phase,.test-bank-study-phase.active{border:2px solid #11a7c0;border-radius:16px;background:rgba(17,167,192,.025)}
 .test-bank-study-phase.locked{opacity:1}
+.test-bank-study-phase>small{color:#0799ad}
+body.light-mode .test-bank-study-phase h3{color:#263746}
+body.light-mode .test-bank-study-phase p,body.light-mode .test-bank-study-phase>b{color:#647f8e}
 .test-bank-study-phase>strong{color:#0799ad;font-weight:850}
+.test-bank-study-phase button{color:#0799ad;border:2px solid #006bd6;border-radius:5px;padding:.4rem .55rem!important;margin-top:auto;line-height:1.4}
+.test-bank-study-phase button:hover{background:rgba(17,167,192,.08);text-decoration:none}
+.test-bank-study-phase button:focus-visible{outline:2px solid #006bd6;outline-offset:3px}
 .test-bank-study-phase>small{font-size:calc(.68rem + 1pt)}
 .test-bank-study-phase h3{font-size:calc(1.02rem + 1pt)}
 .test-bank-study-phase p{font-size:calc(.76rem + 1pt)}
