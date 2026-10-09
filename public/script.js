@@ -4211,11 +4211,13 @@ if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click
     enrolledCoursesSidebarBtn.setAttribute('aria-expanded', String(!expanded));
     list?.classList.toggle('hidden', expanded);
 });
-if (enrolledTestBanksSidebarBtn) enrolledTestBanksSidebarBtn.addEventListener('click', () => {
+if (enrolledTestBanksSidebarBtn) enrolledTestBanksSidebarBtn.addEventListener('click', async () => {
     const list = $('sidebar-enrolled-test-banks-list');
     const expanded = enrolledTestBanksSidebarBtn.getAttribute('aria-expanded') === 'true';
+    await showDashboardCourseList('enrolled');
     enrolledTestBanksSidebarBtn.setAttribute('aria-expanded', String(!expanded));
     if (list) list.classList.toggle('hidden', expanded);
+    document.querySelector('.enrolled-test-bank-section')?.scrollIntoView({behavior:'smooth', block:'start'});
 });
 if (availableCoursesSidebarBtn) availableCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('available'));
 
