@@ -4211,6 +4211,10 @@ if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click
     await showDashboardCourseList('enrolled');
     enrolledCoursesSidebarBtn.setAttribute('aria-expanded', String(!expanded));
     list?.classList.toggle('hidden', expanded);
+    enrolledTestBanksSidebarBtn?.setAttribute('aria-expanded', 'false');
+    $('sidebar-enrolled-test-banks-list')?.classList.add('hidden');
+    enrolledTestBanksSidebarBtn?.classList.remove('active');
+    enrolledCoursesSidebarBtn.classList.add('active');
 });
 if (enrolledTestBanksSidebarBtn) enrolledTestBanksSidebarBtn.addEventListener('click', async () => {
     const list = $('sidebar-enrolled-test-banks-list');
@@ -4218,6 +4222,10 @@ if (enrolledTestBanksSidebarBtn) enrolledTestBanksSidebarBtn.addEventListener('c
     await showDashboardCourseList('enrolled');
     enrolledTestBanksSidebarBtn.setAttribute('aria-expanded', String(!expanded));
     if (list) list.classList.toggle('hidden', expanded);
+    enrolledCoursesSidebarBtn?.setAttribute('aria-expanded', 'false');
+    $('sidebar-enrolled-courses-list')?.classList.add('hidden');
+    enrolledCoursesSidebarBtn?.classList.remove('active');
+    enrolledTestBanksSidebarBtn.classList.add('active');
     document.querySelector('.enrolled-test-bank-section')?.scrollIntoView({behavior:'smooth', block:'start'});
 });
 if (availableCoursesSidebarBtn) availableCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('available'));
