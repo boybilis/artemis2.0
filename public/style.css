@@ -1513,6 +1513,19 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 @media(max-width:700px){.test-bank-panel-heading{align-items:center;gap:.75rem}.test-bank-subject-card{flex-basis:100%}}
 .test-bank-tracker-list{display:grid;gap:.65rem}.test-bank-tracker-row{display:grid;grid-template-columns:minmax(0,1fr) 75px 85px 55px 140px;align-items:center;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--bg2)}.test-bank-tracker-row[hidden]{display:none}.test-bank-tracker-copy h3{margin:0;font-size:.8rem}.test-bank-tracker-copy p{margin:.25rem 0 0;font-size:.64rem;color:var(--text-muted)}.test-bank-tracker-metric{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-metric small{color:var(--text-muted);font-size:.58rem;font-weight:800;letter-spacing:.04em}.test-bank-tracker-metric strong{font-size:.75rem}.test-bank-tracker-row .passed{color:#078b79}.test-bank-tracker-row .failed,.test-bank-tracker-row .cancelled{color:#f47721}.test-bank-tracker-action{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-action small{font-size:.6rem}.test-bank-tracker-action button{border-color:#08a7bf;color:#078b9b;background:var(--surface);min-height:42px}.test-bank-tracker-action button:hover{background:#078b9b;color:#fff}@media(max-width:900px){.test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-tracker-copy{grid-column:1/-1}.test-bank-tracker-action{grid-column:1/-1;align-items:flex-start}.test-bank-tracker-action button{min-width:140px}}
 /* Larger, comfortably spaced Test Bank progress records. */
+.test-bank-builder-layout .test-bank-history-heading h2{font-size:calc(1.25rem + 1pt)}
+.test-bank-builder-settings .form-control{font-size:calc(.82rem + 1pt)}
+.test-bank-builder-layout .test-bank-history-heading p{font-size:calc(.76rem + 1pt);line-height:1.5}
+.test-bank-builder-subject-heading>span,.test-bank-builder-subject strong,.test-bank-builder-create{font-size:calc(.75rem + 1pt)}
+.test-bank-builder-subject small{font-size:calc(.62rem + 1pt)}
+.test-bank-builder-subject-heading label,.test-bank-builder-settings label,.test-bank-builder-edit,.test-bank-builder-delete,.test-bank-builder-cancel{font-size:calc(.7rem + 1pt)}
+.test-bank-builder-quiz-card small{font-size:calc(.58rem + 1pt)}
+.test-bank-builder-quiz-card h3{font-size:calc(.88rem + 1pt);line-height:1.45}
+.test-bank-builder-quiz-card p{font-size:calc(.65rem + 1pt);line-height:1.5}
+.test-bank-builder-quiz-subjects strong{font-size:calc(.62rem + 1pt)}
+.test-bank-builder-quiz-card .test-bank-start-test{font-size:calc(.72rem + 1pt)}
+.test-bank-builder-pagination>span,.test-bank-builder-pagination button{font-size:calc(.68rem + 1pt)}
+.test-bank-builder-quiz-actions{flex-wrap:wrap;max-width:100%}
 .enrolled-test-bank-section .learner-course-card{height:100%;cursor:default}
 .enrolled-test-bank-description{margin:.8rem 0;color:var(--text-muted);font-size:.9rem;line-height:1.6;white-space:pre-line}
 .enrolled-test-bank-open{width:100%;margin-top:auto;border:0;font-family:inherit;text-align:left;cursor:pointer}
