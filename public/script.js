@@ -673,7 +673,7 @@ function renderTestBankWorkspace(workspace) {
             </div>
             <h3>${escapeHtml(subject.title)}</h3>
             <p>${Number(subject.questionCount || 0)} approved practice questions with detailed rationales</p>
-            <div class="test-bank-subject-stats"><span><strong>${Number(subject.completedTests || 0)}</strong><small>completed · 5 required</small></span><span><strong>${subject.averageScore === null ? '--' : `${Number(subject.averageScore)}%`}</strong><small>average</small></span></div>
+            <div class="test-bank-subject-stats"><span><strong>${Number(subject.completedTests || 0)}</strong><small>Completed</small><small class="test-bank-subject-required">5 required</small></span><span><strong>${subject.averageScore === null ? '--' : `${Number(subject.averageScore)}%`}</strong><small>average</small></span></div>
             <div class="test-bank-subject-progress"><div><span>Subject progress</span><strong>${Number(subject.progress || 0)}%</strong></div><div><span style="width:${Number(subject.progress || 0)}%"></span></div></div>
             <div class="test-bank-subject-test-controls"><select class="test-bank-subject-test-type" aria-label="Select test type for ${escapeHtml(subject.title)}"><option value="warm_up">Warm-up</option><option value="mastery">Mastery Test</option></select><button type="button" class="test-bank-subject-start" data-test-bank-subject="${Number(subject.id)}" ${Number(subject.questionCount || 0) ? '' : 'disabled'}>Start Test</button></div>
         </article>`).join('');
