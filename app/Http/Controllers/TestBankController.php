@@ -204,6 +204,7 @@ class TestBankController extends Controller
                         : ((int) $attempt->quiz->item_count <= 10 ? 'Warm-up' : 'Mastery Test'))
                     : ($attempt->quiz && $this->isSimulationQuiz($attempt->quiz) ? 'Simulation Test' : 'Premade Test'),
                 'attemptNumber' => $attemptNumber,
+                'timeLimitMinutes' => $attempt->quiz?->time_limit_minutes,
                 'rank' => $cancelled ? null : $learnerRank,
                 'coverage' => count($attempt->quiz?->subject_ids ?: []) > 1 ? 'Mixed'
                     : $historySubjects->get(collect($attempt->quiz?->subject_ids)->first())?->title,
