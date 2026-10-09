@@ -1513,6 +1513,18 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 @media(max-width:700px){.test-bank-panel-heading{align-items:center;gap:.75rem}.test-bank-subject-card{flex-basis:100%}}
 .test-bank-tracker-list{display:grid;gap:.65rem}.test-bank-tracker-row{display:grid;grid-template-columns:minmax(0,1fr) 75px 85px 55px 140px;align-items:center;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:10px;background:transparent}.test-bank-tracker-row[hidden]{display:none}.test-bank-tracker-copy h3{margin:0;font-size:.8rem}.test-bank-tracker-copy p{margin:.25rem 0 0;font-size:.64rem;color:var(--text-muted)}.test-bank-tracker-metric{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-metric small{color:var(--text-muted);font-size:.58rem;font-weight:800;letter-spacing:.04em}.test-bank-tracker-metric strong{font-size:.75rem}.test-bank-tracker-row .passed{color:#078b79}.test-bank-tracker-row .failed,.test-bank-tracker-row .cancelled{color:#f47721}.test-bank-tracker-action{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-action small{font-size:.6rem}.test-bank-tracker-action button{border-color:#08a7bf;color:#078b9b;background:var(--surface);min-height:42px}.test-bank-tracker-action button:hover{background:#078b9b;color:#fff}@media(max-width:900px){.test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-tracker-copy{grid-column:1/-1}.test-bank-tracker-action{grid-column:1/-1;align-items:flex-start}.test-bank-tracker-action button{min-width:140px}}
 /* Larger, comfortably spaced Test Bank progress records. */
+body .dashboard-hero-copy,body.light-mode .dashboard-hero-copy{isolation:isolate;border-color:rgba(7,59,99,.2);background:linear-gradient(120deg,#062a43 0%,#073b63 65%,#0d5269 100%);color:#fff;box-shadow:0 16px 38px rgba(7,59,99,.16)}
+body .dashboard-hero-copy::before,body.light-mode .dashboard-hero-copy::before{display:block;inset:auto -70px -130px auto;width:340px;height:340px;border:46px solid rgba(17,167,192,.13);border-radius:50%;background:transparent;z-index:-1}
+.dashboard-hero-copy::after{content:'';position:absolute;top:-80px;right:40px;width:220px;height:220px;border:1px solid rgba(255,255,255,.1);border-radius:50%;pointer-events:none;z-index:-1}
+.dashboard-hero-copy h1{color:#fff;line-height:1.1}
+.dashboard-hero-copy .section-eyebrow{align-self:flex-start;padding:.4rem .7rem;margin-bottom:1rem;border:1px solid rgba(244,119,33,.4);border-radius:999px;background:rgba(244,119,33,.12);color:#ffad73;font-weight:700}
+.dashboard-hero-copy .dashboard-hero-text{color:#d6e8f0;font-size:1rem}
+.dashboard-hero-actions .btn-primary{background:#f47721;color:#fff;box-shadow:0 6px 18px rgba(244,119,33,.22)}
+.dashboard-hero-actions .btn-primary:hover{background:#f47721;filter:brightness(1.06)}
+.dashboard-hero-panel{border-top:4px solid #11a7c0;box-shadow:0 10px 28px rgba(7,59,99,.07)}
+.dashboard-hero-panel .info-icon{background:#073b63}
+.dashboard-hero-panel .hero-metric{border-radius:11px}
+body.light-mode .dashboard-hero-panel .hero-metric{background:#eff8fc}
 .dashboard-overview-cards{display:grid;gap:1rem;margin-top:1rem}
 .dashboard-overview-primary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
 .dashboard-overview-secondary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
