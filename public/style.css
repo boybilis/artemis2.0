@@ -1683,6 +1683,22 @@ body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-tracker-buttons button:hover{filter:brightness(.93)}
 .test-bank-tracker-action button,.test-bank-progress-report .test-bank-history-pagination button{min-height:44px;font-size:calc(.9rem - 1pt);padding:.5rem .65rem;line-height:1.4}
 .test-bank-progress-report .test-bank-history-pagination{flex-wrap:wrap;gap:.85rem}
+.course-catalogue-toolbar,.course-catalogue-pagination{grid-column:1/-1}
+#courses-container.available-catalog-view.grid-view{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:1000px){#courses-container.available-catalog-view.grid-view{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){#courses-container.available-catalog-view.grid-view{grid-template-columns:minmax(0,1fr)}}
+.course-catalogue-toolbar{display:grid;gap:1rem;margin-bottom:.25rem}
+.course-catalogue-toolbar p{margin:0;color:var(--text-muted);font-size:.9rem}
+.course-catalogue-search{display:flex;align-items:center;gap:.8rem;padding:.85rem 1rem;border:1px solid #11a7c0;border-radius:12px;background:var(--surface)}
+.course-catalogue-search svg{width:20px;color:var(--text-muted);flex-shrink:0}
+.course-catalogue-search input{width:100%;border:0;background:transparent;color:var(--text);font:inherit;outline:none}
+.course-catalogue-search:focus-within{box-shadow:0 0 0 3px rgba(17,167,192,.15)}
+.course-catalogue-filters,.course-catalogue-pagination{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
+.course-catalogue-filters button,.course-catalogue-pagination button{border:1px solid var(--border);background:var(--surface);color:var(--text);padding:.55rem 1rem;border-radius:999px;cursor:pointer;font:inherit;font-size:.85rem}
+.course-catalogue-filters button[aria-pressed="true"],.course-catalogue-pagination button[aria-current="page"]{background:#11a7c0;border-color:#11a7c0;color:white}
+.course-catalogue-pagination{justify-content:center;padding:1rem 0}
+.course-catalogue-pagination button{border-radius:9px}
+.course-catalogue-pagination button:disabled{opacity:.45;cursor:default}
 .test-bank-progress-report .test-bank-history-pagination>div{flex-wrap:wrap}
 @media(max-width:1150px){.test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-tracker-copy{grid-column:1/-1}.test-bank-tracker-action{grid-column:1/-1;align-items:flex-start}.test-bank-tracker-action button{min-width:180px}}
 @media(max-width:700px){.test-bank-progress-report{padding:1rem}.test-bank-tracker-row{padding:1rem;gap:1rem}.test-bank-progress-report .test-bank-history-table-tools label{width:100%}}

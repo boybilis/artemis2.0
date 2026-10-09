@@ -1449,6 +1449,18 @@ function renderDashboardOverview() {
     if (window.lucide) lucide.createIcons({root: container});
 }
 
+const courseCatalogue = {search: '', category: 'All Courses', page: 1};
+function filterCatalogueCourses(items, search, category) {
+    const query = search.trim().toLowerCase();
+    return items.filter(course => {
+        const text = JSON.stringify(course).toLowerCase();
+        const title = String(course.title || '').toUpperCase();
+        const matchesCategory = category === 'All Courses' || (category === 'DOH (HAAD)'
+            ? /DOH|HAAD/.test(title) : title.includes(category.toUpperCase()));
+        return matchesCategory && (!query || text.includes(query));
+    });
+}
+
 function renderDashboard() {
     // Reset view to courses menu
     const cdArea = $('course-details-area');
@@ -1488,18 +1500,47 @@ function renderDashboard() {
     if (cContainer) {
         cContainer.innerHTML = '';
         cContainer.classList.toggle('available-catalog-view', state.courseListFilter === 'available');
-        const visibleCourses = state.courseListFilter === 'enrolled'
+        let visibleCourses = state.courseListFilter === 'enrolled'
             ? courses.filter(course => course.is_enrolled)
             : state.courseListFilter === 'available'
                 ? courses.filter(course => !course.is_enrolled)
                 : courses;
+
+        if (state.courseListFilter === 'available') {
+            const totalCourses = visibleCourses.length;
+            visibleCourses = filterCatalogueCourses(visibleCourses, courseCatalogue.search, courseCatalogue.category);
+            const matches = visibleCourses.length;
+            const pages = Math.max(1, Math.ceil(matches / 6));
+            courseCatalogue.page = Math.min(pages, Math.max(1, courseCatalogue.page));
+            const start = (courseCatalogue.page - 1) * 6;
+            const toolbar = document.createElement('section');
+            toolbar.className = 'course-catalogue-toolbar';
+            toolbar.innerHTML = `<p>Find your next review course · ${totalCourses} courses</p>
+                <label class="course-catalogue-search"><i data-lucide="search"></i><input type="search" aria-label="Search courses, exams, or batches" placeholder="Search courses, exams, or batches…" value="${escapeHtml(courseCatalogue.search)}"></label>
+                <div class="course-catalogue-filters">${['All Courses', 'NCLEX', 'DHA', 'DOH (HAAD)', 'Prometric', 'CSE', 'PNLE'].map(category => `<button type="button" data-category="${category}" aria-pressed="${category === courseCatalogue.category}">${category}</button>`).join('')}</div>
+                <p aria-live="polite">Showing ${matches ? start + 1 : 0}–${Math.min(start + 6, matches)} of ${matches} courses</p>`;
+            cContainer.appendChild(toolbar);
+            toolbar.querySelector('input').addEventListener('input', event => {
+                courseCatalogue.search = event.target.value;
+                courseCatalogue.page = 1;
+                renderDashboard();
+                $('courses-container').querySelector('.course-catalogue-search input')?.focus();
+            });
+            toolbar.querySelectorAll('[data-category]').forEach(button => button.addEventListener('click', () => {
+                courseCatalogue.category = button.dataset.category;
+                courseCatalogue.page = 1;
+                renderDashboard();
+            }));
+            visibleCourses = visibleCourses.slice(start, start + 6);
+            cContainer.dataset.cataloguePages = String(pages);
+        }
 
         const listTitle = $('dashboard-course-list-title');
         const listSubtitle = $('dashboard-course-list-subtitle');
         if (listTitle) listTitle.textContent = state.courseListFilter === 'enrolled'
             ? 'Your Enrolled Courses'
             : state.courseListFilter === 'available'
-                ? 'All Available Courses'
+                ? 'Course Catalogue'
                 : state.courseListFilter === 'packages' ? 'Review Packages' : 'Course Dashboard';
         if (listSubtitle) listSubtitle.textContent = state.courseListFilter === 'enrolled'
             ? 'Continue learning from the courses included in your active batch enrollments.'
@@ -1526,7 +1567,7 @@ function renderDashboard() {
 
         if (visibleCourses.length === 0 && !(state.courseListFilter === 'available' && availableTestBanks.length)) {
             const isEnrolledView = state.courseListFilter === 'enrolled';
-            cContainer.innerHTML = `<div class="empty-course-filter"><i data-lucide="book-open"></i><p>${isEnrolledView ? 'No enrolled courses yet.' : 'No available courses at this time.'}</p><span>${isEnrolledView ? 'Browse Available Courses to choose a review batch.' : 'Please check again when a new batch becomes available.'}</span></div>`;
+            cContainer.insertAdjacentHTML('beforeend', `<div class="empty-course-filter"><i data-lucide="book-open"></i><p>${isEnrolledView ? 'No enrolled courses yet.' : 'No matching courses.'}</p><span>${isEnrolledView ? 'Browse Available Courses to choose a review batch.' : 'Try another search or category.'}</span></div>`);
         }
 
         visibleCourses.forEach((course, courseIndex) => {
@@ -1653,6 +1694,26 @@ function renderDashboard() {
             });
             cContainer.appendChild(card);
         });
+
+        if (state.courseListFilter === 'available') {
+            const pages = Number(cContainer.dataset.cataloguePages || 1);
+            const navigation = document.createElement('nav');
+            navigation.className = 'course-catalogue-pagination';
+            navigation.setAttribute('aria-label', 'Course catalogue pages');
+            const pageButton = (page, label) => `<button type="button" data-page="${page}" ${page < 1 || page > pages ? 'disabled' : ''} ${page === courseCatalogue.page && typeof label === 'number' ? 'aria-current="page"' : ''}>${label}</button>`;
+            let pageLinks = '';
+            for (let page = 1; page <= pages; page++) {
+                if (page === 1 || page === pages || Math.abs(page - courseCatalogue.page) <= 1) pageLinks += pageButton(page, page);
+                else if (page === courseCatalogue.page - 2 || page === courseCatalogue.page + 2) pageLinks += '<span>…</span>';
+            }
+            navigation.innerHTML = pageButton(courseCatalogue.page - 1, '‹ Previous') + pageLinks + pageButton(courseCatalogue.page + 1, 'Next ›');
+            navigation.querySelectorAll('[data-page]').forEach(button => button.addEventListener('click', () => {
+                courseCatalogue.page = Number(button.dataset.page);
+                renderDashboard();
+                $('dashboard-courses-head')?.scrollIntoView({behavior: 'smooth', block: 'start'});
+            }));
+            cContainer.appendChild(navigation);
+        }
 
         if (state.courseListFilter === 'enrolled') {
             const section = document.createElement('section');
@@ -4093,6 +4154,7 @@ function renderReviewPackages(container) {
 }
 
 async function showDashboardCourseList(filter) {
+    if (filter === 'available') Object.assign(courseCatalogue, {search: '', category: 'All Courses', page: 1});
     if (filter === 'enrolled' || filter === 'available') state.courseLayout = 'grid';
     state.courseListFilter = ['enrolled', 'available', 'packages'].includes(filter) ? filter : 'dashboard';
     if (state.courseListFilter === 'packages') {
