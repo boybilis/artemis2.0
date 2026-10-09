@@ -1608,6 +1608,8 @@ body.light-mode .test-bank-study-phase p,body.light-mode .test-bank-study-phase>
 .test-bank-tracker-list{gap:.65rem;background:transparent}
 .test-bank-tracker-row{grid-template-columns:minmax(0,1fr) 90px 115px 65px 180px;gap:1rem;padding:.9rem;min-height:0;border:1px solid var(--border);border-radius:10px;background:transparent;box-shadow:none}
 .test-bank-tracker-copy h3{font-size:calc(.88rem + 1pt);line-height:1.45;overflow-wrap:anywhere;margin:.2rem 0}
+.test-bank-tracker-taken-date{font-size:calc(.65rem + 1pt);font-weight:500;color:var(--text-muted)}
+body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-tracker-copy p{font-size:calc(.65rem + 1pt);line-height:1.5;margin-top:.3rem}
 .test-bank-tracker-subtitle{margin-top:.25rem;font-family:inherit;font-size:calc(.65rem + 1pt);font-weight:400;line-height:1.5;color:var(--text-muted);overflow-wrap:anywhere}
 .test-bank-tracker-copy .test-bank-tracker-coverage{margin-top:.4rem;color:var(--text);font-size:calc(.65rem + 1pt)}

@@ -693,11 +693,15 @@ function renderTestBankWorkspace(workspace) {
             ? attempt.title.replace(/\s*·\s*(Warm-up|Mastery Test)$/i, '')
             : attempt.title;
         const attemptCount = historyAttemptCounts[attempt.quizId] || 1;
+        const takenDate = attempt.takenAt ? new Date(attempt.takenAt) : null;
+        const takenAt = takenDate && !Number.isNaN(takenDate.getTime())
+            ? takenDate.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric', timeZone:'Asia/Manila'})
+            : '';
         const timing = attempt.timeLimitMinutes ? `Timed (${Number(attempt.timeLimitMinutes)} minutes)` : 'Untimed';
         const subtitle = [attempt.testTypeLabel, `${Number(attempt.totalItems || 0)} questions`, timing, `${attemptCount} ${attemptCount === 1 ? 'attempt' : 'attempts'}`].filter(Boolean).join(' · ');
         const percentage = Number(attempt.totalItems || 0) > 0 ? Math.round(Number(attempt.correctItems || 0) / Number(attempt.totalItems) * 100) : 0;
         return `<article class="test-bank-tracker-row" data-tracker-record>
-            <div class="test-bank-tracker-copy"><h3>${escapeHtml(title)}</h3><div class="test-bank-tracker-subtitle">${escapeHtml(subtitle)}</div><p class="test-bank-tracker-coverage"><strong>SUBJECTS:</strong> ${escapeHtml(attempt.coverage || 'Not specified')}</p></div>
+            <div class="test-bank-tracker-copy"><h3>${escapeHtml(title)}${takenAt ? ` <span class="test-bank-tracker-taken-date">· (${escapeHtml(takenAt)})</span>` : ''}</h3><div class="test-bank-tracker-subtitle">${escapeHtml(subtitle)}</div><p class="test-bank-tracker-coverage"><strong>SUBJECTS:</strong> ${escapeHtml(attempt.coverage || 'Not specified')}</p></div>
             <div class="test-bank-tracker-metric"><small>SCORE</small><strong>${attempt.cancelled ? '—' : `${percentage}%`}</strong></div>
             <div class="test-bank-tracker-metric"><small>RESULT</small><strong class="${attempt.cancelled ? 'cancelled' : attempt.passed ? 'passed' : 'failed'}">${attempt.cancelled ? 'Cancelled' : attempt.passed ? 'Passed' : 'Failed'}</strong></div>
             <div class="test-bank-tracker-metric"><small>RANK</small><strong>${attempt.rank ?? '—'}</strong></div>
