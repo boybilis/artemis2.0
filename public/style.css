@@ -1572,6 +1572,10 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 .test-bank-tracker-coverage strong{color:var(--text-muted);font-size:.85em;letter-spacing:.03em}
 .test-bank-tracker-metric small{font-size:calc(.8rem - 1pt)}
 .test-bank-tracker-metric strong{font-size:calc(1.2rem - 1pt);line-height:1.5}
+.test-bank-tracker-metric strong.passed,.test-bank-tracker-metric strong.failed,.test-bank-tracker-metric strong.cancelled{font-size:calc(.95rem - 1pt);font-weight:800}
+.test-bank-tracker-metric strong.passed{color:#16a34a}
+.test-bank-tracker-metric strong.failed{color:#dc2626}
+.test-bank-tracker-metric strong.cancelled{color:#f47721}
 .test-bank-tracker-action small{font-size:calc(.85rem - 1pt);line-height:1.5}
 .test-bank-tracker-action button,.test-bank-progress-report .test-bank-history-pagination button{min-height:44px;font-size:calc(.9rem - 1pt);padding:.5rem .65rem;line-height:1.4}
 .test-bank-progress-report .test-bank-history-pagination{flex-wrap:wrap;gap:.85rem}
