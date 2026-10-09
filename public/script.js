@@ -750,17 +750,17 @@ function renderTestBankWorkspace(workspace) {
             </div>
         </section>
         <div class="test-bank-workspace-tabs" role="tablist">
-            <button type="button" class="active" data-test-bank-tab="premade"><i data-lucide="book-open"></i> Premade Tests</button>
-            <button type="button" data-test-bank-tab="builder"><i data-lucide="wand-sparkles"></i> Test Builder</button>
+            <button type="button" class="active" data-test-bank-tab="builder"><i data-lucide="wand-sparkles"></i> Test Builder</button>
+            <button type="button" data-test-bank-tab="premade"><i data-lucide="book-open"></i> Premade Tests</button>
             <button type="button" data-test-bank-tab="progress"><i data-lucide="chart-no-axes-column-increasing"></i> Progress Tracker</button>
         </div>
-        <section class="test-bank-tab-panel" data-test-bank-panel="premade">
+        <section class="test-bank-tab-panel hidden" data-test-bank-panel="premade">
             ${simulationCards ? `<div class="test-bank-simulation-grid">${simulationCards}</div>` : ''}
             <div class="test-bank-panel-heading"><div><h2>${escapeHtml(workspace.courseTitle)} Premade Tests by Subject</h2><p>Curated from approved questions in the course question bank.</p></div><div id="test-bank-carousel-controls" class="subject-carousel-controls" aria-label="Premade test carousel controls"><span id="test-bank-carousel-range" class="subject-carousel-range" aria-live="polite"></span><button id="test-bank-carousel-prev" type="button" aria-label="Show previous premade tests"><i data-lucide="chevron-left"></i></button><button id="test-bank-carousel-next" type="button" aria-label="Show next premade tests"><i data-lucide="chevron-right"></i></button></div></div>
             ${premadeCards ? `<div class="test-bank-premade-grid">${premadeCards}</div>` : ''}
             <div class="test-bank-subject-grid">${subjectCards || '<div class="empty-course-filter"><p>No approved subject questions yet.</p></div>'}</div>
         </section>
-        <section class="test-bank-tab-panel hidden" data-test-bank-panel="builder">
+        <section class="test-bank-tab-panel" data-test-bank-panel="builder">
             <div class="test-bank-builder-layout">
                 <form id="test-bank-builder-form" class="test-bank-builder-form">
                     <div class="test-bank-history-heading"><h2>Build a Practice Test</h2><p>Select one or more subjects, choose the number of questions, and optionally add a timer.</p></div>
