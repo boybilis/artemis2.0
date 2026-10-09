@@ -1516,17 +1516,23 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 .dashboard-overview-cards{display:grid;gap:1rem;margin-top:1rem}
 .dashboard-overview-primary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
 .dashboard-overview-secondary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
-.dashboard-overview-card{display:flex;flex-direction:column;min-width:0;padding:1.4rem;border:1px solid var(--border);border-radius:18px;background:var(--surface-solid)}
+.dashboard-overview-card{--overview-color:#11a7c0;--overview-rgb:17,167,192;position:relative;isolation:isolate;overflow:hidden;display:flex;flex-direction:column;min-width:0;padding:1.4rem;border:1px solid var(--border);border-top:4px solid var(--overview-color);border-radius:18px;background:linear-gradient(135deg,rgba(var(--overview-rgb),.09),transparent 75%),var(--surface-solid);box-shadow:0 8px 24px rgba(var(--overview-rgb),.07);transition:transform .2s,box-shadow .2s}
+.dashboard-overview-primary>.dashboard-overview-card:nth-child(1){--overview-color:#073b63;--overview-rgb:7,59,99}
+.dashboard-overview-primary>.dashboard-overview-card:nth-child(2){--overview-color:#f47721;--overview-rgb:244,119,33}
+.dashboard-overview-primary>.dashboard-overview-card:nth-child(3){--overview-color:#08b89f;--overview-rgb:8,184,159}
+.dashboard-overview-card::before{content:'';position:absolute;z-index:-1;pointer-events:none;top:-65px;right:-60px;width:170px;height:170px;border:22px solid rgba(var(--overview-rgb),.055);border-radius:50%}
+.dashboard-overview-card:hover{transform:translateY(-3px);box-shadow:0 14px 30px rgba(var(--overview-rgb),.13)}
 .dashboard-overview-card header{display:flex;align-items:center;gap:1rem;margin-bottom:1rem}
-.dashboard-overview-card header>svg{width:36px;height:36px;flex-shrink:0;color:#f47721}
+.dashboard-overview-card header>svg{width:48px;height:48px;padding:9px;box-sizing:border-box;flex-shrink:0;border-radius:12px;color:var(--overview-color);background:rgba(var(--overview-rgb),.1)}
 .dashboard-overview-card h2{margin:0;font-size:1.05rem;line-height:1.4}
 .dashboard-overview-value{font-size:1.55rem;line-height:1.4;overflow-wrap:anywhere}
 .dashboard-overview-card>p{margin:.3rem 0 1rem;color:var(--text-muted);font-size:.9rem;line-height:1.6;white-space:pre-line;overflow-wrap:anywhere}
-.dashboard-overview-card>button{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;min-height:44px;margin-top:auto;padding:.6rem .9rem;border:1px solid #11a7c0;border-radius:9px;background:#11a7c0;color:#fff;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}
+.dashboard-overview-card>button{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;min-height:44px;margin-top:auto;padding:.6rem .9rem;border:1px solid var(--overview-color);border-radius:9px;background:var(--overview-color);color:#fff;font:inherit;font-size:.85rem;font-weight:600;cursor:pointer}
 .dashboard-overview-card>button svg{width:18px;height:18px}
-.dashboard-overview-wide>button{align-self:flex-start;width:auto;background:transparent;color:#11a7c0}
+.dashboard-overview-wide>button{align-self:flex-start;width:auto;background:transparent;color:var(--overview-color)}
 .dashboard-overview-card>button:focus-visible{outline:2px solid #11a7c0;outline-offset:3px}
 .dashboard-overview-card>button:hover{filter:brightness(.95)}
+@media(prefers-reduced-motion:reduce){.dashboard-overview-card{transition:none}.dashboard-overview-card:hover{transform:none}}
 @media(max-width:1000px){.dashboard-overview-primary{grid-template-columns:1fr 1fr}.dashboard-overview-primary>article:last-child{grid-column:1/-1}}
 @media(max-width:650px){.dashboard-overview-primary,.dashboard-overview-secondary{grid-template-columns:1fr}.dashboard-overview-card{padding:1.1rem}}
 .test-bank-history-filters{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;color:var(--text-muted);font-size:.85rem}
