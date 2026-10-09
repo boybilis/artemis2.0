@@ -43,7 +43,7 @@
             display: grid;
             place-items: center;
             border-radius: 12px;
-            background: linear-gradient(135deg, #f4510b, #ff7a2f);
+            background: linear-gradient(135deg, #f47721, #f47721);
             color: #ffffff;
             font-weight: 800;
         }
@@ -82,7 +82,7 @@
         }
 
         input:focus {
-            border-color: #f4510b;
+            border-color: #f47721;
             box-shadow: 0 0 0 3px rgba(244, 81, 11, .12);
         }
 
