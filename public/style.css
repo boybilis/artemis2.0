@@ -1517,6 +1517,9 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 .test-bank-study-phase,.test-bank-study-phase.active{border:2px solid #11a7c0;border-radius:16px;background:var(--surface-solid)}
 body.light-mode .test-bank-study-phase{background:#f1f3f5}
 body.light-mode .test-bank-study-phase.active{background:#ffffff}
+.test-bank-study-phase.unlocked{background:rgba(17,167,192,.12)}
+body.light-mode .test-bank-study-phase.unlocked{background:#e1f5f3}
+.test-bank-study-phase.unlocked>strong{color:#16a34a}
 .test-bank-study-phase.locked{opacity:1}
 .test-bank-study-phase>small{color:#11a7c0}
 body.light-mode .test-bank-study-phase h3{color:#263746}
