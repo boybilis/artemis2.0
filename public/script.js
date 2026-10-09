@@ -762,6 +762,7 @@ function renderTestBankWorkspace(workspace) {
         </div>
         <section class="test-bank-tab-panel hidden" data-test-bank-panel="premade">
             ${simulationCards ? `<div class="test-bank-simulation-grid">${simulationCards}</div>` : ''}
+            <div class="test-bank-selected-phase" aria-live="polite"><small>SELECTED PHASE</small><strong data-selected-phase-label>Warm Up Quizzes · 10 items</strong><span>Choose a phase above to change this test.</span></div>
             <div class="test-bank-panel-heading"><div><h2>${escapeHtml(workspace.courseTitle)} Premade Tests by Subject</h2><p>Curated from approved questions in the course question bank.</p></div><div id="test-bank-carousel-controls" class="subject-carousel-controls" aria-label="Premade test carousel controls"><span id="test-bank-carousel-range" class="subject-carousel-range" aria-live="polite"></span><button id="test-bank-carousel-prev" type="button" aria-label="Show previous premade tests"><i data-lucide="chevron-left"></i></button><button id="test-bank-carousel-next" type="button" aria-label="Show next premade tests"><i data-lucide="chevron-right"></i></button></div></div>
             ${premadeCards ? `<div class="test-bank-premade-grid">${premadeCards}</div>` : ''}
             <div class="test-bank-subject-grid">${subjectCards || '<div class="empty-course-filter"><p>No approved subject questions yet.</p></div>'}</div>
@@ -981,6 +982,8 @@ function renderTestBankWorkspace(workspace) {
         const itemCount = builderForm?.elements.namedItem('item_count');
         if (itemCount) itemCount.value = Number(button.dataset.guidedBuilder);
         const subjectTestType = Number(button.dataset.guidedBuilder) === 20 ? 'mastery' : 'warm_up';
+        workspaceArea.querySelector('[data-selected-phase-label]').textContent = subjectTestType === 'mastery'
+            ? 'Mastery Tests · 20 items' : 'Warm Up Quizzes · 10 items';
         workspaceArea.querySelectorAll('.test-bank-subject-test-type').forEach(select => {
             select.value = subjectTestType;
         });

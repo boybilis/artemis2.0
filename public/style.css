@@ -1683,6 +1683,10 @@ body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-tracker-action button,.test-bank-progress-report .test-bank-history-pagination button{min-height:44px;font-size:calc(.9rem - 1pt);padding:.5rem .65rem;line-height:1.4}
 .test-bank-progress-report .test-bank-history-pagination{flex-wrap:wrap;gap:.85rem}
 .course-catalogue-toolbar,.course-catalogue-pagination{grid-column:1/-1}
+.test-bank-selected-phase{display:flex;align-items:center;flex-wrap:wrap;gap:.65rem 1.2rem;padding:1.1rem 1.4rem;margin:1rem 0 1.4rem;border-radius:16px;background:rgba(17,167,192,.09)}
+.test-bank-selected-phase small{font-size:.8rem;font-weight:700;letter-spacing:.06em;color:var(--text-muted)}
+.test-bank-selected-phase strong{font-size:1.1rem;color:#11a7c0}
+.test-bank-selected-phase span{font-size:.9rem;color:var(--text-muted)}
 #courses-container.available-catalog-view.grid-view{grid-template-columns:repeat(3,minmax(0,1fr))}
 @media(max-width:1000px){#courses-container.available-catalog-view.grid-view{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){#courses-container.available-catalog-view.grid-view{grid-template-columns:minmax(0,1fr)}}
