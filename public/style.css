@@ -1515,7 +1515,8 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 /* Larger, comfortably spaced Test Bank progress records. */
 .test-bank-study-path{border:0}
 .test-bank-study-phase,.test-bank-study-phase.active{border:2px solid #11a7c0;border-radius:16px;background:var(--surface-solid)}
-body.light-mode .test-bank-study-phase,body.light-mode .test-bank-study-phase.active{background:#ffffff}
+body.light-mode .test-bank-study-phase{background:#f1f3f5}
+body.light-mode .test-bank-study-phase.active{background:#ffffff}
 .test-bank-study-phase.locked{opacity:1}
 .test-bank-study-phase>small{color:#11a7c0}
 body.light-mode .test-bank-study-phase h3{color:#263746}
