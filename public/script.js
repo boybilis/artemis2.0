@@ -1446,6 +1446,7 @@ function renderDashboardOverview() {
         await showDashboardCourseList('enrolled');
         if (action === 'progress' && enrolled.length) showToast('Open a course to view its Progress Report.', 'info');
     }));
+    if (window.lucide) lucide.createIcons({root: container});
 }
 
 function renderDashboard() {
