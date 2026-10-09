@@ -16,7 +16,7 @@
     <div class="test-bank-directory">
         @forelse($testBanks as $testBank)
             <article class="test-bank-directory-card">
-                <div><h3>{{ $testBank->title }}</h3><p class="muted">{{ $testBank->code }} · {{ $testBank->course?->title }}</p><p class="muted">{{ $testBank->status === 'active' ? 'Active' : 'Inactive' }} · {{ $testBank->access_days }} days · ₱{{ number_format($testBank->price, 2) }}</p></div>
+                <div><h3>{{ $testBank->title }}</h3><p class="muted">{{ $testBank->code }} · {{ $testBank->course?->title }}</p><p class="muted">{{ $testBank->status === 'active' ? 'Approved' : 'Pending' }} · {{ $testBank->access_days }} days · ₱{{ number_format($testBank->price, 2) }}</p></div>
                 <div class="directory-actions"><a class="btn-primary" href="{{ route('admin.content.test-banks.manage', [$testBank->course_id, $testBank]) }}">Manage Test Bank</a><button type="button" class="btn-ghost" onclick='openDirectoryBankForm(@json($testBank))'>Edit</button></div>
             </article>
         @empty
@@ -38,6 +38,7 @@
             <div class="field"><label>Price (PHP)</label><input class="form-control" name="price" type="number" min="0" step=".01" required></div>
             <div class="field"><label>Price (USD, optional)</label><input class="form-control" name="usd_price" type="number" min="0" step=".01"></div>
             <div class="field"><label>Access duration (days)</label><input class="form-control" name="access_days" type="number" min="1" max="3650" required value="30"></div>
+            <div class="field"><label for="directoryBankStatus">Approval status</label><select id="directoryBankStatus" class="form-control" name="status" required><option value="draft">Pending</option><option value="active">Approved</option></select><small class="muted">Only approved Test Banks are displayed to learners.</small></div>
         </div></div>
         <div class="admin-modal-footer"><button type="button" class="btn-ghost" onclick="closeDirectoryBankForm()">Cancel</button><button type="submit" class="btn-primary">Save Test Bank</button></div>
     </form>
@@ -57,6 +58,7 @@ function openDirectoryBankForm(item = null) {
     if (item) {
         directoryForm.action += '/' + Number(item.id);
         ['title', 'code', 'description', 'price', 'usd_price', 'access_days'].forEach(key => directoryForm.elements.namedItem(key).value = item[key] ?? '');
+        directoryForm.elements.namedItem('status').value = item.status === 'active' ? 'active' : 'draft';
     }
     document.getElementById('directoryBankModal').classList.add('open');
 }

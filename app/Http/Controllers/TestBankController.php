@@ -895,6 +895,7 @@ class TestBankController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'usd_price' => ['nullable', 'numeric', 'min:0'],
             'access_days' => ['required', 'integer', 'min:1', 'max:3650'],
+            'status' => ['sometimes', 'required', Rule::in(['active', 'draft'])],
         ]);
     }
 

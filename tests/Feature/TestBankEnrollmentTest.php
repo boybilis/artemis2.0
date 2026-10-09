@@ -17,6 +17,28 @@ class TestBankEnrollmentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_pending_bank_is_hidden_until_admin_approves_it(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $learner = User::factory()->create();
+        $course = Course::create(['title' => 'Approval Course']);
+        $data = ['title' => 'Approval Bank', 'code' => 'APPROVAL-TB', 'price' => 500, 'access_days' => 30, 'status' => 'draft'];
+        $this->actingAs($admin)->post(route('admin.content.test-banks.store', $course), $data)->assertSessionHasNoErrors();
+        $bank = TestBank::where('code', 'APPROVAL-TB')->firstOrFail();
+        $this->assertSame('draft', $bank->status);
+        TestBankEnrollment::activate($bank, $learner);
+        $this->actingAs($learner)->getJson('/api/test-banks')->assertJsonCount(0, 'testBanks');
+        $this->getJson('/api/test-banks/enrolled')->assertJsonCount(0, 'testBanks');
+        $data['status'] = 'active';
+        $this->actingAs($admin)->put(route('admin.content.test-banks.update', [$course, $bank]), $data)->assertSessionHasNoErrors();
+        $this->actingAs($learner)->getJson('/api/test-banks')->assertJsonCount(1, 'testBanks');
+        $this->getJson('/api/test-banks/enrolled')->assertJsonCount(1, 'testBanks');
+        $data['status'] = 'draft';
+        $this->actingAs($admin)->put(route('admin.content.test-banks.update', [$course, $bank]), $data)->assertSessionHasNoErrors();
+        $this->actingAs($learner)->getJson('/api/test-banks')->assertJsonCount(0, 'testBanks');
+        $this->getJson('/api/test-banks/enrolled')->assertJsonCount(0, 'testBanks');
+    }
+
     public function test_test_bank_directory_is_accessible_to_admin_and_encoder_only(): void
     {
         $course = Course::create(['title' => 'Directory Course']);
