@@ -1579,6 +1579,7 @@ body.light-mode .test-bank-study-phase p,body.light-mode .test-bank-study-phase>
 @media(max-width:700px){.test-bank-workspace-hero>div:nth-child(2){flex-basis:calc(100% - 64px)}.test-bank-workspace-hero .test-bank-readiness{margin-left:64px}}
 .test-bank-workspace-tabs button{font-size:1.05rem;font-weight:800;min-height:64px;padding:.8rem 1rem;gap:.6rem;line-height:1.4}
 .test-bank-workspace-tabs svg{width:24px;height:24px;flex-shrink:0}
+.test-bank-workspace-tabs button.active{outline-color:#11a7c0;color:#11a7c0}
 .test-bank-simulation-eligibility{padding:1.5rem;margin-bottom:1.25rem;border-left:1px solid var(--border)}
 .test-bank-simulation-eligibility.unlocked{border-left-color:var(--border)}
 .test-bank-simulation-eligibility-head small{font-size:.8rem;line-height:1.5}
