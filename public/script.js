@@ -705,7 +705,7 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-tracker-metric"><small>SCORE</small><strong>${attempt.cancelled ? '—' : `${percentage}%`}</strong></div>
             <div class="test-bank-tracker-metric"><small>RESULT</small><strong class="${attempt.cancelled ? 'cancelled' : attempt.passed ? 'passed' : 'failed'}">${attempt.cancelled ? 'Cancelled' : attempt.passed ? 'Passed' : 'Failed'}</strong></div>
             <div class="test-bank-tracker-metric"><small>RANK</small><strong>${attempt.quizType === 'premade' ? (attempt.rank ?? '--') : '--'}</strong></div>
-            <div class="test-bank-tracker-action">${attempt.cancelled ? '<small>No review available</small>' : `${attempt.passed ? '' : '<small class="test-bank-retake-badge">Retake recommended</small>'}<button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review questions</button>`}</div>
+            <div class="test-bank-tracker-action">${attempt.cancelled ? '<small>No review available</small>' : `${attempt.passed ? '' : '<small class="test-bank-retake-badge">Retake recommended</small>'}<div class="test-bank-tracker-buttons"><button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review</button>${attempt.passed ? '' : `<button type="button" class="test-bank-history-retake" data-retake-attempt="${Number(attempt.id)}">Re-take</button>`}</div>`}</div>
         </article>`;
     }).join('');
     const builderSubjects = (workspace.subjects || []).map(subject => `
@@ -779,20 +779,33 @@ function renderTestBankWorkspace(workspace) {
 
     $('test-bank-back-btn')?.addEventListener('click', () => showDashboardCourseList('available'));
     $('extend-test-bank-btn')?.addEventListener('click', event => startTestBankCheckout(workspace.id, event.currentTarget));
-    workspaceArea.querySelectorAll('.test-bank-start-test').forEach(button => button.addEventListener('click', async () => {
-        const quizId = Number(button.dataset.testBankQuizId);
+    const startSavedTest = async (quizId, button, attempt = null) => {
         const premade = (workspace.premadeTests || []).find(test => Number(test.id) === quizId);
         const learnerQuiz = (workspace.learnerQuizzes || []).find(test => Number(test.id) === quizId);
         const subjectTitles = premade
             ? (workspace.subjects || []).filter(subject => (premade.subjectIds || []).map(Number).includes(Number(subject.id))).map(subject => subject.title)
-            : (learnerQuiz?.subjects || []).map(subject => subject.title);
+            : learnerQuiz ? (learnerQuiz.subjects || []).map(subject => subject.title)
+                : attempt?.coverage ? [attempt.coverage] : [];
         const shouldStart = await showTestBankInstructions({
-            title: premade?.title || learnerQuiz?.title || 'Test Bank Exam',
-            itemCount: premade?.itemCount ?? learnerQuiz?.itemCount ?? 0,
-            timeLimitMinutes: premade?.timeLimitMinutes ?? learnerQuiz?.timeLimitMinutes ?? null,
+            title: premade?.title || learnerQuiz?.title || attempt?.title || 'Test Bank Exam',
+            itemCount: premade?.itemCount ?? learnerQuiz?.itemCount ?? attempt?.totalItems ?? 0,
+            timeLimitMinutes: premade?.timeLimitMinutes ?? learnerQuiz?.timeLimitMinutes ?? attempt?.timeLimitMinutes ?? null,
             coverage: subjectTitles,
         });
-        if (shouldStart) startTestBankPremadeQuiz(Number(button.dataset.testBankId), quizId, button);
+        if (shouldStart) await startTestBankPremadeQuiz(Number(workspace.id), quizId, button);
+    };
+    workspaceArea.querySelectorAll('.test-bank-start-test').forEach(button => button.addEventListener('click', () => {
+        startSavedTest(Number(button.dataset.testBankQuizId), button);
+    }));
+    workspaceArea.querySelectorAll('[data-retake-attempt]').forEach(button => button.addEventListener('click', () => {
+        const attempt = (workspace.history || []).find(item => Number(item.id) === Number(button.dataset.retakeAttempt));
+        if (!attempt || attempt.cancelled || attempt.passed) return;
+        const premade = (workspace.premadeTests || []).find(test => Number(test.id) === Number(attempt.quizId));
+        if (premade?.locked) {
+            showToast('Complete the requirements to unlock this simulation test.', 'info');
+            return;
+        }
+        startSavedTest(Number(attempt.quizId), button, attempt);
     }));
     workspaceArea.querySelectorAll('.test-bank-subject-start').forEach(button => button.addEventListener('click', async () => {
         const originalText = button.textContent;

@@ -168,7 +168,7 @@ class TestBankController extends Controller
         $attempts = TestBankQuizAttempt::query()
             ->where('user_id', $user->id)
             ->where('test_bank_id', $testBank->id)
-            ->with('quiz:id,title,subject_ids,quiz_type,item_count')
+            ->with('quiz:id,title,subject_ids,quiz_type,item_count,time_limit_minutes')
             ->get();
         $warmUpPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->passed
             && $attempt->quiz?->quiz_type === 'learner'
