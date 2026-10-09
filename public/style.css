@@ -1683,6 +1683,8 @@ body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-tracker-action button,.test-bank-progress-report .test-bank-history-pagination button{min-height:44px;font-size:calc(.9rem - 1pt);padding:.5rem .65rem;line-height:1.4}
 .test-bank-progress-report .test-bank-history-pagination{flex-wrap:wrap;gap:.85rem}
 .course-catalogue-toolbar,.course-catalogue-pagination{grid-column:1/-1}
+.test-bank-tab-panel .test-bank-progress-report{border:calc(1px + 1pt) solid #9ca3af}
+.test-bank-simulation-eligibility.unlocked + .test-bank-progress-report{border-color:#11a7c0}
 .test-bank-progress-report .test-bank-progress-stats>div{background:linear-gradient(125deg,#0e9bb3 0%,#11a7c0 55%,#42bed0 100%);border:1px solid #11a7c0}
 .test-bank-progress-report .test-bank-progress-stats strong{color:#fff}
 .test-bank-progress-report .test-bank-progress-stats span{color:#062a43;font-weight:800}
