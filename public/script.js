@@ -1632,7 +1632,7 @@ function renderDashboard() {
                         <span class="available-course-badge">${escapeHtml(availabilityLabel)}</span>
                     </div>
                     <h3>${escapeHtml(course.title)}</h3>
-                    <p class="available-course-program">${escapeHtml(course.batch_name || 'Batch to be announced')}</p>
+                    <p class="available-course-program">Batch: ${escapeHtml(course.batch_name || 'To be announced')}</p>
                     <p class="available-course-detail"><i data-lucide="clock-3"></i><span>${escapeHtml(course.batch_modality || 'Online learning')}${course.batch_includes_intensive_final_coaching ? ' + Final Coaching' : ''}</span></p>
                     <div class="available-course-dates">
                         <span>Starts ${formatCourseDate(course.batch_starts_at) || 'to be announced'}</span>
