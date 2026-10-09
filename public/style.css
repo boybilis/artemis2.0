@@ -1577,6 +1577,7 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 .test-bank-tracker-metric strong.failed{color:#dc2626}
 .test-bank-tracker-metric strong.cancelled{color:#f47721}
 .test-bank-tracker-action small{font-size:calc(.85rem - 1pt);line-height:1.5}
+.test-bank-tracker-action .test-bank-retake-badge{align-self:flex-start;display:inline-flex;align-items:center;padding:.2rem .55rem;border:1px solid #f47721;border-radius:999px;color:#f47721;background:transparent;font-weight:700}
 .test-bank-tracker-action button,.test-bank-progress-report .test-bank-history-pagination button{min-height:44px;font-size:calc(.9rem - 1pt);padding:.5rem .65rem;line-height:1.4}
 .test-bank-progress-report .test-bank-history-pagination{flex-wrap:wrap;gap:.85rem}
 .test-bank-progress-report .test-bank-history-pagination>div{flex-wrap:wrap}
