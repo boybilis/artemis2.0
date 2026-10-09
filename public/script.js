@@ -267,7 +267,7 @@ function setCourseDetailsTab(tab) {
     if (topicsArea) topicsArea.style.display = 'none';
     if (reportArea) reportArea.style.display = isProgress ? '' : 'none';
     $('sidebar-subjects-btn')?.classList.toggle('active', !isProgress);
-    $('sidebar-progress-report-btn')?.classList.toggle('active', isProgress);
+    $('sidebar-my-progress-btn')?.classList.toggle('active', isProgress);
     if (!isProgress) currentSubjectId = null;
     const backToSubjects = $('back-to-subjects-btn');
     if (backToSubjects) backToSubjects.classList.add('hidden');
@@ -1421,6 +1421,8 @@ function renderDashboardOverview() {
     const container = $('dashboard-overview-cards');
     if (!container) return;
     container.style.display = '';
+    container.style.opacity = '1';
+    container.style.transform = 'none';
     container.classList.toggle('hidden', state.courseListFilter !== 'dashboard');
     const enrolled = courses.filter(course => course.is_enrolled);
     const totalTopics = enrolled.reduce((sum, course) => sum + Number(course.topic_count || 0), 0);
@@ -1488,7 +1490,11 @@ function renderDashboard() {
     if (courseContextNav) courseContextNav.classList.add('hidden');
     if (testBankWorkspace) testBankWorkspace.classList.add('hidden');
     setCourseSidebarMode(false);
-    if (dashboardHero) dashboardHero.style.display = isDashboardOverview ? 'grid' : 'none';
+    if (dashboardHero) {
+        dashboardHero.style.display = isDashboardOverview ? 'grid' : 'none';
+        dashboardHero.style.opacity = '1';
+        dashboardHero.style.transform = 'none';
+    }
     if (dcHead) { dcHead.style.display = isDashboardOverview ? 'none' : ''; dcHead.style.opacity = '1'; dcHead.style.transform = 'none'; }
     if (cCont) { cCont.style.display = isDashboardOverview ? 'none' : ''; cCont.style.opacity = '1'; cCont.style.transform = 'none'; }
     renderDashboardOverview();
@@ -1984,7 +1990,7 @@ function renderSubjects() {
     const progressArea = $('course-progress-report-area');
     if (progressArea) progressArea.style.display = 'none';
     $('sidebar-subjects-btn')?.classList.add('active');
-    $('sidebar-progress-report-btn')?.classList.remove('active');
+    $('sidebar-my-progress-btn')?.classList.remove('active');
     const backToSubjects = $('back-to-subjects-btn');
     if (backToSubjects) backToSubjects.classList.add('hidden');
     container.innerHTML = '';
@@ -4194,7 +4200,12 @@ $('sidebar-announcements-btn')?.addEventListener('click', () => {
 const enrolledCoursesSidebarBtn = $('sidebar-enrolled-courses-btn');
 const enrolledTestBanksSidebarBtn = $('sidebar-enrolled-test-banks-btn');
 const availableCoursesSidebarBtn = $('sidebar-available-courses-btn');
-if (dashboardSidebarBtn) dashboardSidebarBtn.addEventListener('click', () => showDashboardCourseList('dashboard'));
+if (dashboardSidebarBtn) dashboardSidebarBtn.addEventListener('click', async () => {
+    await showDashboardCourseList('dashboard');
+    showScreen('dashboard-screen');
+    window.scrollTo({top: 0, behavior: 'smooth'});
+    setLearnerSidebarOpen(false);
+});
 if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click', () => {
     const list = $('sidebar-enrolled-courses-list');
     const expanded = enrolledCoursesSidebarBtn.getAttribute('aria-expanded') === 'true';
