@@ -1683,6 +1683,7 @@ body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-tracker-action button,.test-bank-progress-report .test-bank-history-pagination button{min-height:44px;font-size:calc(.9rem - 1pt);padding:.5rem .65rem;line-height:1.4}
 .test-bank-progress-report .test-bank-history-pagination{flex-wrap:wrap;gap:.85rem}
 .course-catalogue-toolbar,.course-catalogue-pagination{grid-column:1/-1}
+.test-bank-hero-grid .test-bank-workspace-hero,.test-bank-hero-grid .test-bank-subscription-panel{box-shadow:none!important}
 .test-bank-hero-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:1.25rem;margin:1.5rem 0}
 .test-bank-hero-grid .test-bank-workspace-hero{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-wrap:wrap;align-content:center;gap:1.15rem;padding:2.5rem;border:1px solid rgba(255,255,255,.12);border-radius:24px;background:#11a7c0;box-shadow:0 15px 35px rgba(7,59,99,.16);margin:0;min-height:280px;color:#fff}
 .test-bank-hero-grid .test-bank-workspace-hero::after{content:'';position:absolute;z-index:-1;right:-55px;top:-80px;width:250px;height:250px;border:1px solid rgba(255,255,255,.12);border-radius:50%;pointer-events:none}
