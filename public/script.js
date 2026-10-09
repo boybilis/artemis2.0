@@ -276,7 +276,7 @@ function setCourseDetailsTab(tab) {
 const sidebarSubjectsBtn = $('sidebar-subjects-btn');
 if (sidebarSubjectsBtn) sidebarSubjectsBtn.addEventListener('click', () => { setCourseDetailsTab('subjects'); renderSubjects(); });
 const sidebarProgressReportBtn = $('sidebar-progress-report-btn');
-if (sidebarProgressReportBtn) sidebarProgressReportBtn.addEventListener('click', showLearnerProgressReport);
+if (sidebarProgressReportBtn) sidebarProgressReportBtn.addEventListener('click', openMyProgress);
 window.alert = message => showSystemAlert(message);
 
 const learnerSettingsBtn = $('learner-settings-btn');
@@ -1793,32 +1793,8 @@ function renderDashboard() {
         const backBtn = $('back-to-courses-btn');
         if (backBtn) {
             backBtn.onclick = () => {
-                const contextNav = $('learner-course-context-nav');
-                if (contextNav) contextNav.classList.add('hidden');
-                setCourseSidebarMode(false);
-                fadeTransition(
-                    [$('course-details-area')],
-                    [$('dashboard-courses-head'), cContainer],
-                    ['', '']
-                );
                 currentSubjectId = null;
-                const backToSubjects = $('back-to-subjects-btn');
-                if (backToSubjects) backToSubjects.classList.add('hidden');
-                const resumeBtn = $('resume-module-btn');
-                if (resumeBtn) resumeBtn.classList.add('hidden');
-                const exploreBtn = $('explore-courses-btn');
-                if (exploreBtn) exploreBtn.classList.remove('hidden');
-
-                const m1Label = $('metric-1-label');
-                const m1Val = $('dashboard-progress-summary');
-                const m2Label = $('metric-2-label');
-                const m2Val = $('dashboard-modules-completed');
-                if (m1Label) m1Label.textContent = 'Certificates';
-                if (m1Val) m1Val.textContent = state.certificates ? String(state.certificates.length) : '0';
-                if (m2Label) m2Label.textContent = 'Completed Courses';
-                if (m2Val) m2Val.textContent = String(new Set(courses
-                    .filter(item => item.is_enrolled && Number(item.course_progress || 0) >= 100)
-                    .map(item => Number(item.id))).size);
+                showDashboardCourseList('enrolled');
             };
         }
     }
@@ -4148,8 +4124,8 @@ function setCourseSidebarMode(isCourseOpen, activePage = 'subjects') {
     const testBanksGroup = $('sidebar-enrolled-test-banks-group');
     const testBanksButton = $('sidebar-enrolled-test-banks-btn');
     const testBanksList = $('sidebar-enrolled-test-banks-list');
-    if (allCoursesButton) allCoursesButton.classList.toggle('hidden', isCourseOpen);
-    if (testBanksGroup) testBanksGroup.classList.toggle('hidden', isCourseOpen || enrolledTestBanks.length === 0);
+    if (allCoursesButton) allCoursesButton.classList.remove('hidden');
+    if (testBanksGroup) testBanksGroup.classList.toggle('hidden', enrolledTestBanks.length === 0);
     [subjectsButton, progressButton].forEach(button => {
         if (button) button.classList.toggle('hidden', !isCourseOpen);
     });
@@ -4196,18 +4172,19 @@ function updateLearnerSidebarIdentity(isCourseOpen = false) {
 }
 
 const dashboardSidebarBtn = $('sidebar-dashboard-btn');
-$('sidebar-my-progress-btn')?.addEventListener('click', async () => {
+async function openMyProgress() {
     const workspace = $('test-bank-workspace-area');
     if (workspace && !workspace.classList.contains('hidden')) {
         workspace.querySelector('[data-test-bank-tab="progress"]')?.click();
     } else if ($('course-details-area')?.style.display !== 'none' && currentCourseId) {
-        $('sidebar-progress-report-btn')?.click();
+        await showLearnerProgressReport();
     } else {
         await showDashboardCourseList('dashboard');
         document.querySelector('[data-overview-action="progress"]')?.click();
     }
     setLearnerSidebarOpen(false);
-});
+}
+$('sidebar-my-progress-btn')?.addEventListener('click', openMyProgress);
 $('sidebar-announcements-btn')?.addEventListener('click', () => {
     showSystemAlert(dashboardAnnouncements.length
         ? dashboardAnnouncements.map(item => `${item.title}\n${item.message}`).join('\n\n')
