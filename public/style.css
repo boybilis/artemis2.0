@@ -1513,6 +1513,23 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 @media(max-width:700px){.test-bank-panel-heading{align-items:center;gap:.75rem}.test-bank-subject-card{flex-basis:100%}}
 .test-bank-tracker-list{display:grid;gap:.65rem}.test-bank-tracker-row{display:grid;grid-template-columns:minmax(0,1fr) 75px 85px 55px 140px;align-items:center;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--bg2)}.test-bank-tracker-row[hidden]{display:none}.test-bank-tracker-copy h3{margin:0;font-size:.8rem}.test-bank-tracker-copy p{margin:.25rem 0 0;font-size:.64rem;color:var(--text-muted)}.test-bank-tracker-metric{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-metric small{color:var(--text-muted);font-size:.58rem;font-weight:800;letter-spacing:.04em}.test-bank-tracker-metric strong{font-size:.75rem}.test-bank-tracker-row .passed{color:#078b79}.test-bank-tracker-row .failed,.test-bank-tracker-row .cancelled{color:#c94f00}.test-bank-tracker-action{display:flex;flex-direction:column;gap:.25rem}.test-bank-tracker-action small{font-size:.6rem}.test-bank-tracker-action button{border-color:#08a7bf;color:#078b9b;background:var(--surface);min-height:42px}.test-bank-tracker-action button:hover{background:#078b9b;color:#fff}@media(max-width:900px){.test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-tracker-copy{grid-column:1/-1}.test-bank-tracker-action{grid-column:1/-1;align-items:flex-start}.test-bank-tracker-action button{min-width:140px}}
 /* Larger, comfortably spaced Test Bank progress records. */
+.test-bank-panel-heading{gap:1rem;flex-wrap:wrap}
+.test-bank-panel-heading h2{font-size:1.5rem;line-height:1.4}
+.test-bank-panel-heading p{font-size:.95rem;line-height:1.6}
+.test-bank-panel-heading .subject-carousel-range{font-size:.85rem}
+.test-bank-subject-card{padding:1.4rem;min-height:370px}
+.test-bank-subject-card-head>small{font-size:.8rem}
+.test-bank-subject-card h3{font-size:1.2rem;line-height:1.45;overflow-wrap:anywhere}
+.test-bank-subject-card>p{font-size:.95rem;line-height:1.6}
+.test-bank-subject-stats{gap:.75rem;padding:1.2rem 0}
+.test-bank-subject-stats strong{font-size:1.2rem}
+.test-bank-subject-stats small{font-size:.85rem;line-height:1.5}
+.test-bank-subject-progress{margin:1.25rem 0}
+.test-bank-subject-progress>div:first-child{font-size:.85rem;line-height:1.5;gap:.5rem}
+.test-bank-subject-progress>div:last-child{height:9px;margin-top:.6rem}
+.test-bank-subject-test-controls{gap:.65rem;padding-top:.75rem}
+.test-bank-subject-test-type,.test-bank-subject-start{font-size:.9rem;min-height:48px;padding:.7rem .8rem}
+@media(min-width:701px) and (max-width:1200px){.test-bank-subject-test-controls{grid-template-columns:1fr}.test-bank-subject-start{width:100%}}
 .test-bank-workspace-hero{padding:1rem 0;border:0;border-radius:0;background:transparent;box-shadow:none}
 .test-bank-workspace-hero p{font-size:calc(.75rem + 2pt);line-height:1.6}
 .test-bank-workspace-hero>div:nth-child(2){flex:1}
