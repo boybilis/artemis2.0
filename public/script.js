@@ -704,7 +704,7 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-tracker-copy"><h3>${escapeHtml(title)}${takenAt ? ` <span class="test-bank-tracker-taken-date">· (${escapeHtml(takenAt)})</span>` : ''}</h3><div class="test-bank-tracker-subtitle">${escapeHtml(subtitle)}</div><p class="test-bank-tracker-coverage"><strong>SUBJECTS:</strong> ${escapeHtml(attempt.coverage || 'Not specified')}</p></div>
             <div class="test-bank-tracker-metric"><small>SCORE</small><strong>${attempt.cancelled ? '—' : `${percentage}%`}</strong></div>
             <div class="test-bank-tracker-metric"><small>RESULT</small><strong class="${attempt.cancelled ? 'cancelled' : attempt.passed ? 'passed' : 'failed'}">${attempt.cancelled ? 'Cancelled' : attempt.passed ? 'Passed' : 'Failed'}</strong></div>
-            <div class="test-bank-tracker-metric"><small>RANK</small><strong>${attempt.rank ?? '—'}</strong></div>
+            <div class="test-bank-tracker-metric"><small>RANK</small><strong>${attempt.quizType === 'premade' ? (attempt.rank ?? '--') : '--'}</strong></div>
             <div class="test-bank-tracker-action">${attempt.cancelled ? '<small>No review available</small>' : `${attempt.passed ? '' : '<small class="test-bank-retake-badge">Retake recommended</small>'}<button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review questions</button>`}</div>
         </article>`;
     }).join('');

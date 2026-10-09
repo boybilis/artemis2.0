@@ -179,6 +179,7 @@ class TestBankController extends Controller
         $attemptCounters = [];
         $historySubjects = $testBank->course->subjects->keyBy('id');
         $bestPercentages = TestBankQuizAttempt::where('test_bank_id', $testBank->id)
+            ->whereHas('quiz', fn ($query) => $query->where('quiz_type', 'premade'))
             ->whereIn('user_id', $testBank->enrollments()->select('user_id'))
             ->get(['user_id', 'score', 'total', 'points_possible', 'review_data'])
             ->reject(fn ($attempt) => data_get($attempt->review_data, 'cancelled', false)
@@ -205,7 +206,7 @@ class TestBankController extends Controller
                     : ($attempt->quiz && $this->isSimulationQuiz($attempt->quiz) ? 'Simulation Test' : 'Premade Test'),
                 'attemptNumber' => $attemptNumber,
                 'timeLimitMinutes' => $attempt->quiz?->time_limit_minutes,
-                'rank' => $cancelled ? null : $learnerRank,
+                'rank' => ! $cancelled && $attempt->quiz?->quiz_type === 'premade' ? $learnerRank : null,
                 'coverage' => count($attempt->quiz?->subject_ids ?: []) > 1 ? 'Mixed'
                     : $historySubjects->get(collect($attempt->quiz?->subject_ids)->first())?->title,
                 'score' => (float) $attempt->points_earned,

@@ -655,6 +655,21 @@ class TestBankAuthoringTest extends TestCase
         $history = $this->actingAs($learners[0])->getJson("/api/test-banks/{$bank->id}/workspace")
             ->assertOk()->json('workspace.history');
         $this->assertSame([2, 2], array_column($history, 'rank'));
+        foreach (['learner', 'subject'] as $quizType) {
+            $custom = $bank->premadeQuizzes()->create([
+                'title' => 'Custom ranking exclusion', 'item_count' => 10,
+                'subject_ids' => [$subject->id], 'quiz_type' => $quizType,
+                'owner_user_id' => $learners[0]->id, 'status' => 'active', 'created_by' => $admin->id,
+            ]);
+            TestBankQuizAttempt::create([
+                'user_id' => $learners[0]->id, 'test_bank_id' => $bank->id,
+                'test_bank_quiz_id' => $custom->id, 'score' => 10, 'total' => 10,
+                'points_earned' => 10, 'points_possible' => 10, 'passed' => true, 'review_data' => [],
+            ]);
+        }
+        $history = $this->actingAs($learners[0])->getJson("/api/test-banks/{$bank->id}/workspace")
+            ->assertOk()->json('workspace.history');
+        $this->assertSame([null, null, 2, 2], array_column($history, 'rank'));
         $this->actingAs($learners[2])->getJson("/api/test-banks/{$bank->id}/workspace")
             ->assertOk()->assertJsonPath('workspace.history.0.rank', 2);
     }
