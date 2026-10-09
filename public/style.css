@@ -1589,6 +1589,10 @@ body.light-mode .test-bank-study-phase p,body.light-mode .test-bank-study-phase>
 .test-bank-builder-pagination>span,.test-bank-builder-pagination button{font-size:calc(.68rem + 1pt)}
 .test-bank-builder-quiz-actions{flex-wrap:wrap;max-width:100%}
 .enrolled-test-bank-section .learner-course-card{height:100%;cursor:default}
+.enrolled-test-bank-section .course-enrolled{border-top-color:#f47721}
+.enrolled-test-bank-section .course-card-open-label{background:#f47721;color:#fff}
+.enrolled-test-bank-section .course-card-open-label svg{color:#fff}
+.enrolled-test-bank-section .course-card-open-label:hover{background:#f47721;filter:brightness(.95)}
 .enrolled-test-bank-description{margin:.8rem 0;color:var(--text-muted);font-size:.9rem;line-height:1.6;white-space:pre-line}
 .enrolled-test-bank-open{width:100%;margin-top:auto;border:0;font-family:inherit;text-align:left;cursor:pointer}
 .test-bank-panel-heading{gap:1rem;flex-wrap:wrap}
