@@ -1567,7 +1567,7 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 .test-bank-tracker-row{grid-template-columns:minmax(0,1fr) 90px 115px 65px 180px;gap:1rem;padding:1.1rem;min-height:96px}
 .test-bank-tracker-copy h3{font-size:calc(1.2rem - 1pt);line-height:1.45;overflow-wrap:anywhere}
 .test-bank-tracker-copy p{font-size:calc(.85rem - 1pt);line-height:1.5;margin-top:.3rem}
-.test-bank-tracker-subtitle{margin-top:.25rem;font-family:inherit;font-size:calc(1rem - 1pt);font-weight:700;line-height:1.5;color:var(--text);overflow-wrap:anywhere}
+.test-bank-tracker-subtitle{margin-top:.25rem;font-family:inherit;font-size:calc(1rem - 1pt);font-weight:700;line-height:1.5;color:#08b89f;overflow-wrap:anywhere}
 .test-bank-tracker-metric small{font-size:calc(.8rem - 1pt)}
 .test-bank-tracker-metric strong{font-size:calc(1.2rem - 1pt);line-height:1.5}
 .test-bank-tracker-action small{font-size:calc(.85rem - 1pt);line-height:1.5}
