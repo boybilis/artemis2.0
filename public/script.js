@@ -751,6 +751,7 @@ function renderTestBankWorkspace(workspace) {
 
     workspaceArea.innerHTML = `
         <div class="test-bank-workspace-topbar"><button type="button" class="btn-ghost" id="test-bank-back-btn"><i data-lucide="arrow-left"></i> Back to My Courses</button></div>
+        <div class="test-bank-hero-grid">
         <section class="test-bank-workspace-hero">
             <span class="test-bank-workspace-mark"><i data-lucide="book-open"></i></span>
             <div><small>ACTIVE TEST BANK</small><h1>${escapeHtml(workspace.title)}</h1><p style="white-space:pre-line">${escapeHtml(workspace.description?.trim() || 'Build exam confidence with practice tests, detailed rationales, and progress tracking.')}</p></div>
@@ -761,6 +762,7 @@ function renderTestBankWorkspace(workspace) {
             <div><small>YOUR ${escapeHtml(workspace.title).toUpperCase()} SUBSCRIPTION</small><h3>${Number(workspace.accessDays)}-Day Test Bank Access</h3><p>Until ${expiresAt}${workspace.daysRemaining === null ? '' : ` · ${Number(workspace.daysRemaining)} days remaining`}</p></div>
             <button type="button" class="btn-ghost" id="extend-test-bank-btn">Extend Subscription</button>
         </section>
+        </div>
         <section class="test-bank-study-path">
             <div class="test-bank-study-path-heading"><h2>Guided study path</h2><p>Work through each phase at your own pace.</p></div>
             <div class="test-bank-study-path-grid">

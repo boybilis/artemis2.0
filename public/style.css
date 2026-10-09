@@ -1683,6 +1683,22 @@ body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-tracker-action button,.test-bank-progress-report .test-bank-history-pagination button{min-height:44px;font-size:calc(.9rem - 1pt);padding:.5rem .65rem;line-height:1.4}
 .test-bank-progress-report .test-bank-history-pagination{flex-wrap:wrap;gap:.85rem}
 .course-catalogue-toolbar,.course-catalogue-pagination{grid-column:1/-1}
+.test-bank-hero-grid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:1.25rem;margin:1.5rem 0}
+.test-bank-hero-grid .test-bank-workspace-hero{position:relative;isolation:isolate;overflow:hidden;display:flex;flex-wrap:wrap;align-content:center;gap:1.15rem;padding:2.5rem;border:1px solid rgba(255,255,255,.12);border-radius:24px;background:linear-gradient(125deg,#062a43,#073b63 60%,#0d5269);box-shadow:0 15px 35px rgba(7,59,99,.16);margin:0;min-height:280px;color:#fff}
+.test-bank-hero-grid .test-bank-workspace-hero::after{content:'';position:absolute;z-index:-1;right:-55px;top:-80px;width:250px;height:250px;border:1px solid rgba(255,255,255,.12);border-radius:50%;pointer-events:none}
+.test-bank-hero-grid .test-bank-workspace-hero h1{font-size:clamp(1.65rem,2.4vw,2.4rem);line-height:1.2;margin:.65rem 0 1rem;color:#fff}
+.test-bank-hero-grid .test-bank-workspace-hero small{color:#ffad73}
+.test-bank-hero-grid .test-bank-workspace-hero p{color:#d6e8f0;line-height:1.7}
+.test-bank-hero-grid .test-bank-workspace-mark{background:rgba(255,255,255,.12);align-self:flex-start}
+.test-bank-hero-grid .test-bank-workspace-hero .test-bank-readiness{flex-basis:100%;margin:0 0 0 64px;align-items:flex-start}
+.test-bank-hero-grid .test-bank-readiness strong{color:#fff;font-size:1.8rem}
+.test-bank-hero-grid .test-bank-readiness span{color:#d6e8f0}
+.test-bank-hero-grid .test-bank-subscription-panel{display:flex;flex-wrap:wrap;align-content:center;align-items:flex-start;padding:2rem;border-radius:24px;border-top:4px solid #11a7c0;box-shadow:0 12px 28px rgba(7,59,99,.07);margin:0;gap:1rem}
+.test-bank-hero-grid .test-bank-subscription-panel>div{flex:1;min-width:180px}
+.test-bank-hero-grid .test-bank-subscription-panel h3{font-size:1.25rem;line-height:1.4}
+.test-bank-hero-grid .test-bank-subscription-panel .btn-ghost{width:100%;margin:.6rem 0 0}
+@media(max-width:950px){.test-bank-hero-grid{grid-template-columns:1fr}.test-bank-hero-grid .test-bank-workspace-hero{padding:2rem}}
+@media(max-width:600px){.test-bank-hero-grid .test-bank-workspace-hero,.test-bank-hero-grid .test-bank-subscription-panel{padding:1.4rem}.test-bank-hero-grid .test-bank-workspace-hero .test-bank-readiness{margin-left:0}}
 .test-bank-builder-settings + fieldset{margin-top:1.25rem}
 body:not(.light-mode) .test-bank-builder-edit{color:#facc15;border-color:#facc15}
 body:not(.light-mode) .test-bank-builder-edit:hover{color:#facc15;background:rgba(250,204,21,.12)}
