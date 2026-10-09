@@ -757,7 +757,7 @@ function renderTestBankWorkspace(workspace) {
         </section>
         <div class="test-bank-workspace-tabs" role="tablist">
             <button type="button" class="active" data-test-bank-tab="builder"><i data-lucide="wand-sparkles"></i> Test Builder</button>
-            <button type="button" data-test-bank-tab="premade"><i data-lucide="book-open"></i> Premade Tests</button>
+            <button type="button" data-test-bank-tab="premade"><i data-lucide="book-open"></i> Pre-made Tests</button>
             <button type="button" data-test-bank-tab="progress"><i data-lucide="chart-no-axes-column-increasing"></i> Progress Tracker</button>
         </div>
         <section class="test-bank-tab-panel hidden" data-test-bank-panel="premade">
