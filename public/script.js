@@ -592,6 +592,22 @@ async function loadAvailableTestBanks() {
     }
 }
 
+function renderEnrolledCourseSidebar() {
+    const list = $('sidebar-enrolled-courses-list');
+    if (!list) return;
+    const enrolled = courses.filter(course => course.is_enrolled);
+    list.innerHTML = enrolled.map((course, index) => `<button type="button" class="learner-sidebar-subitem" data-enrolled-course-index="${index}"><i data-lucide="graduation-cap"></i><span>${escapeHtml(course.title)}</span></button>`).join('')
+        || '<span class="learner-sidebar-subitem">No enrolled courses yet.</span>';
+    list.querySelectorAll('button').forEach(button => button.addEventListener('click', async () => {
+        const course = enrolled[Number(button.dataset.enrolledCourseIndex)];
+        await showDashboardCourseList('enrolled');
+        const card = Array.from($('courses-container').querySelectorAll('[data-course-id]')).find(item =>
+            item.dataset.courseId === String(course.id) && item.dataset.batchId === String(course.batch_id || ''));
+        card?.click();
+        setLearnerSidebarOpen(false);
+    }));
+}
+
 function renderEnrolledTestBankSidebar() {
     const group = $('sidebar-enrolled-test-banks-group');
     const list = $('sidebar-enrolled-test-banks-list');
@@ -1459,6 +1475,7 @@ function filterCatalogueCourses(items, search, category) {
 }
 
 function renderDashboard() {
+    renderEnrolledCourseSidebar();
     // Reset view to courses menu
     const cdArea = $('course-details-area');
     const dcHead = $('dashboard-courses-head');
@@ -1563,6 +1580,8 @@ function renderDashboard() {
         visibleCourses.forEach((course, courseIndex) => {
             const card = document.createElement('div');
             const isLocked = !course.is_enrolled;
+            card.dataset.courseId = String(course.id);
+            card.dataset.batchId = String(course.batch_id || '');
             card.className = `topic-card learner-course-card ${isLocked ? `course-locked available-course-tone-${(courseIndex % 3) + 1}` : 'course-enrolled'}`;
             card.style.cursor = 'pointer';
 
@@ -4173,7 +4192,12 @@ const enrolledCoursesSidebarBtn = $('sidebar-enrolled-courses-btn');
 const enrolledTestBanksSidebarBtn = $('sidebar-enrolled-test-banks-btn');
 const availableCoursesSidebarBtn = $('sidebar-available-courses-btn');
 if (dashboardSidebarBtn) dashboardSidebarBtn.addEventListener('click', () => showDashboardCourseList('dashboard'));
-if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click', () => showDashboardCourseList('enrolled'));
+if (enrolledCoursesSidebarBtn) enrolledCoursesSidebarBtn.addEventListener('click', () => {
+    const list = $('sidebar-enrolled-courses-list');
+    const expanded = enrolledCoursesSidebarBtn.getAttribute('aria-expanded') === 'true';
+    enrolledCoursesSidebarBtn.setAttribute('aria-expanded', String(!expanded));
+    list?.classList.toggle('hidden', expanded);
+});
 if (enrolledTestBanksSidebarBtn) enrolledTestBanksSidebarBtn.addEventListener('click', () => {
     const list = $('sidebar-enrolled-test-banks-list');
     const expanded = enrolledTestBanksSidebarBtn.getAttribute('aria-expanded') === 'true';

@@ -562,10 +562,12 @@
                             <i data-lucide="layout-dashboard"></i>
                             <span>Dashboard</span>
                         </button>
-                        <button type="button" id="sidebar-enrolled-courses-btn" class="learner-sidebar-item">
+                        <button type="button" id="sidebar-enrolled-courses-btn" class="learner-sidebar-item learner-sidebar-expandable" aria-expanded="false" aria-controls="sidebar-enrolled-courses-list" data-sidebar-expandable>
                             <i data-lucide="graduation-cap"></i>
                             <span>Enrolled Courses</span>
+                            <i class="learner-sidebar-chevron" data-lucide="chevron-down"></i>
                         </button>
+                        <div id="sidebar-enrolled-courses-list" class="learner-sidebar-submenu hidden"></div>
                         <div id="sidebar-enrolled-test-banks-group" class="learner-sidebar-group hidden">
                             <button type="button" id="sidebar-enrolled-test-banks-btn" class="learner-sidebar-item learner-sidebar-expandable" aria-expanded="false" aria-controls="sidebar-enrolled-test-banks-list" data-sidebar-expandable>
                                 <i data-lucide="notebook-tabs"></i>
@@ -1440,7 +1442,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=159"></script>
+        <script src="script.js?v=160"></script>
         <script>
             lucide.createIcons();
         </script>
