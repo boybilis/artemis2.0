@@ -1745,8 +1745,10 @@ function renderDashboard() {
                 const m2Val = $('dashboard-modules-completed');
                 if (m1Label) m1Label.textContent = 'Certificates';
                 if (m1Val) m1Val.textContent = state.certificates ? String(state.certificates.length) : '0';
-                if (m2Label) m2Label.textContent = 'Courses Available';
-                if (m2Val) m2Val.textContent = String(courses.length);
+                if (m2Label) m2Label.textContent = 'Completed Courses';
+                if (m2Val) m2Val.textContent = String(new Set(courses
+                    .filter(item => item.is_enrolled && Number(item.course_progress || 0) >= 100)
+                    .map(item => Number(item.id))).size);
             };
         }
     }
