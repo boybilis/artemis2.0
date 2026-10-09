@@ -762,7 +762,7 @@ function renderTestBankWorkspace(workspace) {
         </section>
         </div>
         <section class="test-bank-study-path">
-            <div class="test-bank-study-path-heading"><h2>Guided study path</h2><p>Work through each phase at your own pace.</p></div>
+            <div class="test-bank-study-path-heading"><h2>Guided Study Path</h2><p>Work through each phase at your own pace.</p></div>
             <div class="test-bank-study-path-grid">
                 <article class="test-bank-study-phase active"><header class="test-bank-phase-header"><small>PHASE 01</small></header><h3>Warm Up Quizzes</h3><p>Create unlimited 10-item quizzes to start your daily review journey.</p><button type="button" data-guided-builder="10">Select Warm Up</button></article>
                 <article class="test-bank-study-phase"><header class="test-bank-phase-header"><small>PHASE 02</small></header><h3>Mastery Tests</h3><p>Create unlimited 20-item tests for mastery. 60% is the passing score. Aim for 100% to gain confidence that you have mastered the concepts and are on the right track.</p><button type="button" data-guided-builder="20">Select Mastery Tests</button></article>

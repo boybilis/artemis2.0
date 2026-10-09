@@ -1683,11 +1683,11 @@ body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-tracker-action button,.test-bank-progress-report .test-bank-history-pagination button{min-height:44px;font-size:calc(.9rem - 1pt);padding:.5rem .65rem;line-height:1.4}
 .test-bank-progress-report .test-bank-history-pagination{flex-wrap:wrap;gap:.85rem}
 .course-catalogue-toolbar,.course-catalogue-pagination{grid-column:1/-1}
-.test-bank-study-phase .test-bank-phase-header{margin:-1.2rem -1.2rem .35rem;padding:.85rem 1.2rem;background:rgba(17,167,192,.09);border-bottom:1px solid rgba(17,167,192,.22);border-radius:10px 10px 0 0}
-.test-bank-phase-header small{color:#11a7c0;font-size:.78rem;font-weight:800;letter-spacing:.08em}
+.test-bank-study-phase .test-bank-phase-header{margin:-1.2rem -1.2rem .35rem;padding:.85rem 1.2rem;background:#087f93;border-bottom:1px solid #087f93;border-radius:12px 12px 0 0}
+.test-bank-phase-header small{color:#fff;font-size:.78rem;font-weight:800;letter-spacing:.08em}
 @media(max-width:520px){.test-bank-study-phase .test-bank-phase-header{margin:-1rem -1rem .35rem;padding:.8rem 1rem}}
-.test-bank-study-path-grid .test-bank-study-phase{border-top:5px solid #11a7c0}
-.test-bank-study-path-grid .test-bank-study-phase.active{border-top-width:7px}
+.test-bank-study-path-grid .test-bank-study-phase{border:1px solid #087f93}
+.test-bank-study-path-grid .test-bank-study-phase.active{border:1px solid #087f93}
 .test-bank-study-phase button[data-guided-builder]{border-radius:999px;padding:.5rem .95rem!important;background:transparent;color:#11a7c0;border-color:#11a7c0}
 .test-bank-study-phase.active button[data-guided-builder]{background:#11a7c0;color:#fff}
 .test-bank-study-phase.active button[data-guided-builder]:hover{background:#0e94aa}
