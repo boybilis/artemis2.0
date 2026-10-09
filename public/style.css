@@ -1553,7 +1553,8 @@ body:not(.light-mode) #courses-container.available-catalog-view .course-locked .
 [data-test-bank-panel="progress"]>.test-bank-history-heading p{font-size:.95rem;line-height:1.6}
 .test-bank-progress-report{padding:1.1rem}
 .test-bank-progress-report-head h2{font-size:1.3rem;line-height:1.4}
-.test-bank-progress-report-head small{font-size:.8rem}
+.test-bank-progress-report-head small{font-size:.8rem;color:#f47721}
+.test-bank-progress-report-icon{color:#f47721;background:rgba(244,119,33,.1)}
 .test-bank-progress-report-head p,.test-bank-progress-report-head>div:last-child>span{font-size:.85rem;line-height:1.5}
 .test-bank-progress-report-head>div:last-child>strong{font-size:2rem}
 .test-bank-progress-stats{gap:.65rem;margin:1rem 0}
