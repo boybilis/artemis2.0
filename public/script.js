@@ -754,7 +754,6 @@ function renderTestBankWorkspace(workspace) {
         <section class="test-bank-workspace-hero">
             <span class="test-bank-workspace-mark"><i data-lucide="book-open"></i></span>
             <div><small>ACTIVE TEST BANK</small><h1>${escapeHtml(workspace.title)}</h1><p style="white-space:pre-line">${escapeHtml(workspace.description?.trim() || 'Build exam confidence with practice tests, detailed rationales, and progress tracking.')}</p></div>
-            <div class="test-bank-readiness"><strong>${Number(workspace.readiness || 0)}%</strong><span>Exam readiness</span></div>
         </section>
         <section class="test-bank-subscription-panel">
             <span><i data-lucide="credit-card"></i></span>
