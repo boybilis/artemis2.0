@@ -705,7 +705,7 @@ function renderTestBankWorkspace(workspace) {
             <div class="test-bank-tracker-metric"><small>SCORE</small><strong>${attempt.cancelled ? '—' : `${percentage}%`}</strong></div>
             <div class="test-bank-tracker-metric"><small>RESULT</small><strong class="${attempt.cancelled ? 'cancelled' : attempt.passed ? 'passed' : 'failed'}">${attempt.cancelled ? 'Cancelled' : attempt.passed ? 'Passed' : 'Failed'}</strong></div>
             <div class="test-bank-tracker-metric"><small>RANK</small><strong>${attempt.quizType === 'premade' ? (attempt.rank ?? '--') : '--'}</strong></div>
-            <div class="test-bank-tracker-action">${attempt.cancelled ? '<small>No review available</small>' : `${attempt.passed ? '' : '<small class="test-bank-retake-badge">Retake recommended</small>'}<div class="test-bank-tracker-buttons"><button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review</button>${attempt.passed ? '' : `<button type="button" class="test-bank-history-retake" data-retake-attempt="${Number(attempt.id)}">Re-take</button>`}</div>`}</div>
+            <div class="test-bank-tracker-action">${attempt.cancelled ? '<small>No review available</small>' : `${attempt.passed ? '' : '<small class="test-bank-retake-badge">Retake recommended</small>'}<div class="test-bank-tracker-buttons"><button type="button" class="test-bank-history-review" data-test-bank-attempt="${Number(attempt.id)}">Review</button><button type="button" class="test-bank-history-retake" data-retake-attempt="${Number(attempt.id)}">Re-take</button></div>`}</div>
         </article>`;
     }).join('');
     const builderSubjects = (workspace.subjects || []).map(subject => `
@@ -799,7 +799,7 @@ function renderTestBankWorkspace(workspace) {
     }));
     workspaceArea.querySelectorAll('[data-retake-attempt]').forEach(button => button.addEventListener('click', () => {
         const attempt = (workspace.history || []).find(item => Number(item.id) === Number(button.dataset.retakeAttempt));
-        if (!attempt || attempt.cancelled || attempt.passed) return;
+        if (!attempt || attempt.cancelled) return;
         const premade = (workspace.premadeTests || []).find(test => Number(test.id) === Number(attempt.quizId));
         if (premade?.locked) {
             showToast('Complete the requirements to unlock this simulation test.', 'info');
