@@ -1684,7 +1684,7 @@ body.light-mode .test-bank-tracker-taken-date{color:#4b5563}
 .test-bank-progress-report .test-bank-history-pagination{flex-wrap:wrap;gap:.85rem}
 .course-catalogue-toolbar,.course-catalogue-pagination{grid-column:1/-1}
 .test-bank-tab-panel article.test-bank-simulation-eligibility.unlocked{border-color:#11a7c0}
-.test-bank-simulation-eligibility.unlocked header.test-bank-simulation-eligibility-head{background:#11a7c0;border-color:#11a7c0}
+.test-bank-simulation-eligibility.unlocked header.test-bank-simulation-eligibility-head{background:linear-gradient(125deg,#0e9bb3 0%,#11a7c0 55%,#42bed0 100%);border-color:#11a7c0}
 .test-bank-simulation-eligibility.unlocked header.test-bank-simulation-eligibility-head small{color:#fff}
 .test-bank-simulation-eligibility.unlocked header.test-bank-simulation-eligibility-head>span{background:#c4510b;color:#fff}
 .test-bank-workspace-tabs button svg{color:#c4510b}
