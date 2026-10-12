@@ -49,13 +49,13 @@ function renderV2PracticeCard(workspace,itemCount = 10) {
     const startLabel = mastery ? 'Start Mastery Test' : 'Start Warm Up Quiz';
     const subjects = (workspace.subjects || []).filter(subject => Number(subject.questionCount) > 0);
     host.innerHTML = `<section class="v2-practice-card">
-        <small class="v2-practice-eyebrow">${mastery ? 'FOCUSED MASTERY PRACTICE' : 'SHORT & FLEXIBLE PRACTICE'}</small>
-        <h2>${title}</h2><p class="v2-practice-description">${mastery ? 'Strengthen your understanding with focused, 20-item mastery tests.' : 'Build your knowledge with short, 10-item quizzes—ideal for daily practice or a quick study break.'}</p>
-        <div class="v2-practice-facts"><div><strong>${itemCount}</strong><span>Questions per quiz</span></div><div><strong>Self-paced</strong><span>Quick study sessions</span></div><div><strong>Unlimited</strong><span>Practice & retakes</span></div></div>
+        <small class="v2-practice-eyebrow">${mastery ? 'BUILD YOUR UNDERSTANDING' : 'SHORT & FLEXIBLE PRACTICE'}</small>
+        <h2>${title}</h2><p class="v2-practice-description">${mastery ? 'Strengthen your understanding with 20-item tests by subject. Score at least 60% to pass, then keep practicing toward 100%.' : 'Build your knowledge with short, 10-item quizzes—ideal for daily practice or a quick study break.'}</p>
+        <div class="v2-practice-facts"><div><strong>${itemCount}</strong><span>${mastery ? 'Questions per test' : 'Questions per quiz'}</span></div><div><strong>${mastery ? '60%' : 'Self-paced'}</strong><span>${mastery ? 'Platform passing score' : 'Quick study sessions'}</span></div><div><strong>Unlimited</strong><span>Practice & retakes</span></div></div>
         <h3>Choose how you want to practice</h3><div class="v2-practice-modes"><button type="button" data-v2-mode="custom" aria-pressed="true">Create Your Own</button><button type="button" data-v2-mode="premade" aria-pressed="false">Pre-Made Tests</button></div>
         <label class="v2-subject-label" for="v2-practice-subject">Subject area</label><select id="v2-practice-subject"><option value="mixed">Mixed</option>${subjects.map(subject => `<option value="${Number(subject.id)}">${escapeHtml(subject.title)}</option>`).join('')}</select>
         <div class="v2-premade-choice hidden"><label for="v2-practice-premade">Pre-Made Test</label><select id="v2-practice-premade"></select></div>
-        <button type="button" class="v2-start" id="v2-practice-start">${startLabel}</button><p class="v2-practice-note">Review your answers after each quiz. If you do not pass, review the explanations and try again.</p>
+        <button type="button" class="v2-start" id="v2-practice-start">${startLabel}</button><p class="v2-practice-note">${mastery ? 'Review explanations before retaking a failed test. Each distinct passed test counts once toward simulation eligibility.' : 'Review your answers after each quiz. If you do not pass, review the explanations and try again.'}</p>
     </section>`;
     let mode = 'custom';
     const subjectSelect = host.querySelector('#v2-practice-subject'), testSelect = host.querySelector('#v2-practice-premade'), start = host.querySelector('#v2-practice-start');

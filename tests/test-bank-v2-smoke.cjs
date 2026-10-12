@@ -40,5 +40,9 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert.equal(requests[1][2].quiz_type,'warm_up');
     context.renderV2PracticeCard(workspace,20);
     assert(host.innerHTML.includes('Start Mastery Test'));
+    assert(host.innerHTML.includes('BUILD YOUR UNDERSTANDING'));
+    assert(host.innerHTML.includes('Platform passing score'));
+    assert(host.innerHTML.includes('Questions per test'));
+    assert(host.innerHTML.includes('Each distinct passed test counts once toward simulation eligibility.'));
     console.log('V2 tab removal, warm-up card, custom and subject quiz flows passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
