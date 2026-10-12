@@ -1,4 +1,20 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-practice-layout{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:1.25rem;align-items:start;margin:1.5rem 0}
+.test-bank-v2 .v2-practice-layout>.v2-practice-card{margin:0;min-width:0}
+.test-bank-v2 .v2-practice-rail{display:grid;gap:1rem;min-width:0}
+.test-bank-v2 .v2-rail-card{padding:1.25rem;border:1px solid var(--border);border-radius:18px;background:var(--surface-solid);color:var(--text);min-width:0;overflow-wrap:anywhere}
+.test-bank-v2 .v2-rail-card h2{font-size:1.2rem;margin:0 0 1rem}
+.test-bank-v2 .v2-rail-card p{font-size:.9rem;color:var(--text-muted);line-height:1.6;margin:1rem 0}
+.test-bank-v2 .v2-rail-card button{max-width:100%;border:1px solid var(--border);border-radius:10px;padding:.7rem .85rem;background:var(--surface-solid);color:var(--text);font:inherit;font-size:.85rem;font-weight:750;cursor:pointer;white-space:normal}
+.test-bank-v2 .v2-rail-card button:focus-visible{outline:2px solid #087f93;outline-offset:3px}
+.test-bank-v2 .v2-rail-actions{display:flex;flex-wrap:wrap;gap:.6rem}
+.test-bank-v2 .v2-rail-card .v2-retake{background:#f47721;border-color:#f47721;color:white}
+.test-bank-v2 .v2-result-score{display:block;font-size:2.6rem;color:#c94c54;margin:.5rem 0}
+.test-bank-v2 .v2-result-status{display:inline-block;background:rgba(201,76,84,.1);color:#c94c54;border-radius:999px;padding:.35rem .6rem;font-size:.8rem;font-weight:750}
+.test-bank-v2 .v2-result-score.passed,.test-bank-v2 .v2-result-status.passed{color:#079383}
+.test-bank-v2 .v2-result-status.passed{background:rgba(7,147,131,.12)}
+.test-bank-v2 .v2-rail-card .v2-eligibility-label{flex-wrap:wrap;font-size:.85rem;gap:.4rem}
+@media(max-width:900px){.test-bank-v2 .v2-practice-layout{grid-template-columns:minmax(0,1fr)}.test-bank-v2 .v2-practice-layout>.v2-practice-card,.test-bank-v2 .v2-practice-rail,.test-bank-v2 .v2-rail-card{width:100%;box-sizing:border-box}}
 .test-bank-v2 .test-bank-study-phase button[data-guided-simulation]{border:2px solid #11a7c0;border-radius:999px;padding:.5rem .95rem!important;background:transparent;color:#11a7c0;line-height:1.4;font-size:calc(.78rem + 1pt)}
 .test-bank-v2 .test-bank-study-phase.active button[data-guided-simulation]{background:#11a7c0;color:#fff}
 .test-bank-v2 .test-bank-study-phase.active button[data-guided-simulation]:hover{background:#0e94aa}

@@ -24,6 +24,9 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     context.renderTestBankWorkspaceV2(workspace);
     assert(host.innerHTML.includes('Warm Up Quizzes'));
     assert(host.innerHTML.includes('Start Warm Up Quiz'));
+    assert(host.innerHTML.includes('v2-practice-layout'));
+    assert(host.innerHTML.includes('No completed results yet'));
+    assert(host.innerHTML.includes('Simulation readiness'));
     assert(!area.innerHTML.includes('data-test-bank-tab'));
     assert(!area.innerHTML.includes('test-bank-builder-form'));
     assert(area.innerHTML.includes('Select Simulation'));
@@ -55,5 +58,13 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(host.innerHTML.includes('Platform passing score'));
     assert(host.innerHTML.includes('Questions per test'));
     assert(host.innerHTML.includes('Each distinct passed test counts once toward simulation eligibility.'));
+    context.renderV2PracticeCard({...workspace,history:[{id:2,quizId:8,title:'Nursing Test',coverage:'Nursing',totalItems:20,total:20,score:10,passed:false,takenAt:'2026-10-12'}]},20);
+    assert(host.innerHTML.includes('50%'));
+    assert(host.innerHTML.includes('Failed · Try again'));
+    assert(host.innerHTML.includes('data-v2-review'));
+    assert(host.innerHTML.includes('data-v2-retake'));
+    const css = fs.readFileSync('public/test-bank-v2.css','utf8');
+    assert(css.includes('grid-template-columns:minmax(0,3fr) minmax(0,1fr)'));
+    assert(css.includes('@media(max-width:900px)'));
     console.log('V2 tab removal, warm-up card, custom and subject quiz flows passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
