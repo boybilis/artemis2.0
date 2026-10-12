@@ -71,6 +71,8 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     const carousel = Object.assign(element(),{querySelector(){return null;},querySelectorAll(){return [];}});
     context.renderV2SubjectCarousel(carousel,workspace,10);
     assert(carousel.innerHTML.includes('Pre-Made Tests by subject'));
+    assert(carousel.innerHTML.includes('v2-subject-header'));
+    assert(!carousel.innerHTML.includes('v2-subject-mark'));
     assert(!carousel.innerHTML.includes('approved practice questions with detailed rationales'));
     assert(carousel.innerHTML.includes('data-v2-subject-start="1"'));
     assert(!carousel.innerHTML.includes('Subject progress'));
