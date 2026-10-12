@@ -2,6 +2,15 @@ const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
 
+const mainScript = fs.readFileSync('public/script.js', 'utf8');
+const learnerPage = fs.readFileSync('public/index.html', 'utf8');
+assert(learnerPage.includes('<span>My Tests Banks</span>'));
+assert(!learnerPage.includes('sidebar-test-bank-v2'));
+assert(!mainScript.includes('function renderTestBankWorkspace('));
+assert(!mainScript.includes('data-test-bank-tab'));
+assert(mainScript.includes('renderTestBankWorkspaceV2(data.workspace)'));
+assert(mainScript.includes("openV2ProgressModal(workspace.testBankWorkspace, 'tracker')"));
+
 function element(value = '') {
     return {value, dataset: {}, listeners: {}, classList: {toggle() {}, add() {}, remove() {}},
         addEventListener(type, listener) { this.listeners[type] = listener; },

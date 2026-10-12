@@ -1,4 +1,4 @@
-// V2-only phase-based interface. Data and quiz services remain shared with V1.
+// Primary learner Test Bank interface, using the existing data and quiz services.
 function renderTestBankWorkspaceV2(workspace) {
     const workspaceArea = $('test-bank-workspace-area');
     if (!workspaceArea) return;
@@ -158,7 +158,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         if (assessmentTitle) assessmentTitle.textContent = latest.title;
         showAssessmentSummary({score:latest.score,total:latest.total,passed:latest.passed,questions:latest.questions || [],incorrectQuestions:(latest.questions || []).filter(question => !question.correct)}, async () => {
             showScreen('dashboard-screen');
-            await openTestBankWorkspace(workspace.id,'v2');
+            await openTestBankWorkspace(workspace.id);
             $('test-bank-workspace-area').querySelector(`[data-guided-builder="${itemCount}"]`)?.click();
         });
     });
@@ -226,7 +226,7 @@ function renderV2GeneratedQuizzes(container,workspace,itemCount,page = 0) {
         const title = $('quiz-assessment-title'); if (title) title.textContent = attempt.title;
         showAssessmentSummary({score:attempt.score,total:attempt.total,passed:attempt.passed,questions:attempt.questions || [],incorrectQuestions:(attempt.questions || []).filter(question => !question.correct)},async () => {
             showScreen('dashboard-screen');
-            await openTestBankWorkspace(workspace.id,'v2');
+            await openTestBankWorkspace(workspace.id);
             $('test-bank-workspace-area').querySelector(`[data-guided-builder="${itemCount}"]`)?.click();
         });
     }));
@@ -377,28 +377,3 @@ container.innerHTML = `<div class="v2-carousel-heading"><div><h3>${escapeHtml(wo
     }
     if (typeof document !== 'undefined') document.fonts?.ready.then(() => { if (container.isConnected) fitTitles(); });
 }
-
-function renderTestBankV2Sidebar() {
-    const list = $('sidebar-test-bank-v2-list');
-    if (!list) return;
-    list.innerHTML = enrolledTestBanks.map(bank => `<button type="button" class="learner-sidebar-subitem" data-test-bank-v2-id="${Number(bank.id)}"><i data-lucide="notebook-tabs"></i><span>${escapeHtml(bank.title)}</span></button>`).join('')
-        || '<span class="learner-sidebar-subitem">No enrolled Test Banks yet.</span>';
-    list.querySelectorAll('button').forEach(button => button.addEventListener('click', () => {
-        openTestBankWorkspace(Number(button.dataset.testBankV2Id), 'v2');
-        setLearnerSidebarOpen(false);
-    }));
-    if (window.lucide) lucide.createIcons({root:list});
-}
-
-$('sidebar-test-bank-v2-btn')?.addEventListener('click', () => {
-    renderTestBankV2Sidebar();
-    const button = $('sidebar-test-bank-v2-btn');
-    const expanded = button.getAttribute('aria-expanded') === 'true';
-    button.setAttribute('aria-expanded', String(!expanded));
-    $('sidebar-test-bank-v2-list')?.classList.toggle('hidden', expanded);
-    $('sidebar-enrolled-courses-btn')?.setAttribute('aria-expanded', 'false');
-    $('sidebar-enrolled-courses-list')?.classList.add('hidden');
-    $('sidebar-enrolled-test-banks-btn')?.setAttribute('aria-expanded', 'false');
-    $('sidebar-enrolled-test-banks-list')?.classList.add('hidden');
-    if (!expanded && enrolledTestBanks.length === 1) openTestBankWorkspace(enrolledTestBanks[0].id, 'v2');
-});
