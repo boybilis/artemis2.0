@@ -33,6 +33,7 @@ function renderTestBankWorkspaceV2(workspace) {
         workspaceArea.querySelectorAll('.test-bank-study-phase').forEach(card => card.classList.toggle('active', card === event.currentTarget.closest('.test-bank-study-phase')));
         renderV2SimulationCard(workspace);
     });
+    renderV2PracticeCard(workspace, 10, false);
     if (window.lucide) lucide.createIcons();
 }
 
@@ -69,7 +70,7 @@ function renderV2SimulationCard(workspace) {
     host.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function renderV2PracticeCard(workspace,itemCount = 10) {
+function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     const host = $('test-bank-workspace-area').querySelector('.v2-practice-area');
     const mastery = itemCount === 20;
     const title = mastery ? 'Mastery Tests' : 'Warm Up Quizzes';
@@ -115,7 +116,7 @@ function renderV2PracticeCard(workspace,itemCount = 10) {
         finally { start.textContent = startLabel; update(); }
     });
     update();
-    host.scrollIntoView({behavior:'smooth',block:'start'});
+    if (scrollToCard) host.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function renderTestBankV2Sidebar() {

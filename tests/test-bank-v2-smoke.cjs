@@ -22,6 +22,8 @@ vm.runInContext(fs.readFileSync('public/test-bank-v2.js', 'utf8'), context);
 const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subjects:[{id:1,title:'Nursing',questionCount:20}],premadeTests:[],simulationProgress:{unlocked:false}};
 (async () => {
     context.renderTestBankWorkspaceV2(workspace);
+    assert(host.innerHTML.includes('Warm Up Quizzes'));
+    assert(host.innerHTML.includes('Start Warm Up Quiz'));
     assert(!area.innerHTML.includes('data-test-bank-tab'));
     assert(!area.innerHTML.includes('test-bank-builder-form'));
     assert(area.innerHTML.includes('Select Simulation'));
