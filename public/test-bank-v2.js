@@ -115,6 +115,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     };
     host.querySelectorAll('[data-v2-mode]').forEach(button => button.addEventListener('click',() => {
         mode = button.dataset.v2Mode;
+        host.querySelector('.v2-generated-quizzes')?.classList.toggle('hidden',mode !== 'custom');
         host.querySelector('.v2-custom-controls')?.classList.toggle('hidden',mode === 'premade');
         host.querySelector('.v2-subject-carousel')?.classList.toggle('hidden',mode !== 'premade');
         if (mode === 'premade') renderV2SubjectCarousel(host.querySelector('.v2-subject-carousel'),workspace,itemCount);
@@ -167,6 +168,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     });
     host.querySelector('[data-v2-weak]')?.addEventListener('click', () => {
         mode = 'custom';
+        host.querySelector('.v2-generated-quizzes')?.classList.remove('hidden');
         host.querySelector('.v2-custom-controls')?.classList.remove('hidden');
         host.querySelector('.v2-subject-carousel')?.classList.add('hidden');
         customSelection = 'weak';
