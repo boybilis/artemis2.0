@@ -1,4 +1,5 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-subject-stats span:last-child strong{color:#994306}
 .test-bank-v2 .v2-subject-carousel{overflow:hidden}
 .test-bank-v2 .v2-subject-card .v2-start{background:linear-gradient(180deg,#062e52 0%,#073b65 52%,#052743 100%);color:#fff;margin:.6rem 0 0;padding:.7rem .85rem;width:100%}
 .test-bank-v2 .v2-subject-card .v2-start:not(:disabled):hover{background:#0b2942}
