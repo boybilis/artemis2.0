@@ -183,29 +183,34 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
 function renderV2GeneratedQuizzes(container,workspace,itemCount) {
     if (!container) return;
     const quizzes = (workspace.learnerQuizzes || []).filter(quiz => /Mastery Test/i.test(quiz.title) ? itemCount === 20 : /Warm Up Quiz/i.test(quiz.title) ? itemCount === 10 : Number(quiz.itemCount) === itemCount);
+    container.id = `v2-generated-accordion-${itemCount}`;
     container.innerHTML = `<header class="v2-generated-heading"><h2>My ${itemCount === 20 ? 'Mastery Tests' : 'Warm Up Quizzes'}</h2><span>${quizzes.length} created</span></header>${quizzes.length ? quizzes.map(quiz => {
         const attempts = (workspace.history || []).filter(attempt => Number(attempt.quizId) === Number(quiz.id)).sort((a,b) => new Date(a.takenAt) - new Date(b.takenAt) || Number(a.id) - Number(b.id));
         const completed = attempts.filter(attempt => !attempt.cancelled && Number(attempt.totalItems) > 0);
         const copy = `<div><h3>${escapeHtml(quiz.title)}</h3><p>${Number(quiz.itemCount)} items · ${quiz.timeLimitMinutes ? `Timed (${Number(quiz.timeLimitMinutes)} minutes)` : 'Un-timed'} · ${completed.length} completed attempts</p><p>Subjects: ${escapeHtml(quiz.coverageLabel || 'Mixed')}</p></div>`;
         if (!completed.length) return `<article class="v2-generated-row">${copy}<button type="button" data-v2-generated-start="${Number(quiz.id)}">Start Quiz</button></article>`;
-        return `<details class="v2-generated-accordion"><summary>${copy}<span class="v2-attempt-chevron" aria-hidden="true">⌄</span></summary><div class="v2-generated-attempts">${attempts.map((attempt,index) => {
+        return `<article class="v2-generated-accordion accordion-item"><header class="accordion-header"><button type="button" class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#v2-quiz-attempts-${Number(quiz.id)}" aria-expanded="false" aria-controls="v2-quiz-attempts-${Number(quiz.id)}">${copy}<span class="v2-attempt-chevron" aria-hidden="true">⌄</span></button></header><div id="v2-quiz-attempts-${Number(quiz.id)}" class="accordion-collapse collapse" data-bs-parent="#${container.id}"><div class="v2-generated-attempts accordion-body">${attempts.map((attempt,index) => {
             const number = Number(attempt.attemptNumber) || index + 1;
             const suffix = number % 100 >= 11 && number % 100 <= 13 ? 'th' : ({1:'st',2:'nd',3:'rd'}[number % 10] || 'th');
             const date = new Date(attempt.takenAt);
             const takenAt = Number.isNaN(date.getTime()) ? '' : date.toLocaleString('en-US',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
             const percent = Number(attempt.total) > 0 ? Math.round(Number(attempt.score) / Number(attempt.total) * 100) : 0;
             return `<article class="v2-generated-attempt"><div><strong>${number}${suffix} attempt</strong><p>${escapeHtml(takenAt)}</p></div><div><strong>${attempt.cancelled ? '—' : `${percent}%`}</strong><span class="${attempt.cancelled ? '' : attempt.passed ? 'passed' : 'failed'}">${attempt.cancelled ? 'Cancelled' : attempt.passed ? 'Passed' : 'Failed'}</span></div>${attempt.cancelled ? '' : `<button type="button" data-v2-generated-review="${Number(attempt.id)}">Review</button>`}</article>`;
-        }).join('')}<button type="button" data-v2-generated-start="${Number(quiz.id)}">Retake Quiz</button></div></details>`;
+        }).join('')}<button type="button" data-v2-generated-start="${Number(quiz.id)}">Retake Quiz</button></div></div></article>`;
     }).join('') : '<p>No quizzes created in this phase yet. Create your first quiz above.</p>'}`;
     container.querySelectorAll('[data-v2-generated-start]').forEach(button => button.addEventListener('click',async () => {
         const quiz = quizzes.find(quiz => Number(quiz.id) === Number(button.dataset.v2GeneratedStart));
         if (!quiz || button.disabled) return;
         if (await showTestBankInstructions({title:quiz.title,itemCount:quiz.itemCount,timeLimitMinutes:quiz.timeLimitMinutes,coverage:[quiz.coverageLabel || 'Mixed']})) await startTestBankPremadeQuiz(workspace.id,Number(quiz.id),button);
     }));
-    container.querySelectorAll('.v2-generated-accordion').forEach(accordion => accordion.addEventListener('toggle',() => {
-        if (!accordion.open) return;
-        container.querySelectorAll('.v2-generated-accordion').forEach(other => {
-            if (other !== accordion) other.open = false;
+    // Keep the accordion usable if the Bootstrap CDN is unavailable.
+    if (!window.bootstrap?.Collapse) container.querySelectorAll('.accordion-button').forEach(button => button.addEventListener('click',() => {
+        const opening = button.getAttribute('aria-expanded') !== 'true';
+        container.querySelectorAll('.accordion-button').forEach(other => {
+            const expanded = other === button && opening;
+            other.setAttribute('aria-expanded',String(expanded));
+            other.classList.toggle('collapsed',!expanded);
+            container.querySelector(other.dataset.bsTarget)?.classList.toggle('show',expanded);
         });
     }));
     container.querySelectorAll('[data-v2-generated-review]').forEach(button => button.addEventListener('click',() => {
