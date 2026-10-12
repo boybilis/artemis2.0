@@ -11,7 +11,7 @@ function element(value = '') {
 }
 const subject = element('mixed'), premade = element(), start = element(), choice = element();
 const modes = ['custom', 'premade'].map(mode => Object.assign(element(), {dataset: {v2Mode:mode}}));
-const host = Object.assign(element(), {querySelector(selector) { return {'#v2-practice-subject':subject, '#v2-practice-premade':premade, '#v2-practice-start':start, '.v2-premade-choice':choice}[selector]; }, querySelectorAll() { return modes; }});
+const host = Object.assign(element(), {querySelector(selector) { return {'#v2-practice-subject':subject, '#v2-practice-premade':premade, '#v2-practice-start':start, '.v2-premade-choice':choice}[selector]; }, querySelectorAll(selector) { return selector === '[data-v2-mode]' ? modes : []; }});
 const area = Object.assign(element(), {querySelector(selector) { return selector === '.v2-practice-area' ? host : null; }, querySelectorAll() { return []; }});
 const requests = [], starts = [];
 const context = {$:id => id === 'test-bank-workspace-area' ? area : null, escapeHtml:String, console,
@@ -24,6 +24,15 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     context.renderTestBankWorkspaceV2(workspace);
     assert(!area.innerHTML.includes('data-test-bank-tab'));
     assert(!area.innerHTML.includes('test-bank-builder-form'));
+    assert(area.innerHTML.includes('Select Simulation'));
+    context.renderV2SimulationCard({...workspace, simulationProgress:{warmUpPassed:7,masteryPassed:3,unlocked:false}});
+    assert(host.innerHTML.includes('7/10 passed'));
+    assert(host.innerHTML.includes('3/5 passed'));
+    assert(host.innerHTML.includes('Pass 3 more distinct Warm Up Quizzes and 2 more distinct Mastery Tests to unlock.'));
+    assert.equal((host.innerHTML.match(/>Locked<\/button>/g) || []).length,2);
+    context.renderV2SimulationCard({...workspace, simulationProgress:{warmUpPassed:10,masteryPassed:5,unlocked:true},premadeTests:[{id:9,isSimulation:true,locked:false}]});
+    assert(host.innerHTML.includes('Start Simulation'));
+    assert(host.innerHTML.includes('Not available'));
     context.renderV2PracticeCard(workspace,10);
     assert(host.innerHTML.includes('SHORT & FLEXIBLE PRACTICE'));
     assert(host.innerHTML.includes('Start Warm Up Quiz'));

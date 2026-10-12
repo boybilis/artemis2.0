@@ -1,4 +1,14 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-simulation-card .v2-practice-eyebrow{background:rgba(244,119,33,.14);color:#994306}
+.test-bank-v2 .v2-simulation-eligibility{padding:1.2rem;background:rgba(17,167,192,.07);border-radius:14px;margin-bottom:1.2rem;color:var(--text-muted)}
+.test-bank-v2 .v2-eligibility-label{display:flex;justify-content:space-between;gap:1rem;margin:1rem 0}
+.test-bank-v2 .v2-eligibility-track{height:8px;border-radius:999px;background:rgba(47,103,143,.08);overflow:hidden;margin-bottom:1.5rem}
+.test-bank-v2 .v2-eligibility-track i{display:block;height:100%;background:#11a7c0}
+.test-bank-v2 .v2-simulation-eligibility p{font-size:.9rem;line-height:1.6}
+.test-bank-v2 .v2-simulation-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin:1.2rem 0}
+.test-bank-v2 .v2-simulation-row h3{margin:0 0 .6rem}.test-bank-v2 .v2-simulation-row p{color:var(--text-muted);font-size:.85rem}
+.test-bank-v2 .v2-simulation-row button{padding:1rem 1.2rem;border:1px solid var(--border);border-radius:10px;background:#11a7c0;color:#fff;font:inherit;font-weight:750;cursor:pointer}
+.test-bank-v2 .v2-simulation-row button:disabled{background:var(--surface-solid);color:var(--text);cursor:not-allowed}
 .test-bank-v2 .v2-practice-area{scroll-margin-top:1rem}
 .test-bank-v2 .v2-practice-card{margin:1.5rem 0;padding:2rem;border:1px solid var(--border);border-radius:22px;background:var(--surface-solid);color:var(--text)}
 .test-bank-v2 .v2-practice-eyebrow{display:inline-flex;border-radius:999px;padding:.4rem .8rem;background:rgba(17,167,192,.12);color:#087f93;font-weight:800;font-size:.8rem}
