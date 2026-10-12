@@ -1,4 +1,12 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-practice-main>.v2-practice-card:not(.v2-generated-quizzes){padding-top:1.4rem}
+.test-bank-v2 .v2-practice-main .v2-practice-eyebrow{padding:.3rem .7rem;font-size:.75rem}
+.test-bank-v2 .v2-practice-main>.v2-practice-card:not(.v2-generated-quizzes)>h2{font-size:1.5rem;margin:.8rem 0}
+.test-bank-v2 .v2-practice-main .v2-practice-description{font-size:.95rem;line-height:1.55;margin:.5rem 0}
+.test-bank-v2 .v2-practice-main .v2-practice-facts{padding:.9rem 0;margin:1rem 0;gap:1.4rem}
+.test-bank-v2 .v2-practice-main .v2-practice-facts div{gap:.25rem}
+.test-bank-v2 .v2-practice-main .v2-practice-facts strong{font-size:1.4rem}
+.test-bank-v2 .v2-practice-main .v2-practice-facts span{font-size:.8rem;line-height:1.45}
 .test-bank-v2 .v2-generated-quizzes button[data-v2-generated-start]:not(:disabled):hover,.test-bank-v2 .v2-generated-quizzes button[data-v2-generated-review]:not(:disabled):hover{background:#079383;color:#fff}
 .test-bank-v2 .v2-generated-quizzes button[data-v2-generated-start]:focus-visible,.test-bank-v2 .v2-generated-quizzes button[data-v2-generated-review]:focus-visible{background:#079383;color:#fff;outline:2px solid #079383;outline-offset:3px}
 .test-bank-v2 .v2-generated-quizzes .v2-generated-attempts{padding:.75rem 1rem}
