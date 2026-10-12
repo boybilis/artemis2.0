@@ -84,7 +84,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         <h2>${title}</h2><p class="v2-practice-description">${mastery ? 'Strengthen your understanding with 20-item tests by subject. Score at least 60% to pass, then keep practicing toward 100%.' : 'Build your knowledge with short, 10-item quizzes—ideal for daily practice or a quick study break.'}</p>
         <div class="v2-practice-facts"><div><strong>${itemCount}</strong><span>${mastery ? 'Questions per test' : 'Questions per quiz'}</span></div><div><strong>${mastery ? '60%' : 'Self-paced'}</strong><span>${mastery ? 'Platform passing score' : 'Quick study sessions'}</span></div><div><strong>Unlimited</strong><span>Practice & retakes</span></div></div>
         <h3>Choose how you want to practice</h3><div class="v2-practice-modes"><button type="button" data-v2-mode="custom" aria-pressed="true">Create Your Own</button><button type="button" data-v2-mode="premade" aria-pressed="false">Pre-Made Tests</button></div>
-        <label class="v2-subject-label" for="v2-practice-subject">Subject area</label><select id="v2-practice-subject"><option value="mixed">Mixed</option>${subjects.map(subject => `<option value="${Number(subject.id)}">${escapeHtml(subject.title)}</option>`).join('')}</select>
+        <span class="v2-subject-label">Subject area</span><details class="v2-topic-picker"><summary id="v2-practice-subject">Choose topics</summary><div class="v2-topic-options">${subjects.map(subject => `<label><input type="checkbox" data-v2-topic="${Number(subject.id)}"><span>${escapeHtml(subject.title)}</span></label>`).join('')}</div></details><p class="v2-topic-hint">Choose one or more topics. 2–3 = Selected topics; more than 3 = Mixed.</p>
         <div class="v2-premade-choice hidden"><label for="v2-practice-premade">Pre-Made Test</label><select id="v2-practice-premade"></select></div>
         <button type="button" class="v2-start" id="v2-practice-start">${startLabel}</button><p class="v2-practice-note">${mastery ? 'Review explanations before retaking a failed test. Each distinct passed test counts once toward simulation eligibility.' : 'Review your answers after each quiz. If you do not pass, review the explanations and try again.'}</p>
     </section><aside class="v2-practice-rail" aria-label="Practice results and next steps">
@@ -94,10 +94,15 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     </aside></div>`;
     let mode = 'custom';
     const subjectSelect = host.querySelector('#v2-practice-subject'), testSelect = host.querySelector('#v2-practice-premade'), start = host.querySelector('#v2-practice-start');
+    const topicInputs = Array.from(host.querySelectorAll('[data-v2-topic]'));
+    const selectedTopics = () => subjects.filter(subject => topicInputs.some(input => input.checked && Number(input.dataset.v2Topic) === Number(subject.id)));
+    const selectionLabel = selected => selected.length > 3 ? 'Mixed' : selected.length > 1 ? 'Selected topics' : selected[0]?.title || 'Choose topics';
     const update = () => {
-        const tests = (workspace.premadeTests || []).filter(test => !test.isSimulation && !test.locked && Number(test.itemCount) === itemCount && (subjectSelect.value === 'mixed' || (test.subjectIds || []).map(Number).includes(Number(subjectSelect.value))));
+        const selected = selectedTopics();
+        subjectSelect.textContent = selectionLabel(selected);
+        const tests = (workspace.premadeTests || []).filter(test => !test.isSimulation && !test.locked && Number(test.itemCount) === itemCount && selected.length && selected.every(subject => (test.subjectIds || []).map(Number).includes(Number(subject.id))));
         testSelect.innerHTML = tests.map(test => `<option value="${Number(test.id)}">${escapeHtml(test.title)}</option>`).join('') || '<option value="">No matching pre-made tests</option>';
-        start.disabled = !subjects.length || (mode === 'premade' && !tests.length && subjectSelect.value === 'mixed');
+        start.disabled = !selected.length || (mode === 'premade' && !tests.length && selected.length !== 1);
         host.querySelector('.v2-premade-choice').classList.toggle('hidden',mode !== 'premade' || !tests.length);
     };
     host.querySelectorAll('[data-v2-mode]').forEach(button => button.addEventListener('click',() => {
@@ -105,16 +110,17 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         host.querySelectorAll('[data-v2-mode]').forEach(item => item.setAttribute('aria-pressed',String(item === button)));
         update();
     }));
-    subjectSelect.addEventListener('change',update);
+    topicInputs.forEach(input => input.addEventListener('change',update));
     start.addEventListener('click',async () => {
-        const selected = subjectSelect.value === 'mixed' ? subjects : subjects.filter(subject => Number(subject.id) === Number(subjectSelect.value));
+        const selected = selectedTopics();
+        if (start.disabled || !selected.length) return;
         const test = mode === 'premade' ? (workspace.premadeTests || []).find(item => Number(item.id) === Number(testSelect.value)) : null;
-        if (!await showTestBankInstructions({title:test?.title || title,itemCount,timeLimitMinutes:test?.timeLimitMinutes || null,coverage:selected.map(subject => subject.title)})) return;
+        if (!await showTestBankInstructions({title:test?.title || `${title} · ${selectionLabel(selected)}`,itemCount,timeLimitMinutes:test?.timeLimitMinutes || null,coverage:selected.map(subject => subject.title)})) return;
         start.disabled = true; start.textContent = 'Preparing…';
         try {
             let quizId = test?.id;
             if (!quizId) {
-                const endpoint = mode === 'custom' ? `/api/test-banks/${workspace.id}/quizzes` : `/api/test-banks/${workspace.id}/subjects/${Number(subjectSelect.value)}/quizzes`;
+                const endpoint = mode === 'custom' ? `/api/test-banks/${workspace.id}/quizzes` : `/api/test-banks/${workspace.id}/subjects/${Number(selected[0].id)}/quizzes`;
                 const payload = mode === 'custom' ? {subject_ids:selected.map(subject => Number(subject.id)),item_count:itemCount,timed:false,time_limit_minutes:null} : {quiz_type:mastery ? 'mastery' : 'warm_up'};
                 quizId = (await apiRequest(endpoint,'POST',payload)).quizId;
             }
@@ -140,7 +146,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     host.querySelector('[data-v2-weak]')?.addEventListener('click', () => {
         const target = subjects.find(subject => subject.title === latest?.coverage);
         mode = 'custom';
-        subjectSelect.value = target ? String(target.id) : 'mixed';
+        topicInputs.forEach(input => { input.checked = target ? Number(input.dataset.v2Topic) === Number(target.id) : true; });
         host.querySelectorAll('[data-v2-mode]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.v2Mode === 'custom')));
         update();
         subjectSelect.focus();

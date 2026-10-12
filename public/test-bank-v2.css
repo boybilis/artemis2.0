@@ -1,4 +1,11 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-subject-label{display:block;font-weight:700;font-size:.85rem;margin:.9rem 0 .6rem}
+.test-bank-v2 .v2-topic-picker{width:100%;border:1px solid var(--border);border-radius:10px;background:var(--surface-solid);box-sizing:border-box}
+.test-bank-v2 .v2-topic-picker summary{padding:1rem;cursor:pointer;overflow-wrap:anywhere}
+.test-bank-v2 .v2-topic-options{max-height:280px;overflow-y:auto;padding:.4rem 1rem;border-top:1px solid var(--border)}
+.test-bank-v2 .v2-topic-options label{display:flex;align-items:flex-start;gap:.7rem;padding:.7rem 0;margin:0;cursor:pointer;line-height:1.5}
+.test-bank-v2 .v2-topic-options input{flex:none;width:18px;height:18px;margin-top:.2rem;accent-color:#11a7c0}
+.test-bank-v2 .v2-topic-hint{font-size:.8rem;color:var(--text-muted);margin:.6rem 0}
 .test-bank-v2 .v2-practice-layout{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:1.25rem;align-items:start;margin:1.5rem 0}
 .test-bank-v2 .v2-practice-layout>.v2-practice-card{margin:0;min-width:0}
 .test-bank-v2 .v2-practice-rail{display:grid;gap:1rem;min-width:0}
