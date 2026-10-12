@@ -52,10 +52,11 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     await start.listeners.click();
     assert.equal(requests[1][0],'/api/test-banks/7/subjects/1/quizzes');
     assert.equal(requests[1][2].quiz_type,'warm_up');
-    context.renderV2PracticeCard({...workspace,subjects:[1,2,3,4].map(id => ({id,title:`Topic ${id}`,questionCount:20,averageScore:id === 2 ? 40 : null}))},10);
+    context.renderV2PracticeCard({...workspace,weakTopicSubjectIds:[2],subjects:[1,2,3,4].map(id => ({id,title:`Topic ${id}`,questionCount:20,averageScore:id === 2 ? 40 : null}))},10);
     subject.value = 'weak'; subject.listeners.change();
     await start.listeners.click();
     assert.deepEqual(Array.from(requests[2][2].subject_ids),[2]);
+    assert.equal(requests[2][2].coverage_mode,'weak');
     context.renderV2PracticeCard(workspace,10);
     subject.value = 'weak'; subject.listeners.change();
     assert(start.disabled,'Weak topics requires evidence');

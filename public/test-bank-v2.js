@@ -95,7 +95,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     let mode = 'custom';
     const subjectSelect = host.querySelector('#v2-practice-subject'), testSelect = host.querySelector('#v2-practice-premade'), start = host.querySelector('#v2-practice-start');
     let customSelection = 'mixed', premadeSelection = subjects[0] ? String(subjects[0].id) : '';
-    const weakSubjects = subjects.filter(subject => (subject.averageScore !== null && subject.averageScore !== undefined && Number(subject.averageScore) < 60) || (workspace.history || []).some(attempt => !attempt.cancelled && !attempt.passed && attempt.coverage === subject.title));
+    const weakSubjects = (workspace.weakTopicSubjectIds || []).map(id => subjects.find(subject => Number(subject.id) === Number(id))).filter(Boolean);
     const selectedTopics = () => mode === 'premade' ? subjects.filter(subject => String(subject.id) === subjectSelect.value) : subjectSelect.value === 'weak' ? weakSubjects : subjects;
     const selectionLabel = selected => mode === 'custom' ? subjectSelect.value === 'weak' ? 'Weak Topics' : 'Mixed' : selected[0]?.title || 'Choose subject';
     const renderSelection = () => {
@@ -105,7 +105,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     const update = () => {
         const selected = selectedTopics();
         const hint = host.querySelector('#v2-selection-hint');
-        if (hint) hint.textContent = mode === 'premade' ? 'Choose a subject for your pre-made test.' : subjectSelect.value === 'weak' ? weakSubjects.length ? 'Practice subjects with scores below 60% or failed attempts.' : 'No weak topics identified yet. Complete a subject test first.' : 'Practice questions across all available subjects.';
+        if (hint) hint.textContent = mode === 'premade' ? 'Choose a subject for your pre-made test.' : subjectSelect.value === 'weak' ? weakSubjects.length ? `Practice your ${weakSubjects.length} lowest-scoring subjects: ${weakSubjects.map(subject => subject.title).join(', ')}. Based on correct answers from completed tests.` : 'No weak topics identified yet. Complete a test first.' : 'Practice questions across all available subjects.';
         const tests = (workspace.premadeTests || []).filter(test => !test.isSimulation && !test.locked && Number(test.itemCount) === itemCount && selected.length && selected.every(subject => (test.subjectIds || []).map(Number).includes(Number(subject.id))));
         testSelect.innerHTML = tests.map(test => `<option value="${Number(test.id)}">${escapeHtml(test.title)}</option>`).join('') || '<option value="">No matching pre-made tests</option>';
         start.disabled = !selected.length || (mode === 'premade' && !tests.length && selected.length !== 1);
@@ -133,7 +133,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
             let quizId = test?.id;
             if (!quizId) {
                 const endpoint = mode === 'custom' ? `/api/test-banks/${workspace.id}/quizzes` : `/api/test-banks/${workspace.id}/subjects/${Number(selected[0].id)}/quizzes`;
-                const payload = mode === 'custom' ? {subject_ids:selected.map(subject => Number(subject.id)),item_count:itemCount,timed:false,time_limit_minutes:null} : {quiz_type:mastery ? 'mastery' : 'warm_up'};
+                const payload = mode === 'custom' ? {subject_ids:selected.map(subject => Number(subject.id)),item_count:itemCount,timed:false,time_limit_minutes:null,...(subjectSelect.value === 'weak' ? {coverage_mode:'weak'} : {})} : {quiz_type:mastery ? 'mastery' : 'warm_up'};
                 quizId = (await apiRequest(endpoint,'POST',payload)).quizId;
             }
             await startTestBankPremadeQuiz(workspace.id,Number(quizId),start);

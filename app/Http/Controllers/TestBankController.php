@@ -301,6 +301,7 @@ class TestBankController extends Controller
                 'createdAt' => $quiz->created_at?->toIso8601String(),
             ])->values(),
             'history' => $attemptHistory,
+            'weakTopicSubjectIds' => $this->weakTopicSubjectIds($testBank, $user->id)->all(),
         ]]);
     }
 
@@ -507,7 +508,7 @@ class TestBankController extends Controller
         $questions = TestBankQuestion::whereIn('id', $ids)
             ->where('course_id', $testBank->course_id)
             ->where('status', 'active')
-            ->get()->keyBy('id');
+            ->with('subjects:id')->get()->keyBy('id');
         $score = 0;
         $earned = 0.0;
         $possible = 0.0;
@@ -521,6 +522,8 @@ class TestBankController extends Controller
             if ($correct) { $score++; $earned += $points; }
             $options = $question->options;
             $review[] = [
+                'questionId' => $question->id,
+                'subjectIds' => $question->subjects->pluck('id')->all(),
                 'question' => $question->question,
                 'imageUrl' => $question->image_path ? asset('storage/'.$question->image_path) : null,
                 'learnerAnswer' => is_numeric($submitted) ? ($options[(int) $submitted] ?? 'No answer') : 'No answer',
@@ -957,19 +960,70 @@ class TestBankController extends Controller
             'item_count' => ['required', 'integer', 'min:1', 'max:500'],
             'timed' => ['required', 'boolean'],
             'time_limit_minutes' => ['nullable', 'required_if:timed,true', 'integer', 'min:1', 'max:600'],
+            'coverage_mode' => ['nullable', 'in:weak'],
         ]);
+        if (($data['coverage_mode'] ?? null) === 'weak') {
+            $data['subject_ids'] = $this->weakTopicSubjectIds($testBank, Auth::id())->all();
+            abort_if(empty($data['subject_ids']), 422, 'Complete a test first so we can identify your weakest subjects.');
+        }
         $subjectIds = $testBank->course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
         abort_unless($subjectIds->count() === count(array_unique($data['subject_ids'])), 422, 'One or more selected subjects are unavailable.');
-        $questionIds = TestBankQuestion::query()
+        $questionQuery = TestBankQuestion::query()
             ->where('course_id', $testBank->course_id)
             ->where('status', 'active')
             ->whereHas('subjects', fn ($query) => $query->whereIn('subjects.id', $subjectIds))
-            ->inRandomOrder()
-            ->limit($data['item_count'])
-            ->pluck('id');
+            ->inRandomOrder();
+        if (($data['coverage_mode'] ?? null) === 'weak') {
+            $pools = $questionQuery->with('subjects:id')->get();
+            $questionIds = collect();
+            while ($questionIds->count() < $data['item_count']) {
+                $before = $questionIds->count();
+                foreach ($subjectIds as $subjectId) {
+                    $question = $pools->first(fn ($question) => !$questionIds->contains($question->id) && $question->subjects->contains('id', $subjectId));
+                    if ($question) $questionIds->push($question->id);
+                    if ($questionIds->count() >= $data['item_count']) break;
+                }
+                if ($before === $questionIds->count()) break;
+            }
+        } else {
+            $questionIds = $questionQuery->limit($data['item_count'])->pluck('id');
+        }
         abort_if($questionIds->isEmpty(), 422, 'The selected subjects do not have active questions yet.');
 
         return [$data, $subjectIds, $questionIds];
+    }
+
+    private function weakTopicSubjectIds(TestBank $testBank, int $userId): \Illuminate\Support\Collection
+    {
+        $activeSubjectIds = TestBankQuestion::where('course_id', $testBank->course_id)->where('status', 'active')
+            ->with('subjects:id')->get()->flatMap(fn ($question) => $question->subjects->pluck('id'))->unique();
+        $available = $testBank->course->subjects()->where('status', 'approved')->whereIn('id', $activeSubjectIds)->pluck('id');
+        $attempts = TestBankQuizAttempt::where('user_id', $userId)->where('test_bank_id', $testBank->id)
+            ->with('quiz:id,subject_ids')->get();
+        // Older attempts stored question text, but not subject IDs. Resolve only unambiguous matches.
+        $lookup = TestBankQuestion::where('course_id', $testBank->course_id)->with('subjects:id')->get()->groupBy('question');
+        $stats = [];
+        foreach ($attempts as $attempt) {
+            if (data_get($attempt->review_data, 'cancelled', false) || $attempt->total <= 0) continue;
+            foreach (($attempt->review_data ?: []) as $answer) {
+                if (!is_array($answer) || !array_key_exists('correct', $answer)) continue;
+                $ids = $answer['subjectIds'] ?? null;
+                if ($ids === null) {
+                    $matches = $lookup->get($answer['question'] ?? '', collect());
+                    $ids = $matches->count() === 1 ? $matches->first()->subjects->pluck('id')->all() : [];
+                    if (!$ids && count($attempt->quiz?->subject_ids ?: []) === 1) $ids = $attempt->quiz->subject_ids;
+                }
+                foreach (array_unique($ids) as $id) {
+                    if (!$available->contains($id)) continue;
+                    $stats[$id] ??= ['id' => (int) $id, 'correct' => 0, 'total' => 0];
+                    $stats[$id]['total']++;
+                    $stats[$id]['correct'] += !empty($answer['correct']) ? 1 : 0;
+                }
+            }
+        }
+        return collect($stats)->sort(function ($a, $b) {
+            return ($a['correct'] / $a['total']) <=> ($b['correct'] / $b['total']) ?: $a['id'] <=> $b['id'];
+        })->take(3)->pluck('id')->values();
     }
 
     private function guardQuestion(Course $course, TestBank $testBank, TestBankQuestion $question): void
