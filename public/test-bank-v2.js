@@ -84,9 +84,9 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         <h2>${title}</h2><p class="v2-practice-description">${mastery ? 'Strengthen your understanding with 20-item tests by subject. Score at least 60% to pass, then keep practicing toward 100%.' : 'Build your knowledge with short, 10-item quizzes—ideal for daily practice or a quick study break.'}</p>
         <div class="v2-practice-facts"><div><strong>${itemCount}</strong><span>${mastery ? 'Questions per test' : 'Questions per quiz'}</span></div><div><strong>${mastery ? '60%' : 'Self-paced'}</strong><span>${mastery ? 'Platform passing score' : 'Quick study sessions'}</span></div><div><strong>Unlimited</strong><span>Practice & retakes</span></div></div>
         <h3>Choose how you want to practice</h3><div class="v2-practice-modes"><button type="button" data-v2-mode="custom" aria-pressed="true">Create Your Own</button><button type="button" data-v2-mode="premade" aria-pressed="false">Pre-Made Tests</button></div>
-        <span class="v2-subject-label">Subject area</span><details class="v2-topic-picker"><summary id="v2-practice-subject">Choose topics</summary><div class="v2-topic-options">${subjects.map(subject => `<label><input type="checkbox" data-v2-topic="${Number(subject.id)}"><span>${escapeHtml(subject.title)}</span></label>`).join('')}</div></details><p class="v2-topic-hint">Choose one or more topics. 2–3 = Selected topics; more than 3 = Mixed.</p>
+        <div class="v2-custom-controls"><label class="v2-subject-label" for="v2-practice-subject">Subject area</label><select id="v2-practice-subject"><option value="mixed">Mixed</option><option value="weak">Weak Topics</option></select><p class="v2-topic-hint" id="v2-selection-hint"></p>
         <div class="v2-premade-choice hidden"><label for="v2-practice-premade">Pre-Made Test</label><select id="v2-practice-premade"></select></div>
-        <button type="button" class="v2-start" id="v2-practice-start">${startLabel}</button><p class="v2-practice-note">${mastery ? 'Review explanations before retaking a failed test. Each distinct passed test counts once toward simulation eligibility.' : 'Review your answers after each quiz. If you do not pass, review the explanations and try again.'}</p>
+        <button type="button" class="v2-start" id="v2-practice-start">${startLabel}</button><p class="v2-practice-note">${mastery ? 'Review explanations before retaking a failed test. Each distinct passed test counts once toward simulation eligibility.' : 'Review your answers after each quiz. If you do not pass, review the explanations and try again.'}</p></div><div class="v2-subject-carousel hidden"></div>
     </section><aside class="v2-practice-rail" aria-label="Practice results and next steps">
         <section class="v2-rail-card"><h2>Latest result</h2>${latest ? `<p>${escapeHtml(latest.coverage || latest.title)}</p><strong class="v2-result-score ${latest.passed ? 'passed' : ''}">${percent}%</strong><span class="v2-result-status ${latest.passed ? 'passed' : ''}">${latest.passed ? 'Passed · Well done' : 'Failed · Try again'}</span><p>${latest.passed ? 'Great work! Keep practicing to strengthen your knowledge.' : 'Keep practicing. Review your answers, then try again.'}</p><div class="v2-rail-actions"><button type="button" data-v2-review>Review Answers</button><button type="button" class="v2-retake" data-v2-retake>Retake</button></div>` : '<p>No completed results yet. Start a test to see your latest result here.</p>'}</section>
         <section class="v2-rail-card"><h2>Your next step</h2><p>${latest && !latest.passed ? `Spend a few minutes reviewing <strong>${escapeHtml(latest.coverage || latest.title)}</strong>, then check your understanding with fresh questions.` : 'Build confidence with fresh questions and review explanations after each test.'}</p><button type="button" data-v2-weak>Practice ${latest && !latest.passed ? 'Weak Topics' : 'More Questions'}</button></section>
@@ -94,12 +94,18 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     </aside></div>`;
     let mode = 'custom';
     const subjectSelect = host.querySelector('#v2-practice-subject'), testSelect = host.querySelector('#v2-practice-premade'), start = host.querySelector('#v2-practice-start');
-    const topicInputs = Array.from(host.querySelectorAll('[data-v2-topic]'));
-    const selectedTopics = () => subjects.filter(subject => topicInputs.some(input => input.checked && Number(input.dataset.v2Topic) === Number(subject.id)));
-    const selectionLabel = selected => selected.length > 3 ? 'Mixed' : selected.length > 1 ? 'Selected topics' : selected[0]?.title || 'Choose topics';
+    let customSelection = 'mixed', premadeSelection = subjects[0] ? String(subjects[0].id) : '';
+    const weakSubjects = subjects.filter(subject => (subject.averageScore !== null && subject.averageScore !== undefined && Number(subject.averageScore) < 60) || (workspace.history || []).some(attempt => !attempt.cancelled && !attempt.passed && attempt.coverage === subject.title));
+    const selectedTopics = () => mode === 'premade' ? subjects.filter(subject => String(subject.id) === subjectSelect.value) : subjectSelect.value === 'weak' ? weakSubjects : subjects;
+    const selectionLabel = selected => mode === 'custom' ? subjectSelect.value === 'weak' ? 'Weak Topics' : 'Mixed' : selected[0]?.title || 'Choose subject';
+    const renderSelection = () => {
+        subjectSelect.innerHTML = mode === 'custom' ? '<option value="mixed">Mixed</option><option value="weak">Weak Topics</option>' : subjects.map(subject => `<option value="${Number(subject.id)}">${escapeHtml(subject.title)}</option>`).join('');
+        subjectSelect.value = mode === 'custom' ? customSelection : premadeSelection;
+    };
     const update = () => {
         const selected = selectedTopics();
-        subjectSelect.textContent = selectionLabel(selected);
+        const hint = host.querySelector('#v2-selection-hint');
+        if (hint) hint.textContent = mode === 'premade' ? 'Choose a subject for your pre-made test.' : subjectSelect.value === 'weak' ? weakSubjects.length ? 'Practice subjects with scores below 60% or failed attempts.' : 'No weak topics identified yet. Complete a subject test first.' : 'Practice questions across all available subjects.';
         const tests = (workspace.premadeTests || []).filter(test => !test.isSimulation && !test.locked && Number(test.itemCount) === itemCount && selected.length && selected.every(subject => (test.subjectIds || []).map(Number).includes(Number(subject.id))));
         testSelect.innerHTML = tests.map(test => `<option value="${Number(test.id)}">${escapeHtml(test.title)}</option>`).join('') || '<option value="">No matching pre-made tests</option>';
         start.disabled = !selected.length || (mode === 'premade' && !tests.length && selected.length !== 1);
@@ -107,10 +113,16 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     };
     host.querySelectorAll('[data-v2-mode]').forEach(button => button.addEventListener('click',() => {
         mode = button.dataset.v2Mode;
+        host.querySelector('.v2-custom-controls')?.classList.toggle('hidden',mode === 'premade');
+        host.querySelector('.v2-subject-carousel')?.classList.toggle('hidden',mode !== 'premade');
+        if (mode === 'premade') renderV2SubjectCarousel(host.querySelector('.v2-subject-carousel'),workspace,itemCount);
         host.querySelectorAll('[data-v2-mode]').forEach(item => item.setAttribute('aria-pressed',String(item === button)));
-        update();
+        renderSelection(); update();
     }));
-    topicInputs.forEach(input => input.addEventListener('change',update));
+    subjectSelect.addEventListener('change', () => {
+        if (mode === 'custom') customSelection = subjectSelect.value; else premadeSelection = subjectSelect.value;
+        update();
+    });
     start.addEventListener('click',async () => {
         const selected = selectedTopics();
         if (start.disabled || !selected.length) return;
@@ -128,7 +140,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         } catch(error) { showToast(error.message || 'Unable to prepare this quiz.','error'); }
         finally { start.textContent = startLabel; update(); }
     });
-    update();
+    renderSelection(); update();
     host.querySelector('[data-v2-review]')?.addEventListener('click', () => {
         if (!latest) return;
         const assessmentTitle = $('quiz-assessment-title');
@@ -144,15 +156,40 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         if (await showTestBankInstructions({title:latest.title,itemCount,timeLimitMinutes:latest.timeLimitMinutes,coverage:[latest.coverage || 'Mixed']})) await startTestBankPremadeQuiz(workspace.id,Number(latest.quizId),event.currentTarget);
     });
     host.querySelector('[data-v2-weak]')?.addEventListener('click', () => {
-        const target = subjects.find(subject => subject.title === latest?.coverage);
         mode = 'custom';
-        topicInputs.forEach(input => { input.checked = target ? Number(input.dataset.v2Topic) === Number(target.id) : true; });
+        host.querySelector('.v2-custom-controls')?.classList.remove('hidden');
+        host.querySelector('.v2-subject-carousel')?.classList.add('hidden');
+        customSelection = 'weak';
         host.querySelectorAll('[data-v2-mode]').forEach(button => button.setAttribute('aria-pressed',String(button.dataset.v2Mode === 'custom')));
-        update();
+        renderSelection(); update();
         subjectSelect.focus();
     });
     host.querySelector('[data-v2-view-simulation]')?.addEventListener('click', () => $('test-bank-workspace-area').querySelector('[data-guided-simulation]')?.click());
     if (scrollToCard) host.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderV2SubjectCarousel(container,workspace,itemCount) {
+    if (!container) return;
+    const subjects = (workspace.subjects || []).filter(subject => Number(subject.questionCount) > 0);
+    let page = 0;
+    const render = () => {
+        const visible = subjects.slice(page * 3,page * 3 + 3);
+        container.innerHTML = `<div class="v2-carousel-heading"><div><h3>${escapeHtml(workspace.title)} Pre-Made Tests by subject</h3><p>Curated from approved questions in the course question bank.</p></div><div><span>Subjects ${subjects.length ? page * 3 + 1 : 0}–${Math.min(subjects.length,page * 3 + 3)} of ${subjects.length}</span><button type="button" data-v2-prev ${page === 0 ? 'disabled' : ''} aria-label="Previous subjects">‹</button><button type="button" data-v2-next ${(page + 1) * 3 >= subjects.length ? 'disabled' : ''} aria-label="Next subjects">›</button></div></div><div class="v2-subject-grid">${visible.map(subject => `<article class="v2-subject-card"><span class="v2-subject-mark">▤</span><h3>${escapeHtml(subject.title)}</h3><p>${Number(subject.questionCount)} approved practice questions with detailed rationales</p><div class="v2-subject-stats"><span><strong>${Number(subject.completedTests || 0)}</strong>Completed</span><span><strong>${subject.averageScore == null ? '—' : `${Number(subject.averageScore)}%`}</strong>Average</span></div><p>Subject progress <strong>${Number(subject.progress || 0)}%</strong></p><div class="v2-eligibility-track"><i style="width:${Math.max(0,Math.min(100,Number(subject.progress || 0)))}%"></i></div><button type="button" class="v2-start" data-v2-subject-start="${Number(subject.id)}">Start ${itemCount === 20 ? 'Mastery Test' : 'Warm Up Quiz'}</button></article>`).join('')}</div>`;
+        container.querySelector('[data-v2-prev]')?.addEventListener('click',() => { if (page > 0) { page--; render(); } });
+        container.querySelector('[data-v2-next]')?.addEventListener('click',() => { if ((page + 1) * 3 < subjects.length) { page++; render(); } });
+        container.querySelectorAll('[data-v2-subject-start]').forEach(button => button.addEventListener('click',async () => {
+            const subject = subjects.find(item => Number(item.id) === Number(button.dataset.v2SubjectStart));
+            if (!subject || button.disabled) return;
+            if (!await showTestBankInstructions({title:subject.title,itemCount,timeLimitMinutes:null,coverage:[subject.title]})) return;
+            button.disabled = true;
+            try {
+                const result = await apiRequest(`/api/test-banks/${workspace.id}/subjects/${subject.id}/quizzes`,'POST',{quiz_type:itemCount === 20 ? 'mastery' : 'warm_up'});
+                await startTestBankPremadeQuiz(workspace.id,Number(result.quizId),button);
+            } catch(error) { showToast(error.message || 'Unable to prepare this test.','error'); }
+            finally { button.disabled = false; }
+        }));
+    };
+    render();
 }
 
 function renderTestBankV2Sidebar() {

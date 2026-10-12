@@ -1,4 +1,12 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-carousel-heading{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.test-bank-v2 .v2-carousel-heading p,.test-bank-v2 .v2-subject-card p{color:var(--text-muted);font-size:.9rem;line-height:1.6}
+.test-bank-v2 .v2-carousel-heading button{margin-left:.5rem;padding:.5rem .8rem;border:1px solid var(--border);border-radius:10px;background:#0b3d60;color:#fff;cursor:pointer}.test-bank-v2 .v2-carousel-heading button:disabled{opacity:.4;cursor:default}
+.test-bank-v2 .v2-subject-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
+.test-bank-v2 .v2-subject-card{padding:1rem;border:1px solid var(--border);border-radius:16px;min-width:0;overflow-wrap:anywhere}
+.test-bank-v2 .v2-subject-card h3{margin:1rem 0}.test-bank-v2 .v2-subject-mark{color:#11a7c0;font-size:2rem}
+.test-bank-v2 .v2-subject-stats{display:flex;justify-content:space-between;border-block:1px solid var(--border);padding:1rem 0;margin:1rem 0;gap:.5rem}.test-bank-v2 .v2-subject-stats span{display:flex;flex-direction:column;gap:.4rem;font-size:.8rem}.test-bank-v2 .v2-subject-stats strong{font-size:1.3rem}
+@media(max-width:1100px){.test-bank-v2 .v2-subject-grid{grid-template-columns:minmax(0,1fr)}}
 .test-bank-v2 .v2-subject-label{display:block;font-weight:700;font-size:.85rem;margin:.9rem 0 .6rem}
 .test-bank-v2 .v2-topic-picker{width:100%;border:1px solid var(--border);border-radius:10px;background:var(--surface-solid);box-sizing:border-box}
 .test-bank-v2 .v2-topic-picker summary{padding:1rem;cursor:pointer;overflow-wrap:anywhere}
