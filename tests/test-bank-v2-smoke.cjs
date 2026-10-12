@@ -71,6 +71,7 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     const carousel = Object.assign(element(),{querySelector(){return null;},querySelectorAll(){return [];}});
     context.renderV2SubjectCarousel(carousel,workspace,10);
     assert(carousel.innerHTML.includes('Pre-Made Tests by subject'));
+    assert(!carousel.innerHTML.includes('approved practice questions with detailed rationales'));
     assert(carousel.innerHTML.includes('data-v2-subject-start="1"'));
     context.renderV2PracticeCard(workspace,20);
     assert(host.innerHTML.includes('Start Mastery Test'));
