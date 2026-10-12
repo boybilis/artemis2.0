@@ -134,5 +134,10 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert.equal(requests.at(-1)[2].timed,true);
     assert.equal(requests.at(-1)[2].time_limit_minutes,10);
     assert.equal(instructions.at(-1).timeLimitMinutes,10);
+    context.renderV2PracticeCard(workspace,20);
+    assert(host.innerHTML.includes('Timed (20 minutes)'));
+    await start.listeners.click();
+    assert.equal(requests.at(-1)[2].time_limit_minutes,20);
+    assert.equal(instructions.at(-1).timeLimitMinutes,20);
     console.log('V2 tab removal, warm-up card, custom and subject quiz flows passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

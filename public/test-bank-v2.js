@@ -85,7 +85,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         <div class="v2-practice-facts"><div><strong>${itemCount}</strong><span>${mastery ? 'Questions per test' : 'Questions per quiz'}</span></div><div><strong>${mastery ? '60%' : 'Self-paced'}</strong><span>${mastery ? 'Platform passing score' : 'Quick study sessions'}</span></div><div><strong>Unlimited</strong><span>Practice & retakes</span></div></div>
         <h3>Choose how you want to practice</h3><div class="v2-practice-modes"><button type="button" data-v2-mode="custom" aria-pressed="true">Create Your Own</button><button type="button" data-v2-mode="premade" aria-pressed="false">Pre-Made Tests</button></div>
         <div class="v2-custom-controls"><label class="v2-subject-label" for="v2-practice-subject">Subject area</label><select id="v2-practice-subject"><option value="mixed">Mixed</option><option value="weak">Weak Topics</option></select><p class="v2-topic-hint" id="v2-selection-hint"></p>
-        <label for="v2-practice-timing">Test timing</label><select id="v2-practice-timing"><option value="untimed" selected>Un-timed</option><option value="timed">Timed (10 minutes)</option></select>
+        <label for="v2-practice-timing">Test timing</label><select id="v2-practice-timing"><option value="untimed" selected>Un-timed</option><option value="timed">Timed (${itemCount} minutes)</option></select>
         <div class="v2-premade-choice hidden"><label for="v2-practice-premade">Pre-Made Test</label><select id="v2-practice-premade"></select></div>
         <button type="button" class="v2-start" id="v2-practice-start">${startLabel}</button><p class="v2-practice-note">${mastery ? 'Review explanations before retaking a failed test. Each distinct passed test counts once toward simulation eligibility.' : 'Review your answers after each quiz. If you do not pass, review the explanations and try again.'}</p></div><div class="v2-subject-carousel hidden"></div>
     </section><aside class="v2-practice-rail" aria-label="Practice results and next steps">
@@ -129,13 +129,13 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         if (start.disabled || !selected.length) return;
         const test = mode === 'premade' ? (workspace.premadeTests || []).find(item => Number(item.id) === Number(testSelect.value)) : null;
         const timed = mode === 'custom' && host.querySelector('#v2-practice-timing')?.value === 'timed';
-        if (!await showTestBankInstructions({title:test?.title || `${title} · ${selectionLabel(selected)}`,itemCount,timeLimitMinutes:test?.timeLimitMinutes || (timed ? 10 : null),coverage:selected.map(subject => subject.title)})) return;
+        if (!await showTestBankInstructions({title:test?.title || `${title} · ${selectionLabel(selected)}`,itemCount,timeLimitMinutes:test?.timeLimitMinutes || (timed ? itemCount : null),coverage:selected.map(subject => subject.title)})) return;
         start.disabled = true; start.textContent = 'Preparing…';
         try {
             let quizId = test?.id;
             if (!quizId) {
                 const endpoint = mode === 'custom' ? `/api/test-banks/${workspace.id}/quizzes` : `/api/test-banks/${workspace.id}/subjects/${Number(selected[0].id)}/quizzes`;
-                const payload = mode === 'custom' ? {subject_ids:selected.map(subject => Number(subject.id)),item_count:itemCount,timed,time_limit_minutes:timed ? 10 : null,...(subjectSelect.value === 'weak' ? {coverage_mode:'weak'} : {})} : {quiz_type:mastery ? 'mastery' : 'warm_up'};
+                const payload = mode === 'custom' ? {subject_ids:selected.map(subject => Number(subject.id)),item_count:itemCount,timed,time_limit_minutes:timed ? itemCount : null,...(subjectSelect.value === 'weak' ? {coverage_mode:'weak'} : {})} : {quiz_type:mastery ? 'mastery' : 'warm_up'};
                 quizId = (await apiRequest(endpoint,'POST',payload)).quizId;
             }
             await startTestBankPremadeQuiz(workspace.id,Number(quizId),start);
