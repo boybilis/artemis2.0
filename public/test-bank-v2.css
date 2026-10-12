@@ -1,4 +1,19 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-practice-card.v2-simulation-card{padding:1.4rem}
+.test-bank-v2 .v2-simulation-card .v2-practice-eyebrow{padding:.3rem .7rem;font-size:.75rem}
+.test-bank-v2 .v2-simulation-card>h2{font-size:1.5rem;margin:.8rem 0}
+.test-bank-v2 .v2-simulation-card .v2-practice-description{font-size:.95rem;line-height:1.55;margin:.5rem 0}
+.test-bank-v2 .v2-simulation-card .v2-practice-facts{padding:.9rem 0;margin:1rem 0;gap:1.4rem}
+.test-bank-v2 .v2-simulation-card .v2-practice-facts div{gap:.25rem;min-width:0}
+.test-bank-v2 .v2-simulation-card .v2-practice-facts strong{font-size:1.4rem}
+.test-bank-v2 .v2-simulation-card .v2-practice-facts span{font-size:.8rem;line-height:1.45}
+.test-bank-v2 .v2-simulation-card .v2-simulation-eligibility{padding:1rem;margin-bottom:.8rem}
+.test-bank-v2 .v2-simulation-card .v2-simulation-eligibility h3{font-size:1rem;margin:0 0 .75rem}
+.test-bank-v2 .v2-simulation-card .v2-simulation-row{margin:.8rem 0;gap:.75rem}
+.test-bank-v2 .v2-simulation-card .v2-simulation-row h3{font-size:1rem;margin:0 0 .25rem}
+.test-bank-v2 .v2-simulation-card .v2-simulation-row p{margin:.25rem 0;font-size:.8rem}
+.test-bank-v2 .v2-simulation-card .v2-simulation-row button{padding:.65rem 1rem;min-height:44px;font-size:.85rem}
+@media(max-width:600px){.test-bank-v2 .v2-practice-card.v2-simulation-card{padding:1.1rem}.test-bank-v2 .v2-simulation-card .v2-simulation-row{flex-wrap:wrap}.test-bank-v2 .v2-simulation-card .v2-simulation-row button{width:100%}}
 .test-bank-v2 .test-bank-study-phase.active .test-bank-phase-header{background:#f47721;border-bottom-color:#f47721}
 .test-bank-v2 .test-bank-study-phase.active button[data-guided-builder],.test-bank-v2 .test-bank-study-phase.active button[data-guided-simulation]{background:#f47721;border-color:#f47721;color:#fff}
 .test-bank-v2 .test-bank-study-phase.active button[data-guided-builder]:hover,.test-bank-v2 .test-bank-study-phase.active button[data-guided-simulation]:hover{background:#f47721;border-color:#f47721;filter:brightness(.93);color:#fff}
