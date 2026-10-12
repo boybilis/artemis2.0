@@ -1,4 +1,7 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-rail-card button[data-v2-progress-snapshot]{border-radius:999px;background:#079383;border-color:#079383;color:#fff}
+.test-bank-v2 .v2-rail-card button[data-v2-progress-tracker]{border-radius:999px;background:#994306;border-color:#994306;color:#fff}
+.test-bank-v2 .v2-rail-card button[data-v2-progress-snapshot]:hover,.test-bank-v2 .v2-rail-card button[data-v2-progress-tracker]:hover{filter:brightness(.93)}
 .test-bank-v2 .v2-tracker-tools .v2-tracker-search{display:flex;flex:1;max-width:550px;min-width:0;gap:.6rem;padding:.85rem 1rem;border:1px solid #11a7c0;border-radius:12px;color:var(--text-muted)}
 .test-bank-v2 .v2-tracker-search input{width:100%;min-width:0;border:0;outline:none;background:transparent;color:var(--text);font:inherit}
 .test-bank-v2 .v2-tracker-search:focus-within{outline:2px solid #11a7c0;outline-offset:2px}
