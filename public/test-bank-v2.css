@@ -1,4 +1,14 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-tracker-tools .v2-tracker-search{display:flex;flex:1;max-width:550px;min-width:0;gap:.6rem;padding:.85rem 1rem;border:1px solid #11a7c0;border-radius:12px;color:var(--text-muted)}
+.test-bank-v2 .v2-tracker-search input{width:100%;min-width:0;border:0;outline:none;background:transparent;color:var(--text);font:inherit}
+.test-bank-v2 .v2-tracker-search:focus-within{outline:2px solid #11a7c0;outline-offset:2px}
+.test-bank-v2 .v2-tracker-filters{display:flex;align-items:center;gap:1rem;white-space:nowrap;color:var(--text-muted);font-size:.85rem}
+.test-bank-v2 .v2-cancelled-switch{position:relative;cursor:pointer}.test-bank-v2 .v2-cancelled-switch input{position:absolute;opacity:0;width:44px;height:24px;margin:0}
+.test-bank-v2 .v2-switch-track{display:inline-block;position:relative;width:44px;height:24px;border:1px solid var(--border);border-radius:999px;background:rgba(47,103,143,.1);box-sizing:border-box}
+.test-bank-v2 .v2-switch-track::before{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:var(--text-muted);transition:transform .2s}
+.test-bank-v2 .v2-cancelled-switch input:checked+.v2-switch-track{background:#11a7c0}.test-bank-v2 .v2-cancelled-switch input:checked+.v2-switch-track::before{transform:translateX(20px);background:#fff}
+.test-bank-v2 .v2-cancelled-switch input:focus-visible+.v2-switch-track{outline:2px solid #11a7c0;outline-offset:3px}
+@media(max-width:700px){.test-bank-v2 .v2-tracker-tools .v2-tracker-search{flex-basis:100%;max-width:none}.test-bank-v2 .v2-tracker-filters{width:100%;justify-content:space-between;gap:.5rem;font-size:.8rem}}
 .test-bank-v2 .v2-progress-modal .test-bank-tracker-row{display:grid;grid-template-columns:minmax(0,1fr) 90px 100px 65px 190px;align-items:center;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface-solid)}
 .test-bank-v2 .v2-progress-modal .test-bank-tracker-copy,.test-bank-v2 .v2-progress-modal .test-bank-tracker-action{grid-column:auto}
 .test-bank-v2 .v2-progress-modal .test-bank-tracker-copy h3{margin:0;font-size:1rem;line-height:1.45}
