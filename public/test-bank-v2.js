@@ -96,16 +96,16 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     const subjectSelect = host.querySelector('#v2-practice-subject'), testSelect = host.querySelector('#v2-practice-premade'), start = host.querySelector('#v2-practice-start');
     let customSelection = 'mixed', premadeSelection = subjects[0] ? String(subjects[0].id) : '';
     const weakSubjects = (workspace.weakTopicSubjectIds || []).map(id => subjects.find(subject => Number(subject.id) === Number(id))).filter(Boolean);
-    const selectedTopics = () => mode === 'premade' ? subjects.filter(subject => String(subject.id) === subjectSelect.value) : subjectSelect.value === 'weak' ? weakSubjects : subjects;
-    const selectionLabel = selected => mode === 'custom' ? subjectSelect.value === 'weak' ? 'Weak Topics' : 'Mixed' : selected[0]?.title || 'Choose subject';
+    const selectedTopics = () => subjectSelect.value === 'weak' ? weakSubjects : subjectSelect.value === 'mixed' ? subjects : subjects.filter(subject => String(subject.id) === subjectSelect.value);
+    const selectionLabel = selected => subjectSelect.value === 'weak' ? 'Weak Topics' : subjectSelect.value === 'mixed' ? 'Mixed' : selected[0]?.title || 'Choose subject';
     const renderSelection = () => {
-        subjectSelect.innerHTML = mode === 'custom' ? '<option value="mixed">Mixed</option><option value="weak">Weak Topics</option>' : subjects.map(subject => `<option value="${Number(subject.id)}">${escapeHtml(subject.title)}</option>`).join('');
+        subjectSelect.innerHTML = (mode === 'custom' ? '<option value="mixed">Mixed</option><option value="weak">Weak Topics</option>' : '') + subjects.map(subject => `<option value="${Number(subject.id)}">${escapeHtml(subject.title)}</option>`).join('');
         subjectSelect.value = mode === 'custom' ? customSelection : premadeSelection;
     };
     const update = () => {
         const selected = selectedTopics();
         const hint = host.querySelector('#v2-selection-hint');
-        if (hint) hint.textContent = mode === 'premade' ? 'Choose a subject for your pre-made test.' : subjectSelect.value === 'weak' ? weakSubjects.length ? `Practice your ${weakSubjects.length} lowest-scoring subjects: ${weakSubjects.map(subject => subject.title).join(', ')}. Based on correct answers from completed tests.` : 'No weak topics identified yet. Complete a test first.' : 'Practice questions across all available subjects.';
+        if (hint) hint.textContent = mode === 'premade' ? 'Choose a subject for your pre-made test.' : subjectSelect.value === 'weak' ? weakSubjects.length ? `Practice your ${weakSubjects.length} lowest-scoring subjects: ${weakSubjects.map(subject => subject.title).join(', ')}. Based on correct answers from completed tests.` : 'No weak topics identified yet. Complete a test first.' : subjectSelect.value === 'mixed' ? 'Practice questions across all available subjects.' : 'Practice questions from this subject.';
         const tests = (workspace.premadeTests || []).filter(test => !test.isSimulation && !test.locked && Number(test.itemCount) === itemCount && selected.length && selected.every(subject => (test.subjectIds || []).map(Number).includes(Number(subject.id))));
         testSelect.innerHTML = tests.map(test => `<option value="${Number(test.id)}">${escapeHtml(test.title)}</option>`).join('') || '<option value="">No matching pre-made tests</option>';
         start.disabled = !selected.length || (mode === 'premade' && !tests.length && selected.length !== 1);
@@ -201,7 +201,7 @@ function renderV2SubjectCarousel(container,workspace,itemCount) {
             if (!await showTestBankInstructions({title:subject.title,itemCount,timeLimitMinutes:null,coverage:[subject.title]})) return;
             button.disabled = true;
             try {
-                const result = await apiRequest(`/api/test-banks/${workspace.id}/subjects/${subject.id}/quizzes`,'POST',{quiz_type:itemCount === 20 ? 'mastery' : 'warm_up'});
+                const result = await apiRequest(`/api/test-banks/${workspace.id}/subjects/${subject.id}/quizzes`,'POST',{quiz_type:itemCount === 20 ? 'mastery' : 'warm_up',reuse_set:true});
                 await startTestBankPremadeQuiz(workspace.id,Number(result.quizId),button);
             } catch(error) { showToast(error.message || 'Unable to prepare this test.','error'); }
             finally { button.disabled = false; }

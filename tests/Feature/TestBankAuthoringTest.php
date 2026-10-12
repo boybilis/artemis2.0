@@ -394,6 +394,12 @@ class TestBankAuthoringTest extends TestCase
         $this->assertSame(10, $quiz->questions()->count());
         $this->assertSame([$subject->id], $quiz->subject_ids);
         $this->assertFalse($quiz->questions()->whereKey($otherQuestion->id)->exists());
+        $endpoint = "/api/test-banks/{$bank->id}/subjects/{$subject->id}/quizzes";
+        $this->postJson($endpoint, ['quiz_type' => 'warm_up', 'reuse_set' => true])->assertOk()->assertJsonPath('quizId', $quiz->id);
+        $masteryId = $this->postJson($endpoint, ['quiz_type' => 'mastery', 'reuse_set' => true])->assertOk()->json('quizId');
+        $this->assertNotSame($quiz->id, $masteryId);
+        $this->postJson($endpoint, ['quiz_type' => 'mastery', 'reuse_set' => true])->assertOk()->assertJsonPath('quizId', $masteryId);
+        $this->assertSame(2, $bank->premadeQuizzes()->where('quiz_type', 'subject')->count());
 
         $this->actingAs($learner)
             ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")

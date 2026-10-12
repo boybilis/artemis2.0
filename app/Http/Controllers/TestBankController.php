@@ -351,8 +351,18 @@ class TestBankController extends Controller
         $user = Auth::user();
         $this->guardLearnerCatalog($user, $testBank);
         abort_unless($subject->course_id === $testBank->course_id && $subject->status === 'approved', 404);
-        $data = $request->validate(['quiz_type' => ['required', Rule::in(['warm_up', 'mastery'])]]);
+        $data = $request->validate(['quiz_type' => ['required', Rule::in(['warm_up', 'mastery'])], 'reuse_set' => ['sometimes', 'boolean']]);
         $itemCount = $data['quiz_type'] === 'mastery' ? 20 : 10;
+        if (!empty($data['reuse_set'])) {
+            $typeLabel = $data['quiz_type'] === 'mastery' ? 'Mastery Test' : 'Warm-up';
+            $existing = $testBank->premadeQuizzes()->where('quiz_type', 'subject')
+                ->where('owner_user_id', $user->id)->where('status', 'active')
+                ->where('title', "{$subject->title} · {$typeLabel}")
+                ->whereJsonContains('subject_ids', $subject->id)
+                ->whereHas('questions', fn ($query) => $query->where('test_bank_questions.status', 'active'))
+                ->oldest('id')->first();
+            if ($existing) return response()->json(['success' => true, 'quizId' => $existing->id, 'message' => 'Subject test ready.']);
+        }
         $questionIds = TestBankQuestion::query()
             ->where('course_id', $testBank->course_id)
             ->where('status', 'active')

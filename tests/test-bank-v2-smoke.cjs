@@ -60,6 +60,14 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     context.renderV2PracticeCard(workspace,10);
     subject.value = 'weak'; subject.listeners.change();
     assert(start.disabled,'Weak topics requires evidence');
+    subject.value = '1'; subject.listeners.change();
+    assert(!start.disabled);
+    await start.listeners.click();
+    assert.deepEqual(Array.from(requests[3][2].subject_ids),[1]);
+    assert(!requests[3][2].coverage_mode);
+    assert(subject.innerHTML.includes('Mixed'));
+    assert(subject.innerHTML.includes('Weak Topics'));
+    assert(subject.innerHTML.includes('Nursing'));
     const carousel = Object.assign(element(),{querySelector(){return null;},querySelectorAll(){return [];}});
     context.renderV2SubjectCarousel(carousel,workspace,10);
     assert(carousel.innerHTML.includes('Pre-Made Tests by subject'));
