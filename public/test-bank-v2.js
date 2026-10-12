@@ -92,6 +92,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         <section class="v2-rail-card"><h2>Latest result</h2>${latest ? `<p>${escapeHtml(latest.coverage || latest.title)}</p><strong class="v2-result-score ${latest.passed ? 'passed' : ''}">${percent}%</strong><span class="v2-result-status ${latest.passed ? 'passed' : ''}">${latest.passed ? 'Passed · Well done' : 'Failed · Try again'}</span><p>${latest.passed ? 'Great work! Keep practicing to strengthen your knowledge.' : 'Keep practicing. Review your answers, then try again.'}</p><div class="v2-rail-actions"><button type="button" data-v2-review>Review Answers</button><button type="button" class="v2-retake" data-v2-retake>Retake</button></div>` : '<p>No completed results yet. Start a test to see your latest result here.</p>'}</section>
         <section class="v2-rail-card"><h2>Your next step</h2><p>${latest && !latest.passed ? `Spend a few minutes reviewing <strong>${escapeHtml(latest.coverage || latest.title)}</strong>, then check your understanding with fresh questions.` : 'Build confidence with fresh questions and review explanations after each test.'}</p><button type="button" data-v2-weak>Practice ${latest && !latest.passed ? 'Weak Topics' : 'More Questions'}</button></section>
         <section class="v2-rail-card"><h2>Simulation readiness</h2>${[['Warm Up Quizzes',Number(progress.warmUpPassed || 0),10],['Mastery Tests',Number(progress.masteryPassed || 0),5]].map(([label,count,total]) => `<div class="v2-eligibility-label"><span>${label}</span><strong>${count}/${total} passed</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="${label} passed" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${Math.max(0,Math.min(total,count))}"><i style="width:${Math.max(0,Math.min(100,count / total * 100))}%"></i></div>`).join('')}<button type="button" data-v2-view-simulation>View exam simulations →</button></section>
+        <section class="v2-rail-card"><h2>Exam Readiness %</h2><strong class="v2-readiness-value">${getV2ProgressStats(workspace).readiness}%</strong><p>Passed required tests ÷ total required tests × 100</p><div class="v2-rail-actions"><button type="button" data-v2-progress-snapshot>Progress Snapshot</button><button type="button" data-v2-progress-tracker>Progress Tracker</button></div></section>
     </aside></div>`;
     let mode = 'custom';
     const subjectSelect = host.querySelector('#v2-practice-subject'), testSelect = host.querySelector('#v2-practice-premade'), start = host.querySelector('#v2-practice-start');
@@ -167,7 +168,79 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         subjectSelect.focus();
     });
     host.querySelector('[data-v2-view-simulation]')?.addEventListener('click', () => $('test-bank-workspace-area').querySelector('[data-guided-simulation]')?.click());
+    host.querySelector('[data-v2-progress-snapshot]')?.addEventListener('click', () => openV2ProgressModal(workspace,'snapshot'));
+    host.querySelector('[data-v2-progress-tracker]')?.addEventListener('click', () => openV2ProgressModal(workspace,'tracker'));
     if (scrollToCard) host.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function getV2ProgressStats(workspace) {
+    const history = workspace.history || [], completed = history.filter(attempt => !attempt.cancelled && Number(attempt.totalItems) > 0);
+    const progress = workspace.simulationProgress || {};
+    const warm = Number(progress.warmUpPassed || 0), mastery = Number(progress.masteryPassed || 0);
+    const warmRequired = Number(progress.warmUpRequired || 10), masteryRequired = Number(progress.masteryRequired || 5);
+    const required = warmRequired + masteryRequired, passed = Math.min(warm,warmRequired) + Math.min(mastery,masteryRequired);
+    const average = completed.length ? Math.round(completed.reduce((sum,attempt) => sum + (Number(attempt.total) > 0 ? Number(attempt.score) / Number(attempt.total) * 100 : 0),0) / completed.length) : null;
+    const dayKey = date => new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Manila',year:'numeric',month:'2-digit',day:'2-digit'}).format(date);
+    const days = new Set(completed.map(attempt => new Date(attempt.takenAt)).filter(date => !Number.isNaN(date.getTime())).map(dayKey));
+    let cursor = new Date(), streak = 0;
+    if (!days.has(dayKey(cursor))) cursor = new Date(cursor.getTime() - 86400000);
+    while (days.has(dayKey(cursor))) { streak++; cursor = new Date(cursor.getTime() - 86400000); }
+    return {completed:completed.length,cancelled:history.filter(attempt => attempt.cancelled).length,questions:completed.reduce((sum,attempt) => sum + Number(attempt.totalItems || 0),0),average,streak,warm,mastery,warmRequired,masteryRequired,required,passed,readiness:required ? Math.round(passed / required * 100) : 0};
+}
+
+function openV2ProgressModal(workspace,view) {
+    const area = $('test-bank-workspace-area');
+    area.querySelector('.v2-progress-modal')?.remove();
+    const stats = getV2ProgressStats(workspace);
+    const dialog = document.createElement('dialog');
+    dialog.className = `v2-progress-modal ${view === 'tracker' ? 'v2-progress-wide' : ''}`;
+    dialog.setAttribute('aria-labelledby','v2-progress-modal-title');
+    const bars = [['Warm Up Quizzes',stats.warm,stats.warmRequired],['Mastery Tests',stats.mastery,stats.masteryRequired]].map(([label,count,total]) => `<div class="v2-eligibility-label"><span>${label} passed</span><strong>${count}/${total}</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="${label} passed" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${Math.min(total,count)}"><i style="width:${Math.min(100,count / total * 100)}%"></i></div>`).join('');
+    dialog.innerHTML = `<header class="v2-progress-modal-heading"><h2 id="v2-progress-modal-title">${view === 'snapshot' ? 'My Progress Snapshot' : 'Progress Tracker'}</h2><button type="button" data-v2-modal-close aria-label="Close progress modal">×</button></header>${view === 'snapshot' ? `<p>Your learning progress in ${escapeHtml(workspace.title)}.</p><div class="v2-snapshot-stats">${[[stats.completed,'Tests taken'],[stats.average === null ? '—' : `${stats.average}%`,'Average score'],[stats.questions,'Questions answered'],[stats.streak,'Day streak']].map(([value,label]) => `<div><strong>${value}</strong><span>${label}</span></div>`).join('')}</div><h3>SIMULATION UNLOCK PROGRESS</h3>${bars}<p>Pass both required totals to unlock Simulation. Results update after completed tests.</p>` : `<section class="test-bank-progress-report"><div class="v2-tracker-summary"><div><small>REQUIRED CUSTOM TESTS</small><h3>Progress Tracker</h3><p>Passed required tests ÷ total required tests × 100</p></div><div><strong>${stats.readiness}%</strong><span>Exam readiness</span></div></div><div class="test-bank-progress-stats">${[[stats.required,'Total required'],[stats.completed,'Completed attempts'],[stats.cancelled,'Cancelled'],[stats.passed,'Requirements passed']].map(([value,label]) => `<div><strong>${value}</strong><span>${label}</span></div>`).join('')}</div><div class="v2-tracker-tools"><input type="search" data-v2-record-search placeholder="Search progress records" aria-label="Search progress records"><label><input type="checkbox" data-v2-record-cancelled> Show Cancelled Tests</label></div><p data-v2-record-count aria-live="polite"></p><div class="test-bank-tracker-list" data-v2-record-list></div><div class="v2-tracker-pagination"><button type="button" data-v2-record-prev>Previous</button><span data-v2-record-page></span><button type="button" data-v2-record-next>Next</button></div></section>`}`;
+    area.appendChild(dialog);
+    dialog.querySelector('[data-v2-modal-close]').addEventListener('click',() => dialog.close());
+    dialog.addEventListener('close',() => dialog.remove(),{once:true});
+    dialog.addEventListener('click',event => { if (event.target === dialog) { const rect = dialog.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close(); } });
+    if (view === 'tracker') {
+        let page = 0;
+        const search = dialog.querySelector('[data-v2-record-search]'), cancelled = dialog.querySelector('[data-v2-record-cancelled]');
+        const history = workspace.history || [];
+        const render = () => {
+            const records = history.filter(attempt => (cancelled.checked || !attempt.cancelled) && `${attempt.title} ${attempt.coverage} ${attempt.testTypeLabel}`.toLowerCase().includes(search.value.trim().toLowerCase()));
+            page = Math.min(page,Math.max(0,Math.ceil(records.length / 5) - 1));
+            dialog.querySelector('[data-v2-record-count]').textContent = `${records.length} records`;
+            dialog.querySelector('[data-v2-record-page]').textContent = `Page ${page + 1} of ${Math.max(1,Math.ceil(records.length / 5))}`;
+            dialog.querySelector('[data-v2-record-prev]').disabled = page === 0;
+            dialog.querySelector('[data-v2-record-next]').disabled = (page + 1) * 5 >= records.length;
+            dialog.querySelector('[data-v2-record-list]').innerHTML = records.slice(page * 5,page * 5 + 5).map(attempt => {
+                const date = new Date(attempt.takenAt);
+                const takenAt = Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-US',{timeZone:'Asia/Manila',month:'short',day:'numeric',year:'numeric'});
+                const percent = Number(attempt.totalItems) > 0 ? Math.round(Number(attempt.correctItems || 0) / Number(attempt.totalItems) * 100) : 0;
+                const count = history.filter(item => item.quizId === attempt.quizId).length;
+                return `<article class="test-bank-tracker-row"><div class="test-bank-tracker-copy"><h3>${escapeHtml(attempt.title)} <span class="test-bank-tracker-taken-date">${takenAt ? `· (${takenAt})` : ''}</span></h3><div class="test-bank-tracker-subtitle">${escapeHtml(attempt.testTypeLabel || 'Test')} · ${Number(attempt.totalItems || 0)} questions · ${attempt.timeLimitMinutes ? `Timed (${Number(attempt.timeLimitMinutes)} minutes)` : 'Untimed'} · ${count} attempt${count === 1 ? '' : 's'}</div><p class="test-bank-tracker-coverage"><strong>SUBJECTS:</strong> ${escapeHtml(attempt.coverage || 'Not specified')}</p></div><div class="test-bank-tracker-metric"><small>SCORE</small><strong>${attempt.cancelled ? '—' : `${percent}%`}</strong></div><div class="test-bank-tracker-metric"><small>RESULT</small><strong class="${attempt.cancelled ? 'cancelled' : attempt.passed ? 'passed' : 'failed'}">${attempt.cancelled ? 'Cancelled' : attempt.passed ? 'Passed' : 'Failed'}</strong></div><div class="test-bank-tracker-metric"><small>RANK</small><strong>${attempt.quizType === 'premade' ? escapeHtml(attempt.rank ?? '--') : '--'}</strong></div><div class="test-bank-tracker-action">${attempt.cancelled ? '<small>No review available</small>' : `<div class="test-bank-tracker-buttons"><button type="button" data-v2-record-review="${Number(attempt.id)}">Review</button>${attempt.quizType === 'subject' ? '' : `<button type="button" data-v2-record-retake="${Number(attempt.id)}">Re-take</button>`}</div>`}</div></article>`;
+            }).join('') || '<p>No matching Test Bank attempts.</p>';
+        };
+        search.addEventListener('input',() => { page = 0; render(); });
+        cancelled.addEventListener('change',() => { page = 0; render(); });
+        dialog.querySelector('[data-v2-record-prev]').addEventListener('click',() => { page--; render(); });
+        dialog.querySelector('[data-v2-record-next]').addEventListener('click',() => { page++; render(); });
+        dialog.querySelector('[data-v2-record-list]').addEventListener('click',async event => {
+            const button = event.target.closest('[data-v2-record-review], [data-v2-record-retake]');
+            if (!button) return;
+            const attempt = history.find(item => Number(item.id) === Number(button.dataset.v2RecordReview || button.dataset.v2RecordRetake));
+            if (!attempt || attempt.cancelled) return;
+            if (button.dataset.v2RecordReview) {
+                dialog.close();
+                const title = $('quiz-assessment-title'); if (title) title.textContent = attempt.title;
+                showAssessmentSummary({score:attempt.score,total:attempt.total,passed:attempt.passed,questions:attempt.questions || [],incorrectQuestions:(attempt.questions || []).filter(question => !question.correct)},async () => { showScreen('dashboard-screen'); await openTestBankWorkspace(workspace.id,'v2'); openV2ProgressModal(workspace,'tracker'); });
+            } else if (attempt.quizType !== 'subject') {
+                dialog.close();
+                if (await showTestBankInstructions({title:attempt.title,itemCount:attempt.totalItems,timeLimitMinutes:attempt.timeLimitMinutes,coverage:[attempt.coverage || 'Mixed']})) await startTestBankPremadeQuiz(workspace.id,Number(attempt.quizId),button);
+            }
+        });
+        render();
+    }
+    dialog.showModal();
 }
 
 function renderV2SubjectCarousel(container,workspace,itemCount) {
