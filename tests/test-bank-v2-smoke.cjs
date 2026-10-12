@@ -73,6 +73,14 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(carousel.innerHTML.includes('Pre-Made Tests by subject'));
     assert(!carousel.innerHTML.includes('approved practice questions with detailed rationales'));
     assert(carousel.innerHTML.includes('data-v2-subject-start="1"'));
+    assert(!carousel.innerHTML.includes('Subject progress'));
+    assert(!carousel.innerHTML.includes('Average'));
+    context.renderV2SubjectCarousel(carousel,{...workspace,v2SubjectResults:[{subjectId:1,phase:'warm_up',score:30}]},10);
+    assert(carousel.innerHTML.includes('30%'));
+    assert(carousel.innerHTML.includes('Score'));
+    assert(carousel.innerHTML.includes('disabled>Completed'));
+    context.renderV2SubjectCarousel(carousel,{...workspace,v2SubjectResults:[{subjectId:1,phase:'warm_up',score:30}]},20);
+    assert(!carousel.innerHTML.includes('30%'));
     context.renderV2PracticeCard(workspace,20);
     assert(host.innerHTML.includes('Start Mastery Test'));
     assert(host.innerHTML.includes('BUILD YOUR UNDERSTANDING'));

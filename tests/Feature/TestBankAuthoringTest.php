@@ -395,11 +395,21 @@ class TestBankAuthoringTest extends TestCase
         $this->assertSame([$subject->id], $quiz->subject_ids);
         $this->assertFalse($quiz->questions()->whereKey($otherQuestion->id)->exists());
         $endpoint = "/api/test-banks/{$bank->id}/subjects/{$subject->id}/quizzes";
-        $this->postJson($endpoint, ['quiz_type' => 'warm_up', 'reuse_set' => true])->assertOk()->assertJsonPath('quizId', $quiz->id);
+        $warmId = $this->postJson($endpoint, ['quiz_type' => 'warm_up', 'reuse_set' => true])->assertOk()->json('quizId');
+        $this->postJson($endpoint, ['quiz_type' => 'warm_up', 'reuse_set' => true])->assertOk()->assertJsonPath('quizId', $warmId);
         $masteryId = $this->postJson($endpoint, ['quiz_type' => 'mastery', 'reuse_set' => true])->assertOk()->json('quizId');
         $this->assertNotSame($quiz->id, $masteryId);
         $this->postJson($endpoint, ['quiz_type' => 'mastery', 'reuse_set' => true])->assertOk()->assertJsonPath('quizId', $masteryId);
-        $this->assertSame(2, $bank->premadeQuizzes()->where('quiz_type', 'subject')->count());
+        $this->assertSame(3, $bank->premadeQuizzes()->where('quiz_type', 'subject')->count());
+        $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/questions")->assertOk();
+        $this->postJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/submit", ['answers' => array_fill(0, 10, 0)])->assertOk();
+        $this->postJson($endpoint, ['quiz_type' => 'warm_up', 'reuse_set' => true])->assertStatus(422);
+        $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/questions")->assertStatus(422);
+        $this->postJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/submit", ['answers' => array_fill(0, 10, 0)])->assertStatus(422);
+        $this->postJson($endpoint, ['quiz_type' => 'mastery', 'reuse_set' => true])->assertOk()->assertJsonPath('quizId', $masteryId);
+        $results = $this->getJson("/api/test-banks/{$bank->id}/workspace")->assertOk()->json('workspace.v2SubjectResults');
+        $this->assertSame('warm_up', $results[0]['phase']);
+        $this->assertEquals(100, $results[0]['score']);
 
         $this->actingAs($learner)
             ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")

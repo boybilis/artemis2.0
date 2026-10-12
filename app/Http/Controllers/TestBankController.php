@@ -274,6 +274,13 @@ class TestBankController extends Controller
                 'unlocked' => $warmUpPassed >= 10 && $masteryPassed >= 5,
             ],
             'subjects' => $subjects,
+            'v2SubjectResults' => $attempts->sortBy('created_at')->filter(fn ($attempt) => $attempt->quiz?->quiz_type === 'subject'
+                && $attempt->total > 0 && !data_get($attempt->review_data, 'cancelled', false))
+                ->map(fn ($attempt) => [
+                    'subjectId' => collect($attempt->quiz->subject_ids)->first(),
+                    'phase' => str_ends_with($attempt->quiz->title, 'Mastery Test') ? 'mastery' : 'warm_up',
+                    'score' => (float) $attempt->points_possible > 0 ? round((float) $attempt->points_earned / (float) $attempt->points_possible * 100, 1) : 0,
+                ])->unique(fn ($result) => $result['subjectId'].':'.$result['phase'])->values(),
             'premadeTests' => $testBank->premadeQuizzes->map(fn ($quiz) => [
                 'id' => $quiz->id, 'title' => $quiz->title, 'description' => $quiz->description,
                 'itemCount' => $quiz->questions_count, 'subjectIds' => $quiz->subject_ids,
@@ -355,7 +362,13 @@ class TestBankController extends Controller
         $itemCount = $data['quiz_type'] === 'mastery' ? 20 : 10;
         if (!empty($data['reuse_set'])) {
             $typeLabel = $data['quiz_type'] === 'mastery' ? 'Mastery Test' : 'Warm-up';
+            $completed = TestBankQuizAttempt::where('user_id', $user->id)->where('test_bank_id', $testBank->id)
+                ->where('total', '>', 0)->whereHas('quiz', fn ($query) => $query->where('quiz_type', 'subject')
+                    ->whereJsonContains('subject_ids', $subject->id)->where('title', 'like', '% · '.$typeLabel))
+                ->get()->contains(fn ($attempt) => !data_get($attempt->review_data, 'cancelled', false));
+            abort_if($completed, 422, 'This pre-made subject test has already been completed. Each phase allows one completed attempt per subject.');
             $existing = $testBank->premadeQuizzes()->where('quiz_type', 'subject')
+                ->where('description', 'V2 one-time subject test.')
                 ->where('owner_user_id', $user->id)->where('status', 'active')
                 ->where('title', "{$subject->title} · {$typeLabel}")
                 ->whereJsonContains('subject_ids', $subject->id)
@@ -380,7 +393,7 @@ class TestBankController extends Controller
                 'quiz_type' => 'subject',
                 'owner_user_id' => $user->id,
                 'title' => "{$subject->title} · {$typeLabel}",
-                'description' => 'Subject-focused learner practice test.',
+                'description' => !empty($data['reuse_set']) ? 'V2 one-time subject test.' : 'Subject-focused learner practice test.',
                 'item_count' => $questionIds->count(),
                 'time_limit_minutes' => null,
                 'subject_ids' => [$subject->id],
@@ -929,6 +942,11 @@ class TestBankController extends Controller
 
     private function guardLearnerQuiz($user, TestBank $testBank, TestBankQuiz $quiz): void
     {
+        if ($quiz->description === 'V2 one-time subject test.') {
+            $completed = $quiz->attempts()->where('user_id', $user->id)->where('total', '>', 0)->get()
+                ->contains(fn ($attempt) => !data_get($attempt->review_data, 'cancelled', false));
+            abort_if($completed, 422, 'This pre-made subject test can only be completed once.');
+        }
         $belongsToLearner = $quiz->quiz_type === 'premade'
             || (in_array($quiz->quiz_type, ['learner', 'subject'], true) && $quiz->owner_user_id === $user->id);
         abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active' && $belongsToLearner, 404);
