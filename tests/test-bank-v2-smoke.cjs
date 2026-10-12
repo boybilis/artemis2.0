@@ -34,6 +34,9 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(area.innerHTML.includes('Select Simulation'));
     context.renderV2SimulationCard({...workspace, simulationProgress:{warmUpPassed:7,masteryPassed:3,unlocked:false}});
     assert(host.innerHTML.includes('7/10 passed'));
+    assert(host.innerHTML.includes('<strong>150</strong>'));
+    assert(host.innerHTML.includes('300 minutes'));
+    assert(!host.innerHTML.includes('100–150'));
     assert(host.innerHTML.includes('3/5 passed'));
     assert(host.innerHTML.includes('Pass 3 more distinct Warm Up Quizzes and 2 more distinct Mastery Tests to unlock.'));
     assert.equal((host.innerHTML.match(/>Locked<\/button>/g) || []).length,2);
