@@ -466,13 +466,15 @@ class TestBankController extends Controller
 
         $attemptKey = "test_bank_quiz_{$user->id}_{$quiz->id}";
         $deadlineKey = "test_bank_quiz_deadline_{$user->id}_{$quiz->id}";
+        $choiceKey = "test_bank_quiz_choices_{$user->id}_{$quiz->id}";
         $offset = max(0, (int) $request->query('offset', 0));
         $lazyLoad = $this->isSimulationQuiz($quiz);
         $serialize = fn (TestBankQuestion $question) => [
             'id' => $question->id,
             'question' => $question->question,
             'imageUrl' => $question->image_path ? asset('storage/'.$question->image_path) : null,
-            'options' => $question->options,
+            'options' => collect(session()->get($choiceKey.'.'.$question->id, array_keys($question->options)))
+                ->map(fn ($index) => $question->options[$index])->values()->all(),
             'responseType' => 'single',
             'maximumPoints' => (float) $question->points,
         ];
@@ -499,6 +501,12 @@ class TestBankController extends Controller
         if ($quiz->randomize_questions) $questions = $questions->shuffle();
         if ($questions->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'This premade test does not have active questions yet.'], 422);
+        }
+        session()->forget($choiceKey);
+        if ($request->boolean('shuffle_choices')) {
+            session()->put($choiceKey, $questions->mapWithKeys(fn ($question) => [
+                $question->id => collect(array_keys($question->options))->shuffle()->values()->all(),
+            ])->all());
         }
 
         $questionIds = $questions->pluck('id')->all();
@@ -530,6 +538,7 @@ class TestBankController extends Controller
 
         $ids = session()->pull("test_bank_quiz_{$user->id}_{$quiz->id}", []);
         $deadline = session()->pull("test_bank_quiz_deadline_{$user->id}_{$quiz->id}");
+        $choiceOrders = session()->pull("test_bank_quiz_choices_{$user->id}_{$quiz->id}", []);
         if (!$ids) return response()->json(['success' => false, 'message' => 'No active Test Bank attempt was found. Please start the test again.'], 422);
         if ($deadline && now()->timestamp > ((int) $deadline + 30)) {
             return response()->json(['success' => false, 'message' => 'The time limit for this Test Bank attempt has expired.'], 422);
@@ -546,7 +555,12 @@ class TestBankController extends Controller
         foreach ($ids as $index => $id) {
             if (!$question = $questions->get($id)) continue;
             $submitted = $request->input("answers.$index");
-            $correct = (int) $submitted === (int) $question->correct_answer;
+            if (isset($choiceOrders[$id])) {
+                $submitted = is_numeric($submitted) ? ($choiceOrders[$id][(int) $submitted] ?? null) : null;
+                $correct = is_numeric($submitted) && (int) $submitted === (int) $question->correct_answer;
+            } else {
+                $correct = (int) $submitted === (int) $question->correct_answer;
+            }
             $points = (float) $question->points;
             $possible += $points;
             if ($correct) { $score++; $earned += $points; }

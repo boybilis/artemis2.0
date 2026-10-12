@@ -572,12 +572,25 @@ class TestBankAuthoringTest extends TestCase
         $this->assertSame(2, $quiz->questions()->count());
 
         for ($attempt = 1; $attempt <= 3; $attempt++) {
+            $questions = $this->actingAs($learner)
+                ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions".($attempt > 1 ? '?shuffle_choices=1' : ''))
+                ->assertOk()->assertJsonPath('timeLimitMinutes', 15)->json('questions');
+            $answers = array_map(function ($question) {
+                $this->assertEqualsCanonicalizing(['Correct', 'Wrong'], $question['options']);
+                return array_search('Correct', $question['options'], true);
+            }, $questions);
             $this->actingAs($learner)
-                ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")
-                ->assertOk()->assertJsonPath('timeLimitMinutes', 15);
-            $this->actingAs($learner)
-                ->postJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/submit", ['answers' => [0, 0]])
+                ->postJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/submit", ['answers' => $answers])
                 ->assertOk();
+            $saved = TestBankQuizAttempt::where('test_bank_quiz_id', $quiz->id)->latest('id')->firstOrFail();
+            $this->assertSame(2, $saved->score);
+            $this->assertSame('Correct', $saved->review_data[0]['learnerAnswer']);
+            $this->assertSame('Correct', $saved->review_data[0]['correctAnswer']);
+            $this->assertEqualsCanonicalizing($quiz->questions()->pluck('test_bank_questions.id')->all(), array_column($questions, 'id'));
+        }
+        foreach ($quiz->questions as $question) {
+            $this->assertSame(['Correct', 'Wrong'], $question->options);
+            $this->assertSame(0, (int) $question->correct_answer);
         }
 
         $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");

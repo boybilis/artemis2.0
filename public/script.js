@@ -3367,7 +3367,7 @@ async function startTestBankPremadeQuiz(testBankId, quizId, button) {
     const originalText = button?.textContent || 'Start Test';
     if (button) { button.disabled = true; button.textContent = 'Loading…'; }
     try {
-        const data = await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/questions`);
+        const data = await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/questions${activeTestBankDesign === 'v2' ? '?shuffle_choices=1' : ''}`);
         activeTestBankId = testBankId;
         activeTestBankQuizId = quizId;
         testBankExamActive = true;
