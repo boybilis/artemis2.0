@@ -180,11 +180,14 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     if (scrollToCard) host.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-function renderV2GeneratedQuizzes(container,workspace,itemCount) {
+function renderV2GeneratedQuizzes(container,workspace,itemCount,page = 0) {
     if (!container) return;
     const quizzes = (workspace.learnerQuizzes || []).filter(quiz => /Mastery Test/i.test(quiz.title) ? itemCount === 20 : /Warm Up Quiz/i.test(quiz.title) ? itemCount === 10 : Number(quiz.itemCount) === itemCount);
+    const pages = Math.max(1,Math.ceil(quizzes.length / 5));
+    page = Math.max(0,Math.min(page,pages - 1));
+    container.querySelectorAll('.accordion-collapse').forEach(panel => window.bootstrap?.Collapse?.getInstance(panel)?.dispose());
     container.id = `v2-generated-accordion-${itemCount}`;
-    container.innerHTML = `<header class="v2-generated-heading"><h2>My ${itemCount === 20 ? 'Mastery Tests' : 'Warm Up Quizzes'}</h2><span>${quizzes.length} created</span></header>${quizzes.length ? quizzes.map(quiz => {
+    container.innerHTML = `<header class="v2-generated-heading"><h2>My ${itemCount === 20 ? 'Mastery Tests' : 'Warm Up Quizzes'}</h2><span>${quizzes.length} created</span></header>${quizzes.length ? quizzes.slice(page * 5,page * 5 + 5).map(quiz => {
         const attempts = (workspace.history || []).filter(attempt => Number(attempt.quizId) === Number(quiz.id)).sort((a,b) => new Date(a.takenAt) - new Date(b.takenAt) || Number(a.id) - Number(b.id));
         const completed = attempts.filter(attempt => !attempt.cancelled && Number(attempt.totalItems) > 0);
         const copy = `<div><h3>${escapeHtml(quiz.title)}</h3><p>${Number(quiz.itemCount)} items · ${quiz.timeLimitMinutes ? `Timed (${Number(quiz.timeLimitMinutes)} minutes)` : 'Un-timed'} · ${completed.length} completed attempts</p><p>Subjects: ${escapeHtml(quiz.coverageLabel || 'Mixed')}</p></div>`;
@@ -197,7 +200,9 @@ function renderV2GeneratedQuizzes(container,workspace,itemCount) {
             const percent = Number(attempt.total) > 0 ? Math.round(Number(attempt.score) / Number(attempt.total) * 100) : 0;
             return `<article class="v2-generated-attempt"><div><strong>${number}${suffix} attempt</strong><p>${escapeHtml(takenAt)}</p></div><div><strong>${attempt.cancelled ? '—' : `${percent}%`}</strong><span class="${attempt.cancelled ? '' : attempt.passed ? 'passed' : 'failed'}">${attempt.cancelled ? 'Cancelled' : attempt.passed ? 'Passed' : 'Failed'}</span></div>${attempt.cancelled ? '' : `<button type="button" data-v2-generated-review="${Number(attempt.id)}">Review</button>`}</article>`;
         }).join('')}<button type="button" data-v2-generated-start="${Number(quiz.id)}">Retake Quiz</button></div></div></article>`;
-    }).join('') : '<p>No quizzes created in this phase yet. Create your first quiz above.</p>'}`;
+    }).join('') : '<p>No quizzes created in this phase yet. Create your first quiz above.</p>'}<nav class="v2-generated-pagination" aria-label="Created quiz pages"><button type="button" data-v2-generated-prev ${page === 0 ? 'disabled' : ''}>Previous</button><span aria-live="polite">Page ${page + 1} of ${pages}</span><button type="button" data-v2-generated-next ${page >= pages - 1 ? 'disabled' : ''}>Next</button></nav>`;
+    container.querySelector?.('[data-v2-generated-prev]')?.addEventListener('click',() => { if (page > 0) renderV2GeneratedQuizzes(container,workspace,itemCount,page - 1); });
+    container.querySelector?.('[data-v2-generated-next]')?.addEventListener('click',() => { if (page < pages - 1) renderV2GeneratedQuizzes(container,workspace,itemCount,page + 1); });
     container.querySelectorAll('[data-v2-generated-start]').forEach(button => button.addEventListener('click',async () => {
         const quiz = quizzes.find(quiz => Number(quiz.id) === Number(button.dataset.v2GeneratedStart));
         if (!quiz || button.disabled) return;
