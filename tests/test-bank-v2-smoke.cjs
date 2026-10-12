@@ -78,5 +78,15 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     const css = fs.readFileSync('public/test-bank-v2.css','utf8');
     assert(css.includes('grid-template-columns:minmax(0,3fr) minmax(0,1fr)'));
     assert(css.includes('@media(max-width:900px)'));
+    assert(css.includes('-webkit-line-clamp:2'));
+    const heading = {clientWidth:150,textContent:'A long subject title',style:{}};
+    Object.defineProperty(heading,'scrollHeight',{get(){return parseFloat(heading.style.fontSize) > 14 ? 72 : 38;}});
+    const titleContainer = Object.assign(element(),{querySelector(){return null;},querySelectorAll(selector){return selector === '.v2-subject-card h3' ? [heading] : [];}});
+    context.document = {documentElement:{}};
+    context.getComputedStyle = () => ({fontSize:'16px'});
+    context.renderV2SubjectCarousel(titleContainer,workspace,10);
+    assert(parseFloat(heading.style.fontSize) <= 14);
+    assert.equal(heading.style.webkitLineClamp,'2');
+    assert.equal(heading.style.height,'');
     console.log('V2 tab removal, warm-up card, custom and subject quiz flows passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });

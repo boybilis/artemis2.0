@@ -170,6 +170,24 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
 
 function renderV2SubjectCarousel(container,workspace,itemCount) {
     if (!container) return;
+    container.v2TitleObserver?.disconnect();
+    const fitTitles = () => {
+        container.querySelectorAll('.v2-subject-card h3').forEach(heading => {
+            if (!heading.clientWidth) return;
+            heading.title = heading.textContent;
+            heading.style.webkitLineClamp = 'unset';
+            heading.style.height = 'auto';
+            const base = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            let size = base * 1.05;
+            heading.style.fontSize = `${size}px`;
+            while (size > base * .75 && heading.scrollHeight > size * 1.4 * 2 + 1) {
+                size = Math.max(base * .75,size - .5);
+                heading.style.fontSize = `${size}px`;
+            }
+            heading.style.webkitLineClamp = '2';
+            heading.style.height = '';
+        });
+    };
     const subjects = (workspace.subjects || []).filter(subject => Number(subject.questionCount) > 0);
     let page = 0;
     const render = () => {
@@ -188,8 +206,19 @@ function renderV2SubjectCarousel(container,workspace,itemCount) {
             } catch(error) { showToast(error.message || 'Unable to prepare this test.','error'); }
             finally { button.disabled = false; }
         }));
+        fitTitles();
     };
     render();
+    if (typeof ResizeObserver !== 'undefined') {
+        let lastWidth = 0;
+        container.v2TitleObserver = new ResizeObserver(entries => {
+            const width = entries[0].contentRect.width;
+            if (width !== lastWidth) { lastWidth = width; fitTitles(); }
+            if (!container.isConnected) container.v2TitleObserver.disconnect();
+        });
+        container.v2TitleObserver.observe(container);
+    }
+    if (typeof document !== 'undefined') document.fonts?.ready.then(() => { if (container.isConnected) fitTitles(); });
 }
 
 function renderTestBankV2Sidebar() {

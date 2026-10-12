@@ -4,7 +4,7 @@
 .test-bank-v2 .v2-carousel-heading button{margin-left:.5rem;padding:.5rem .8rem;border:1px solid var(--border);border-radius:10px;background:#0b3d60;color:#fff;cursor:pointer}.test-bank-v2 .v2-carousel-heading button:disabled{opacity:.4;cursor:default}
 .test-bank-v2 .v2-subject-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
 .test-bank-v2 .v2-subject-card{padding:1rem;border:1px solid var(--border);border-radius:16px;min-width:0;overflow-wrap:anywhere}
-.test-bank-v2 .v2-subject-card h3{margin:1rem 0}.test-bank-v2 .v2-subject-mark{color:#11a7c0;font-size:2rem}
+.test-bank-v2 .v2-practice-card .v2-subject-card h3{margin:1rem 0;font-size:1.05rem;line-height:1.4;height:2.94rem;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}.test-bank-v2 .v2-subject-mark{color:#11a7c0;font-size:2rem}
 .test-bank-v2 .v2-subject-stats{display:flex;justify-content:space-between;border-block:1px solid var(--border);padding:1rem 0;margin:1rem 0;gap:.5rem}.test-bank-v2 .v2-subject-stats span{display:flex;flex-direction:column;gap:.4rem;font-size:.8rem}.test-bank-v2 .v2-subject-stats strong{font-size:1.3rem}
 @media(max-width:1100px){.test-bank-v2 .v2-subject-grid{grid-template-columns:minmax(0,1fr)}}
 .test-bank-v2 .v2-subject-label{display:block;font-weight:700;font-size:.85rem;margin:.9rem 0 .6rem}
