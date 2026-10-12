@@ -202,6 +202,12 @@ function renderV2GeneratedQuizzes(container,workspace,itemCount) {
         if (!quiz || button.disabled) return;
         if (await showTestBankInstructions({title:quiz.title,itemCount:quiz.itemCount,timeLimitMinutes:quiz.timeLimitMinutes,coverage:[quiz.coverageLabel || 'Mixed']})) await startTestBankPremadeQuiz(workspace.id,Number(quiz.id),button);
     }));
+    container.querySelectorAll('.v2-generated-accordion').forEach(accordion => accordion.addEventListener('toggle',() => {
+        if (!accordion.open) return;
+        container.querySelectorAll('.v2-generated-accordion').forEach(other => {
+            if (other !== accordion) other.open = false;
+        });
+    }));
     container.querySelectorAll('[data-v2-generated-review]').forEach(button => button.addEventListener('click',() => {
         const attempt = (workspace.history || []).find(attempt => Number(attempt.id) === Number(button.dataset.v2GeneratedReview));
         if (!attempt || attempt.cancelled) return;

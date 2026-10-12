@@ -47,6 +47,13 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(savedList.innerHTML.includes('80%'));
     assert(savedList.innerHTML.includes('data-v2-generated-review="11"'));
     assert(savedList.innerHTML.includes('Retake Quiz'));
+    const accordionA = Object.assign(element(),{open:false}), accordionB = Object.assign(element(),{open:true});
+    const accordionList = Object.assign(element(),{querySelectorAll(selector){return selector === '.v2-generated-accordion' ? [accordionA,accordionB] : [];}});
+    context.renderV2GeneratedQuizzes(accordionList,workspace,10);
+    accordionA.open = true; accordionA.listeners.toggle();
+    assert(!accordionB.open,'Opening a quiz closes the previously expanded quiz');
+    accordionB.open = true; accordionB.listeners.toggle();
+    assert(!accordionA.open);
     context.renderV2GeneratedQuizzes(savedList,{...workspace,learnerQuizzes:[{id:2,title:'Mastery Test #1',itemCount:20}]},20);
     assert(savedList.innerHTML.includes('Mastery Test #1'));
     const progressStats = context.getV2ProgressStats({...workspace,simulationProgress:{warmUpPassed:7,masteryPassed:3},history:[{totalItems:10,total:10,score:5,cancelled:false},{totalItems:20,total:20,score:15,cancelled:false},{cancelled:true,totalItems:10}]});
