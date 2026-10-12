@@ -1,4 +1,24 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-practice-area{scroll-margin-top:1rem}
+.test-bank-v2 .v2-practice-card{margin:1.5rem 0;padding:2rem;border:1px solid var(--border);border-radius:22px;background:var(--surface-solid);color:var(--text)}
+.test-bank-v2 .v2-practice-eyebrow{display:inline-flex;border-radius:999px;padding:.4rem .8rem;background:rgba(17,167,192,.12);color:#087f93;font-weight:800;font-size:.8rem}
+.test-bank-v2 .v2-practice-card h2{font-size:1.7rem;margin:1.2rem 0}
+.test-bank-v2 .v2-practice-description{color:var(--text-muted);font-size:1rem;line-height:1.7}
+.test-bank-v2 .v2-practice-facts{display:flex;flex-wrap:wrap;gap:1.8rem;border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:1.3rem 0;margin:1.6rem 0}
+.test-bank-v2 .v2-practice-facts div{display:flex;flex-direction:column;gap:.4rem;min-width:145px}
+.test-bank-v2 .v2-practice-facts strong{font-size:1.6rem}
+.test-bank-v2 .v2-practice-facts span,.test-bank-v2 .v2-practice-note{color:var(--text-muted);font-size:.85rem;line-height:1.6}
+.test-bank-v2 .v2-practice-card h3{font-size:1.15rem;margin:0 0 1.4rem}
+.test-bank-v2 .v2-practice-modes{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;padding-bottom:1rem;margin-bottom:1.3rem;border-bottom:1px solid var(--border)}
+.test-bank-v2 .v2-practice-modes button,.test-bank-v2 .v2-start{border:0;border-radius:10px;padding:.85rem 1rem;font:inherit;font-weight:750;cursor:pointer}
+.test-bank-v2 .v2-practice-modes button{background:rgba(47,103,143,.08);color:var(--text-muted)}
+.test-bank-v2 .v2-practice-modes button[aria-pressed="true"],.test-bank-v2 .v2-start{background:#11a7c0;color:#fff}
+.test-bank-v2 .v2-practice-card label{display:block;font-weight:700;font-size:.85rem;margin:.9rem 0 .6rem}
+.test-bank-v2 .v2-practice-card select{width:100%;padding:1rem;border:1px solid var(--border);border-radius:10px;background:var(--surface-solid);color:var(--text);font:inherit}
+.test-bank-v2 .v2-start{margin:1.4rem .5rem 1rem 0}
+.test-bank-v2 .v2-start:disabled{opacity:.5;cursor:not-allowed}
+.test-bank-v2 .v2-practice-modes button:focus-visible,.test-bank-v2 .v2-start:focus-visible{outline:2px solid #087f93;outline-offset:3px}
+@media(max-width:600px){.test-bank-v2 .v2-practice-card{padding:1.2rem}.test-bank-v2 .v2-practice-modes{grid-template-columns:1fr}.test-bank-v2 .v2-practice-facts{gap:1rem}}
 @scope (.test-bank-v2) {
 :root {
     --bg: #041e32; --bg2: #062a43; --surface: rgba(255,255,255,0.06);
