@@ -1,4 +1,7 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .test-bank-study-phase button[data-guided-simulation]{border:2px solid #11a7c0;border-radius:999px;padding:.5rem .95rem!important;background:transparent;color:#11a7c0;line-height:1.4;font-size:calc(.78rem + 1pt)}
+.test-bank-v2 .test-bank-study-phase.active button[data-guided-simulation]{background:#11a7c0;color:#fff}
+.test-bank-v2 .test-bank-study-phase.active button[data-guided-simulation]:hover{background:#0e94aa}
 .test-bank-v2 .v2-simulation-card .v2-practice-eyebrow{background:rgba(244,119,33,.14);color:#994306}
 .test-bank-v2 .v2-simulation-eligibility{padding:1.2rem;background:rgba(17,167,192,.07);border-radius:14px;margin-bottom:1.2rem;color:var(--text-muted)}
 .test-bank-v2 .v2-eligibility-label{display:flex;justify-content:space-between;gap:1rem;margin:1rem 0}
