@@ -1,5 +1,10 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
-.test-bank-v2 .v2-carousel-heading{display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}
+.test-bank-v2 .v2-carousel-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.75rem 1rem;align-items:start;margin-bottom:1rem}
+.test-bank-v2 .v2-carousel-heading>div:first-child{display:contents}
+.test-bank-v2 .v2-carousel-heading h3{grid-column:1;grid-row:1;margin:0;min-width:0;overflow-wrap:anywhere}
+.test-bank-v2 .v2-carousel-heading>div:last-child{grid-column:2;grid-row:1;display:flex;align-items:center;justify-content:flex-end;gap:.5rem;white-space:nowrap}
+.test-bank-v2 .v2-carousel-heading>div:first-child>p{grid-column:1 / -1;grid-row:2;margin:0}
+@media(max-width:600px){.test-bank-v2 .v2-carousel-heading{grid-template-columns:minmax(0,1fr)}.test-bank-v2 .v2-carousel-heading>div:last-child{grid-column:1;grid-row:1;justify-self:end}.test-bank-v2 .v2-carousel-heading h3{grid-column:1;grid-row:2}.test-bank-v2 .v2-carousel-heading>div:first-child>p{grid-column:1;grid-row:3}.test-bank-v2 .v2-carousel-heading>div:last-child>span{font-size:.8rem}}
 .test-bank-v2 .v2-carousel-heading p,.test-bank-v2 .v2-subject-card p{color:var(--text-muted);font-size:.9rem;line-height:1.6}
 .test-bank-v2 .v2-carousel-heading button{margin-left:.5rem;padding:.5rem .8rem;border:1px solid var(--border);border-radius:10px;background:#0b3d60;color:#fff;cursor:pointer}.test-bank-v2 .v2-carousel-heading button:disabled{opacity:.4;cursor:default}
 .test-bank-v2 .v2-subject-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}
