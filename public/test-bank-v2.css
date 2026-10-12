@@ -1,4 +1,6 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-generated-quizzes button[data-v2-generated-start]:not(:disabled):hover,.test-bank-v2 .v2-generated-quizzes button[data-v2-generated-review]:not(:disabled):hover{background:#079383;color:#fff}
+.test-bank-v2 .v2-generated-quizzes button[data-v2-generated-start]:focus-visible,.test-bank-v2 .v2-generated-quizzes button[data-v2-generated-review]:focus-visible{background:#079383;color:#fff;outline:2px solid #079383;outline-offset:3px}
 .test-bank-v2 .v2-generated-quizzes .v2-generated-attempts{padding:.75rem 1rem}
 .test-bank-v2 .v2-generated-quizzes .v2-generated-attempt{padding:.65rem 0;gap:.75rem;font-size:.85rem;line-height:1.45}
 .test-bank-v2 .v2-generated-quizzes .v2-generated-attempt strong{font-size:.9rem}
