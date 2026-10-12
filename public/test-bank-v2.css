@@ -1,4 +1,5 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-progress-modal .v2-tracker-tools{margin-bottom:1.1rem}
 .test-bank-v2 .v2-rail-actions:has([data-v2-progress-snapshot]){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.4rem}
 .test-bank-v2 .v2-rail-actions button[data-v2-progress-snapshot],.test-bank-v2 .v2-rail-actions button[data-v2-progress-tracker]{min-width:0;padding:.6rem .35rem;font-size:clamp(.58rem,.65vw,.72rem);white-space:nowrap;letter-spacing:-.02em}
 .test-bank-v2 .v2-rail-card button[data-v2-progress-snapshot]{border-radius:999px;background:#079383;border-color:#079383;color:#fff}

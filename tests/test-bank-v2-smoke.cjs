@@ -55,6 +55,12 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(modalNodes['[data-v2-record-list]'].innerHTML.includes('30%'));
     assert(modalNodes['[data-v2-record-list]'].innerHTML.includes('data-v2-record-review'));
     assert(!modalNodes['[data-v2-record-list]'].innerHTML.includes('data-v2-record-retake'));
+    context.openV2ProgressModal({...workspace,history:[{id:2,quizId:42,title:'Second result',attemptNumber:2,totalItems:10,correctItems:8,takenAt:'2026-10-13'},{id:1,quizId:42,title:'First result',attemptNumber:1,totalItems:10,correctItems:5,takenAt:'2026-10-12'}]},'tracker');
+    const historyMarkup = modalNodes['[data-v2-record-list]'].innerHTML;
+    assert(historyMarkup.includes('2nd attempt'));
+    assert(historyMarkup.includes('1st attempt'));
+    assert(historyMarkup.includes('80%'));
+    assert(historyMarkup.includes('50%'));
     delete context.document;
     assert(!area.innerHTML.includes('data-test-bank-tab'));
     assert(!area.innerHTML.includes('test-bank-builder-form'));
