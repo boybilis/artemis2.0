@@ -1,4 +1,13 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-row{display:grid;grid-template-columns:minmax(0,1fr) 90px 100px 65px 190px;align-items:center;gap:1rem;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface-solid)}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-copy,.test-bank-v2 .v2-progress-modal .test-bank-tracker-action{grid-column:auto}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-copy h3{margin:0;font-size:1rem;line-height:1.45}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-subtitle{margin-top:.4rem;font-size:.8rem;color:var(--text-muted)}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-metric small{font-size:.75rem;font-weight:600}.test-bank-v2 .v2-progress-modal .test-bank-tracker-metric strong{font-size:1.15rem}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-row .failed{color:#ef4444}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-action .test-bank-retake-badge{font-size:.8rem;font-weight:500;padding:.25rem .6rem}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-action button{min-width:0;min-height:40px;padding:.5rem .8rem;border:0;font-size:.8rem;font-weight:700}
+@media(max-width:850px){.test-bank-v2 .v2-progress-modal .test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-v2 .v2-progress-modal .test-bank-tracker-copy,.test-bank-v2 .v2-progress-modal .test-bank-tracker-action{grid-column:1 / -1}}
 .test-bank-v2 .v2-readiness-value{display:block;color:#994306;font-size:2.3rem}
 .test-bank-v2 dialog.v2-progress-modal{box-sizing:border-box;width:min(680px,calc(100vw - 2rem));max-width:none;max-height:calc(100dvh - 2rem);margin:auto;padding:1.75rem;border:1px solid var(--border);border-radius:20px;background:var(--surface-solid);color:var(--text);overflow:auto}
 .test-bank-v2 dialog.v2-progress-wide{width:min(1200px,calc(100vw - 2rem))}
