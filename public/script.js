@@ -581,6 +581,7 @@ async function loadEnrolledTestBanks() {
         enrolledTestBanks = [];
     }
     renderEnrolledTestBankSidebar();
+    if (typeof renderTestBankV2Sidebar === 'function') renderTestBankV2Sidebar();
 }
 
 async function loadAvailableTestBanks() {
@@ -628,7 +629,7 @@ function renderEnrolledTestBankSidebar() {
     }
     list.querySelectorAll('.learner-sidebar-subitem').forEach(item => {
         item.addEventListener('click', () => {
-            openTestBankWorkspace(Number(item.dataset.testBankId));
+            openTestBankWorkspace(Number(item.dataset.testBankId), 'v1');
             setLearnerSidebarOpen(false);
         });
     });
@@ -654,21 +655,25 @@ async function startTestBankCheckout(testBankId, button) {
     }
 }
 
-async function openTestBankWorkspace(testBankId) {
+let activeTestBankDesign = 'v1';
+async function openTestBankWorkspace(testBankId, design = activeTestBankDesign) {
+    activeTestBankDesign = design === 'v2' ? 'v2' : 'v1';
     const workspaceArea = $('test-bank-workspace-area');
     if (!workspaceArea) return;
+    workspaceArea.classList.toggle('test-bank-v2', activeTestBankDesign === 'v2');
     workspaceArea.classList.remove('hidden');
     workspaceArea.innerHTML = '<div class="test-bank-workspace-loading">Loading your Test Bank…</div>';
     [$('dashboard-hero'), $('dashboard-overview-cards'), $('dashboard-courses-head'), $('courses-container'), $('course-details-area')].forEach(element => {
         if (element) element.style.display = 'none';
     });
     document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
-    document.querySelectorAll('.learner-sidebar-subitem').forEach(item => item.classList.toggle('active', Number(item.dataset.testBankId) === Number(testBankId)));
-    $('sidebar-enrolled-test-banks-btn')?.classList.add('active');
+    document.querySelectorAll('.learner-sidebar-subitem').forEach(item => item.classList.toggle('active', Number(activeTestBankDesign === 'v2' ? item.dataset.testBankV2Id : item.dataset.testBankId) === Number(testBankId)));
+    $(activeTestBankDesign === 'v2' ? 'sidebar-test-bank-v2-btn' : 'sidebar-enrolled-test-banks-btn')?.classList.add('active');
 
     try {
         const data = await apiRequest(`/api/test-banks/${testBankId}/workspace`);
-        renderTestBankWorkspace(data.workspace);
+        if (activeTestBankDesign === 'v2') renderTestBankWorkspaceV2(data.workspace);
+        else renderTestBankWorkspace(data.workspace);
     } catch (error) {
         workspaceArea.innerHTML = `<div class="empty-course-filter"><i data-lucide="shield-alert"></i><p>Test Bank access unavailable.</p><span>${escapeHtml(error.message || 'Your subscription may have expired.')}</span></div>`;
         if (window.lucide) lucide.createIcons();
@@ -1446,7 +1451,7 @@ function renderDashboardOverview() {
         if (action === 'banks' || (action === 'progress' && !enrolled.length && enrolledTestBanks.length)) {
             await showDashboardCourseList('enrolled');
             if (action === 'progress') {
-                await openTestBankWorkspace(enrolledTestBanks[0].id);
+                await openTestBankWorkspace(enrolledTestBanks[0].id, 'v1');
                 document.querySelector('[data-test-bank-tab="progress"]')?.click();
             } else {
                 document.querySelector('.enrolled-test-bank-section')?.scrollIntoView({behavior:'smooth', block:'start'});
@@ -1752,7 +1757,7 @@ function renderDashboard() {
                 </div>`;
             cContainer.appendChild(section);
             section.querySelectorAll('[data-enrolled-test-bank]').forEach(button => button.addEventListener('click', () => {
-                openTestBankWorkspace(Number(button.dataset.enrolledTestBank));
+                openTestBankWorkspace(Number(button.dataset.enrolledTestBank), 'v1');
             }));
         }
 
