@@ -1,4 +1,7 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .test-bank-study-phase.active .test-bank-phase-header{background:#f47721;border-bottom-color:#f47721}
+.test-bank-v2 .test-bank-study-phase.active button[data-guided-builder],.test-bank-v2 .test-bank-study-phase.active button[data-guided-simulation]{background:#f47721;border-color:#f47721;color:#fff}
+.test-bank-v2 .test-bank-study-phase.active button[data-guided-builder]:hover,.test-bank-v2 .test-bank-study-phase.active button[data-guided-simulation]:hover{background:#f47721;border-color:#f47721;filter:brightness(.93);color:#fff}
 .test-bank-v2 .v2-practice-main>.v2-practice-card:not(.v2-generated-quizzes){padding-top:1.4rem}
 .test-bank-v2 .v2-practice-main .v2-practice-eyebrow{padding:.3rem .7rem;font-size:.75rem}
 .test-bank-v2 .v2-practice-main>.v2-practice-card:not(.v2-generated-quizzes)>h2{font-size:1.5rem;margin:.8rem 0}
