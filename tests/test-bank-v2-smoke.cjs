@@ -10,9 +10,10 @@ function element(value = '') {
         get innerHTML() { return this.html || ''; }};
 }
 const subject = element('mixed'), premade = element(), start = element(), choice = element();
+const timing = element('untimed');
 const topics = [1,2,3,4].map(id => Object.assign(element(),{dataset:{v2Topic:String(id)},checked:false}));
 const modes = ['custom', 'premade'].map(mode => Object.assign(element(), {dataset: {v2Mode:mode}}));
-const host = Object.assign(element(), {querySelector(selector) { return {'#v2-practice-subject':subject, '#v2-practice-premade':premade, '#v2-practice-start':start, '.v2-premade-choice':choice}[selector]; }, querySelectorAll(selector) { return selector === '[data-v2-mode]' ? modes : selector === '[data-v2-topic]' ? topics : []; }});
+const host = Object.assign(element(), {querySelector(selector) { return {'#v2-practice-timing':timing,'#v2-practice-subject':subject, '#v2-practice-premade':premade, '#v2-practice-start':start, '.v2-premade-choice':choice}[selector]; }, querySelectorAll(selector) { return selector === '[data-v2-mode]' ? modes : selector === '[data-v2-topic]' ? topics : []; }});
 const area = Object.assign(element(), {querySelector(selector) { return selector === '.v2-practice-area' ? host : null; }, querySelectorAll() { return []; }});
 const requests = [], starts = [];
 const context = {$:id => id === 'test-bank-workspace-area' ? area : null, escapeHtml:String, console,
@@ -46,6 +47,8 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     await start.listeners.click();
     assert.equal(requests[0][0], '/api/test-banks/7/quizzes');
     assert.equal(requests[0][2].item_count,10);
+    assert.equal(requests[0][2].timed,false);
+    assert.equal(requests[0][2].time_limit_minutes,null);
     assert.deepEqual(Array.from(requests[0][2].subject_ids),[1]);
     assert.equal(starts[0][1],42);
     modes[1].listeners.click();
@@ -122,5 +125,14 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(parseFloat(heading.style.fontSize) <= 14);
     assert.equal(heading.style.webkitLineClamp,'2');
     assert.equal(heading.style.height,'');
+    context.renderV2PracticeCard(workspace,10);
+    assert(host.innerHTML.includes('value="untimed" selected'));
+    timing.value = 'timed';
+    const instructions = [];
+    context.showTestBankInstructions = async data => { instructions.push(data); return true; };
+    await start.listeners.click();
+    assert.equal(requests.at(-1)[2].timed,true);
+    assert.equal(requests.at(-1)[2].time_limit_minutes,10);
+    assert.equal(instructions.at(-1).timeLimitMinutes,10);
     console.log('V2 tab removal, warm-up card, custom and subject quiz flows passed.');
 })().catch(error => { console.error(error); process.exitCode = 1; });
