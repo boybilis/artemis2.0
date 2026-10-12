@@ -48,6 +48,10 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(modal.innerHTML.includes('SIMULATION UNLOCK PROGRESS'));
     context.openV2ProgressModal({...workspace,history:[{id:1,title:'Subject test',quizType:'subject',totalItems:10,correctItems:3,total:10,score:3,cancelled:false,coverage:'Nursing'}]},'tracker');
     assert(modal.className.includes('v2-progress-wide'));
+    assert(modal.innerHTML.includes('test-bank-progress-report-head'));
+    assert(modal.innerHTML.includes('test-bank-progress-report-icon'));
+    assert(modal.innerHTML.includes('aria-label="Exam readiness"'));
+    assert(!modal.innerHTML.includes('v2-tracker-summary'));
     assert(modalNodes['[data-v2-record-list]'].innerHTML.includes('30%'));
     assert(modalNodes['[data-v2-record-list]'].innerHTML.includes('data-v2-record-review'));
     assert(!modalNodes['[data-v2-record-list]'].innerHTML.includes('data-v2-record-retake'));
