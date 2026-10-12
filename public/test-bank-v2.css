@@ -1,4 +1,8 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-practice-rail>.v2-rail-card{border-top:4px solid #073b65}
+.test-bank-v2 .v2-practice-rail>.v2-rail-card:nth-child(2){border-top-color:#f47721}
+.test-bank-v2 .v2-practice-rail>.v2-rail-card:nth-child(3){border-top-color:#079383}
+.test-bank-v2 .v2-practice-rail>.v2-rail-card:nth-child(4){border-top-color:#11a7c0}
 .test-bank-v2 .v2-practice-main>.v2-generated-quizzes{padding:1rem}
 .test-bank-v2 .v2-generated-quizzes .v2-generated-heading{margin-bottom:.65rem}.test-bank-v2 .v2-generated-quizzes .v2-generated-heading h2{font-size:1.15rem;margin:0}
 .test-bank-v2 .v2-generated-quizzes .v2-generated-row{padding:.75rem 1rem;margin-top:.5rem}.test-bank-v2 .v2-generated-quizzes .v2-generated-accordion{margin-top:.5rem}.test-bank-v2 .v2-generated-quizzes .accordion-button{padding:.75rem 1rem}
