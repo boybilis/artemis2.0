@@ -1,4 +1,6 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-subject-card .v2-start{background:#0b2942;color:#fff}
+.test-bank-v2 .v2-subject-card .v2-start:not(:disabled):hover{background:#123d5d}
 .test-bank-v2 .v2-carousel-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.75rem 1rem;align-items:start;margin-bottom:1rem}
 .test-bank-v2 .v2-carousel-heading>div:first-child{display:contents}
 .test-bank-v2 .v2-carousel-heading h3{grid-column:1;grid-row:1;margin:0;min-width:0;overflow-wrap:anywhere}
