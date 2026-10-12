@@ -190,11 +190,32 @@ function renderV2SubjectCarousel(container,workspace,itemCount) {
     };
     const subjects = (workspace.subjects || []).filter(subject => Number(subject.questionCount) > 0);
     let page = 0;
+    let transitioning = false;
+    const changePage = async direction => {
+        const nextPage = page + direction;
+        if (transitioning || nextPage < 0 || nextPage * 3 >= subjects.length) return;
+        transitioning = true;
+        const grid = container.querySelector('.v2-subject-grid');
+        const reduceMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const animate = async (element,frames,duration) => {
+            if (reduceMotion || !element?.animate) return;
+            try { await element.animate(frames,{duration,easing:'cubic-bezier(.22,.61,.36,1)'}).finished; } catch (_) { /* Navigation can detach a running animation. */ }
+        };
+        container.querySelectorAll('[data-v2-prev], [data-v2-next]').forEach(button => { button.disabled = true; });
+        try {
+            await animate(grid,[{transform:'translateX(0)',opacity:1},{transform:`translateX(${-direction * 100}%)`,opacity:0}],180);
+            if (container.isConnected === false) return;
+            page = nextPage;
+            render();
+            await animate(container.querySelector('.v2-subject-grid'),[{transform:`translateX(${direction * 100}%)`,opacity:0},{transform:'translateX(0)',opacity:1}],240);
+            container.querySelector(direction > 0 ? '[data-v2-next]' : '[data-v2-prev]')?.focus?.({preventScroll:true});
+        } finally { transitioning = false; }
+    };
     const render = () => {
         const visible = subjects.slice(page * 3,page * 3 + 3);
 container.innerHTML = `<div class="v2-carousel-heading"><div><h3>${escapeHtml(workspace.title)} Pre-Made Tests by subject</h3><p>Each subject’s pre-made test can be taken only once. Practice thoroughly with subject-based quizzes before attempting it.</p></div><div><span>Subjects ${subjects.length ? page * 3 + 1 : 0}–${Math.min(subjects.length,page * 3 + 3)} of ${subjects.length}</span><button type="button" data-v2-prev ${page === 0 ? 'disabled' : ''} aria-label="Previous subjects">‹</button><button type="button" data-v2-next ${(page + 1) * 3 >= subjects.length ? 'disabled' : ''} aria-label="Next subjects">›</button></div></div><div class="v2-subject-grid">${visible.map(subject => { const result = (workspace.v2SubjectResults || []).find(result => Number(result.subjectId) === Number(subject.id) && result.phase === (itemCount === 20 ? 'mastery' : 'warm_up')); return `<article class="v2-subject-card"><header class="v2-subject-header"><h3>${escapeHtml(subject.title)}</h3></header><div class="v2-subject-stats"><span><strong>${result ? 1 : 0}</strong>Completed</span><span><strong>${result ? `${Number(result.score)}%` : '—'}</strong>Score</span></div><button type="button" class="v2-start" data-v2-subject-start="${Number(subject.id)}" ${result ? 'disabled' : ''}>${result ? 'Completed' : itemCount === 20 ? 'Start Mastery Test' : 'Start Warm Up Quiz'}</button></article>`; }).join('')}</div>`;
-        container.querySelector('[data-v2-prev]')?.addEventListener('click',() => { if (page > 0) { page--; render(); } });
-        container.querySelector('[data-v2-next]')?.addEventListener('click',() => { if ((page + 1) * 3 < subjects.length) { page++; render(); } });
+        container.querySelector('[data-v2-prev]')?.addEventListener('click',() => changePage(-1));
+        container.querySelector('[data-v2-next]')?.addEventListener('click',() => changePage(1));
         container.querySelectorAll('[data-v2-subject-start]').forEach(button => button.addEventListener('click',async () => {
             const subject = subjects.find(item => Number(item.id) === Number(button.dataset.v2SubjectStart));
             if (!subject || button.disabled) return;
