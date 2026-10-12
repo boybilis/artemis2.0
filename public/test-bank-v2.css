@@ -1,4 +1,10 @@
 /* V2-only starting design snapshot. Future changes here do not affect V1. */
+.test-bank-v2 .v2-generated-quizzes .v2-generated-attempts{padding:.75rem 1rem}
+.test-bank-v2 .v2-generated-quizzes .v2-generated-attempt{padding:.65rem 0;gap:.75rem;font-size:.85rem;line-height:1.45}
+.test-bank-v2 .v2-generated-quizzes .v2-generated-attempt strong{font-size:.9rem}
+.test-bank-v2 .v2-generated-quizzes .v2-generated-attempt p{font-size:.78rem;margin:.1rem 0}
+.test-bank-v2 .v2-generated-quizzes .v2-generated-attempt>div:nth-child(2){gap:.15rem}
+.test-bank-v2 .v2-generated-quizzes .v2-generated-attempt button{font-size:.8rem;padding:.5rem .85rem;min-height:36px}
 .test-bank-v2 .v2-practice-rail>.v2-rail-card{border-top:4px solid #073b65}
 .test-bank-v2 .v2-practice-rail>.v2-rail-card:nth-child(2){border-top-color:#f47721}
 .test-bank-v2 .v2-practice-rail>.v2-rail-card:nth-child(3){border-top-color:#079383}
