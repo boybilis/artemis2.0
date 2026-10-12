@@ -350,6 +350,13 @@ class TestBankController extends Controller
                 ? "Practice test created with all {$questionIds->count()} available questions."
                 : 'Practice test created.',
             'quizId' => $quiz->id,
+            'quiz' => [
+                'id' => $quiz->id, 'title' => $quiz->title, 'itemCount' => $quiz->item_count,
+                'subjectIds' => $quiz->subject_ids,
+                'coverageLabel' => $testBank->course->subjects()->whereIn('id', $quiz->subject_ids)->pluck('title')->join(', '),
+                'timed' => $quiz->time_limit_minutes !== null, 'timeLimitMinutes' => $quiz->time_limit_minutes,
+                'attemptCount' => 0, 'createdAt' => $quiz->created_at?->toIso8601String(),
+            ],
         ]);
     }
 

@@ -32,6 +32,14 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(host.innerHTML.includes('Exam Readiness %'));
     assert(host.innerHTML.includes('data-v2-progress-snapshot'));
     assert(host.innerHTML.includes('data-v2-progress-tracker'));
+    assert(host.innerHTML.includes('v2-generated-quizzes'));
+    const savedList = Object.assign(element(),{querySelectorAll(){return [];}});
+    context.renderV2GeneratedQuizzes(savedList,{...workspace,learnerQuizzes:[{id:1,title:'Warm Up Quiz Set 1',itemCount:10},{id:2,title:'Mastery Test #1',itemCount:20}]},10);
+    assert(savedList.innerHTML.includes('1 created'));
+    assert(savedList.innerHTML.includes('Warm Up Quiz Set 1'));
+    assert(!savedList.innerHTML.includes('Mastery Test #1'));
+    context.renderV2GeneratedQuizzes(savedList,{...workspace,learnerQuizzes:[{id:2,title:'Mastery Test #1',itemCount:20}]},20);
+    assert(savedList.innerHTML.includes('Mastery Test #1'));
     const progressStats = context.getV2ProgressStats({...workspace,simulationProgress:{warmUpPassed:7,masteryPassed:3},history:[{totalItems:10,total:10,score:5,cancelled:false},{totalItems:20,total:20,score:15,cancelled:false},{cancelled:true,totalItems:10}]});
     assert.equal(progressStats.readiness,67);
     assert.equal(progressStats.completed,2);

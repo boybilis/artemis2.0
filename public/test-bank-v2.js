@@ -79,7 +79,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     const latest = (workspace.history || []).filter(attempt => !attempt.cancelled && Number(attempt.totalItems) === itemCount).sort((a,b) => new Date(b.takenAt) - new Date(a.takenAt))[0];
     const percent = latest && Number(latest.total) > 0 ? Math.round(Number(latest.score) / Number(latest.total) * 100) : 0;
     const progress = workspace.simulationProgress || {};
-    host.innerHTML = `<div class="v2-practice-layout"><section class="v2-practice-card">
+    host.innerHTML = `<div class="v2-practice-layout"><div class="v2-practice-main"><section class="v2-practice-card">
         <small class="v2-practice-eyebrow">${mastery ? 'BUILD YOUR UNDERSTANDING' : 'SHORT & FLEXIBLE PRACTICE'}</small>
         <h2>${title}</h2><p class="v2-practice-description">${mastery ? 'Strengthen your understanding with 20-item tests by subject. Score at least 60% to pass, then keep practicing toward 100%.' : 'Build your knowledge with short, 10-item quizzes—ideal for daily practice or a quick study break.'}</p>
         <div class="v2-practice-facts"><div><strong>${itemCount}</strong><span>${mastery ? 'Questions per test' : 'Questions per quiz'}</span></div><div><strong>${mastery ? '60%' : 'Self-paced'}</strong><span>${mastery ? 'Platform passing score' : 'Quick study sessions'}</span></div><div><strong>Unlimited</strong><span>Practice & retakes</span></div></div>
@@ -88,7 +88,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         <label for="v2-practice-timing">Test timing</label><select id="v2-practice-timing"><option value="untimed" selected>Un-timed</option><option value="timed">Timed (${itemCount} minutes)</option></select>
         <div class="v2-premade-choice hidden"><label for="v2-practice-premade">Pre-Made Test</label><select id="v2-practice-premade"></select></div>
         <button type="button" class="v2-start" id="v2-practice-start">${startLabel}</button><p class="v2-practice-note">${mastery ? 'Review explanations before retaking a failed test. Each distinct passed test counts once toward simulation eligibility.' : 'Review your answers after each quiz. If you do not pass, review the explanations and try again.'}</p></div><div class="v2-subject-carousel hidden"></div>
-    </section><aside class="v2-practice-rail" aria-label="Practice results and next steps">
+    </section><section class="v2-generated-quizzes v2-practice-card" aria-label="Generated quizzes"></section></div><aside class="v2-practice-rail" aria-label="Practice results and next steps">
         <section class="v2-rail-card"><h2>Latest result</h2>${latest ? `<p>${escapeHtml(latest.coverage || latest.title)}</p><strong class="v2-result-score ${latest.passed ? 'passed' : ''}">${percent}%</strong><span class="v2-result-status ${latest.passed ? 'passed' : ''}">${latest.passed ? 'Passed · Well done' : 'Failed · Try again'}</span><p>${latest.passed ? 'Great work! Keep practicing to strengthen your knowledge.' : 'Keep practicing. Review your answers, then try again.'}</p><div class="v2-rail-actions"><button type="button" data-v2-review>Review Answers</button><button type="button" class="v2-retake" data-v2-retake>Retake</button></div>` : '<p>No completed results yet. Start a test to see your latest result here.</p>'}</section>
         <section class="v2-rail-card"><h2>Your next step</h2><p>${latest && !latest.passed ? `Spend a few minutes reviewing <strong>${escapeHtml(latest.coverage || latest.title)}</strong>, then check your understanding with fresh questions.` : 'Build confidence with fresh questions and review explanations after each test.'}</p><button type="button" data-v2-weak>Practice ${latest && !latest.passed ? 'Weak Topics' : 'More Questions'}</button></section>
         <section class="v2-rail-card"><h2>Simulation readiness</h2>${[['Warm Up Quizzes',Number(progress.warmUpPassed || 0),10],['Mastery Tests',Number(progress.masteryPassed || 0),5]].map(([label,count,total]) => `<div class="v2-eligibility-label"><span>${label}</span><strong>${count}/${total} passed</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="${label} passed" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${Math.max(0,Math.min(total,count))}"><i style="width:${Math.max(0,Math.min(100,count / total * 100))}%"></i></div>`).join('')}<button type="button" data-v2-view-simulation>View exam simulations →</button></section>
@@ -137,13 +137,20 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
             if (!quizId) {
                 const endpoint = mode === 'custom' ? `/api/test-banks/${workspace.id}/quizzes` : `/api/test-banks/${workspace.id}/subjects/${Number(selected[0].id)}/quizzes`;
                 const payload = mode === 'custom' ? {subject_ids:selected.map(subject => Number(subject.id)),item_count:itemCount,timed,time_limit_minutes:timed ? itemCount : null,...(subjectSelect.value === 'weak' ? {coverage_mode:'weak'} : {})} : {quiz_type:mastery ? 'mastery' : 'warm_up'};
-                quizId = (await apiRequest(endpoint,'POST',payload)).quizId;
+                const created = await apiRequest(endpoint,'POST',payload);
+                quizId = created.quizId;
+                if (mode === 'custom') {
+                    workspace.learnerQuizzes ||= [];
+                    workspace.learnerQuizzes.unshift(created.quiz || {id:Number(quizId),title:`${title} · ${selectionLabel(selected)}`,itemCount,subjectIds:selected.map(subject => Number(subject.id)),coverageLabel:selected.map(subject => subject.title).join(', '),timed,timeLimitMinutes:timed ? itemCount : null,attemptCount:0,createdAt:new Date().toISOString()});
+                    renderV2GeneratedQuizzes(host.querySelector('.v2-generated-quizzes'),workspace,itemCount);
+                }
             }
             await startTestBankPremadeQuiz(workspace.id,Number(quizId),start);
         } catch(error) { showToast(error.message || 'Unable to prepare this quiz.','error'); }
         finally { start.textContent = startLabel; update(); }
     });
     renderSelection(); update();
+    renderV2GeneratedQuizzes(host.querySelector('.v2-generated-quizzes'),workspace,itemCount);
     host.querySelector('[data-v2-review]')?.addEventListener('click', () => {
         if (!latest) return;
         const assessmentTitle = $('quiz-assessment-title');
@@ -171,6 +178,17 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
     host.querySelector('[data-v2-progress-snapshot]')?.addEventListener('click', () => openV2ProgressModal(workspace,'snapshot'));
     host.querySelector('[data-v2-progress-tracker]')?.addEventListener('click', () => openV2ProgressModal(workspace,'tracker'));
     if (scrollToCard) host.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderV2GeneratedQuizzes(container,workspace,itemCount) {
+    if (!container) return;
+    const quizzes = (workspace.learnerQuizzes || []).filter(quiz => /Mastery Test/i.test(quiz.title) ? itemCount === 20 : /Warm Up Quiz/i.test(quiz.title) ? itemCount === 10 : Number(quiz.itemCount) === itemCount);
+    container.innerHTML = `<header class="v2-generated-heading"><h2>My ${itemCount === 20 ? 'Mastery Tests' : 'Warm Up Quizzes'}</h2><span>${quizzes.length} created</span></header>${quizzes.length ? quizzes.map(quiz => `<article class="v2-generated-row"><div><h3>${escapeHtml(quiz.title)}</h3><p>${Number(quiz.itemCount)} items · ${quiz.timeLimitMinutes ? `Timed (${Number(quiz.timeLimitMinutes)} minutes)` : 'Un-timed'} · ${Number(quiz.attemptCount || 0)} completed attempts</p><p>Subjects: ${escapeHtml(quiz.coverageLabel || 'Mixed')}</p></div><button type="button" data-v2-generated-start="${Number(quiz.id)}">Start Quiz</button></article>`).join('') : '<p>No quizzes created in this phase yet. Create your first quiz above.</p>'}`;
+    container.querySelectorAll('[data-v2-generated-start]').forEach(button => button.addEventListener('click',async () => {
+        const quiz = quizzes.find(quiz => Number(quiz.id) === Number(button.dataset.v2GeneratedStart));
+        if (!quiz || button.disabled) return;
+        if (await showTestBankInstructions({title:quiz.title,itemCount:quiz.itemCount,timeLimitMinutes:quiz.timeLimitMinutes,coverage:[quiz.coverageLabel || 'Mixed']})) await startTestBankPremadeQuiz(workspace.id,Number(quiz.id),button);
+    }));
 }
 
 function getV2ProgressStats(workspace) {
