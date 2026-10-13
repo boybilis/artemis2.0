@@ -150,7 +150,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware([AdminMiddleware::class])->group(function () {
         Route::redirect('/', '/admin/dashboard');
         
-        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\ManagementDashboardController::class, 'index'])->name('dashboard');
 
         // Users
         Route::middleware(RoleMiddleware::class.':admin,staff')->group(function () {
