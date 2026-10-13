@@ -287,6 +287,7 @@ class TestBankController extends Controller
                 'randomized' => $quiz->randomize_questions,
                 'timeLimitMinutes' => $quiz->time_limit_minutes,
                 'isSimulation' => $this->isSimulationQuiz($quiz),
+                'testType' => $quiz->test_type ?? ($this->isSimulationQuiz($quiz) ? 'simulation' : ($quiz->item_count === 20 ? 'mastery' : 'warm_up')),
                 'locked' => $this->isSimulationQuiz($quiz) && ! ($warmUpPassed >= 10 && $masteryPassed >= 5),
             ])->values(),
             'learnerQuizzes' => $learnerQuizzes->map(fn (TestBankQuiz $quiz) => [
@@ -524,6 +525,7 @@ class TestBankController extends Controller
             'timeLimitMinutes' => $quiz->time_limit_minutes,
             'lazyLoad' => $lazyLoad,
             'prometricSimulation' => $lazyLoad && str_contains(strtolower($testBank->title.' '.$testBank->code.' '.$testBank->course->title), 'prometric'),
+            'testType' => $quiz->test_type,
             'offset' => 0,
             'totalQuestions' => count($questionIds),
             'questions' => $questions->map($serialize)->values(),
@@ -899,22 +901,30 @@ class TestBankController extends Controller
     {
         $this->guardCatalog($course, $testBank);
         $data = $request->validate([
+            'test_type' => ['sometimes', 'required', Rule::in(['warm_up', 'mastery', 'simulation'])],
             'title' => ['required', 'string', 'max:255'], 'description' => ['nullable', 'string', 'max:5000'],
             'item_count' => ['required', 'integer', 'min:1', 'max:500'],
             'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:600'],
             'subject_ids' => ['required', 'array', 'min:1'], 'subject_ids.*' => ['integer'],
         ]);
+        $data['test_type'] ??= in_array(strtolower(trim($data['title'])), ['simulation test 1', 'simulation test 2'], true) ? 'simulation' : ($data['item_count'] === 20 ? 'mastery' : 'warm_up');
+        if ($data['test_type'] === 'simulation') {
+            $data['item_count'] = 150;
+            $data['time_limit_minutes'] = 300;
+        }
         $validSubjectIds = $course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
         if ($validSubjectIds->count() !== count(array_unique($data['subject_ids']))) abort(422, 'One or more subjects do not belong to this course.');
         $questionIds = TestBankQuestion::where('course_id', $course->id)->where('status', 'active')
             ->whereHas('subjects', fn ($query) => $query->whereIn('subjects.id', $validSubjectIds))
             ->inRandomOrder()->limit($data['item_count'])->pluck('id');
         if ($questionIds->isEmpty()) return back()->withErrors(['subject_ids' => 'The selected subjects do not have active Test Bank questions yet.']);
+        if ($data['test_type'] === 'simulation' && $questionIds->count() < 150) return back()->withErrors(['subject_ids' => 'A simulation requires 150 active questions in the selected subjects.']);
 
         DB::transaction(function () use ($request, $testBank, $data, $validSubjectIds, $questionIds) {
             $quiz = $testBank->premadeQuizzes()->create([
                 'title' => $data['title'], 'description' => $data['description'] ?? null,
                 'quiz_type' => 'premade',
+                'test_type' => $data['test_type'],
                 'item_count' => $questionIds->count(), 'subject_ids' => $validSubjectIds->values()->all(),
                 'time_limit_minutes' => $data['time_limit_minutes'] ?? null,
                 'randomize_questions' => true, 'status' => 'active', 'created_by' => $request->user()->id,
@@ -1040,7 +1050,7 @@ class TestBankController extends Controller
 
     private function isSimulationQuiz(TestBankQuiz $quiz): bool
     {
-        return in_array(strtolower(trim($quiz->title)), ['simulation test 1', 'simulation test 2'], true);
+        return $quiz->test_type === 'simulation' || ($quiz->test_type === null && in_array(strtolower(trim($quiz->title)), ['simulation test 1', 'simulation test 2'], true));
     }
 
     private function guardOwnedLearnerQuiz($user, TestBank $testBank, TestBankQuiz $quiz): void

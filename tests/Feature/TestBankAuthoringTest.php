@@ -137,6 +137,29 @@ class TestBankAuthoringTest extends TestCase
         $this->actingAs($learner)->get($url)->assertNotFound();
     }
 
+    public function test_admin_premade_type_routes_to_workspace_and_simulation_requires_full_pool(): void
+    {
+        extract($this->catalog());
+        for ($i = 0; $i < 150; $i++) {
+            $question = TestBankQuestion::create(['course_id' => $course->id, 'test_bank_id' => $bank->id, 'subject_id' => $subject->id, 'question' => 'Type question '.$i, 'options' => ['A', 'B'], 'correct_answer' => 0, 'points' => 1, 'status' => 'active']);
+            $question->subjects()->attach($subject->id);
+        }
+        $url = route('admin.content.test-banks.quizzes.store', [$course, $bank]);
+        foreach (['warm_up', 'mastery', 'simulation'] as $type) {
+            $this->actingAs($admin)->post($url, ['title' => 'Typed '.$type, 'test_type' => $type, 'item_count' => 10, 'subject_ids' => [$subject->id]])->assertSessionHas('success');
+        }
+        $simulation = $bank->premadeQuizzes()->where('test_type', 'simulation')->firstOrFail();
+        $this->assertSame(150, $simulation->item_count);
+        $this->assertSame(300, $simulation->time_limit_minutes);
+        $learner = User::factory()->create();
+        $bank->enrollments()->create(['user_id' => $learner->id, 'status' => 'active', 'enrolled_at' => now(), 'expires_at' => now()->addDays(30)]);
+        $tests = $this->actingAs($learner)->getJson('/api/test-banks/'.$bank->id.'/workspace')->assertOk()->json('workspace.premadeTests');
+        $this->assertEqualsCanonicalizing(['warm_up', 'mastery', 'simulation'], array_column($tests, 'testType'));
+        $this->getJson('/api/test-banks/'.$bank->id.'/quizzes/'.$simulation->id.'/questions')->assertForbidden();
+        $question->update(['status' => 'inactive']);
+        $this->actingAs($admin)->post($url, ['title' => 'Not enough items', 'test_type' => 'simulation', 'item_count' => 150, 'subject_ids' => [$subject->id]])->assertSessionHasErrors('subject_ids');
+    }
+
     public function test_admin_can_import_course_subject_questions_from_csv(): void
     {
         extract($this->catalog());

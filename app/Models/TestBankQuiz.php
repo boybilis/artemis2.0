@@ -9,7 +9,7 @@ class TestBankQuiz extends Model
     protected $fillable = [
         'test_bank_id', 'title', 'description', 'item_count', 'subject_ids',
         'randomize_questions', 'status', 'created_by', 'owner_user_id',
-        'quiz_type', 'time_limit_minutes',
+        'quiz_type', 'time_limit_minutes', 'test_type',
     ];
 
     protected function casts(): array

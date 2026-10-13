@@ -56,10 +56,9 @@ function renderV2SimulationCard(workspace) {
             <div class="v2-eligibility-label"><span>Mastery Tests</span><strong>${mastery}/5 passed</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="Mastery tests passed" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${Math.min(5, mastery)}"><i style="width:${Math.min(100, mastery * 20)}%"></i></div>
             <p>${unlocked ? 'Requirements complete. Your simulation tests are unlocked.' : `Pass ${remaining.join(' and ')} to unlock.`}</p>
         </section>
-        ${[0,1].map(index => {
-            const test = tests[index];
+        ${Array.from({length:Math.max(2,tests.length)},(_,index) => tests[index] || null).map((test,index) => {
             const locked = !unlocked || Boolean(test?.locked);
-            return `<div class="v2-simulation-row"><div><h3>Simulation ${index + 1}</h3><p>${index ? 'A second question set' : 'Full-length practice'} · Unlimited retakes</p></div><button type="button" data-v2-simulation="${test ? Number(test.id) : ''}" ${locked || !test ? 'disabled' : ''}>${locked ? 'Locked' : test ? 'Start Simulation' : 'Not available'}</button></div>`;
+            return `<div class="v2-simulation-row"><div><h3>${escapeHtml(test?.title || `Simulation ${index + 1}`)}</h3><p>Full-length practice · Unlimited retakes</p></div><button type="button" data-v2-simulation="${test ? Number(test.id) : ''}" ${locked || !test ? 'disabled' : ''}>${locked ? 'Locked' : test ? 'Start Simulation' : 'Not available'}</button></div>`;
         }).join('')}
     </section>`;
     host.querySelectorAll('[data-v2-simulation]').forEach(button => button.addEventListener('click', async () => {
@@ -351,6 +350,12 @@ function renderV2SubjectCarousel(container,workspace,itemCount) {
     const render = () => {
         const visible = subjects.slice(page * 3,page * 3 + 3);
 container.innerHTML = `<div class="v2-carousel-heading"><div><h3>${escapeHtml(workspace.title)} Pre-Made Tests by subject</h3><p>Each subject’s pre-made test can be taken only once. Practice thoroughly with subject-based quizzes before attempting it.</p></div><div><span>Subjects ${subjects.length ? page * 3 + 1 : 0}–${Math.min(subjects.length,page * 3 + 3)} of ${subjects.length}</span><button type="button" data-v2-prev ${page === 0 ? 'disabled' : ''} aria-label="Previous subjects">‹</button><button type="button" data-v2-next ${(page + 1) * 3 >= subjects.length ? 'disabled' : ''} aria-label="Next subjects">›</button></div></div><div class="v2-subject-grid">${visible.map(subject => { const result = (workspace.v2SubjectResults || []).find(result => Number(result.subjectId) === Number(subject.id) && result.phase === (itemCount === 20 ? 'mastery' : 'warm_up')); return `<article class="v2-subject-card"><header class="v2-subject-header"><h3>${escapeHtml(subject.title)}</h3></header><div class="v2-subject-stats"><span><strong>${result ? 1 : 0}</strong>Completed</span><span><strong>${result ? `${Number(result.score)}%` : '—'}</strong>Score</span></div><button type="button" class="v2-start" data-v2-subject-start="${Number(subject.id)}" ${result ? 'disabled' : ''}>${result ? 'Completed' : itemCount === 20 ? 'Start Mastery Test' : 'Start Warm Up Quiz'}</button></article>`; }).join('')}</div>`;
+        const adminTests = (workspace.premadeTests || []).filter(test => !test.isSimulation && (test.testType || (Number(test.itemCount) === 20 ? 'mastery' : 'warm_up')) === (itemCount === 20 ? 'mastery' : 'warm_up'));
+        container.innerHTML += `<section class="v2-admin-premades"><h3>Pre-Made ${itemCount === 20 ? 'Mastery Tests' : 'Warm Up Quizzes'}</h3>${adminTests.length ? adminTests.map(test => `<article class="v2-generated-row"><div><h3>${escapeHtml(test.title)}</h3><p>${Number(test.itemCount)} items · ${test.timeLimitMinutes ? `${Number(test.timeLimitMinutes)} minutes` : 'Un-timed'}</p>${test.description ? `<p>${escapeHtml(test.description)}</p>` : ''}</div><button type="button" data-v2-admin-premade="${Number(test.id)}">Start Test</button></article>`).join('') : '<p>No additional pre-made tests available yet.</p>'}</section>`;
+        container.querySelectorAll('[data-v2-admin-premade]').forEach(button => button.addEventListener('click',async () => {
+            const test = adminTests.find(test => Number(test.id) === Number(button.dataset.v2AdminPremade));
+            if (test && await showTestBankInstructions({title:test.title,itemCount:test.itemCount,timeLimitMinutes:test.timeLimitMinutes,coverage:[]})) await startTestBankPremadeQuiz(workspace.id,test.id,button);
+        }));
         container.querySelector('[data-v2-prev]')?.addEventListener('click',() => changePage(-1));
         container.querySelector('[data-v2-next]')?.addEventListener('click',() => changePage(1));
         container.querySelectorAll('[data-v2-subject-start]').forEach(button => button.addEventListener('click',async () => {

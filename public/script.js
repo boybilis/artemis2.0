@@ -2974,7 +2974,7 @@ async function startTestBankPremadeQuiz(testBankId, quizId, button) {
         testBankExamActive = true;
         document.body.classList.add('test-bank-exam-mode');
         state.examType = 'test_bank';
-        startQuiz(data.questions, {title: data.title, timeLimitMinutes: data.timeLimitMinutes, lazyLoad: data.lazyLoad, totalQuestions: data.totalQuestions, prometricSimulation: data.prometricSimulation});
+        startQuiz(data.questions, {title: data.title, timeLimitMinutes: data.timeLimitMinutes, lazyLoad: data.lazyLoad, totalQuestions: data.totalQuestions, prometricSimulation: data.prometricSimulation, testType: data.testType});
         handleTestBankFullscreenChange();
     } catch (error) {
         testBankExamActive = false;
@@ -3005,6 +3005,7 @@ function startQuiz(data, settings = {}) {
     if ($('assessment-review-panel')) $('assessment-review-panel').style.display = 'none';
     const assessmentTitle = $('quiz-assessment-title');
     if (assessmentTitle) assessmentTitle.dataset.examTitle = settings.title || '';
+    if (assessmentTitle) assessmentTitle.dataset.testType = settings.testType || '';
     if (assessmentTitle) assessmentTitle.textContent = settings.title || (state.examType === 'subtopic_assessment'
         ? (topics[state.currentTopicIndex]?.subtopics?.find(item => item.id === activeSubtopicAssessmentId)?.title || 'Assessment')
         : (state.examType === 'final' ? 'Mock Exam' : (state.examType === 'mid' ? 'Practice Test' : (state.examType === 'test_bank' ? 'Test Bank' : 'Topic Quiz'))));
@@ -3476,9 +3477,10 @@ function showAssessmentResultModal(data) {
         dialog.setAttribute('aria-labelledby', 'assessment-result-modal-title');
         const title = $('quiz-assessment-title')?.dataset.examTitle || $('quiz-assessment-title')?.textContent?.trim() || 'Assessment';
         const items = data.questions?.length || quizData.length || Number(data.total || 0);
-        const type = state.examType === 'test_bank'
+        const explicitType = {warm_up:'Warm Up Quiz',mastery:'Mastery Test',simulation:'Exam Simulation'}[$('quiz-assessment-title')?.dataset.testType];
+        const type = explicitType || (state.examType === 'test_bank'
             ? (/simulation/i.test(title) || items === 150 ? 'Exam Simulation' : items === 20 ? 'Mastery Test' : 'Warm Up Quiz')
-            : state.examType === 'final' ? 'Mock Exam' : state.examType === 'mid' ? 'Practice Test' : 'Assessment';
+            : state.examType === 'final' ? 'Mock Exam' : state.examType === 'mid' ? 'Practice Test' : 'Assessment');
         const percentage = Number(data.total) > 0 ? Math.round(Number(data.score) / Number(data.total) * 100) : 0;
         dialog.innerHTML = `<small>ASSESSMENT RESULT</small><h2 id="assessment-result-modal-title">${escapeHtml(title)}</h2><p>${escapeHtml(type)} · ${Number(items)} items</p><div class="assessment-result-score"><strong>${Number(data.score || 0)}/${Number(data.total || 0)}</strong><span>${percentage}%</span></div><p class="assessment-result-status ${data.passed ? 'passed' : 'failed'}">${data.passed ? 'Passed' : 'Failed'}</p><button type="button">OK</button>`;
         document.body.appendChild(dialog);
