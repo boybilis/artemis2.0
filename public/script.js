@@ -2992,6 +2992,14 @@ function formatTime(sec) {
 
 function startQuiz(data, settings = {}) {
     $('quiz-screen')?.classList.toggle('prometric-simulation-exam', Boolean(settings.prometricSimulation));
+    const examHeader = $('quiz-screen')?.querySelector('.exam-environment-header');
+    let candidateStrip = $('quiz-screen')?.querySelector('.prometric-candidate-strip');
+    if (examHeader && !candidateStrip) {
+        candidateStrip = document.createElement('div');
+        candidateStrip.className = 'prometric-candidate-strip';
+        examHeader.after(candidateStrip);
+    }
+    if (candidateStrip) candidateStrip.textContent = `Candidate: ${state.user?.name || [state.user?.firstName, state.user?.lastName].filter(Boolean).join(' ') || 'Learner'}`;
     if (!Array.isArray(data) || data.length === 0) {
         showToast('No approved questions are available for this assessment yet.', 'info');
         return;
