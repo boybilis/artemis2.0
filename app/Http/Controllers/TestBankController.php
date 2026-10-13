@@ -821,6 +821,11 @@ class TestBankController extends Controller
                 return back()->withErrors(['csv_file' => "Invalid data on CSV row {$line}. Check the subject codes, question, choices, answer letter, and points."]);
             }
             $imageNames = [];
+            $videoUrl = trim((string) ($row['rationale_video_url'] ?? ''));
+            if ($videoUrl !== '' && validator(['url' => $videoUrl], ['url' => ['url:http,https', 'max:2048']])->fails()) {
+                fclose($handle);
+                return back()->withErrors(['csv_file' => "Invalid rationale video URL on CSV row {$line}. Use a valid HTTP or HTTPS URL."]);
+            }
             foreach (['reference_image', 'rationale_image'] as $column) {
                 $name = trim((string) ($row[$column] ?? ''));
                 if ($name !== '' && !isset($images[$name])) {
@@ -831,6 +836,7 @@ class TestBankController extends Controller
             }
             $rows[] = [
                 '_images' => $imageNames,
+                'rationale_video_url' => $videoUrl ?: null,
                 'subject_ids' => $rowSubjects->pluck('id')->values()->all(),
                 'test_bank_id' => $testBank->id, 'course_id' => $course->id, 'subject_id' => $rowSubjects->first()->id,
                 'question' => trim($row['question']), 'options' => $options, 'correct_answer' => $correctIndex,
