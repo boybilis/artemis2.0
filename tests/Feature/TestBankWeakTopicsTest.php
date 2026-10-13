@@ -49,5 +49,27 @@ class TestBankWeakTopicsTest extends TestCase
         $this->assertCount(10, $questions->unique());
         $counts = TestBankQuestion::whereIn('id', $questions)->with('subjects')->get()->flatMap(fn ($q) => $q->subjects->pluck('id'))->countBy()->values();
         $this->assertLessThanOrEqual(1, $counts->max() - $counts->min());
+
+        // Pre-made subject tests must contribute alongside custom quiz answers.
+        foreach ([10 => 'Warm-up', 20 => 'Mastery Test'] as $itemCount => $label) {
+            $premade = TestBankQuiz::create([
+                'test_bank_id' => $bank->id, 'title' => $label.' Subject 3',
+                'quiz_type' => 'subject', 'owner_user_id' => $user->id,
+                'item_count' => $itemCount, 'subject_ids' => [$subjects[3]->id], 'status' => 'active',
+            ]);
+            TestBankQuizAttempt::create([
+                'user_id' => $user->id, 'test_bank_id' => $bank->id,
+                'test_bank_quiz_id' => $premade->id, 'score' => 0, 'total' => $itemCount,
+                'points_earned' => 0, 'points_possible' => $itemCount, 'passed' => false,
+                'review_data' => array_fill(0, $itemCount, ['subjectIds' => [$subjects[3]->id], 'correct' => false]),
+            ]);
+            $this->assertSame(
+                [$subjects[0]->id, $subjects[3]->id, $subjects[1]->id],
+                $rank->invoke($controller, $bank, $user->id)->all(),
+                $label.' pre-made results should change the weakest-subject ranking.',
+            );
+        }
+        [, $ids] = $selection->invoke($controller, $request, $bank);
+        $this->assertEqualsCanonicalizing([$subjects[0]->id, $subjects[3]->id, $subjects[1]->id], $ids->all());
     }
 }

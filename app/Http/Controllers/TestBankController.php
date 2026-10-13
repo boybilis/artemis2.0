@@ -1047,6 +1047,7 @@ class TestBankController extends Controller
         $activeSubjectIds = TestBankQuestion::where('course_id', $testBank->course_id)->where('status', 'active')
             ->with('subjects:id')->get()->flatMap(fn ($question) => $question->subjects->pluck('id'))->unique();
         $available = $testBank->course->subjects()->where('status', 'approved')->whereIn('id', $activeSubjectIds)->pluck('id');
+        // Include every completed quiz type, including pre-made Warm-up and Mastery subject tests.
         $attempts = TestBankQuizAttempt::where('user_id', $userId)->where('test_bank_id', $testBank->id)
             ->with('quiz:id,subject_ids')->get();
         // Older attempts stored question text, but not subject IDs. Resolve only unambiguous matches.
