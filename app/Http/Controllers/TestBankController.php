@@ -523,6 +523,7 @@ class TestBankController extends Controller
             'title' => $quiz->title,
             'timeLimitMinutes' => $quiz->time_limit_minutes,
             'lazyLoad' => $lazyLoad,
+            'prometricSimulation' => $lazyLoad && str_contains(strtolower($testBank->title.' '.$testBank->code.' '.$testBank->course->title), 'prometric'),
             'offset' => 0,
             'totalQuestions' => count($questionIds),
             'questions' => $questions->map($serialize)->values(),

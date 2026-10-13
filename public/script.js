@@ -2974,7 +2974,7 @@ async function startTestBankPremadeQuiz(testBankId, quizId, button) {
         testBankExamActive = true;
         document.body.classList.add('test-bank-exam-mode');
         state.examType = 'test_bank';
-        startQuiz(data.questions, {title: data.title, timeLimitMinutes: data.timeLimitMinutes, lazyLoad: data.lazyLoad, totalQuestions: data.totalQuestions});
+        startQuiz(data.questions, {title: data.title, timeLimitMinutes: data.timeLimitMinutes, lazyLoad: data.lazyLoad, totalQuestions: data.totalQuestions, prometricSimulation: data.prometricSimulation});
         handleTestBankFullscreenChange();
     } catch (error) {
         testBankExamActive = false;
@@ -2991,6 +2991,7 @@ function formatTime(sec) {
 }
 
 function startQuiz(data, settings = {}) {
+    $('quiz-screen')?.classList.toggle('prometric-simulation-exam', Boolean(settings.prometricSimulation));
     if (!Array.isArray(data) || data.length === 0) {
         showToast('No approved questions are available for this assessment yet.', 'info');
         return;
@@ -3003,9 +3004,11 @@ function startQuiz(data, settings = {}) {
     if ($('quiz-question-panel')) $('quiz-question-panel').style.display = '';
     if ($('assessment-review-panel')) $('assessment-review-panel').style.display = 'none';
     const assessmentTitle = $('quiz-assessment-title');
+    if (assessmentTitle) assessmentTitle.dataset.examTitle = settings.title || '';
     if (assessmentTitle) assessmentTitle.textContent = settings.title || (state.examType === 'subtopic_assessment'
         ? (topics[state.currentTopicIndex]?.subtopics?.find(item => item.id === activeSubtopicAssessmentId)?.title || 'Assessment')
         : (state.examType === 'final' ? 'Mock Exam' : (state.examType === 'mid' ? 'Practice Test' : (state.examType === 'test_bank' ? 'Test Bank' : 'Topic Quiz'))));
+    if (assessmentTitle && settings.prometricSimulation) assessmentTitle.textContent = 'PROMETRIC RN Simulation Test';
     const totalQEl = $('total-q');
     if (totalQEl) totalQEl.textContent = quizData.length;
     
@@ -3407,7 +3410,7 @@ function escapeHtml(value) {
 }
 function showAssessmentSummary(data, continueAction) {
     assessmentSummaryContinueAction = continueAction;
-    const activeAssessmentTitle = $('quiz-assessment-title')?.textContent?.trim() || 'Assessment';
+    const activeAssessmentTitle = $('quiz-assessment-title')?.dataset.examTitle || $('quiz-assessment-title')?.textContent?.trim() || 'Assessment';
     const summaryAssessmentTitle = $('assessment-summary-assessment-title');
     if (summaryAssessmentTitle) summaryAssessmentTitle.textContent = `${activeAssessmentTitle} Summary`;
     const score = Number(data.score || 0).toLocaleString(undefined, {maximumFractionDigits: 2});
@@ -3471,7 +3474,7 @@ function showAssessmentResultModal(data) {
         const dialog = document.createElement('dialog');
         dialog.className = 'assessment-result-modal';
         dialog.setAttribute('aria-labelledby', 'assessment-result-modal-title');
-        const title = $('quiz-assessment-title')?.textContent?.trim() || 'Assessment';
+        const title = $('quiz-assessment-title')?.dataset.examTitle || $('quiz-assessment-title')?.textContent?.trim() || 'Assessment';
         const items = data.questions?.length || quizData.length || Number(data.total || 0);
         const type = state.examType === 'test_bank'
             ? (/simulation/i.test(title) || items === 150 ? 'Exam Simulation' : items === 20 ? 'Mastery Test' : 'Warm Up Quiz')

@@ -1417,6 +1417,29 @@ body:not(.light-mode) .learner-course-card.course-locked{background:linear-gradi
 .test-bank-catalog-meta{display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin:auto 1.35rem 0;padding:1rem 0;border-top:1px solid var(--border)}.test-bank-catalog-meta span{display:flex;align-items:center;gap:.35rem;color:var(--text-muted);font-size:.72rem}.test-bank-catalog-meta svg{width:14px;height:14px}.test-bank-catalog-meta strong{color:var(--test-bank-color);font-size:1rem}.test-bank-catalog-card>.test-bank-subscribe-btn{width:auto;min-height:44px;margin:0 1.35rem 1.35rem;padding:.52rem .68rem;border-radius:8px;font-size:.72rem;line-height:1.2}
 .test-bank-subscribe-btn{background:linear-gradient(135deg,var(--test-bank-dark),var(--test-bank-color));box-shadow:0 9px 20px var(--test-bank-soft)}.test-bank-subscribe-btn:hover:not(:disabled){border-color:var(--test-bank-dark);background:linear-gradient(135deg,var(--test-bank-dark),var(--test-bank-color));box-shadow:0 11px 23px var(--test-bank-soft)}.test-bank-subscribe-btn:disabled{cursor:default;opacity:.78}
 .assessment-result-modal{box-sizing:border-box;width:min(480px,calc(100vw - 2rem));max-height:calc(100dvh - 2rem);overflow:auto;padding:1.75rem;border:1px solid #d5e5ec;border-radius:20px;background:#fff;color:#073b65;text-align:center}.assessment-result-modal::backdrop{background:rgba(3,24,44,.65)}.assessment-result-modal>small{color:#f47721;font-weight:700;letter-spacing:.06em}.assessment-result-modal h2{margin:.75rem 0;font-size:1.4rem;overflow-wrap:anywhere}.assessment-result-modal p{line-height:1.5}.assessment-result-score{display:flex;justify-content:center;align-items:center;gap:1rem;padding:1rem;background:#eff8fc;border-radius:12px}.assessment-result-score strong{font-size:1.8rem}.assessment-result-score span{font-size:1.4rem}.assessment-result-status{font-size:1.2rem;font-weight:700}.assessment-result-status.passed{color:#079383}.assessment-result-status.failed{color:#dc2626}.assessment-result-modal>button{min-height:44px;width:100%;padding:.65rem 1rem;border:0;border-radius:999px;background:#073b65;color:#fff;font:inherit;font-weight:700;cursor:pointer}.assessment-result-modal>button:hover{background:#079383}.assessment-result-modal>button:focus-visible{outline:2px solid #079383;outline-offset:3px}
+/* Color-only theme: exclusively enabled for Prometric simulation attempts. */
+#quiz-screen.prometric-simulation-exam{background:#f4f4f4;color:#222}
+#quiz-screen.prometric-simulation-exam .exam-environment-header{background:linear-gradient(180deg,#333,#4a4a4a);color:#fff;box-shadow:none}
+#quiz-screen.prometric-simulation-exam .exam-environment-footer{background:#4a4a4a;border-top-color:#8ac43f;box-shadow:none}
+#quiz-screen.prometric-simulation-exam .exam-environment-body{background:#f4f4f4}
+#quiz-screen.prometric-simulation-exam .quiz-question-card{background:#fff;border-color:#ccc;color:#222;box-shadow:none}
+#quiz-screen.prometric-simulation-exam .quiz-question-card h3{color:#222}
+#quiz-screen.prometric-simulation-exam .quiz-response-label{background:#f0f2f3;color:#222}
+#quiz-screen.prometric-simulation-exam .quiz-answer-instruction{color:#444}
+#quiz-screen.prometric-simulation-exam .quiz-option{background:#fff;color:#222;border-color:#536166;box-shadow:none}
+#quiz-screen.prometric-simulation-exam .quiz-option:hover{background:#f1f7e8;border-color:#719d36}
+#quiz-screen.prometric-simulation-exam .quiz-option.selected{background:#d9e9c1;border-color:#628c2d;color:#222;box-shadow:none}
+#quiz-screen.prometric-simulation-exam .opt-letter{color:#222;background:transparent}
+#quiz-screen.prometric-simulation-exam .quiz-progress{background:#656565;border-color:#777}
+#quiz-screen.prometric-simulation-exam .quiz-progress-bar{background:#8ac43f}
+#quiz-screen.prometric-simulation-exam .exam-brand-mark{background:#8ac43f;color:#fff}
+#quiz-screen.prometric-simulation-exam .exam-submit-btn,#quiz-screen.prometric-simulation-exam .exam-previous-btn{background:#8ac43f;border-color:#8ac43f;color:#fff;box-shadow:none}
+#quiz-screen.prometric-simulation-exam .exam-previous-btn:disabled{background:#719744;color:#e7ecdf;border-color:#719744}
+#quiz-screen.prometric-simulation-exam .exam-submit-btn:hover,#quiz-screen.prometric-simulation-exam .exam-previous-btn:not(:disabled):hover{background:#719d36;border-color:#719d36}
+#quiz-screen.prometric-simulation-exam .exam-review-toggle{color:#fff}
+#quiz-screen.prometric-simulation-exam .exam-review-toggle input{accent-color:#8ac43f}
+#quiz-screen.prometric-simulation-exam #quiz-timer{background:transparent!important;border-color:#777!important;color:#fff!important}
+#quiz-screen.prometric-simulation-exam .assessment-review-panel{background:#fff;color:#222;border-color:#ccc}
 /* All Available Courses uses one midnight-blue language for actions and capsules. */
 #courses-container.available-catalog-view .course-card-status.available,
 #courses-container.available-catalog-view .course-card-master{border:1px solid #073b65;background:transparent;color:#073b65}
