@@ -43,7 +43,9 @@ function renderV2SimulationCard(workspace) {
     const warm = Math.max(0, Number(progress.warmUpPassed || 0));
     const mastery = Math.max(0, Number(progress.masteryPassed || 0));
     const unlocked = Boolean(progress.unlocked);
-    const tests = (workspace.premadeTests || []).filter(test => test.testType ? test.testType === 'simulation' : test.isSimulation);
+    const tests = (workspace.premadeTests || [])
+        .filter(test => test.testType ? test.testType === 'simulation' : test.isSimulation)
+        .sort((a, b) => String(a.title || '').localeCompare(String(b.title || ''), 'en', {numeric:true, sensitivity:'base'}) || Number(a.id) - Number(b.id));
     const remaining = [];
     if (warm < 10) remaining.push(`${10 - warm} more distinct Warm Up Quizzes`);
     if (mastery < 5) remaining.push(`${5 - mastery} more distinct Mastery Tests`);

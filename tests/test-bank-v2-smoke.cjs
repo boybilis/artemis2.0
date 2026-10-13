@@ -121,6 +121,11 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(host.innerHTML.includes('3/5 passed'));
     assert(host.innerHTML.includes('Pass 3 more distinct Warm Up Quizzes and 2 more distinct Mastery Tests to unlock.'));
     assert(host.innerHTML.includes('No pre-made simulation tests are available yet.'));
+    const simulations = [10,2,1].map(id => ({id,title:`Simulation Test ${id}`,testType:'simulation',locked:true}));
+    context.renderV2SimulationCard({...workspace,premadeTests:simulations});
+    assert(host.innerHTML.indexOf('Simulation Test 1</h3>') < host.innerHTML.indexOf('Simulation Test 2</h3>'));
+    assert(host.innerHTML.indexOf('Simulation Test 2</h3>') < host.innerHTML.indexOf('Simulation Test 10</h3>'));
+    assert.deepStrictEqual(simulations.map(test => test.id), [10,2,1]);
     context.renderV2SimulationCard({...workspace,premadeTests:[{id:8,title:'RN Practice Exam',testType:'simulation',locked:true},{id:10,title:'Warm-up Only',testType:'warm_up'}]});
     assert(host.innerHTML.includes('RN Practice Exam'));
     assert(!host.innerHTML.includes('Warm-up Only'));
