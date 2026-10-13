@@ -42,9 +42,9 @@
         .prometric-summary-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin-bottom:16px}
         .prometric-summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px}
         .prometric-summary-grid button{font-size:13px;font-weight:700;min-height:44px;padding:4px;border:1px solid currentColor}
-        .prometric-summary-grid .summary-answered{background:#dceaff;color:#123c72}
-        .prometric-summary-grid .summary-unanswered{background:#ffe5e5;color:#992525}
-        .prometric-summary-grid .summary-marked{background:#ffecd0;color:#854500}
+        .prometric-summary-grid .summary-answered{background:#8ac43f;color:#17220b}
+        .prometric-summary-grid .summary-unanswered{background:#e0e0e0;color:#252525}
+        .prometric-summary-grid .summary-marked{background:#facc15;color:#302500}
         .prometric-summary-grid button[aria-current="true"]{outline:2px solid #222;outline-offset:2px}
     `;
     summaryToggle.addEventListener('click', () => {
@@ -69,7 +69,7 @@
         summary.append(counts);
         const legend = document.createElement('div');
         legend.className = 'prometric-summary-legend';
-        legend.textContent = '✓ Blue: answered   ○ Red: unanswered   ⚑ Orange: marked for review';
+        legend.textContent = '✓ Green: answered   ○ Gray: unanswered   ⚑ Yellow: marked for review';
         summary.append(legend);
         const grid = document.createElement('div');
         grid.className = 'prometric-summary-grid';
