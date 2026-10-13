@@ -694,7 +694,7 @@ function showTestBankInstructions({title, itemCount, timeLimitMinutes, coverage 
                 <div><i data-lucide="${timeLimitMinutes ? 'timer' : 'infinity'}"></i><span><small>TIME LIMIT</small><strong>${timeLimitMinutes ? `${Number(timeLimitMinutes)} minutes` : 'Untimed exam'}</strong></span></div>
                 <div class="full"><i data-lucide="book-open"></i><span><small>EXAM COVERAGE</small><strong>${escapeHtml(coverage.filter(Boolean).join(', ') || 'All selected subjects')}</strong></span></div>
             </div>
-            <div class="test-bank-answer-instruction"><strong>How to answer</strong><p>Select the single best answer for each question. Use Previous and Save &amp; Continue to review or change answers before submitting the exam.</p></div>
+            <div class="test-bank-answer-instruction"><strong>How to answer</strong><p>Select the single best answer for each question. Use Previous and Next to review or change answers before submitting the exam.</p></div>
             <div class="test-bank-instructions-actions"><button type="button" class="test-bank-instructions-cancel">Cancel Exam</button><button type="button" class="test-bank-instructions-start">Start Exam</button></div>
         </section>`;
         document.body.appendChild(backdrop);
@@ -3135,7 +3135,7 @@ async function renderQuestion() {
             : (isStructured ? {} : ((isSata || isHighlight) ? [] : null));
         const nextBtn = $('next-q-btn');
         if (nextBtn) {
-            nextBtn.textContent = editingQuestionFromReview ? 'Save & Return to Review' : (qIndex === quizData.length - 1 ? 'Review Assessment' : 'Save & Continue');
+            nextBtn.textContent = editingQuestionFromReview ? 'Save & Return to Review' : (qIndex === quizData.length - 1 ? 'Review Assessment' : 'Next');
             nextBtn.disabled = false;
             nextBtn.style.opacity = '1';
             nextBtn.style.cursor = 'pointer';
