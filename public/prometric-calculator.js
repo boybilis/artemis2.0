@@ -6,7 +6,7 @@
     style.textContent = `
         .prometric-calculator-toggle{display:none}
         #quiz-screen.prometric-simulation-exam .prometric-calculator-toggle{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:9px;border:1px solid #8ac43f;border-radius:8px;background:#8ac43f;color:#17220b;cursor:pointer}
-        .prometric-calculator{position:fixed;inset:0;margin:auto;width:min(300px,calc(100vw - 32px));max-height:90vh;overflow:auto;box-sizing:border-box;padding:18px;border:2px solid #8ac43f;border-radius:14px;background:#fff;color:#222;box-shadow:0 12px 48px #0006;font:16px Arial,sans-serif}
+        .prometric-calculator{position:fixed;inset:auto;top:var(--calculator-top,104px);right:16px;margin:0;width:min(300px,calc(100vw - 32px));max-height:var(--calculator-height,70vh);overflow:auto;box-sizing:border-box;padding:18px;border:2px solid #8ac43f;border-radius:14px;background:#fff;color:#222;box-shadow:0 12px 48px #0006;font:16px Arial,sans-serif}
         .prometric-calculator::backdrop{background:#0004}
         .prometric-calculator header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
         .prometric-calculator button{font:inherit;cursor:pointer;border:1px solid #ccc;border-radius:6px;background:#f2f2f2;color:#222;min-height:44px}
@@ -60,9 +60,19 @@
         button.addEventListener('click', () => press(key));
         dialog.querySelector('.prometric-calculator-keys').append(button);
     }
+    function positionCalculator() {
+        const body = exam.querySelector('.exam-environment-body').getBoundingClientRect();
+        const top = Math.max(16, body.top + 16);
+        dialog.style.setProperty('--calculator-top', `${top}px`);
+        dialog.style.setProperty('--calculator-height', `${Math.max(44, Math.min(body.bottom, window.innerHeight) - top - 16)}px`);
+    }
     toggle.addEventListener('click', () => {
-        if (exam.classList.contains('prometric-simulation-exam') && !dialog.open) dialog.showModal();
+        if (exam.classList.contains('prometric-simulation-exam') && !dialog.open) {
+            positionCalculator();
+            dialog.showModal();
+        }
     });
+    window.addEventListener('resize', () => { if (dialog.open) positionCalculator(); });
     dialog.querySelector('header button').addEventListener('click', () => dialog.close());
     dialog.addEventListener('keydown', event => {
         const key = ({'*':'×','/':'÷','-':'−','Enter':'=','Backspace':'⌫','Delete':'C'})[event.key] || event.key;
