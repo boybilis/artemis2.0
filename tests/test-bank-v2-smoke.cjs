@@ -120,10 +120,14 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(!host.innerHTML.includes('100–150'));
     assert(host.innerHTML.includes('3/5 passed'));
     assert(host.innerHTML.includes('Pass 3 more distinct Warm Up Quizzes and 2 more distinct Mastery Tests to unlock.'));
-    assert.equal((host.innerHTML.match(/>Locked<\/button>/g) || []).length,2);
+    assert(host.innerHTML.includes('No pre-made simulation tests are available yet.'));
+    context.renderV2SimulationCard({...workspace,premadeTests:[{id:8,title:'RN Practice Exam',testType:'simulation',locked:true},{id:10,title:'Warm-up Only',testType:'warm_up'}]});
+    assert(host.innerHTML.includes('RN Practice Exam'));
+    assert(!host.innerHTML.includes('Warm-up Only'));
+    assert.equal((host.innerHTML.match(/>Locked<\/button>/g) || []).length,1);
     context.renderV2SimulationCard({...workspace, simulationProgress:{warmUpPassed:10,masteryPassed:5,unlocked:true},premadeTests:[{id:9,isSimulation:true,locked:false}]});
     assert(host.innerHTML.includes('Start Simulation'));
-    assert(host.innerHTML.includes('Not available'));
+    assert(!host.innerHTML.includes('Not available'));
     context.renderV2SimulationCard({...workspace, simulationProgress:{warmUpPassed:0,masteryPassed:0,unlocked:true,adminUnlocked:true},premadeTests:[{id:9,isSimulation:true,locked:false}]});
     assert(host.innerHTML.includes('Your administrator has unlocked simulation tests'));
     assert(/data-v2-simulation="9"\s*>Start Simulation/.test(host.innerHTML));

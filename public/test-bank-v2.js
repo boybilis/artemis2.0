@@ -43,23 +43,23 @@ function renderV2SimulationCard(workspace) {
     const warm = Math.max(0, Number(progress.warmUpPassed || 0));
     const mastery = Math.max(0, Number(progress.masteryPassed || 0));
     const unlocked = Boolean(progress.unlocked);
-    const tests = (workspace.premadeTests || []).filter(test => test.isSimulation);
+    const tests = (workspace.premadeTests || []).filter(test => test.testType ? test.testType === 'simulation' : test.isSimulation);
     const remaining = [];
     if (warm < 10) remaining.push(`${10 - warm} more distinct Warm Up Quizzes`);
     if (mastery < 5) remaining.push(`${5 - mastery} more distinct Mastery Tests`);
     host.innerHTML = `<section class="v2-practice-card v2-simulation-card">
         <small class="v2-practice-eyebrow">EXAM CONDITIONS</small><h2>Exam Simulations</h2>
         <p class="v2-practice-description">Practice a full-length test with a timer, no pause, and no explanations until submission.</p>
-        <div class="v2-practice-facts"><div><strong>150</strong><span>Items per simulation</span></div><div><strong>300 minutes</strong><span>Timed · No pause</span></div><div><strong>2</strong><span>Simulations</span></div></div>
+        <div class="v2-practice-facts"><div><strong>150</strong><span>Items per simulation</span></div><div><strong>300 minutes</strong><span>Timed · No pause</span></div><div><strong>${tests.length}</strong><span>Simulations</span></div></div>
         <section class="v2-simulation-eligibility"><h3>Simulation test eligibility</h3>
             <div class="v2-eligibility-label"><span>Warm Up Quizzes</span><strong>${warm}/10 passed</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="Warm Up quizzes passed" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${Math.min(10, warm)}"><i style="width:${Math.min(100, warm * 10)}%"></i></div>
             <div class="v2-eligibility-label"><span>Mastery Tests</span><strong>${mastery}/5 passed</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="Mastery tests passed" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${Math.min(5, mastery)}"><i style="width:${Math.min(100, mastery * 20)}%"></i></div>
             <p>${unlocked ? progress.adminUnlocked ? 'Your administrator has unlocked simulation tests for this Test Bank.' : 'Requirements complete. Your simulation tests are unlocked.' : `Pass ${remaining.join(' and ')} to unlock.`}</p>
         </section>
-        ${Array.from({length:Math.max(2,tests.length)},(_,index) => tests[index] || null).map((test,index) => {
-            const locked = !unlocked || Boolean(test?.locked);
-            return `<div class="v2-simulation-row"><div><h3>${escapeHtml(test?.title || `Simulation ${index + 1}`)}</h3><p>Full-length practice · Unlimited retakes</p></div><button type="button" data-v2-simulation="${test ? Number(test.id) : ''}" ${locked || !test ? 'disabled' : ''}>${locked ? 'Locked' : test ? 'Start Simulation' : 'Not available'}</button></div>`;
-        }).join('')}
+        ${tests.length ? tests.map(test => {
+            const locked = !unlocked || Boolean(test.locked);
+            return `<div class="v2-simulation-row"><div><h3>${escapeHtml(test.title || 'Simulation Test')}</h3><p>Full-length practice · Unlimited retakes</p>${test.description ? `<p>${escapeHtml(test.description)}</p>` : ''}</div><button type="button" data-v2-simulation="${Number(test.id)}" ${locked ? 'disabled' : ''}>${locked ? 'Locked' : 'Start Simulation'}</button></div>`;
+        }).join('') : '<p>No pre-made simulation tests are available yet.</p>'}
     </section>`;
     host.querySelectorAll('[data-v2-simulation]').forEach(button => button.addEventListener('click', async () => {
         const test = tests.find(item => Number(item.id) === Number(button.dataset.v2Simulation));
