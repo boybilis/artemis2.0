@@ -702,7 +702,17 @@ function showTestBankInstructions({title, itemCount, timeLimitMinutes, coverage 
         const finish = value => { document.removeEventListener('keydown', onKeydown); backdrop.remove(); resolve(value); };
         const onKeydown = event => { if (event.key === 'Escape') finish(false); };
         backdrop.querySelector('.test-bank-instructions-cancel').addEventListener('click', () => finish(false));
-        backdrop.querySelector('.test-bank-instructions-start').addEventListener('click', () => finish(true));
+        backdrop.querySelector('.test-bank-instructions-start').addEventListener('click', async event => {
+            const button = event.currentTarget;
+            button.disabled = true;
+            try {
+                await enterTestBankFullscreen();
+                finish(true);
+            } catch (error) {
+                button.disabled = false;
+                showToast('Full-screen mode is required. Please allow it and click Start Exam again.', 'error');
+            }
+        });
         backdrop.addEventListener('click', event => { if (event.target === backdrop) finish(false); });
         document.addEventListener('keydown', onKeydown);
         backdrop.querySelector('.test-bank-instructions-start').focus();
@@ -2875,8 +2885,23 @@ let testBankExamActive = false;
 let testBankAttemptInvalidating = false;
 let testBankExitWarningOpen = false;
 
+function currentTestBankFullscreenElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement;
+}
+
+async function enterTestBankFullscreen() {
+    if (currentTestBankFullscreenElement()) return;
+    const requestFullscreen = document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen;
+    if (!requestFullscreen) throw new Error('Fullscreen unavailable');
+    await requestFullscreen.call(document.documentElement);
+}
+
 async function exitTestBankFullscreen() {
+    testBankExamActive = false;
     document.body.classList.remove('test-bank-exam-mode');
+    if (!currentTestBankFullscreenElement()) return;
+    const exitFullscreen = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exitFullscreen) await exitFullscreen.call(document);
 }
 
 async function invalidateActiveTestBankExam(message = 'The exam was invalidated because full-screen mode was exited.') {
@@ -2911,6 +2936,10 @@ function showTestBankExitWarning(fullscreenExited = false) {
     const cleanup = () => { document.removeEventListener('keydown', onKeydown); backdrop.remove(); testBankExitWarningOpen = false; };
     const cancelExam = async () => { cleanup(); await invalidateActiveTestBankExam('Exam cancelled and recorded in Quiz History.'); await exitTestBankFullscreen(); };
     const continueExam = async () => {
+        try { await enterTestBankFullscreen(); } catch (error) {
+            showToast('Return to full-screen mode to continue the exam.', 'error');
+            return;
+        }
         document.body.classList.add('test-bank-exam-mode');
         cleanup();
     };
@@ -2920,6 +2949,12 @@ function showTestBankExitWarning(fullscreenExited = false) {
     document.addEventListener('keydown', onKeydown);
     backdrop.querySelector('.test-bank-exit-continue').focus();
 }
+
+function handleTestBankFullscreenChange() {
+    if (testBankExamActive && !currentTestBankFullscreenElement()) showTestBankExitWarning(true);
+}
+document.addEventListener('fullscreenchange', handleTestBankFullscreenChange);
+document.addEventListener('webkitfullscreenchange', handleTestBankFullscreenChange);
 
 document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && testBankExamActive && !testBankExitWarningOpen) {
@@ -2940,6 +2975,7 @@ async function startTestBankPremadeQuiz(testBankId, quizId, button) {
         document.body.classList.add('test-bank-exam-mode');
         state.examType = 'test_bank';
         startQuiz(data.questions, {title: data.title, timeLimitMinutes: data.timeLimitMinutes, lazyLoad: data.lazyLoad, totalQuestions: data.totalQuestions});
+        handleTestBankFullscreenChange();
     } catch (error) {
         testBankExamActive = false;
         await exitTestBankFullscreen();
