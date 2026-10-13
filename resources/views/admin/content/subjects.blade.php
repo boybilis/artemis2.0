@@ -45,7 +45,7 @@
                         @endif
                         <button type="button" class="btn-ghost edit-subject-btn"
                             data-id="{{ $subject->id }}" data-code="{{ $subject->subject_code }}" data-title="{{ $subject->title }}"
-                            data-description="{{ $subject->description }}" data-order="{{ $subject->sort_order }}" data-intensive="{{ $subject->is_intensive_final_coaching ? '1' : '0' }}">Edit</button>
+                            data-description="{{ $subject->description }}" data-order="{{ $subject->sort_order }}" data-intensive="{{ $subject->is_intensive_final_coaching ? '1' : '0' }}" data-mentoring="{{ $subject->is_mentoring ? '1' : '0' }}">Edit</button>
                         <form method="POST" action="{{ route('admin.content.subjects.destroy', ['course' => $course->id, 'subject' => $subject->id]) }}" style="display:inline" onsubmit="return confirm('Delete this subject?');">
                             @csrf @method('DELETE')
                             <button type="submit" class="btn-ghost" style="color:var(--wrong)">Delete</button>
@@ -96,6 +96,7 @@
                     </label>
                 </div>
             </div>
+                <div class="field full"><label class="subject-phase-check" for="subject_mentoring"><input id="subject_mentoring" type="checkbox" name="is_mentoring" value="1"><span><strong>Mentoring subject</strong><small>Included in Mentoring batches and Complete Review courses.</small></span></label></div>
           </section>
         </div>
         <div class="admin-modal-footer">
@@ -127,6 +128,7 @@ document.querySelectorAll('.edit-subject-btn').forEach(button => button.addEvent
     document.getElementById('subject_description').value = button.dataset.description || '';
     document.getElementById('subject_sort_order').value = button.dataset.order || 0;
     document.getElementById('subject_intensive_final_coaching').checked = button.dataset.intensive === '1';
+    document.getElementById('subject_mentoring').checked = button.dataset.mentoring === '1';
     document.getElementById('subjectModalTitle').textContent = 'Edit Subject';
     document.getElementById('subjectSaveButton').textContent = 'Save Changes';
     subjectModal.classList.add('open');

@@ -13,12 +13,14 @@ class Subject extends Model
         'course_id', 'subject_code', 'title', 'description', 'start_date', 'end_date',
         'schedule_day', 'start_time', 'end_time', 'modality', 'sort_order', 'status',
         'is_intensive_final_coaching',
+        'is_mentoring',
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
         'is_intensive_final_coaching' => 'boolean',
+        'is_mentoring' => 'boolean',
     ];
 
     public function course()

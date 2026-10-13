@@ -6,7 +6,30 @@ use Illuminate\Database\Eloquent\Model;
 
 class CourseBatch extends Model
 {
-    protected $fillable = ['course_id', 'name', 'code', 'description', 'includes_intensive_final_coaching', 'starts_at', 'ends_at', 'schedule_day', 'start_time', 'end_time', 'modality', 'price', 'usd_price', 'capacity', 'status', 'created_by'];
+    public const COURSE_TYPES = [
+        'complete' => 'Complete Review Course',
+        'comprehensive' => 'Comprehensive Review Course',
+        'final_coaching' => 'Final Coaching Review Course',
+        'mentoring' => 'Mentoring Course',
+    ];
+
+
+    public function filterSubjects($query)
+    {
+        $type = $this->course_type ?? ($this->includes_intensive_final_coaching ? 'complete' : 'comprehensive');
+        return match ($type) {
+            'final_coaching' => $query->where('is_intensive_final_coaching', true),
+            'mentoring' => $query->where('is_mentoring', true),
+            'comprehensive' => $query->where('is_intensive_final_coaching', false),
+            default => $query,
+        };
+    }
+
+    public function includesUnassignedTopics(): bool
+    {
+        return !in_array($this->course_type, ['final_coaching', 'mentoring'], true);
+    }
+    protected $fillable = ['course_id', 'name', 'code', 'description', 'course_type', 'includes_intensive_final_coaching', 'starts_at', 'ends_at', 'schedule_day', 'start_time', 'end_time', 'modality', 'price', 'usd_price', 'capacity', 'status', 'created_by'];
 
     protected $casts = ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'price' => 'decimal:2', 'usd_price' => 'decimal:2', 'includes_intensive_final_coaching' => 'boolean'];
 
@@ -30,6 +53,11 @@ class CourseBatch extends Model
 
     protected static function booted(): void
     {
+        static::creating(function (self $batch) {
+            if (!isset($batch->course_type)) {
+                $batch->course_type = $batch->includes_intensive_final_coaching ? 'complete' : 'comprehensive';
+            }
+        });
         // Keep legacy callers and older tests compatible while the application
         // transitions from one course per batch to the batch/course pivot.
         static::saved(function (CourseBatch $batch) {

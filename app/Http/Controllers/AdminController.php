@@ -427,9 +427,11 @@ class AdminController extends Controller
             'modality'=>'nullable|in:Online,Blended,Live via Zoom', 'price'=>'required|numeric|min:0', 'usd_price'=>'nullable|numeric|min:0',
             'capacity'=>'nullable|integer|min:1|max:100000', 'status'=>'required|in:draft,open,closed,completed',
             'includes_intensive_final_coaching'=>'nullable|boolean',
+            'course_type'=>'sometimes|required|in:complete,comprehensive,final_coaching,mentoring',
             'course_ids'=>'required|array|min:1', 'course_ids.*'=>['integer',\Illuminate\Validation\Rule::exists('courses','id')->where('approval_status','approved')],
         ]);
-        $data['includes_intensive_final_coaching'] = $request->boolean('includes_intensive_final_coaching');
+        $data['course_type'] = $data['course_type'] ?? ($request->boolean('includes_intensive_final_coaching') ? 'complete' : 'comprehensive');
+        $data['includes_intensive_final_coaching'] = in_array($data['course_type'], ['complete', 'final_coaching'], true);
 
         if (!$batchId || blank($data['code'] ?? null)) {
             $base = Str::upper(Str::slug($data['name']));
@@ -932,8 +934,10 @@ class AdminController extends Controller
             'description' => 'nullable|string|max:2000',
             'sort_order' => 'nullable|integer|min:0',
             'is_intensive_final_coaching' => 'nullable|boolean',
+            'is_mentoring' => 'nullable|boolean',
         ]);
         $data['is_intensive_final_coaching'] = $request->boolean('is_intensive_final_coaching');
+        $data['is_mentoring'] = $request->boolean('is_mentoring');
         return $data;
     }
 

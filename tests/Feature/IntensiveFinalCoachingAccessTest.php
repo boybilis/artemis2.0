@@ -15,6 +15,41 @@ class IntensiveFinalCoachingAccessTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_all_four_batch_types_filter_subjects_topics_and_course_counts(): void
+    {
+        foreach (['complete' => ['REG', 'IFC', 'MENT'], 'comprehensive' => ['REG', 'MENT'], 'final_coaching' => ['IFC'], 'mentoring' => ['MENT']] as $type => $expected) {
+            $learner = User::factory()->create();
+            $course = Course::create(['title' => $type, 'approval_status' => 'approved', 'is_published' => true]);
+            $batch = CourseBatch::create(['course_id' => $course->id, 'name' => $type, 'code' => $type, 'status' => 'open', 'course_type' => $type]);
+            CourseEnrollment::create(['user_id' => $learner->id, 'batch_id' => $batch->id, 'status' => 'active', 'enrolled_at' => now()]);
+            foreach (['REG', 'IFC', 'MENT'] as $code) {
+                $subject = Subject::create(['course_id' => $course->id, 'subject_code' => $code, 'title' => $code, 'status' => 'approved', 'is_intensive_final_coaching' => $code === 'IFC', 'is_mentoring' => $code === 'MENT']);
+                Topic::create(['course_id' => $course->id, 'subject_id' => $subject->id, 'title' => $code, 'status' => 'approved']);
+            }
+            Topic::create(['course_id' => $course->id, 'title' => 'Unassigned', 'status' => 'approved']);
+            $response = $this->actingAs($learner)->getJson("/api/courses/{$course->id}/topics")->assertOk();
+            $this->assertEqualsCanonicalizing($expected, collect($response->json('subjects'))->pluck('code')->all());
+            $topicCount = count($expected) + (in_array($type, ['complete', 'comprehensive']) ? 1 : 0);
+            $response->assertJsonCount($topicCount, 'topics');
+            $card = collect($this->getJson('/api/courses')->assertOk()->json('courses'))->firstWhere('id', $course->id);
+            $this->assertSame(count($expected), $card['subject_count']);
+            $this->assertSame($topicCount, $card['topic_count']);
+        }
+    }
+
+    public function test_admin_can_save_each_course_type_and_tag_mentoring_subjects(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
+        $course = Course::create(['title' => 'Review', 'approval_status' => 'approved']);
+        foreach (array_keys(CourseBatch::COURSE_TYPES) as $type) {
+            $this->actingAs($admin)->post(route('admin.classes.batches.store'), ['name' => $type, 'price' => 500, 'status' => 'open', 'course_ids' => [$course->id], 'course_type' => $type])->assertSessionHasNoErrors();
+            $this->assertDatabaseHas('course_batches', ['name' => $type, 'course_type' => $type]);
+        }
+        $this->post(route('admin.content.subjects.store', $course), ['subject_code' => 'MENT', 'title' => 'Mentoring', 'is_mentoring' => '1'])->assertSessionHasNoErrors();
+        $this->assertDatabaseHas('subjects', ['subject_code' => 'MENT', 'is_mentoring' => true]);
+        $this->get(route('admin.classes.index'))->assertOk()->assertSee('Mentoring Course')->assertSee('Final Coaching Review Course');
+    }
+
     private function learningSetup(bool $includesCoaching): array
     {
         $learner = User::factory()->create();
