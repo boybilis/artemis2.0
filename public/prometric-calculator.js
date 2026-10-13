@@ -28,13 +28,13 @@
     const summaryToggle = document.createElement('button');
     summaryToggle.type = 'button';
     summaryToggle.className = 'prometric-calculator-toggle';
-    summaryToggle.title = 'Test summary';
-    summaryToggle.setAttribute('aria-label', 'Open test summary');
-    summaryToggle.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="6" height="6"/><rect x="15" y="3" width="6" height="6"/><rect x="3" y="15" width="6" height="6"/><rect x="15" y="15" width="6" height="6"/></svg>';
+    summaryToggle.title = 'Question navigator';
+    summaryToggle.setAttribute('aria-label', 'Open question navigator');
+    summaryToggle.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3h1v4M3 7h2M3 11h2l-2 4h2M3 19h2v4H3M4 21h1M9 5h12M9 13h12M9 21h6M18 18l3 3-3 3M16 21h5"/></svg>';
     controls.append(summaryToggle);
     const summary = document.createElement('dialog');
     summary.className = 'prometric-calculator prometric-test-summary';
-    summary.setAttribute('aria-label', 'Test summary');
+    summary.setAttribute('aria-label', 'Question navigator');
     exam.append(summary);
     style.textContent += `
         .prometric-test-summary{inset:0;margin:auto;width:min(1100px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
@@ -62,7 +62,7 @@
         }));
         const done = entries.filter(entry => entry.answered).length;
         const flags = entries.filter(entry => entry.marked).length;
-        summary.innerHTML = '<header><strong>Test summary</strong><button type="button" aria-label="Close test summary">×</button></header>';
+        summary.innerHTML = '<header><strong>Question navigator</strong><button type="button" aria-label="Close question navigator">×</button></header>';
         const counts = document.createElement('p');
         counts.className = 'prometric-summary-counts';
         counts.textContent = `${done} answered · ${total - done} remaining · ${flags} marked · ${total} total`;
