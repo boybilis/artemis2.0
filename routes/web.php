@@ -178,6 +178,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/content/courses/{course}/test-banks/{testBank}/status', [TestBankController::class, 'toggleStatus'])->name('content.test-banks.status');
             Route::delete('/content/courses/{course}/test-banks/{testBank}', [TestBankController::class, 'destroy'])->name('content.test-banks.destroy');
             Route::get('/content/courses/{course}/test-banks/{testBank}/manage', [TestBankController::class, 'manage'])->name('content.test-banks.manage');
+            Route::get('/content/courses/{course}/test-banks/{testBank}/simulation-preview', [TestBankController::class, 'previewSimulation'])->name('content.test-banks.simulation-preview');
             Route::post('/content/courses/{course}/test-banks/{testBank}/questions', [TestBankController::class, 'storeQuestion'])->name('content.test-banks.questions.store');
             Route::post('/content/courses/{course}/test-banks/{testBank}/questions/import', [TestBankController::class, 'importQuestions'])->name('content.test-banks.questions.import');
             Route::put('/content/courses/{course}/test-banks/{testBank}/questions/{question}', [TestBankController::class, 'updateQuestion'])->name('content.test-banks.questions.update');

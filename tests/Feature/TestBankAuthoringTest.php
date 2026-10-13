@@ -124,6 +124,19 @@ class TestBankAuthoringTest extends TestCase
         Storage::disk('public')->assertExists($question->rationale_image_path);
     }
 
+    public function test_admin_can_preview_simulation_without_unlocking_or_recording_attempts(): void
+    {
+        extract($this->catalog());
+        $course->update(['title' => 'PROMETRIC RN']);
+        $this->actingAs($admin)->get(route('admin.content.test-banks.manage', [$course, $bank]))->assertOk()->assertSee('Preview Simulation Test');
+        $url = route('admin.content.test-banks.simulation-preview', [$course, $bank]);
+        $this->get($url)->assertOk()->assertSee('PROMETRIC RN Simulation Test')->assertViewHas('prometric', true);
+        $this->assertDatabaseCount('test_bank_quiz_attempts', 0);
+        $this->assertDatabaseCount('test_bank_enrollments', 0);
+        $learner = User::factory()->create(['role' => 'student', 'is_admin' => false]);
+        $this->actingAs($learner)->get($url)->assertNotFound();
+    }
+
     public function test_admin_can_import_course_subject_questions_from_csv(): void
     {
         extract($this->catalog());

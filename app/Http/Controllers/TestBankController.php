@@ -656,6 +656,15 @@ class TestBankController extends Controller
         return redirect()->route('admin.test-banks.index');
     }
 
+    public function previewSimulation(Course $course, TestBank $testBank)
+    {
+        $this->guardCatalog($course, $testBank);
+        $questions = TestBankQuestion::where('course_id', $course->id)->where('status', 'active')->inRandomOrder()->limit(150)->get()
+            ->map(fn ($question) => ['question' => $question->question, 'options' => $question->options, 'imageUrl' => $question->image_path ? asset('storage/'.$question->image_path) : null]);
+        $prometric = str_contains(strtolower($testBank->title.' '.$testBank->code.' '.$course->title), 'prometric');
+        return view('admin.content.simulation-preview', compact('course', 'testBank', 'questions', 'prometric'));
+    }
+
     public function manage(Request $request, Course $course, TestBank $testBank)
     {
         $this->guardCatalog($course, $testBank);
