@@ -96,6 +96,28 @@ class TestBankAuthoringTest extends TestCase
         $this->assertDatabaseHas('test_bank_questions', ['id' => $question->id, 'status' => 'active']);
     }
 
+    public function test_csv_import_matches_image_filenames_and_rejects_missing_or_duplicate_images(): void
+    {
+        extract($this->catalog());
+        Storage::fake('public');
+        $url = route('admin.content.test-banks.questions.import', [$course, $bank]);
+        $csv = "subject_codes,question,option_a,option_b,correct_answer,reference_image,rationale_image\nMEDSURG,Image question,A,B,A,reference.png,rationale.png\n";
+        $upload = fn () => UploadedFile::fake()->createWithContent('questions.csv', $csv);
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=');
+        $image = fn ($name) => UploadedFile::fake()->createWithContent($name, $png);
+        $this->actingAs($admin)->post($url, ['csv_file' => $upload()])->assertSessionHasErrors('csv_file');
+        $this->assertDatabaseCount('test_bank_questions', 0);
+        $this->assertEmpty(Storage::disk('public')->allFiles());
+        $this->post($url, ['csv_file' => $upload(), 'images' => [$image('reference.png'), $image('reference.png')]])->assertSessionHasErrors('images');
+        $this->assertDatabaseCount('test_bank_questions', 0);
+        $this->post($url, ['csv_file' => $upload(), 'images' => [$image('reference.png'), $image('rationale.png')]])->assertSessionHas('success');
+        $question = TestBankQuestion::firstOrFail();
+        $this->assertSame('reference.png', $question->image_filename);
+        $this->assertSame('rationale.png', $question->rationale_image_filename);
+        Storage::disk('public')->assertExists($question->image_path);
+        Storage::disk('public')->assertExists($question->rationale_image_path);
+    }
+
     public function test_admin_can_import_course_subject_questions_from_csv(): void
     {
         extract($this->catalog());

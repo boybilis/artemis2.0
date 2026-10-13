@@ -780,7 +780,17 @@ class TestBankController extends Controller
     public function importQuestions(Request $request, Course $course, TestBank $testBank)
     {
         $this->guardCatalog($course, $testBank);
-        $request->validate(['csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:10240']]);
+        $request->validate([
+            'csv_file' => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+            'images' => ['nullable', 'array', 'max:200'],
+            'images.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
+        ]);
+        $images = [];
+        foreach ($request->file('images', []) as $image) {
+            $name = $image->getClientOriginalName();
+            if (isset($images[$name])) return back()->withErrors(['images' => "Duplicate image filename: {$name}."]);
+            $images[$name] = $image;
+        }
         $handle = fopen($request->file('csv_file')->getRealPath(), 'rb');
         $headers = array_map(fn ($value) => strtolower(trim((string) $value)), fgetcsv($handle) ?: []);
         $subjectHeader = in_array('subject_codes', $headers, true) ? 'subject_codes' : 'subject_code';
@@ -810,7 +820,17 @@ class TestBankController extends Controller
                 fclose($handle);
                 return back()->withErrors(['csv_file' => "Invalid data on CSV row {$line}. Check the subject codes, question, choices, answer letter, and points."]);
             }
+            $imageNames = [];
+            foreach (['reference_image', 'rationale_image'] as $column) {
+                $name = trim((string) ($row[$column] ?? ''));
+                if ($name !== '' && !isset($images[$name])) {
+                    fclose($handle);
+                    return back()->withErrors(['csv_file' => "Missing image on CSV row {$line}: {$name}. Upload the matching image using its exact filename."]);
+                }
+                $imageNames[$column] = $name;
+            }
             $rows[] = [
+                '_images' => $imageNames,
                 'subject_ids' => $rowSubjects->pluck('id')->values()->all(),
                 'test_bank_id' => $testBank->id, 'course_id' => $course->id, 'subject_id' => $rowSubjects->first()->id,
                 'question' => trim($row['question']), 'options' => $options, 'correct_answer' => $correctIndex,
@@ -821,14 +841,30 @@ class TestBankController extends Controller
         }
         fclose($handle);
         if (!$rows) return back()->withErrors(['csv_file' => 'The CSV contains no question rows.']);
-        DB::transaction(function () use ($rows) {
+        $storedPaths = [];
+        try {
+        DB::transaction(function () use ($rows, $images, &$storedPaths) {
             foreach ($rows as $row) {
+                foreach (['reference_image' => ['image_path', 'image_filename', 'test-bank-question-images'], 'rationale_image' => ['rationale_image_path', 'rationale_image_filename', 'test-bank-rationale-images']] as $column => [$pathField, $nameField, $directory]) {
+                    if ($name = $row['_images'][$column]) {
+                        // Keep each question's image independent when a filename is reused.
+                        $path = $images[$name]->storeAs($directory, (string) \Illuminate\Support\Str::uuid().'.'.$images[$name]->extension(), 'public');
+                        if (!$path) throw new \RuntimeException('Could not store the imported image.');
+                        $storedPaths[] = $path;
+                        $row[$pathField] = $path;
+                        $row[$nameField] = $name;
+                    }
+                }
                 $subjectIds = $row['subject_ids'];
-                unset($row['subject_ids']);
+                unset($row['subject_ids'], $row['_images']);
                 $question = TestBankQuestion::create($row);
                 $question->subjects()->sync($subjectIds);
             }
         });
+        } catch (\Throwable $error) {
+            Storage::disk('public')->delete($storedPaths);
+            throw $error;
+        }
 
         return back()->with('success', count($rows).' Test Bank questions imported.');
     }
