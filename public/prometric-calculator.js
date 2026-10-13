@@ -25,6 +25,80 @@
     toggle.setAttribute('aria-label', 'Open calculator');
     toggle.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M7 6h10M7 10h2m2 0h2m2 0h2M7 14h2m2 0h2m2 0h2M7 18h2m2 0h2m2 0h2"/></svg>';
     controls.append(toggle);
+    const summaryToggle = document.createElement('button');
+    summaryToggle.type = 'button';
+    summaryToggle.className = 'prometric-calculator-toggle';
+    summaryToggle.title = 'Test summary';
+    summaryToggle.setAttribute('aria-label', 'Open test summary');
+    summaryToggle.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="6" height="6"/><rect x="15" y="3" width="6" height="6"/><rect x="3" y="15" width="6" height="6"/><rect x="15" y="15" width="6" height="6"/></svg>';
+    controls.append(summaryToggle);
+    const summary = document.createElement('dialog');
+    summary.className = 'prometric-calculator prometric-test-summary';
+    summary.setAttribute('aria-label', 'Test summary');
+    exam.append(summary);
+    style.textContent += `
+        .prometric-test-summary{inset:0;margin:auto;width:min(640px,calc(100vw - 32px));max-height:85vh}
+        .prometric-summary-counts{line-height:1.7;margin:12px 0}
+        .prometric-summary-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin-bottom:16px}
+        .prometric-summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px}
+        .prometric-summary-grid button{font-size:13px;font-weight:700;min-height:44px;padding:4px;border:1px solid currentColor}
+        .prometric-summary-grid .summary-answered{background:#dceaff;color:#123c72}
+        .prometric-summary-grid .summary-unanswered{background:#ffe5e5;color:#992525}
+        .prometric-summary-grid .summary-marked{background:#ffecd0;color:#854500}
+        .prometric-summary-grid button[aria-current="true"]{outline:2px solid #222;outline-offset:2px}
+    `;
+    summaryToggle.addEventListener('click', () => {
+        if (!exam.classList.contains('prometric-simulation-exam') || summary.open) return;
+        const preview = typeof quizData === 'undefined';
+        if (!preview && !assessmentReviewActive && quizData[qIndex]) {
+            answersList[qIndex] = Array.isArray(selected) ? [...selected] : selected && typeof selected === 'object' ? {...selected} : selected;
+        }
+        const total = preview ? questions.length : quizData.length;
+        const current = preview ? index : qIndex;
+        const entries = Array.from({length:total}, (_, position) => ({
+            position,
+            answered: preview ? answers[position] !== undefined : assessmentAnswerIsComplete(answersList[position]),
+            marked: preview ? Boolean(marked[position]) : reviewQuestions.has(position)
+        }));
+        const done = entries.filter(entry => entry.answered).length;
+        const flags = entries.filter(entry => entry.marked).length;
+        summary.innerHTML = '<header><strong>Test summary</strong><button type="button" aria-label="Close test summary">×</button></header>';
+        const counts = document.createElement('p');
+        counts.className = 'prometric-summary-counts';
+        counts.textContent = `${done} answered · ${total - done} remaining · ${flags} marked · ${total} total`;
+        summary.append(counts);
+        const legend = document.createElement('div');
+        legend.className = 'prometric-summary-legend';
+        legend.textContent = '✓ Blue: answered   ○ Red: unanswered   ⚑ Orange: marked for review';
+        summary.append(legend);
+        const grid = document.createElement('div');
+        grid.className = 'prometric-summary-grid';
+        entries.forEach(entry => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = entry.marked ? 'summary-marked' : entry.answered ? 'summary-answered' : 'summary-unanswered';
+            button.textContent = `${entry.position + 1} ${entry.marked ? '⚑' : entry.answered ? '✓' : '○'}`;
+            button.setAttribute('aria-label', `Question ${entry.position + 1}, ${entry.answered ? 'answered' : 'unanswered'}${entry.marked ? ', marked for review' : ''}`);
+            if (entry.position === current) button.setAttribute('aria-current', 'true');
+            button.addEventListener('click', () => {
+                summary.close();
+                if (preview) { index = entry.position; render(); }
+                else {
+                    qIndex = entry.position;
+                    assessmentReviewActive = false;
+                    editingQuestionFromReview = false;
+                    document.getElementById('assessment-review-panel').style.display = 'none';
+                    document.getElementById('quiz-question-panel').style.display = '';
+                    renderQuestion();
+                }
+                exam.querySelector('.exam-environment-body').scrollTop = 0;
+            });
+            grid.append(button);
+        });
+        summary.append(grid);
+        summary.querySelector('header button').onclick = () => summary.close();
+        summary.showModal();
+    });
     const dialog = document.createElement('dialog');
     dialog.className = 'prometric-calculator';
     dialog.setAttribute('aria-label', 'Calculator');
@@ -79,6 +153,7 @@
         if (/^[0-9.+]$/.test(key) || ['×','÷','−','=','⌫','C'].includes(key)) { event.preventDefault(); event.stopPropagation(); press(key); }
     });
     new MutationObserver(() => {
+        if (summary.open && (!exam.classList.contains('prometric-simulation-exam') || !exam.classList.contains('active'))) summary.close();
         if (dialog.open && (!exam.classList.contains('prometric-simulation-exam') || !exam.classList.contains('active'))) dialog.close();
     }).observe(exam, {attributes:true, attributeFilter:['class']});
 })();

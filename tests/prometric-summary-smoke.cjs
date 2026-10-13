@@ -1,0 +1,23 @@
+const fs = require('fs'), vm = require('vm'), assert = require('assert');
+const source = fs.readFileSync('public/prometric-calculator.js', 'utf8');
+function element() { return {children:[],style:{},append(child){this.children.push(child)},setAttribute(){},addEventListener(type,fn){this[type]=fn}}; }
+const close = element(), summary = element();
+summary.querySelector = () => close;
+summary.showModal = () => summary.open = true;
+summary.close = () => summary.open = false;
+const panel = element(), body = element();
+const context = {summary, summaryToggle:element(),exam:{classList:{contains:()=>true},querySelector:()=>body},document:{createElement:element,getElementById:()=>panel},quizData:[{},undefined,{}],qIndex:0,selected:0,answersList:[],reviewQuestions:new Set([2]),assessmentReviewActive:false,editingQuestionFromReview:false,assessmentAnswerIsComplete:a=>a!==undefined&&a!==null,renderQuestion:()=>context.rendered=true};
+vm.createContext(context);
+vm.runInContext(source.slice(source.indexOf("    summaryToggle.addEventListener('click'"),source.indexOf("    const dialog =")),context);
+context.summaryToggle.click();
+assert.equal(context.answersList[0],0,'Opening summary preserves selected answer');
+assert.equal(summary.children[0].textContent,'1 answered · 2 remaining · 1 marked · 3 total');
+const grid = summary.children[2];
+assert.equal(grid.children.length,3,'Includes unloaded questions');
+assert.equal(grid.children[2].className,'summary-marked');
+grid.children[1].click();
+assert.equal(context.qIndex,1);
+assert(context.rendered);
+assert(!summary.open);
+assert(!context.assessmentReviewActive);
+console.log('Prometric summary counts, saved selection, flags, and navigation passed.');
