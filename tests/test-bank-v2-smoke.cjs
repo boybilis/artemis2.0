@@ -124,6 +124,9 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     context.renderV2SimulationCard({...workspace, simulationProgress:{warmUpPassed:10,masteryPassed:5,unlocked:true},premadeTests:[{id:9,isSimulation:true,locked:false}]});
     assert(host.innerHTML.includes('Start Simulation'));
     assert(host.innerHTML.includes('Not available'));
+    context.renderV2SimulationCard({...workspace, simulationProgress:{warmUpPassed:0,masteryPassed:0,unlocked:true,adminUnlocked:true},premadeTests:[{id:9,isSimulation:true,locked:false}]});
+    assert(host.innerHTML.includes('Your administrator has unlocked simulation tests'));
+    assert(/data-v2-simulation="9"\s*>Start Simulation/.test(host.innerHTML));
     context.renderV2PracticeCard(workspace,10);
     assert(host.innerHTML.includes('SHORT & FLEXIBLE PRACTICE'));
     assert(host.innerHTML.includes('Start Warm Up Quiz'));

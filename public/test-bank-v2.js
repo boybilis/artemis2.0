@@ -42,7 +42,7 @@ function renderV2SimulationCard(workspace) {
     const progress = workspace.simulationProgress || {};
     const warm = Math.max(0, Number(progress.warmUpPassed || 0));
     const mastery = Math.max(0, Number(progress.masteryPassed || 0));
-    const unlocked = Boolean(progress.unlocked) && warm >= 10 && mastery >= 5;
+    const unlocked = Boolean(progress.unlocked);
     const tests = (workspace.premadeTests || []).filter(test => test.isSimulation);
     const remaining = [];
     if (warm < 10) remaining.push(`${10 - warm} more distinct Warm Up Quizzes`);
@@ -54,7 +54,7 @@ function renderV2SimulationCard(workspace) {
         <section class="v2-simulation-eligibility"><h3>Simulation test eligibility</h3>
             <div class="v2-eligibility-label"><span>Warm Up Quizzes</span><strong>${warm}/10 passed</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="Warm Up quizzes passed" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${Math.min(10, warm)}"><i style="width:${Math.min(100, warm * 10)}%"></i></div>
             <div class="v2-eligibility-label"><span>Mastery Tests</span><strong>${mastery}/5 passed</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="Mastery tests passed" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${Math.min(5, mastery)}"><i style="width:${Math.min(100, mastery * 20)}%"></i></div>
-            <p>${unlocked ? 'Requirements complete. Your simulation tests are unlocked.' : `Pass ${remaining.join(' and ')} to unlock.`}</p>
+            <p>${unlocked ? progress.adminUnlocked ? 'Your administrator has unlocked simulation tests for this Test Bank.' : 'Requirements complete. Your simulation tests are unlocked.' : `Pass ${remaining.join(' and ')} to unlock.`}</p>
         </section>
         ${Array.from({length:Math.max(2,tests.length)},(_,index) => tests[index] || null).map((test,index) => {
             const locked = !unlocked || Boolean(test?.locked);

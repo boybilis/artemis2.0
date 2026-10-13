@@ -265,5 +265,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         Route::get('/audit-logs', [AdminController::class, 'auditLogs'])->middleware(RoleMiddleware::class.':admin,instructor')->name('audit-logs.index');
         Route::get('/settings', [AdminController::class, 'settings'])->middleware(RoleMiddleware::class.':admin,instructor')->name('settings.index');
+        Route::put('/settings/test-banks/{testBank}/simulation-access', [TestBankController::class, 'updateSimulationAccess'])->middleware(RoleMiddleware::class.':admin')->name('settings.simulation-access');
     });
 });

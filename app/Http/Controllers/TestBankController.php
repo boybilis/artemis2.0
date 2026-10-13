@@ -168,14 +168,10 @@ class TestBankController extends Controller
         $attempts = TestBankQuizAttempt::query()
             ->where('user_id', $user->id)
             ->where('test_bank_id', $testBank->id)
-            ->with('quiz:id,title,subject_ids,quiz_type,item_count,time_limit_minutes')
+            ->with('quiz:id,title,subject_ids,quiz_type,item_count,time_limit_minutes,test_type')
             ->get();
-        $warmUpPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->passed
-            && $attempt->quiz?->quiz_type === 'learner'
-            && (int) $attempt->quiz?->item_count === 10)->count();
-        $masteryPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->passed
-            && $attempt->quiz?->quiz_type === 'learner'
-            && (int) $attempt->quiz?->item_count === 20)->count();
+        [$warmUpPassed, $masteryPassed] = $this->simulationPassCounts($attempts);
+        $simulationUnlocked = $testBank->simulation_unlocked_by_admin || ($warmUpPassed >= 10 && $masteryPassed >= 5);
         $attemptCounters = [];
         $historySubjects = $testBank->course->subjects->keyBy('id');
         $bestPercentages = TestBankQuizAttempt::where('test_bank_id', $testBank->id)
@@ -271,7 +267,8 @@ class TestBankController extends Controller
                 'warmUpRequired' => 10,
                 'masteryPassed' => $masteryPassed,
                 'masteryRequired' => 5,
-                'unlocked' => $warmUpPassed >= 10 && $masteryPassed >= 5,
+                'unlocked' => $simulationUnlocked,
+                'adminUnlocked' => $testBank->simulation_unlocked_by_admin,
             ],
             'subjects' => $subjects,
             'v2SubjectResults' => $attempts->sortBy('created_at')->filter(fn ($attempt) => $attempt->quiz?->quiz_type === 'subject'
@@ -288,7 +285,7 @@ class TestBankController extends Controller
                 'timeLimitMinutes' => $quiz->time_limit_minutes,
                 'isSimulation' => $this->isSimulationQuiz($quiz),
                 'testType' => $quiz->test_type ?? ($this->isSimulationQuiz($quiz) ? 'simulation' : ($quiz->item_count === 20 ? 'mastery' : 'warm_up')),
-                'locked' => $this->isSimulationQuiz($quiz) && ! ($warmUpPassed >= 10 && $masteryPassed >= 5),
+                'locked' => $this->isSimulationQuiz($quiz) && ! $simulationUnlocked,
             ])->values(),
             'learnerQuizzes' => $learnerQuizzes->map(fn (TestBankQuiz $quiz) => [
                 'id' => $quiz->id,
@@ -907,7 +904,7 @@ class TestBankController extends Controller
             'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:600'],
             'subject_ids' => ['required', 'array', 'min:1'], 'subject_ids.*' => ['integer'],
         ]);
-        $data['test_type'] ??= in_array(strtolower(trim($data['title'])), ['simulation test 1', 'simulation test 2'], true) ? 'simulation' : ($data['item_count'] === 20 ? 'mastery' : 'warm_up');
+        $data['test_type'] ??= (int) $data['item_count'] === 20 ? 'mastery' : 'warm_up';
         if ($data['test_type'] === 'simulation') {
             $data['item_count'] = 150;
             $data['time_limit_minutes'] = 300;
@@ -1033,24 +1030,46 @@ class TestBankController extends Controller
         $belongsToLearner = $quiz->quiz_type === 'premade'
             || (in_array($quiz->quiz_type, ['learner', 'subject'], true) && $quiz->owner_user_id === $user->id);
         abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active' && $belongsToLearner, 404);
-        if ($this->isSimulationQuiz($quiz)) {
+        if ($this->isSimulationQuiz($quiz) && !$testBank->simulation_unlocked_by_admin) {
             $attempts = TestBankQuizAttempt::query()
                 ->where('user_id', $user->id)
                 ->where('test_bank_id', $testBank->id)
                 ->where('passed', true)
-                ->with('quiz:id,quiz_type,item_count')
+                ->with('quiz:id,quiz_type,item_count,test_type')
                 ->get();
-            $warmUpPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->quiz?->quiz_type === 'learner'
-                && (int) $attempt->quiz?->item_count === 10)->count();
-            $masteryPassed = $attempts->filter(fn (TestBankQuizAttempt $attempt) => $attempt->quiz?->quiz_type === 'learner'
-                && (int) $attempt->quiz?->item_count === 20)->count();
+            [$warmUpPassed, $masteryPassed] = $this->simulationPassCounts($attempts);
             abort_unless($warmUpPassed >= 10 && $masteryPassed >= 5, 403, 'Pass 10 Warm Up Quizzes and 5 Mastery Tests to unlock Simulation Tests.');
         }
     }
 
     private function isSimulationQuiz(TestBankQuiz $quiz): bool
     {
-        return $quiz->test_type === 'simulation' || ($quiz->test_type === null && in_array(strtolower(trim($quiz->title)), ['simulation test 1', 'simulation test 2'], true));
+        return $quiz->test_type === 'simulation';
+    }
+
+    private function simulationPassCounts($attempts): array
+    {
+        $passed = $attempts->filter(fn ($attempt) => $attempt->passed && $attempt->total > 0
+            && !data_get($attempt->review_data, 'cancelled', false) && $attempt->quiz)
+            ->unique('test_bank_quiz_id');
+        $type = function ($attempt) {
+            $quiz = $attempt->quiz;
+            if ($quiz->test_type) return $quiz->test_type;
+            // Compatibility for existing generated and subject tests, which predate test_type.
+            return in_array($quiz->quiz_type, ['learner', 'subject'], true)
+                ? match ((int) $quiz->item_count) { 10 => 'warm_up', 20 => 'mastery', default => null }
+                : null;
+        };
+        return [$passed->filter(fn ($attempt) => $type($attempt) === 'warm_up')->count(),
+            $passed->filter(fn ($attempt) => $type($attempt) === 'mastery')->count()];
+    }
+
+    public function updateSimulationAccess(Request $request, TestBank $testBank)
+    {
+        $request->validate(['simulation_unlocked_by_admin' => ['required', 'boolean']]);
+        $testBank->simulation_unlocked_by_admin = $request->boolean('simulation_unlocked_by_admin');
+        $testBank->save();
+        return back()->with('success', 'Simulation access settings saved.');
     }
 
     private function guardOwnedLearnerQuiz($user, TestBank $testBank, TestBankQuiz $quiz): void

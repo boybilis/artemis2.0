@@ -4,6 +4,21 @@
 @section('kicker', 'Configuration')
 
 @section('content')
+@if(Auth::user()->is_admin || strtolower(trim(Auth::user()->role ?? '')) === 'admin')
+<section class="panel" style="margin-bottom:18px">
+    <p class="panel-label">Test Banks</p><h2 class="panel-title">Simulation Access</h2>
+    <p class="panel-subtitle">Simulation exams normally require 10 distinct passed Warm-up tests and 5 distinct passed Mastery tests. Enable an override to unlock all simulation exams in that Test Bank for learners with an active subscription. Turning it off restores the normal requirements.</p>
+    @if(session('success'))<p role="status">{{ session('success') }}</p>@endif
+    @foreach($testBanks as $bank)
+    <form method="POST" action="{{ route('admin.settings.simulation-access', $bank) }}" style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:1rem 0;border-bottom:1px solid var(--border)">
+        @csrf @method('PUT')
+        <div><strong>{{ $bank->title }}</strong><p>{{ $bank->course?->title }}</p></div>
+        <label style="display:flex;align-items:center;gap:.6rem"><input type="hidden" name="simulation_unlocked_by_admin" value="0"><input type="checkbox" name="simulation_unlocked_by_admin" value="1" @checked($bank->simulation_unlocked_by_admin)> Unlock simulations for all subscribed learners</label>
+        <button class="btn-primary" type="submit">Save</button>
+    </form>
+    @endforeach
+</section>
+@endif
 <div class="page-grid two">
     <section class="panel">
         <p class="panel-label">Admin profile</p>

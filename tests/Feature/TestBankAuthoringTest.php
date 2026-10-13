@@ -533,12 +533,12 @@ class TestBankAuthoringTest extends TestCase
             ->assertJsonPath('workspace.subjects.0.completedTests', 5)
             ->assertJsonPath('workspace.subjects.0.averageScore', 60)
             ->assertJsonPath('workspace.subjects.0.progress', 100)
-            ->assertJsonPath('workspace.simulationProgress.warmUpPassed', 1)
+            ->assertJsonPath('workspace.simulationProgress.warmUpPassed', 2)
             ->assertJsonPath('workspace.simulationProgress.masteryPassed', 0)
             ->assertJsonPath('workspace.simulationProgress.unlocked', false);
     }
 
-    public function test_only_named_simulation_tests_are_locked_until_progress_requirements_are_met(): void
+    public function test_simulation_type_uses_distinct_passes_or_admin_override_regardless_of_title(): void
     {
         extract($this->catalog());
         $question = TestBankQuestion::create([
@@ -548,11 +548,11 @@ class TestBankAuthoringTest extends TestCase
         ]);
         $question->subjects()->sync([$subject->id]);
         $regular = $bank->premadeQuizzes()->create([
-            'title' => 'Final Practice Test', 'item_count' => 1, 'subject_ids' => [$subject->id],
+            'title' => 'Simulation Test 1', 'test_type' => 'warm_up', 'item_count' => 1, 'subject_ids' => [$subject->id],
             'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
         ]);
         $simulation = $bank->premadeQuizzes()->create([
-            'title' => 'Simulation Test 1', 'item_count' => 25, 'subject_ids' => [$subject->id],
+            'title' => 'Clinical Readiness Exam', 'test_type' => 'simulation', 'item_count' => 25, 'subject_ids' => [$subject->id],
             'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
         ]);
         $regular->questions()->sync([$question->id]);
@@ -574,20 +574,31 @@ class TestBankAuthoringTest extends TestCase
         ]);
 
         $workspace = $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace");
-        $simulationIndex = collect($workspace->json('workspace.premadeTests'))->search(fn ($test) => $test['title'] === 'Simulation Test 1');
-        $regularIndex = collect($workspace->json('workspace.premadeTests'))->search(fn ($test) => $test['title'] === 'Final Practice Test');
+        $simulationIndex = collect($workspace->json('workspace.premadeTests'))->search(fn ($test) => $test['id'] === $simulation->id);
+        $regularIndex = collect($workspace->json('workspace.premadeTests'))->search(fn ($test) => $test['id'] === $regular->id);
         $workspace->assertJsonPath("workspace.premadeTests.{$simulationIndex}.locked", true)
             ->assertJsonPath("workspace.premadeTests.{$regularIndex}.locked", false);
         $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$regular->id}/questions")->assertOk();
         $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$simulation->id}/questions")->assertForbidden();
 
-        foreach ([10 => 10, 20 => 5] as $itemCount => $attemptCount) {
+        $overrideUrl = route('admin.settings.simulation-access', $bank);
+        $this->actingAs($learner)->put($overrideUrl, ['simulation_unlocked_by_admin' => 1])->assertNotFound();
+        $this->actingAs($admin)->put($overrideUrl, ['simulation_unlocked_by_admin' => 1])->assertSessionHas('success');
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace")->assertJsonPath('workspace.simulationProgress.unlocked', true)->assertJsonPath('workspace.simulationProgress.adminUnlocked', true);
+        $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$simulation->id}/questions")->assertOk();
+        $this->actingAs($admin)->put($overrideUrl, ['simulation_unlocked_by_admin' => 0])->assertSessionHas('success');
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/quizzes/{$simulation->id}/questions")->assertForbidden();
+        for ($i = 0; $i < 10; $i++) {
+            TestBankQuizAttempt::create(['user_id' => $learner->id, 'test_bank_id' => $bank->id, 'test_bank_quiz_id' => $regular->id, 'score' => 1, 'total' => 1, 'points_earned' => 1, 'points_possible' => 1, 'passed' => true, 'review_data' => []]);
+        }
+        $this->getJson("/api/test-banks/{$bank->id}/workspace")->assertJsonPath('workspace.simulationProgress.warmUpPassed', 1)->assertJsonPath('workspace.simulationProgress.unlocked', false);
+        foreach ([10 => 9, 20 => 5] as $itemCount => $attemptCount) {
+            foreach (range(1, $attemptCount) as $attempt) {
             $progressQuiz = $bank->premadeQuizzes()->create([
-                'quiz_type' => 'learner', 'owner_user_id' => $learner->id,
+                'quiz_type' => 'premade', 'test_type' => $itemCount === 10 ? 'warm_up' : 'mastery',
                 'title' => "Progress {$itemCount}", 'item_count' => $itemCount, 'subject_ids' => [$subject->id],
                 'randomize_questions' => true, 'status' => 'active', 'created_by' => $learner->id,
             ]);
-            foreach (range(1, $attemptCount) as $attempt) {
                 TestBankQuizAttempt::create([
                     'user_id' => $learner->id, 'test_bank_id' => $bank->id,
                     'test_bank_quiz_id' => $progressQuiz->id, 'score' => $itemCount, 'total' => $itemCount,

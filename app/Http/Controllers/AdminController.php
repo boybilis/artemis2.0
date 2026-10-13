@@ -1905,6 +1905,7 @@ class AdminController extends Controller
     // ─── SETTINGS ────────────────────────────────────────────────
     public function settings()
     {
-        return view('admin.settings.index');
+        $testBanks = \App\Models\TestBank::with('course:id,title')->orderBy('title')->get();
+        return view('admin.settings.index', compact('testBanks'));
     }
 }
