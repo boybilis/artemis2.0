@@ -3286,7 +3286,18 @@ function showAssessmentReview() {
 
     const list = $('assessment-review-list');
     list.innerHTML = '';
-    quizData.forEach((question, index) => {
+    const simulation = $('quiz-assessment-title')?.dataset.testType === 'simulation';
+    $('assessment-review-panel').classList.toggle('simulation-final-review', simulation);
+    const legend = $('assessment-review-panel').querySelector('.assessment-review-legend');
+    if (legend) {
+        if (simulation) {
+            const answeredCount = Array.from({length:quizData.length}, (_, index) => assessmentAnswerIsComplete(answersList[index])).filter(Boolean).length;
+            legend.textContent = `${answeredCount} answered · ${quizData.length - answeredCount} remaining · ${reviewQuestions.size} marked · ${quizData.length} total — ✓ Green: answered · ⚑ Yellow: marked · ○ Gray: unanswered`;
+        } else {
+            legend.innerHTML = '<span class="review-orange">Marked for review</span><span class="review-red">No answer</span><span class="review-blue">Answered</span>';
+        }
+    }
+    Array.from({length:quizData.length}, (_, index) => quizData[index]).forEach((question, index) => {
         const answered = assessmentAnswerIsComplete(answersList[index]);
         const marked = reviewQuestions.has(index);
         const statusClass = marked ? 'review-orange' : (answered ? 'review-blue' : 'review-red');
@@ -3294,7 +3305,12 @@ function showAssessmentReview() {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = `assessment-review-item ${statusClass}`;
-        button.innerHTML = `<span class="assessment-review-number">${index + 1}</span><span class="assessment-review-copy"><strong>${statusText}</strong><span>${String(question.question || 'Question').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]))}</span></span>`;
+        if (simulation) {
+            button.textContent = `${index + 1} ${marked ? '⚑' : answered ? '✓' : '○'}`;
+            button.setAttribute('aria-label', `Question ${index + 1}, ${answered ? 'answered' : 'unanswered'}${marked ? ', marked for review' : ''}`);
+        } else {
+            button.innerHTML = `<span class="assessment-review-number">${index + 1}</span><span class="assessment-review-copy"><strong>${statusText}</strong><span>${String(question?.question || 'Question').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[char]))}</span></span>`;
+        }
         button.addEventListener('click', () => {
             assessmentReviewActive = false;
             editingQuestionFromReview = true;
