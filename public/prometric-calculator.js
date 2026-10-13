@@ -37,7 +37,7 @@
     summary.setAttribute('aria-label', 'Test summary');
     exam.append(summary);
     style.textContent += `
-        .prometric-test-summary{inset:0;margin:auto;width:min(640px,calc(100vw - 32px));max-height:85vh}
+        .prometric-test-summary{inset:0;margin:auto;width:min(1100px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
         .prometric-summary-counts{line-height:1.7;margin:12px 0}
         .prometric-summary-legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;margin-bottom:16px}
         .prometric-summary-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:8px}
