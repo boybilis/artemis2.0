@@ -3413,7 +3413,8 @@ function showAssessmentSummary(data, continueAction) {
     const score = Number(data.score || 0).toLocaleString(undefined, {maximumFractionDigits: 2});
     const total = Number(data.total || 0).toLocaleString(undefined, {maximumFractionDigits: 2});
     $('assessment-summary-title').textContent = data.passed ? 'Assessment Passed' : 'Assessment Completed';
-    $('assessment-summary-score').textContent = `Score: ${score}/${total}`;
+    const percentage = Number(data.total) > 0 ? Math.round(Number(data.score) / Number(data.total) * 100) : 0;
+    $('assessment-summary-score').innerHTML = `Score: ${score}/${total} · ${percentage}% · <span style="color:${data.passed ? '#079383' : '#dc2626'};font-weight:700">${data.passed ? 'Passed' : 'Failed'}</span>`;
     const wrong = Array.isArray(data.incorrectQuestions) ? data.incorrectQuestions : [];
     assessmentSummaryQuestions = Array.isArray(data.questions) && data.questions.length
         ? data.questions
@@ -3465,6 +3466,26 @@ if (assessmentSummaryContinue) assessmentSummaryContinue.addEventListener('click
     else showScreen('dashboard-screen');
 });
 
+function showAssessmentResultModal(data) {
+    return new Promise(resolve => {
+        const dialog = document.createElement('dialog');
+        dialog.className = 'assessment-result-modal';
+        dialog.setAttribute('aria-labelledby', 'assessment-result-modal-title');
+        const title = $('quiz-assessment-title')?.textContent?.trim() || 'Assessment';
+        const items = data.questions?.length || quizData.length || Number(data.total || 0);
+        const type = state.examType === 'test_bank'
+            ? (/simulation/i.test(title) || items === 150 ? 'Exam Simulation' : items === 20 ? 'Mastery Test' : 'Warm Up Quiz')
+            : state.examType === 'final' ? 'Mock Exam' : state.examType === 'mid' ? 'Practice Test' : 'Assessment';
+        const percentage = Number(data.total) > 0 ? Math.round(Number(data.score) / Number(data.total) * 100) : 0;
+        dialog.innerHTML = `<small>ASSESSMENT RESULT</small><h2 id="assessment-result-modal-title">${escapeHtml(title)}</h2><p>${escapeHtml(type)} · ${Number(items)} items</p><div class="assessment-result-score"><strong>${Number(data.score || 0)}/${Number(data.total || 0)}</strong><span>${percentage}%</span></div><p class="assessment-result-status ${data.passed ? 'passed' : 'failed'}">${data.passed ? 'Passed' : 'Failed'}</p><button type="button">OK</button>`;
+        document.body.appendChild(dialog);
+        dialog.addEventListener('cancel', event => event.preventDefault());
+        dialog.querySelector('button').addEventListener('click', () => { dialog.close(); dialog.remove(); resolve(); });
+        dialog.showModal();
+        dialog.querySelector('button').focus();
+    });
+}
+
 async function finishQuiz() {
     clearInterval(quizTimerInterval);
     if (state.examType === 'test_bank' && activeTestBankId && activeTestBankQuizId) {
@@ -3475,7 +3496,7 @@ async function finishQuiz() {
             testBankExamActive = false;
             activeTestBankQuizId = null;
             await exitTestBankFullscreen();
-            showToast(`Test submitted. Score: ${data.score}/${data.total}`, data.passed ? 'success' : 'info');
+            await showAssessmentResultModal(data);
             showAssessmentSummary(data, () => {
                 showScreen('dashboard-screen');
                 openTestBankWorkspace(testBankId);
