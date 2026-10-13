@@ -127,12 +127,13 @@
             <div class="brand-mark">LC</div>
             <div>
                 <h1>Admin Login</h1>
-                <p>Placeholder screen for the future Laravel auth flow.</p>
+                <p>Sign in to your Artemis 2.0 management account.</p>
             </div>
         </div>
 
         <form action="{{ route('admin.login.submit') }}" method="POST">
             @csrf
+            @if(session('status'))<div class="note" role="status">{{ session('status') }}</div>@endif
             
             @if ($errors->any())
                 <div class="note" style="background: #fee2e2; border-color: #fca5a5; color: #991b1b; margin-bottom: 15px; margin-top: 0;">
@@ -158,6 +159,7 @@
             </div>
             <button class="btn" type="submit">Sign In</button>
         </form>
+        <a class="back-link" href="{{ route('admin.password.request') }}">Forgot password?</a>
 
         <div class="note">
             Sign in with your Artemis 2.0 administrator account. Administrative activity is recorded in the security audit log.

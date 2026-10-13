@@ -140,6 +140,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Admin Guest Auth
     Route::get('/login', [AdminController::class, 'showLogin'])->name('login');
     Route::post('/login', [AdminController::class, 'login'])->name('login.submit');
+    Route::get('/forgot-password', [\App\Http\Controllers\AdminPasswordController::class, 'requestForm'])->name('password.request');
+    Route::post('/forgot-password', [\App\Http\Controllers\AdminPasswordController::class, 'sendLink'])->middleware('throttle:5,1')->name('password.email');
+    Route::get('/reset-password/{token}', [\App\Http\Controllers\AdminPasswordController::class, 'resetForm'])->name('password.reset');
+    Route::post('/reset-password', [\App\Http\Controllers\AdminPasswordController::class, 'resetPassword'])->middleware('throttle:5,1')->name('password.update');
     Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
 
     // Admin Protected Area
