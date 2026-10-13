@@ -934,6 +934,21 @@ class TestBankController extends Controller
         return back()->with('success', $message);
     }
 
+    public function updateQuiz(Request $request, Course $course, TestBank $testBank, TestBankQuiz $quiz)
+    {
+        $this->guardCatalog($course, $testBank);
+        abort_unless($quiz->test_bank_id === $testBank->id && $quiz->quiz_type === 'premade', 404);
+        $data = $request->validate([
+            'title' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:600'],
+            'status' => ['required', Rule::in(['active', 'inactive'])],
+        ]);
+        if ($this->isSimulationQuiz($quiz)) $data['time_limit_minutes'] = 300;
+        $quiz->update($data);
+        return back()->with('success', 'Premade quiz information updated.');
+    }
+
     public function destroyQuiz(Course $course, TestBank $testBank, TestBankQuiz $quiz)
     {
         $this->guardCatalog($course, $testBank);

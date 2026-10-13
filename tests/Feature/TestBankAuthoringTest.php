@@ -18,6 +18,30 @@ class TestBankAuthoringTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_can_edit_premade_information_without_replacing_questions(): void
+    {
+        extract($this->catalog());
+        $quiz = $bank->premadeQuizzes()->create([
+            'title' => 'Simulation Test 2', 'quiz_type' => 'premade', 'test_type' => 'simulation',
+            'item_count' => 150, 'subject_ids' => [$subject->id], 'time_limit_minutes' => 300,
+            'randomize_questions' => true, 'status' => 'active', 'created_by' => $admin->id,
+        ]);
+        $url = route('admin.content.test-banks.quizzes.update', [$course, $bank, $quiz]);
+        $this->actingAs($admin)->get(route('admin.content.test-banks.manage', [$course, $bank]))
+            ->assertOk()->assertSee('Edit Premade Quiz')->assertSee('Save Changes');
+        $this->put($url, ['title' => 'Updated Simulation', 'description' => 'Updated description', 'time_limit_minutes' => 60, 'status' => 'inactive'])->assertRedirect();
+        $quiz->refresh();
+        $this->assertSame('Updated Simulation', $quiz->title);
+        $this->assertSame('Updated description', $quiz->description);
+        $this->assertSame('inactive', $quiz->status);
+        $this->assertEquals(300, $quiz->time_limit_minutes);
+        $this->assertEquals(150, $quiz->item_count);
+        $this->assertSame('simulation', $quiz->test_type);
+        $this->put($url, ['title' => '', 'status' => 'invalid'])->assertSessionHasErrors(['title', 'status']);
+        $otherBank = TestBank::create(['course_id' => $course->id, 'title' => 'Other', 'code' => 'OTHER', 'price' => 100, 'access_days' => 30, 'status' => 'active', 'created_by' => $admin->id]);
+        $this->put(route('admin.content.test-banks.quizzes.update', [$course, $otherBank, $quiz]), ['title' => 'Wrong bank', 'status' => 'active'])->assertNotFound();
+    }
+
     private function catalog(): array
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

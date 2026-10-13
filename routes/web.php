@@ -184,6 +184,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/content/courses/{course}/test-banks/{testBank}/questions/{question}', [TestBankController::class, 'updateQuestion'])->name('content.test-banks.questions.update');
             Route::post('/content/courses/{course}/test-banks/{testBank}/questions/{question}/status', [TestBankController::class, 'toggleQuestionStatus'])->name('content.test-banks.questions.status');
             Route::post('/content/courses/{course}/test-banks/{testBank}/quizzes', [TestBankController::class, 'storeQuiz'])->name('content.test-banks.quizzes.store');
+            Route::put('/content/courses/{course}/test-banks/{testBank}/quizzes/{quiz}', [TestBankController::class, 'updateQuiz'])->name('content.test-banks.quizzes.update');
             Route::delete('/content/courses/{course}/test-banks/{testBank}/quizzes/{quiz}', [TestBankController::class, 'destroyQuiz'])->name('content.test-banks.quizzes.destroy');
         });
 
