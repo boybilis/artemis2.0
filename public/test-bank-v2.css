@@ -1948,3 +1948,5 @@ body:not(.light-mode) .test-bank-builder-edit:hover{color:#facc15;background:rgb
 .test-bank-v2 .v2-progress-modal .test-bank-tracker-buttons button:hover{background:rgba(17,167,192,.12);filter:none}
 .test-bank-v2 .v2-progress-modal .test-bank-tracker-buttons button[data-v2-record-retake]:hover{background:rgba(244,119,33,.12)}
 .test-bank-v2 .v2-progress-modal .test-bank-tracker-buttons button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-action .test-bank-retake-badge{display:inline-flex;align-items:center;gap:.35rem;padding:0;border:0;border-radius:0;background:transparent;color:#b84b00;font-size:.65rem;font-weight:500;line-height:1.4}
+.test-bank-v2 .v2-progress-modal .test-bank-retake-badge::before{content:'•';font-size:1em}
