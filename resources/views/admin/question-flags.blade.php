@@ -8,6 +8,11 @@
 .flag-table th{font-size:.75rem;text-transform:uppercase;color:var(--text-muted);white-space:nowrap}
 .flag-table tbody tr:last-child td{border-bottom:0}
 .flag-detail-text{white-space:pre-wrap;overflow-wrap:anywhere;margin:16px 0}
+.flag-reply-field{margin-top:24px}
+.flag-reply-field .form-label{display:block;margin-bottom:8px;font-size:.95rem;font-weight:600}
+.flag-reply-field .form-control{display:block;width:100%;box-sizing:border-box;min-height:160px;padding:12px 14px;font:inherit;line-height:1.5;color:var(--text);background:var(--surface-solid,#fff);border:1px solid var(--border,#ced4da);border-radius:8px;resize:vertical;transition:border-color .15s ease-in-out,box-shadow .15s ease-in-out}
+.flag-reply-field .form-control:focus{border-color:#08a991;outline:0;box-shadow:0 0 0 .2rem rgba(8,169,145,.2)}
+.flag-reply-field .form-text{display:block;margin-top:8px;color:var(--text-muted);font-size:.8rem}
 </style>
 <section class="panel"><h2 class="panel-title">Flagged Questions</h2><p class="muted">View a flagged question to answer the learner’s query.</p>
 @if(session('success'))<p role="status">{{ session('success') }}</p>@endif
@@ -28,7 +33,7 @@
 <p class="flag-detail-text"><strong>Correct answer:</strong> {{ $flag->question_snapshot['correctAnswer'] ?? '' }}</p>
 <p class="flag-detail-text"><strong>Reason for flagging:</strong> {{ $flag->reason }}</p>
 @if($flag->replied_at)<p class="muted">Replied by {{ $flag->responder?->name ?? 'Management' }} · {{ $flag->replied_at->timezone('Asia/Manila')->format('M j, Y g:i A') }}</p>@endif
-<label for="reply{{ $flag->id }}">Reply to learner</label><textarea id="reply{{ $flag->id }}" class="form-control" name="reply" rows="5" maxlength="10000" required>{{ $flag->reply }}</textarea>
+<div class="flag-reply-field mb-3"><label class="form-label" for="reply{{ $flag->id }}">Reply to learner</label><textarea id="reply{{ $flag->id }}" class="form-control" name="reply" rows="5" maxlength="10000" placeholder="Write your explanation or answer here…" aria-describedby="replyHelp{{ $flag->id }}" required>{{ $flag->reply }}</textarea><small id="replyHelp{{ $flag->id }}" class="form-text">Your reply will be visible to the learner in Flagged Questions.</small></div>
 </div><div class="admin-modal-footer"><button type="button" class="btn-ghost" onclick="closeModal('flagModal{{ $flag->id }}')">Cancel</button><button class="btn-primary">{{ $flag->reply ? 'Update Reply' : 'Send Reply' }}</button></div>
 </form></div>
 @endforeach
