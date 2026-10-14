@@ -32,4 +32,23 @@
 </div><div class="admin-modal-footer"><button type="button" class="btn-ghost" onclick="closeModal('flagModal{{ $flag->id }}')">Cancel</button><button class="btn-primary">{{ $flag->reply ? 'Update Reply' : 'Send Reply' }}</button></div>
 </form></div>
 @endforeach
+<script>
+function openModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.returnFocus = document.activeElement;
+    modal.classList.add('open');
+    modal.querySelector('textarea')?.focus();
+}
+function closeModal(id) {
+    const modal = document.getElementById(id);
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.returnFocus?.focus();
+}
+document.querySelectorAll('[id^="flagModal"]').forEach(modal => {
+    modal.addEventListener('click', event => { if (event.target === modal) closeModal(modal.id); });
+    modal.addEventListener('keydown', event => { if (event.key === 'Escape') closeModal(modal.id); });
+});
+</script>
 @endsection
