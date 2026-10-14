@@ -29,6 +29,7 @@
 <div class="admin-modal-header"><h3 id="flagTitle{{ $flag->id }}" class="admin-modal-title">Flagged Question</h3><button type="button" class="admin-modal-close" aria-label="Close" onclick="closeModal('flagModal{{ $flag->id }}')">&times;</button></div>
 <div class="admin-modal-body">
 <p><strong>{{ $flag->user->name }}</strong> · {{ $flag->exam_details['title'] }} · {{ $flag->exam_details['type'] }}</p>
+<p><strong>Question ID:</strong> {{ $flag->question_snapshot['questionId'] ?? $flag->question_snapshot['id'] ?? 'Unavailable for this earlier review' }}</p>
 <p class="flag-detail-text"><strong>Question:</strong> {{ $flag->question_snapshot['question'] ?? '' }}</p>
 <p class="flag-detail-text"><strong>Correct answer:</strong> {{ $flag->question_snapshot['correctAnswer'] ?? '' }}</p>
 <p class="flag-detail-text"><strong>Reason for flagging:</strong> {{ $flag->reason }}</p>
