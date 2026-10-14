@@ -1937,3 +1937,14 @@ body:not(.light-mode) .test-bank-builder-edit:hover{color:#facc15;background:rgb
 @media(max-width:1150px){.test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-tracker-copy{grid-column:1/-1}.test-bank-tracker-action{grid-column:1/-1;align-items:flex-start}.test-bank-tracker-action button{min-width:180px}}
 @media(max-width:700px){.test-bank-progress-report{padding:1rem}.test-bank-tracker-row{padding:1rem;gap:1rem}.test-bank-progress-report .test-bank-history-table-tools label{width:100%}}
 }
+
+/* Progress records share one table surface; tracker controls remain separate. */
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-list{display:grid;gap:0;border:1px solid #bdd3df;border-radius:12px;overflow:hidden;background:#e3ecf0}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-row{margin:0;border:0;border-bottom:1px solid #bdd3df;border-radius:0;background:transparent;box-shadow:none;padding:1rem 1.25rem}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-row:last-child{border-bottom:0}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-list>p{margin:0;padding:1.25rem}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-buttons button{min-width:0;min-height:36px;padding:.4rem .8rem;border:1px solid #078b9b;border-radius:8px;background:transparent;color:#067b89;box-shadow:none;filter:none}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-buttons button[data-v2-record-retake]{border-color:#d6600b;background:transparent;color:#b84b00}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-buttons button:hover{background:rgba(17,167,192,.12);filter:none}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-buttons button[data-v2-record-retake]:hover{background:rgba(244,119,33,.12)}
+.test-bank-v2 .v2-progress-modal .test-bank-tracker-buttons button:focus-visible{outline:2px solid currentColor;outline-offset:3px}
