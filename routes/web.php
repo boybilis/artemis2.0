@@ -37,6 +37,8 @@ Route::prefix('api')->group(function () {
     // Authenticated API endpoints
     Route::middleware('auth')->group(function () {
         Route::post('/profile/settings', [AuthController::class, 'updateSettings']);
+        Route::get('/question-flags', [\App\Http\Controllers\QuestionFlagController::class, 'index']);
+        Route::post('/question-flags', [\App\Http\Controllers\QuestionFlagController::class, 'store'])->middleware('throttle:10,1');
         Route::post('/profile/email/verify', [AuthController::class, 'verifyEmailChange']);
         Route::post('/profile/email/resend', [AuthController::class, 'resendEmailChangeCode']);
         // Course & Progress
@@ -151,6 +153,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::redirect('/', '/admin/dashboard');
         
         Route::get('/dashboard', [\App\Http\Controllers\ManagementDashboardController::class, 'index'])->name('dashboard');
+        Route::middleware(RoleMiddleware::class.':admin,instructor')->group(function () {
+            Route::get('/question-flags', [\App\Http\Controllers\QuestionFlagController::class, 'manage'])->name('question-flags.index');
+            Route::put('/question-flags/{flag}/reply', [\App\Http\Controllers\QuestionFlagController::class, 'reply'])->name('question-flags.reply');
+        });
 
         // Users
         Route::middleware(RoleMiddleware::class.':admin,staff')->group(function () {

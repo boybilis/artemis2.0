@@ -20,6 +20,9 @@
     if ($isAdmin || $role === 'encoder') {
         $navItems[] = ['label' => 'Test Banks', 'route' => 'admin.test-banks.index', 'active' => ['admin.test-banks.*', 'admin.content.test-banks.*'], 'icon' => 'notebook-tabs'];
     }
+    if ($isAdmin || $role === 'instructor') {
+        $navItems[] = ['label' => 'Flagged Questions', 'route' => 'admin.question-flags.index', 'active' => 'admin.question-flags.*', 'icon' => 'flag'];
+    }
     if ($isAdmin || in_array($role, ['instructor','staff'], true)) {
         $navItems[] = ['label' => 'Class Management', 'route' => 'admin.classes.index', 'active' => 'admin.classes.*', 'icon' => 'calendar-days'];
     }
