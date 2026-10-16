@@ -17,8 +17,20 @@
         @forelse($testBanks as $testBank)
             <article class="test-bank-directory-card">
                 <div><h3>{{ $testBank->title }}</h3><p class="muted">{{ $testBank->code }} · {{ $testBank->course?->title }}</p><p class="muted">{{ $testBank->status === 'active' ? 'Approved' : 'Pending' }} · {{ $testBank->access_days }} days · ₱{{ number_format($testBank->price, 2) }}</p></div>
-                <div class="directory-actions"><a class="btn-primary" href="{{ route('admin.content.test-banks.manage', [$testBank->course_id, $testBank]) }}">Manage Test Bank</a><button type="button" class="btn-ghost" onclick='openDirectoryBankForm(@json($testBank))'>Edit</button></div>
+                <div class="directory-actions"><a class="btn-primary" href="{{ route('admin.content.test-banks.manage', [$testBank->course_id, $testBank]) }}">Manage Test Bank</a><button type="button" class="btn-ghost" onclick='openDirectoryBankForm(@json($testBank))'>Edit</button>
+                @if(auth()->user()->is_admin || strtolower(trim(auth()->user()->role)) === 'admin')
+                <button type="button" class="btn-ghost" style="color:#dc2626;border-color:#dc2626" onclick="document.getElementById('deleteBank{{ $testBank->id }}').classList.add('open')">Delete</button>
+                @endif</div>
             </article>
+            @if(auth()->user()->is_admin || strtolower(trim(auth()->user()->role)) === 'admin')
+            <div id="deleteBank{{ $testBank->id }}" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="deleteBankTitle{{ $testBank->id }}">
+                <form method="POST" action="{{ route('admin.content.test-banks.destroy', [$testBank->course_id,$testBank]) }}" class="admin-modal-content" style="max-width:560px">@csrf @method('DELETE')
+                    <div class="admin-modal-header"><h3 id="deleteBankTitle{{ $testBank->id }}" class="admin-modal-title">Delete Test Bank?</h3><button type="button" class="admin-modal-close" aria-label="Close" onclick="document.getElementById('deleteBank{{ $testBank->id }}').classList.remove('open')">&times;</button></div>
+                    <div class="admin-modal-body"><p><strong>{{ $testBank->title }}</strong></p><p>This permanently deletes this catalog, its quizzes, learner subscriptions, and exam attempts/results.</p><p>Questions shared with another catalog in the same course will be retained. If this is the last catalog, questions belonging to it will also be deleted.</p><p style="color:#dc2626;font-weight:600">This action cannot be undone.</p></div>
+                    <div class="admin-modal-footer"><button type="button" class="btn-ghost" onclick="document.getElementById('deleteBank{{ $testBank->id }}').classList.remove('open')">Cancel</button><button type="submit" class="btn-primary" style="background:#dc2626;color:white">Delete Test Bank</button></div>
+                </form>
+            </div>
+            @endif
         @empty
             <p class="muted">No Test Banks created yet. {{ $courses->isEmpty() ? 'Create a master course first in Course Management.' : 'Select Create Test Bank to get started.' }}</p>
         @endforelse
