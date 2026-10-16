@@ -60,6 +60,10 @@ class TestBankController extends Controller
     {
         $this->guardCatalog($course, $testBank);
         $query = $testBank->enrollments()->with('user:id,name,email');
+        if ($request->query('table_data') === 'enrollments') return response()->json(['rows'=>$query->latest('enrolled_at')->get()->map(fn($e)=>[
+            'id'=>$e->id,'name'=>$e->user->name,'email'=>$e->user->email,'licensure'=>$e->enrollment_option['name'] ?? 'Standard / previously enrolled','country'=>$e->enrollment_option['country'] ?? '—',
+            'status'=>$e->isActive() ? 'Active' : 'Inactive / expired','enrolled'=>$e->enrolled_at?->timezone('Asia/Manila')->format('M j, Y'),'expires'=>$e->expires_at?->timezone('Asia/Manila')->format('M j, Y') ?? 'No expiration',
+        ])]);
         $search = trim((string) $request->query('search', ''));
         if ($search !== '') {
             $query->where(function ($query) use ($search) {
@@ -698,6 +702,27 @@ class TestBankController extends Controller
     public function manage(Request $request, Course $course, TestBank $testBank)
     {
         $this->guardCatalog($course, $testBank);
+        if ($request->query('table_data') === 'question') {
+            $q=TestBankQuestion::where('course_id',$course->id)->with('subjects')->findOrFail($request->query('id'));
+            return response()->json(['question'=>[
+                'id'=>$q->id,'question'=>$q->question,'options'=>$q->options,'correctAnswer'=>$q->correct_answer,'points'=>(float)$q->points,'rationale'=>$q->rationale,'status'=>$q->status,
+                'imageUrl'=>$q->image_path ? asset('storage/'.$q->image_path) : null,'imageFilename'=>$q->image_filename,
+                'rationaleImageUrl'=>$q->rationale_image_path ? asset('storage/'.$q->rationale_image_path) : null,'rationaleImageFilename'=>$q->rationale_image_filename,'rationaleVideoUrl'=>$q->rationale_video_url,
+                'subjectIds'=>$q->subjects->pluck('id'),'subjects'=>$q->subjects->map(fn($s)=>['id'=>$s->id,'code'=>$s->subject_code,'title'=>$s->title]),
+            ]]);
+        }
+        if ($request->query('table_data') === 'questions') return response()->json(['rows'=>TestBankQuestion::where('course_id',$course->id)->with('subjects:id,subject_code,title')->latest()->get()->map(fn($q)=>[
+            'id'=>$q->id,'question'=>$q->question,'answer'=>chr(65+$q->correct_answer).'. '.($q->options[$q->correct_answer] ?? ''),'points'=>(float)$q->points,'status'=>$q->status,
+            'subjects'=>$q->subjects->map(fn($s)=>['code'=>$s->subject_code,'title'=>$s->title]),'statusUrl'=>route('admin.content.test-banks.questions.status',[$course,$testBank,$q]),
+        ])]);
+        if ($request->query('table_data') === 'quizzes') {
+            $rows=$testBank->premadeQuizzes()->where('quiz_type','premade')->withCount(['questions'=>fn($q)=>$q->where('test_bank_questions.status','active')])->latest()->get();
+            return response()->json(['rows'=>$rows->map(fn($quiz)=>[
+                'id'=>$quiz->id,'title'=>$quiz->title,'description'=>$quiz->description,'type'=>$quiz->test_type,'items'=>$quiz->questions_count,'minutes'=>$quiz->time_limit_minutes,'status'=>$quiz->status,
+                'deleteUrl'=>route('admin.content.test-banks.quizzes.destroy',[$course,$testBank,$quiz]),
+                'editHtml'=>view('admin.content.partials.premade-edit-modal',compact('course','testBank','quiz'))->render(),
+            ])]);
+        }
         $subjects = $course->subjects()->where('status', 'approved')->orderBy('sort_order')->orderBy('title')->get();
         $questionTotal = TestBankQuestion::where('course_id', $course->id)->count();
         $questionQuery = TestBankQuestion::where('course_id', $course->id)->with([

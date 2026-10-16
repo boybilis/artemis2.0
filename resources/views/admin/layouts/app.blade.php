@@ -592,5 +592,6 @@
             }
         });
     </script>
+<script src="{{ asset('admin-client-tables.js') }}?v=1"></script>
 </body>
 </html>

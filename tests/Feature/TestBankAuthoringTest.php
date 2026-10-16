@@ -79,6 +79,8 @@ class TestBankAuthoringTest extends TestCase
         $this->actingAs($admin)->get($url)->assertOk()->assertSee('tb-premade-table')->assertSee('12 matching quizzes')->assertSee('Page 1 of 2');
         $this->get($url.'?quiz_page=2')->assertOk()->assertSee('Page 2 of 2')->assertSee('Edit Premade Quiz');
         $this->get($url.'?quiz_search=Premade%2012')->assertOk()->assertSee('1 matching quizzes')->assertSee('Page 1 of 1');
+        $json=$this->getJson($url.'?table_data=quizzes&quiz_search=not-a-match')->assertOk()->assertJsonCount(12,'rows');
+        $this->assertStringContainsString('Edit Premade Quiz',$json->json('rows.0.editHtml'));
     }
 
     public function test_question_table_ajax_payload_and_edit_archive_responses(): void
@@ -91,6 +93,21 @@ class TestBankAuthoringTest extends TestCase
         $this->putJson(route('admin.content.test-banks.questions.update',[$course,$bank,$question]),array_replace($data,['question'=>'AJAX updated']))->assertOk()->assertJsonPath('success',true);
         $this->postJson(route('admin.content.test-banks.questions.status',[$course,$bank,$question]))->assertOk()->assertJsonPath('success',true);
         $this->assertSame('inactive',$question->fresh()->status);
+    }
+
+    public function test_question_master_json_is_lightweight_and_details_are_course_scoped(): void
+    {
+        extract($this->catalog());
+        $q=TestBankQuestion::create(['course_id'=>$course->id,'test_bank_id'=>$bank->id,'subject_id'=>$subject->id,'question'=>'Master question','options'=>['First','Second'],'correct_answer'=>0,'rationale'=>'Detailed explanation','status'=>'active']);
+        $q->subjects()->attach($subject->id);
+        $url=route('admin.content.test-banks.manage',[$course,$bank]);
+        $response=$this->actingAs($admin)->getJson($url.'?table_data=questions&search=not-a-match')->assertOk()->assertJsonCount(1,'rows');
+        $this->assertArrayNotHasKey('rationale',$response->json('rows.0'));
+        $this->assertArrayNotHasKey('options',$response->json('rows.0'));
+        $this->getJson($url.'?table_data=question&id='.$q->id)->assertOk()->assertJsonPath('question.rationale','Detailed explanation');
+        $otherCourse=Course::create(['title'=>'Other']);
+        $otherBank=TestBank::create(['course_id'=>$otherCourse->id,'title'=>'Other bank','code'=>'OTHER-JSON','price'=>100,'access_days'=>30,'status'=>'active']);
+        $this->getJson(route('admin.content.test-banks.manage',[$otherCourse,$otherBank]).'?table_data=question&id='.$q->id)->assertNotFound();
     }
 
     private function catalog(): array

@@ -193,6 +193,13 @@ class AdminController extends Controller
             });
         }
 
+        if ($request->query('table_data') === 'users') {
+            return response()->json(['rows'=>$query->latest()->get(['id','name','email','role','is_admin','affiliation_name','is_active'])->map(fn($u)=>[
+                'id'=>$u->id,'name'=>$u->name,'email'=>$u->email,'affiliation'=>$u->affiliation_name ?: 'N/A',
+                'role'=>$u->is_admin ? 'admin' : ($u->role ?: 'student'),'active'=>(bool)$u->is_active,
+                'toggleUrl'=>route('admin.users.toggle',$u),'roleUrl'=>route('admin.users.role',$u),
+            ]),'canEditRoles'=>(bool)Auth::user()->is_admin || Auth::user()->role==='admin']);
+        }
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function($q) use ($search) {

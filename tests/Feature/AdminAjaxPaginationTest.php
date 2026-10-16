@@ -11,6 +11,17 @@ class AdminAjaxPaginationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_users_master_json_is_scoped_and_omits_credentials(): void
+    {
+        $admin=User::factory()->create(['role'=>'admin','is_admin'=>true]);
+        $learner=User::factory()->create(['role'=>'student','is_admin'=>false]);
+        $staff=User::factory()->create(['role'=>'staff','is_admin'=>false]);
+        $response=$this->actingAs($admin)->getJson('/admin/users?table_data=users&search=not-a-match')->assertOk()->assertJsonCount(3,'rows');
+        $this->assertArrayNotHasKey('password',$response->json('rows.0'));
+        $this->assertArrayNotHasKey('remember_token',$response->json('rows.0'));
+        $this->actingAs($staff)->getJson('/admin/users?table_data=users')->assertOk()->assertJsonCount(1,'rows')->assertJsonPath('rows.0.id',$learner->id)->assertJsonPath('canEditRoles',false);
+    }
+
     public function test_users_table_and_mutations_support_ajax_without_redirecting(): void
     {
         $admin=User::factory()->create(['role'=>'admin','is_admin'=>true]);

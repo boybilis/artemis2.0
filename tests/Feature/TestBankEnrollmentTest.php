@@ -33,6 +33,7 @@ class TestBankEnrollmentTest extends TestCase
         $this->get($url.'?search=report12%40example.com')->assertOk()->assertSee('Showing 1 to 1 of 1 entries');
         $this->get($url.'?search=DHA&per_page=20')->assertOk()->assertSee('Showing 1 to 12 of 12 entries');
         $this->get($url.'?search=missing')->assertOk()->assertSee('No matching enrollments.');
+        $this->getJson($url.'?table_data=enrollments&search=missing')->assertOk()->assertJsonCount(12,'rows');
     }
 
     public function test_exam_location_options_are_validated_and_saved_on_payment_and_enrollment(): void

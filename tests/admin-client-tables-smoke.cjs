@@ -1,0 +1,13 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const source=fs.readFileSync('public/admin-client-tables.js','utf8');
+const body={innerHTML:''},footer={innerHTML:''},events=[];
+const context={document:{dispatchEvent:event=>events.push(event)},CustomEvent:class{constructor(type,data){this.type=type;this.detail=data.detail}},escape:String,rowHtml:(_,r)=>`<tr>${r.name}</tr>`};
+vm.createContext(context);
+vm.runInContext(source.slice(source.indexOf('    class ClientTable'),source.indexOf('    function engineFor'))+'\nglobalThis.Table=ClientTable;',context);
+const table=Object.create(context.Table.prototype);
+Object.assign(table,{id:'bank-enrollments',config:{columns:6},ready:true,query:'ar',status:'',size:1,page:0,rows:[{name:'Artemis',_search:'artemis'},{name:'Joseph',_search:'joseph'},{name:'Aramil',_search:'aramil'}],meta:{},root:{querySelector:()=>body,querySelectorAll:()=>[]},footer});
+table.render();assert(body.innerHTML.includes('Artemis'));assert(!body.innerHTML.includes('Joseph'));assert(footer.innerHTML.includes('Page 1 of 2'));
+table.page=1;table.render();assert(body.innerHTML.includes('Aramil'));
+table.query='missing';table.render();assert(body.innerHTML.includes('No matching records'));assert.equal(table.page,0);
+assert.equal(events.length,3);
+console.log('Local search and pagination operate on cached rows without server requests.');
