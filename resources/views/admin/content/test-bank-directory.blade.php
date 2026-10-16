@@ -83,7 +83,7 @@ function addBankOptionRow(option = {}) {
     const row = document.createElement('div');
     row.className = 'bank-option-row';
     row.dataset.optionId = option.id || crypto.randomUUID();
-    row.innerHTML = '<input class="form-control" placeholder="Exam name" aria-label="Exam name" maxlength="255" required><input class="form-control" placeholder="Country/location" aria-label="Country or location" maxlength="100" required><label class="bank-option-active"><input type="checkbox"> Active</label><button type="button" class="btn-ghost bank-option-remove" aria-label="Remove enrollment option"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button>';
+    row.innerHTML = '<input class="form-control" placeholder="Exam name" aria-label="Exam name" maxlength="255" required><input class="form-control" placeholder="Country/location" aria-label="Country or location" maxlength="100" required><label class="bank-option-active form-check-label"><input class="form-check-input" type="checkbox"> Set Active</label><button type="button" class="btn-ghost bank-option-remove" aria-label="Remove enrollment option"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button>';
     const inputs = row.querySelectorAll('input');
     inputs[0].value = option.name || ''; inputs[1].value = option.country || ''; inputs[2].checked = option.active ?? true;
     row.querySelector('button').onclick = () => row.remove();
@@ -101,8 +101,8 @@ directoryForm.addEventListener('submit', () => {
 </script>
 <style>
     #directoryBankForm .bank-option-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto 32px;gap:10px;margin:12px 0;align-items:center;font-size:.9rem}
-    #directoryBankForm .bank-option-active{display:inline-flex;align-items:center;gap:6px;margin:0;white-space:nowrap;font-size:inherit;font-weight:400;line-height:1.4}
-    #directoryBankForm .bank-option-active input[type="checkbox"]{appearance:auto;width:16px;height:16px;min-width:16px;min-height:0;padding:0;margin:0;accent-color:#08a991;box-shadow:none}
+    #directoryBankForm .bank-option-active{display:inline-flex!important;flex-direction:row;align-items:center;gap:6px;margin:0;white-space:nowrap;font-size:.85rem;font-weight:400;line-height:1.4}
+    #directoryBankForm .bank-option-active input[type="checkbox"]{appearance:auto!important;flex:0 0 16px!important;width:16px!important;height:16px!important;min-width:16px!important;max-width:16px!important;min-height:16px!important;max-height:16px!important;padding:0!important;margin:0!important;transform:none!important;accent-color:#08a991;box-shadow:none}
     #directoryBankForm .bank-option-remove{display:grid;place-items:center;width:32px;height:32px;min-height:32px;padding:0;border-radius:8px;color:#dc2626;border-color:#e8b5b5;background:transparent}
     #directoryBankForm .bank-option-remove:hover{background:#fef2f2}
     @media(max-width:550px){#directoryBankForm .bank-option-row{grid-template-columns:minmax(0,1fr) auto 32px}#directoryBankForm .bank-option-row>.form-control:first-child{grid-column:1/-1}}
