@@ -5,6 +5,10 @@
 
 @section('content')
 <style>
+    .users-directory-table thead th { background: #4b5563; color: #fff; }
+    .users-directory-table tbody tr:nth-child(odd) td { background: #fff; color: #073b63; }
+    .users-directory-table tbody tr:nth-child(even) td { background: #f1f3f5; color: #073b63; }
+    .users-directory-table .role-select { color: #073b63; }
     .role-form { display: flex; align-items: center; gap: 0.5rem; margin: 0; }
     .role-select { background: rgba(255,255,255,0.05); border: 1.5px solid var(--border); color: var(--text); padding: 0.3rem 0.5rem; border-radius: 8px; font-size: 0.8rem; outline: none; cursor: pointer; transition: border-color 0.2s; }
     .role-select.changed { border-color: var(--accent); }
@@ -50,7 +54,7 @@
     </div>
 
     <div class="table-wrap">
-        <table class="data-table">
+        <table class="data-table users-directory-table">
             <thead>
                 <tr>
                     <th>Name</th>
