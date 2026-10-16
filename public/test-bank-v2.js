@@ -11,7 +11,7 @@ function renderTestBankWorkspaceV2(workspace) {
         </section>
         <section class="test-bank-subscription-panel">
             <span><i data-lucide="credit-card"></i></span>
-            <div><small>YOUR ${escapeHtml(workspace.title).toUpperCase()} SUBSCRIPTION</small><h3>${Number(workspace.accessDays)}-Day Test Bank Access</h3><p>Until ${expiresAt}${workspace.daysRemaining === null ? '' : ` · ${Number(workspace.daysRemaining)} days remaining`}</p></div>
+            <div><small>YOUR ${escapeHtml(workspace.title).toUpperCase()} SUBSCRIPTION</small><h3>${Number(workspace.accessDays)}-Day Test Bank Access</h3>${workspace.enrollmentOption ? `<p>${escapeHtml(workspace.enrollmentOption.name)} — ${escapeHtml(workspace.enrollmentOption.country)}</p>` : ''}<p>Until ${expiresAt}${workspace.daysRemaining === null ? '' : ` · ${Number(workspace.daysRemaining)} days remaining`}</p></div>
             <div class="test-bank-subscription-actions"><span class="test-bank-enrolled-capsule">Enrolled</span><button type="button" class="btn-ghost" id="extend-test-bank-btn">Extend Subscription</button></div>
         </section>
         </div>

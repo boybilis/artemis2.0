@@ -184,6 +184,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/content/courses/{course}/test-banks/{testBank}/status', [TestBankController::class, 'toggleStatus'])->name('content.test-banks.status');
             Route::delete('/content/courses/{course}/test-banks/{testBank}', [TestBankController::class, 'destroy'])->middleware(AdministratorMiddleware::class)->name('content.test-banks.destroy');
             Route::get('/content/courses/{course}/test-banks/{testBank}/manage', [TestBankController::class, 'manage'])->name('content.test-banks.manage');
+            Route::get('/content/courses/{course}/test-banks/{testBank}/enrollments', [TestBankController::class, 'enrollmentReport'])->middleware(AdministratorMiddleware::class)->name('content.test-banks.enrollments');
             Route::get('/content/courses/{course}/test-banks/{testBank}/simulation-preview', [TestBankController::class, 'previewSimulation'])->name('content.test-banks.simulation-preview');
             Route::post('/content/courses/{course}/test-banks/{testBank}/questions', [TestBankController::class, 'storeQuestion'])->name('content.test-banks.questions.store');
             Route::delete('/content/courses/{course}/test-banks/{testBank}/questions', [TestBankController::class, 'deleteAllQuestions'])->middleware([AdministratorMiddleware::class, 'throttle:5,1'])->name('content.test-banks.questions.delete-all');

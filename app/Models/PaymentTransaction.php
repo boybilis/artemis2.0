@@ -8,10 +8,10 @@ class PaymentTransaction extends Model
 {
     protected $fillable = [
         'user_id', 'batch_id', 'review_package_id', 'test_bank_id', 'reference', 'amount', 'currency', 'provider',
-        'provider_checkout_id', 'provider_payment_id', 'status', 'paid_at',
+        'provider_checkout_id', 'provider_payment_id', 'status', 'paid_at', 'enrollment_option',
     ];
 
-    protected $casts = ['amount' => 'decimal:2', 'paid_at' => 'datetime'];
+    protected $casts = ['amount' => 'decimal:2', 'paid_at' => 'datetime', 'enrollment_option'=>'array'];
 
     public function user() { return $this->belongsTo(User::class); }
     public function batch() { return $this->belongsTo(CourseBatch::class); }

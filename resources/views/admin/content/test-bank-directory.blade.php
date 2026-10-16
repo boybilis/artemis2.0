@@ -19,6 +19,7 @@
                 <div><h3>{{ $testBank->title }}</h3><p class="muted">{{ $testBank->code }} · {{ $testBank->course?->title }}</p><p class="muted">{{ $testBank->status === 'active' ? 'Approved' : 'Pending' }} · {{ $testBank->access_days }} days · ₱{{ number_format($testBank->price, 2) }}</p></div>
                 <div class="directory-actions"><a class="btn-primary" href="{{ route('admin.content.test-banks.manage', [$testBank->course_id, $testBank]) }}">Manage Test Bank</a><button type="button" class="btn-ghost" onclick='openDirectoryBankForm(@json($testBank))'>Edit</button>
                 @if(auth()->user()->is_admin || strtolower(trim(auth()->user()->role)) === 'admin')
+                <a class="btn-ghost" href="{{ route('admin.content.test-banks.enrollments', [$testBank->course_id,$testBank]) }}">Enrollments</a>
                 <button type="button" class="btn-ghost" style="color:#dc2626;border-color:#dc2626" onclick="document.getElementById('deleteBank{{ $testBank->id }}').classList.add('open')">Delete</button>
                 @endif</div>
             </article>
@@ -47,6 +48,7 @@
             <div class="field"><label>Test Bank display name</label><input class="form-control" name="title" required maxlength="255"></div>
             <div class="field"><label>Catalog code</label><input class="form-control" name="code" required maxlength="80"></div>
             <div class="field full"><label>Description</label><textarea class="form-control" name="description" rows="3"></textarea></div>
+            <div class="field full"><label>Enrollment options (optional)</label><p class="muted">Add exam/location choices under this single Test Bank. Leave empty for standard enrollment. Deactivate an option to stop new enrollments.</p><input type="hidden" name="enrollment_options_json" id="bankOptionsJson" value="[]"><div id="bankOptionRows"></div><button type="button" class="btn-ghost" id="addBankOption">Add Exam / Location</button></div>
             <div class="field"><label>Price (PHP)</label><input class="form-control" name="price" type="number" min="0" step=".01" required></div>
             <div class="field"><label>Price (USD, optional)</label><input class="form-control" name="usd_price" type="number" min="0" step=".01"></div>
             <div class="field"><label>Access duration (days)</label><input class="form-control" name="access_days" type="number" min="1" max="3650" required value="30"></div>
@@ -62,6 +64,8 @@ function updateDirectoryStoreUrl() { directoryForm.action = directoryCourse.sele
 directoryCourse.addEventListener('change', updateDirectoryStoreUrl);
 function openDirectoryBankForm(item = null) {
     directoryForm.reset();
+    document.getElementById('bankOptionRows').replaceChildren();
+    (item?.enrollment_options || []).forEach(addBankOptionRow);
     directoryCourse.disabled = Boolean(item);
     directoryCourse.value = item ? String(item.course_id) : '';
     document.getElementById('directoryBankMethod').value = item ? 'PUT' : 'POST';
@@ -75,6 +79,23 @@ function openDirectoryBankForm(item = null) {
     document.getElementById('directoryBankModal').classList.add('open');
 }
 function closeDirectoryBankForm() { document.getElementById('directoryBankModal').classList.remove('open'); }
+function addBankOptionRow(option = {}) {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:2fr 1fr auto auto;gap:8px;margin:12px 0;align-items:center';
+    row.dataset.optionId = option.id || crypto.randomUUID();
+    row.innerHTML = '<input class="form-control" placeholder="Exam name" aria-label="Exam name" maxlength="255" required><input class="form-control" placeholder="Country/location" aria-label="Country or location" maxlength="100" required><label><input type="checkbox"> Active</label><button type="button" class="btn-ghost" aria-label="Remove enrollment option">×</button>';
+    const inputs = row.querySelectorAll('input');
+    inputs[0].value = option.name || ''; inputs[1].value = option.country || ''; inputs[2].checked = option.active ?? true;
+    row.querySelector('button').onclick = () => row.remove();
+    document.getElementById('bankOptionRows').append(row);
+}
+document.getElementById('addBankOption').onclick = () => addBankOptionRow();
+directoryForm.addEventListener('submit', () => {
+    document.getElementById('bankOptionsJson').value = JSON.stringify(Array.from(document.getElementById('bankOptionRows').children).map(row => {
+        const inputs = row.querySelectorAll('input');
+        return {id:row.dataset.optionId,name:inputs[0].value.trim(),country:inputs[1].value.trim(),active:inputs[2].checked};
+    }));
+});
 @if(session('success')) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(session('success')), 'success')); @endif
 @if($errors->any()) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(implode(' ', $errors->all())), 'error', 6500)); @endif
 </script>

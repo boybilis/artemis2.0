@@ -17,6 +17,35 @@ class TestBankEnrollmentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_exam_location_options_are_validated_and_saved_on_payment_and_enrollment(): void
+    {
+        $admin = User::factory()->create(['role'=>'admin','is_admin'=>true]);
+        $learner = User::factory()->create();
+        $course = Course::create(['title'=>'Prometric']);
+        $options = [['id'=>'dha','name'=>'DHA RN (Prometric)','country'=>'UAE','active'=>true],['id'=>'oman','name'=>'OMSB Nursing','country'=>'Oman','active'=>false]];
+        $this->actingAs($admin)->post(route('admin.content.test-banks.store',$course),['title'=>'Gulf Test Bank','code'=>'GULF','price'=>999,'access_days'=>30,'enrollment_options_json'=>json_encode($options)])->assertSessionHasNoErrors();
+        $bank = TestBank::where('code','GULF')->firstOrFail();
+        $this->assertSame($options,$bank->enrollment_options);
+        $this->actingAs($learner)->getJson('/api/test-banks')->assertJsonCount(1,'testBanks')->assertJsonCount(1,'testBanks.0.enrollmentOptions');
+        $this->postJson('/api/test-banks/'.$bank->id.'/buy')->assertUnprocessable();
+        $this->postJson('/api/test-banks/'.$bank->id.'/buy',['enrollment_option_id'=>'oman'])->assertUnprocessable();
+        $this->postJson('/api/test-banks/'.$bank->id.'/buy',['enrollment_option_id'=>'foreign'])->assertUnprocessable();
+        $this->assertDatabaseCount('payment_transactions',0);
+        config(['services.paymongo.secret_key'=>'test_secret']);
+        Http::fake(['api.paymongo.com/*'=>Http::response(['data'=>['id'=>'cs_options','attributes'=>['checkout_url'=>'https://example.com/pay']]],200)]);
+        $this->postJson('/api/test-banks/'.$bank->id.'/buy',['enrollment_option_id'=>'dha'])->assertOk();
+        $payment=PaymentTransaction::firstOrFail();
+        $this->assertSame($options[0],$payment->enrollment_option);
+        $enrollment=TestBankEnrollment::activate($bank,$learner,$payment->enrollment_option);
+        $this->assertSame($options[0],$enrollment->enrollment_option);
+        $bank->update(['enrollment_options'=>[]]);
+        TestBankEnrollment::activate($bank,$learner);
+        $this->assertSame($options[0],$enrollment->fresh()->enrollment_option);
+        $this->actingAs($admin)->get(route('admin.content.test-banks.enrollments',[$course,$bank]))->assertOk()->assertSee('DHA RN (Prometric)')->assertSee('UAE');
+        $encoder=User::factory()->create(['role'=>'encoder','is_admin'=>false]);
+        $this->actingAs($encoder)->get(route('admin.content.test-banks.enrollments',[$course,$bank]))->assertNotFound();
+    }
+
     public function test_pending_bank_is_hidden_until_admin_approves_it(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
@@ -272,6 +301,7 @@ class TestBankEnrollmentTest extends TestCase
             'user_id' => $learner->id, 'test_bank_id' => $testBank->id, 'reference' => 'ART2TB-WEBHOOK',
             'amount' => 2000, 'currency' => 'PHP', 'provider' => 'paymongo', 'status' => 'pending_payment',
             'provider_checkout_id' => 'cs_test_bank_paid',
+            'enrollment_option' => ['id'=>'dha','name'=>'DHA RN','country'=>'UAE','active'=>true],
         ]);
         $payload = json_encode(['data' => ['id' => 'evt_tb', 'attributes' => [
             'type' => 'checkout_session.payment.paid',
@@ -290,6 +320,7 @@ class TestBankEnrollmentTest extends TestCase
         $this->assertDatabaseHas('payment_transactions', ['id' => $transaction->id, 'status' => 'paid', 'provider_payment_id' => 'pay_tb']);
         $enrollment = TestBankEnrollment::where('user_id', $learner->id)->where('test_bank_id', $testBank->id)->firstOrFail();
         $this->assertTrue($enrollment->expires_at->equalTo(now()->addDays(45)));
+        $this->assertSame('dha', $enrollment->enrollment_option['id']);
         $this->assertDatabaseCount('test_bank_enrollments', 1);
         $this->assertDatabaseCount('course_enrollments', 0);
         $this->assertDatabaseCount('vouchers', 0);

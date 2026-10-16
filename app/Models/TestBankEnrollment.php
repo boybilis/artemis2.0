@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class TestBankEnrollment extends Model
 {
-    protected $fillable = ['test_bank_id', 'user_id', 'status', 'enrolled_at', 'expires_at'];
-    protected $casts = ['enrolled_at'=>'datetime', 'expires_at'=>'datetime'];
+    protected $fillable = ['test_bank_id', 'user_id', 'status', 'enrolled_at', 'expires_at', 'enrollment_option'];
+    protected $casts = ['enrolled_at'=>'datetime', 'expires_at'=>'datetime', 'enrollment_option'=>'array'];
 
     public function testBank() { return $this->belongsTo(TestBank::class); }
     public function user() { return $this->belongsTo(User::class); }
@@ -17,7 +17,7 @@ class TestBankEnrollment extends Model
         return $this->status === 'active' && (!$this->expires_at || $this->expires_at->isFuture());
     }
 
-    public static function activate(TestBank $testBank, User $user): self
+    public static function activate(TestBank $testBank, User $user, ?array $option = null): self
     {
         $activatedAt = now();
         $existing = static::where('test_bank_id', $testBank->id)->where('user_id', $user->id)->first();
@@ -29,6 +29,7 @@ class TestBankEnrollment extends Model
             ['test_bank_id' => $testBank->id, 'user_id' => $user->id],
             [
                 'status' => 'active',
+                'enrollment_option' => $option ?? $existing?->enrollment_option,
                 'enrolled_at' => $activatedAt,
                 'expires_at' => $testBank->access_days
                     ? $accessStartsAt->addDays($testBank->access_days)

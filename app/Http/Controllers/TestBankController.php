@@ -45,6 +45,8 @@ class TestBankController extends Controller
             'price' => (float) $testBank->price,
             'usdPrice' => $testBank->usd_price === null ? null : (float) $testBank->usd_price,
             'accessDays' => $testBank->access_days,
+            'enrollmentOptions' => collect($testBank->enrollment_options ?? [])->where('active', true)->values(),
+            'requiresEnrollmentOption' => !empty($testBank->enrollment_options),
             'isSubscribed' => $user->testBankEnrollments()
                 ->where('test_bank_id', $testBank->id)
                 ->where('status', 'active')
@@ -54,10 +56,24 @@ class TestBankController extends Controller
         ])->values()]);
     }
 
-    public function buy(TestBank $testBank)
+    public function enrollmentReport(Course $course, TestBank $testBank)
+    {
+        $this->guardCatalog($course, $testBank);
+        $enrollments = $testBank->enrollments()->with('user:id,name,email')->latest('enrolled_at')->paginate(20);
+        return view('admin.content.test-bank-enrollments', compact('testBank', 'enrollments'));
+    }
+
+    public function buy(Request $request, TestBank $testBank)
     {
         $user = Auth::user();
         abort_unless($testBank->status === 'active', 404);
+        $options = collect($testBank->enrollment_options ?? []);
+        $option = null;
+        if ($options->isNotEmpty()) {
+            $request->validate(['enrollment_option_id'=>['required','string','max:80']]);
+            $option = $options->first(fn($item) => $item['id'] === $request->input('enrollment_option_id') && $item['active']);
+            if (!$option) throw ValidationException::withMessages(['enrollment_option_id'=>'Select an available exam/location.']);
+        }
         if ((float) $testBank->price <= 0) {
             return response()->json([
                 'success' => false,
@@ -76,6 +92,7 @@ class TestBankController extends Controller
             'amount' => $testBank->price,
             'currency' => 'PHP',
             'provider' => 'paymongo',
+            'enrollment_option' => $option,
             'status' => 'pending_payment',
         ]);
 
@@ -85,7 +102,7 @@ class TestBankController extends Controller
             return response()->json(['success' => false, 'message' => 'Online payment is not configured yet.'], 503);
         }
 
-        $description = 'Artemis 2.0 Test Bank: ' . $testBank->title;
+        $description = 'Artemis 2.0 Test Bank: ' . $testBank->title . ($option ? ' — '.$option['name'].' ('.$option['country'].')' : '');
         try {
             $response = Http::withBasicAuth($secretKey, '')
                 ->acceptJson()
@@ -260,6 +277,7 @@ class TestBankController extends Controller
             'accessDays' => $testBank->access_days,
             'enrolledAt' => $enrollment->enrolled_at?->toIso8601String(),
             'expiresAt' => $enrollment->expires_at?->toIso8601String(),
+            'enrollmentOption' => $enrollment->enrollment_option,
             'daysRemaining' => $enrollment->expires_at ? max(0, (int) ceil(now()->diffInDays($enrollment->expires_at, false))) : null,
             'readiness' => 0,
             'simulationProgress' => [
@@ -1030,6 +1048,10 @@ class TestBankController extends Controller
 
     private function validatedData(Request $request, ?TestBank $testBank = null): array
     {
+        if ($request->has('enrollment_options_json')) {
+            $request->validate(['enrollment_options_json'=>['required','json','max:50000']]);
+            $request->merge(['enrollment_options'=>json_decode($request->input('enrollment_options_json'), true)]);
+        }
         return $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'code' => ['required', 'string', 'max:80', Rule::unique('test_banks', 'code')->ignore($testBank?->id)],
@@ -1038,6 +1060,12 @@ class TestBankController extends Controller
             'usd_price' => ['nullable', 'numeric', 'min:0'],
             'access_days' => ['required', 'integer', 'min:1', 'max:3650'],
             'status' => ['sometimes', 'required', Rule::in(['active', 'draft'])],
+            'enrollment_options' => ['sometimes','nullable','array','max:50'],
+            'enrollment_options.*' => ['array:id,name,country,active'],
+            'enrollment_options.*.id' => ['required','string','max:80','distinct'],
+            'enrollment_options.*.name' => ['required','string','max:255'],
+            'enrollment_options.*.country' => ['required','string','max:100'],
+            'enrollment_options.*.active' => ['required','boolean'],
         ]);
     }
 

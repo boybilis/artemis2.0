@@ -373,7 +373,7 @@ class VoucherController extends Controller
                 'paid_at' => now(),
                 'provider_payment_id' => $paymentId ?: $locked->provider_payment_id,
             ]);
-            TestBankEnrollment::activate($locked->testBank, $locked->user);
+            TestBankEnrollment::activate($locked->testBank, $locked->user, $locked->enrollment_option);
             $activated = true;
 
             return $locked;

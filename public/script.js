@@ -642,7 +642,26 @@ async function startTestBankCheckout(testBankId, button) {
         button.textContent = 'Opening secure payment…';
     }
     try {
-        const result = await apiRequest(`/api/test-banks/${testBankId}/buy`, 'POST');
+        const catalog = await apiRequest('/api/test-banks');
+        const bank = (catalog.testBanks || []).find(item => Number(item.id) === Number(testBankId));
+        let optionId = button?.closest('.test-bank-catalog-card')?.querySelector('[data-bank-enrollment-option]')?.value || null;
+        const options = bank?.enrollmentOptions || [];
+        if (bank?.requiresEnrollmentOption && !options.length) throw new Error('No exam/location options are currently available for this Test Bank.');
+        if (options.length && !optionId) {
+            optionId = await new Promise(resolve => {
+                const dialog = document.createElement('dialog');
+                dialog.style.cssText = 'position:fixed;inset:0;margin:auto;width:min(540px,calc(100vw - 32px));padding:24px;border:1px solid var(--border);border-radius:18px;background:var(--surface-solid,#fff);color:var(--text)';
+                dialog.setAttribute('aria-label', 'Select your exam/location');
+                dialog.innerHTML = `<form><h2>Select your exam/location</h2><p>${escapeHtml(bank.title)}</p><label for="bank-enrollment-option">Exam / location</label><select id="bank-enrollment-option" required style="display:block;width:100%;margin:12px 0 24px;padding:12px;border:1px solid var(--border);border-radius:8px;font:inherit;background:var(--surface-solid,#fff);color:var(--text)"><option value="">Select your exam/location</option>${options.map(option => `<option value="${escapeHtml(option.id)}">${escapeHtml(option.name)} — ${escapeHtml(option.country)}</option>`).join('')}</select><div style="display:flex;justify-content:flex-end;gap:12px"><button type="button" class="btn-ghost">Cancel</button><button type="submit" class="btn-primary">Continue to Payment</button></div></form>`;
+                let selection = null;
+                dialog.querySelector('[type="button"]').onclick = () => dialog.close();
+                dialog.querySelector('form').onsubmit = event => { event.preventDefault(); selection = dialog.querySelector('select').value; dialog.close(); };
+                dialog.addEventListener('close', () => { dialog.remove(); resolve(selection); }, {once:true});
+                document.body.append(dialog); dialog.showModal();
+            });
+            if (!optionId) { if (button) { button.disabled = false; button.textContent = originalText; } return; }
+        }
+        const result = await apiRequest(`/api/test-banks/${testBankId}/buy`, 'POST', {enrollment_option_id:optionId});
         if (!result?.checkout_url) throw new Error('The secure payment page is unavailable.');
         window.location.href = result.checkout_url;
     } catch (error) {
@@ -1362,6 +1381,7 @@ function renderDashboard() {
                                 <span><i data-lucide="clock-3"></i>${Number(testBank.accessDays)} days access</span>
                                 <strong>₱${Number(testBank.price || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}</strong>
                             </div>
+                            ${testBank.requiresEnrollmentOption ? `<div style="padding:0 20px 16px"><label for="bank-location-${Number(testBank.id)}">Select your exam/location</label><select id="bank-location-${Number(testBank.id)}" data-bank-enrollment-option style="display:block;width:100%;padding:10px;margin-top:8px;border:1px solid var(--border);border-radius:8px;font:inherit;background:var(--surface-solid,#fff);color:var(--text)"><option value="">Select your exam/location</option>${(testBank.enrollmentOptions || []).map(option => `<option value="${escapeHtml(option.id)}">${escapeHtml(option.name)} — ${escapeHtml(option.country)}</option>`).join('')}</select></div>` : ''}
                             <button type="button" class="btn-primary test-bank-subscribe-btn" data-test-bank-id="${Number(testBank.id)}">
                                 ${testBank.isSubscribed ? 'Extend Access' : `Subscribe — ₱${Number(testBank.price || 0).toLocaleString('en-PH', {minimumFractionDigits:2, maximumFractionDigits:2})}`}
                             </button>
