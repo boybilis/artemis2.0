@@ -22,7 +22,9 @@
 .enrollment-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:12px}
 .enrollment-table{width:100%;border-collapse:collapse;text-align:left;font-size:.9rem}
 .enrollment-table th,.enrollment-table td{padding:16px!important;border-bottom:1px solid var(--border)}
-.enrollment-table th{font-size:.75rem;text-transform:uppercase;color:var(--text-muted)}
+.enrollment-table th{font-size:.75rem;text-transform:uppercase;background:#4b5563;color:#fff}
+.enrollment-table tbody tr:nth-child(odd) td{background:#fff;color:#073b63}
+.enrollment-table tbody tr:nth-child(even) td{background:#f1f3f5;color:#073b63}
 .enrollment-table tr:last-child td{border-bottom:0}
 .enrollment-table-footer{font-size:.8rem}.enrollment-table-footer nav{display:flex;gap:8px}
 </style>
