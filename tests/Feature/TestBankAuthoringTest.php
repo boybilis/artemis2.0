@@ -71,6 +71,16 @@ class TestBankAuthoringTest extends TestCase
         $this->post(route('admin.content.test-banks.quizzes.store',[$course,$bank]),array_replace($payload,['licensure_ids'=>['foreign']]))->assertSessionHasErrors('licensure_ids.0');
     }
 
+    public function test_premade_table_pagination_and_search_return_modals_for_each_page(): void
+    {
+        extract($this->catalog());
+        foreach(range(1,12) as $i) $bank->premadeQuizzes()->create(['title'=>'Premade '.$i,'quiz_type'=>'premade','item_count'=>10,'subject_ids'=>[$subject->id],'status'=>'active']);
+        $url=route('admin.content.test-banks.manage',[$course,$bank]);
+        $this->actingAs($admin)->get($url)->assertOk()->assertSee('tb-premade-table')->assertSee('12 matching quizzes')->assertSee('Page 1 of 2');
+        $this->get($url.'?quiz_page=2')->assertOk()->assertSee('Page 2 of 2')->assertSee('Edit Premade Quiz');
+        $this->get($url.'?quiz_search=Premade%2012')->assertOk()->assertSee('1 matching quizzes')->assertSee('Page 1 of 1');
+    }
+
     private function catalog(): array
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

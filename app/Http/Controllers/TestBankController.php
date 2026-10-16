@@ -722,8 +722,9 @@ class TestBankController extends Controller
         $direction = $request->query('direction') === 'asc' ? 'asc' : 'desc';
         $questions = $questionQuery->orderBy($sort, $direction)->orderByDesc('id')->paginate(20)->withQueryString();
         $quizzes = $testBank->premadeQuizzes()->where('quiz_type', 'premade')
+            ->when(trim((string)$request->query('quiz_search')), fn($q,$search)=>$q->where(fn($q)=>$q->where('title','like',"%{$search}%")->orWhere('description','like',"%{$search}%")))
             ->withCount(['questions' => fn ($query) => $query->where('test_bank_questions.status', 'active')])
-            ->latest()->get();
+            ->latest()->paginate(10, ['*'], 'quiz_page')->withQueryString();
         $questionPayload = $questions->mapWithKeys(fn (TestBankQuestion $question) => [$question->id => [
             'id' => $question->id,
             'question' => $question->question,
@@ -1012,10 +1013,11 @@ class TestBankController extends Controller
             }
             $quiz->update($data);
         });
+        if ($request->expectsJson()) return response()->json(['success'=>true,'message'=>'Premade quiz information updated.']);
         return back()->with('success', 'Premade quiz information updated.');
     }
 
-    public function destroyQuiz(Course $course, TestBank $testBank, TestBankQuiz $quiz)
+    public function destroyQuiz(Request $request, Course $course, TestBank $testBank, TestBankQuiz $quiz)
     {
         $this->guardCatalog($course, $testBank);
         abort_unless($quiz->test_bank_id === $testBank->id, 404);
@@ -1023,6 +1025,7 @@ class TestBankController extends Controller
             $quiz->attempts()->delete();
             $quiz->delete();
         });
+        if ($request->expectsJson()) return response()->json(['success'=>true,'message'=>'Premade quiz and all learner test results deleted.']);
         return back()->with('success', 'Premade quiz and all learner test results deleted.');
     }
 

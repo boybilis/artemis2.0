@@ -12,6 +12,14 @@
 @section('content')
 <style>
 #simulationLicensureField[hidden]{display:none}
+.tb-premade-table{width:100%;min-width:850px;border-collapse:collapse;text-align:left;font-size:.85rem}
+.tb-premade-table th,.tb-premade-table td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+body .tb-premade-table thead th{background:#4b5563;color:#fff;font-size:.7rem;text-transform:uppercase}
+.tb-premade-table tbody tr:nth-child(odd) td{background:#fff;color:#073b63}
+.tb-premade-table tbody tr:nth-child(even) td{background:#f1f3f5;color:#073b63}
+.tb-premade-table tbody tr:last-child td{border-bottom:0}
+.tb-premade-table small{display:block;margin-top:5px;color:#526b7b}
+.tb-premade-actions{display:flex;gap:10px;align-items:center}.tb-premade-actions form{margin:0}
 select.form-control[name="licensure_ids[]"][multiple]{height:190px!important;min-height:190px!important;max-height:none;overflow-y:auto;padding:8px;font-size:.9rem;line-height:1.5}
 select.form-control[name="licensure_ids[]"][multiple] option{padding:7px 8px;min-height:28px}
 body .tb-table thead th,body.light-mode .tb-table thead th{background:#4b5563;color:#fff}
@@ -28,9 +36,18 @@ body .tb-table tbody td:first-child,body .tb-table tbody td:nth-child(3){font-si
 
 <a class="btn-ghost" href="{{ route('admin.test-banks.index') }}" style="display:inline-flex;text-decoration:none;margin-bottom:1rem">← Test Bank Catalogs</a>
 <p class="panel-label">{{ $testBank->code }} · {{ $course->title }}</p><h2 class="panel-title">{{ $testBank->title }}</h2><p class="panel-subtitle">Build the multiple-choice question bank and learner-facing premade quizzes.</p>
-<div class="tb-summary"><div class="tb-stat"><small>Questions</small><strong>{{ $questionTotal }}</strong></div><div class="tb-stat"><small>Premade quizzes</small><strong>{{ $quizzes->count() }}</strong></div><div class="tb-stat"><small>Question format</small><strong>Multiple choice</strong></div></div>
+<div class="tb-summary"><div class="tb-stat"><small>Questions</small><strong>{{ $questionTotal }}</strong></div><div class="tb-stat"><small>Premade quizzes</small><strong id="premadeSummaryCount">{{ $testBank->premadeQuizzes()->where('quiz_type','premade')->count() }}</strong></div><div class="tb-stat"><small>Question format</small><strong>Multiple choice</strong></div></div>
 
-<section class="panel" style="margin-bottom:1rem"><p class="panel-label">Quiz Builder</p><div class="tb-subject-heading" style="flex-wrap:wrap"><h2 class="panel-title">Premade Quizzes</h2><a class="btn-ghost" href="{{ route('admin.content.test-banks.simulation-preview', [$course, $testBank]) }}" target="_blank" rel="noopener">Preview Simulation Test</a></div>@forelse($quizzes as $quiz)<article class="tb-quiz"><div><h3>{{ $quiz->title }}</h3><p class="muted">{{ $quiz->questions_count }} active items · Randomized · {{ $quiz->time_limit_minutes ? $quiz->time_limit_minutes.' minutes' : 'Untimed' }} · {{ $quiz->status === 'active' ? 'Available to learners' : 'Inactive' }}</p>@if($quiz->description)<p class="muted">{{ $quiz->description }}</p>@endif</div><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button type="button" class="btn-ghost" onclick="openModal('editQuizModal{{ $quiz->id }}')">Edit</button><form method="POST" action="{{ route('admin.content.test-banks.quizzes.destroy', [$course,$testBank,$quiz]) }}">@csrf @method('DELETE')<button class="btn-ghost" style="color:var(--wrong)">Delete</button></form></div></article>
+<form id="premadeSearchForm" style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:12px"><input class="form-control" type="search" name="quiz_search" value="{{ request('quiz_search') }}" placeholder="Search pre-made quizzes" aria-label="Search pre-made quizzes"></form>
+<div data-ajax-table="premade-quizzes">
+<span hidden data-premade-total>{{ $testBank->premadeQuizzes()->where('quiz_type','premade')->count() }}</span>
+<section class="panel" style="margin-bottom:1rem"><p class="panel-label">Quiz Builder</p><div class="tb-subject-heading" style="flex-wrap:wrap"><h2 class="panel-title">Premade Quizzes</h2><a class="btn-ghost" href="{{ route('admin.content.test-banks.simulation-preview', [$course, $testBank]) }}" target="_blank" rel="noopener">Preview Simulation Test</a></div>
+<div class="tb-table-wrap"><table class="tb-premade-table"><thead><tr><th>Quiz name</th><th>Test type</th><th>Active items</th><th>Time limit</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+@forelse($quizzes as $quiz)
+<tr><td><strong>{{ $quiz->title }}</strong>@if($quiz->description)<p class="muted" style="margin:.4rem 0 0">{{ $quiz->description }}</p>@endif<small>Randomized questions</small></td><td>{{ ['warm_up'=>'Warm-up','mastery'=>'Mastery','simulation'=>'Simulation'][$quiz->test_type] ?? 'Premade' }}</td><td>{{ $quiz->questions_count }}</td><td>{{ $quiz->time_limit_minutes ? $quiz->time_limit_minutes.' minutes' : 'Untimed' }}</td><td>{{ $quiz->status === 'active' ? 'Available to learners' : 'Inactive' }}</td><td><div class="tb-premade-actions"><button type="button" class="btn-ghost" onclick="openModal('editQuizModal{{ $quiz->id }}')">Edit</button><form method="POST" action="{{ route('admin.content.test-banks.quizzes.destroy', [$course,$testBank,$quiz]) }}">@csrf @method('DELETE')<button class="btn-ghost" style="color:var(--wrong)">Delete</button></form></div></td></tr>
+@empty<tr><td colspan="6">No premade quizzes created yet.</td></tr>@endforelse
+</tbody></table></div><div class="tb-pagination"><span>{{ $quizzes->total() }} matching quizzes · Page {{ $quizzes->currentPage() }} of {{ $quizzes->lastPage() }}</span>{{ $quizzes->links() }}</div></section>
+@foreach($quizzes as $quiz)
 <div id="editQuizModal{{ $quiz->id }}" class="admin-modal"><form method="POST" action="{{ route('admin.content.test-banks.quizzes.update', [$course,$testBank,$quiz]) }}" class="admin-modal-content" style="max-width:650px">@csrf @method('PUT')
 <div class="admin-modal-header"><h3 class="admin-modal-title">Edit Premade Quiz</h3><button type="button" class="admin-modal-close" onclick="closeModal('editQuizModal{{ $quiz->id }}')">&times;</button></div>
 <div class="admin-modal-body"><div class="form-grid">
@@ -43,8 +60,8 @@ body .tb-table tbody td:first-child,body .tb-table tbody td:nth-child(3){font-si
 @endif
 <div class="field"><label for="editQuizStatus{{ $quiz->id }}">Availability</label><select id="editQuizStatus{{ $quiz->id }}" class="form-control" name="status"><option value="active" @selected($quiz->status === 'active')>Available to learners</option><option value="inactive" @selected($quiz->status !== 'active')>Inactive</option></select></div>
 </div></div><div class="admin-modal-footer"><button type="button" class="btn-ghost" onclick="closeModal('editQuizModal{{ $quiz->id }}')">Cancel</button><button class="btn-primary">Save Changes</button></div></form></div>
-@empty<p class="muted">No premade quizzes created yet.</p>@endforelse</section>
-
+@endforeach
+</div>
 @if(auth()->user()->is_admin || strtolower(trim(auth()->user()->role)) === 'admin')
 <div id="deleteAllQuestionsModal" class="admin-modal" role="dialog" aria-modal="true" aria-labelledby="deleteAllQuestionsTitle">
 <form method="POST" action="{{ route('admin.content.test-banks.questions.delete-all', [$course,$testBank]) }}" class="admin-modal-content" style="max-width:650px">@csrf @method('DELETE')
@@ -85,5 +102,36 @@ function downloadTemplate(){const subjectCodes={{ Illuminate\Support\Js::from($s
 @if(session('success'))document.addEventListener('DOMContentLoaded',()=>showAdminToast(@json(session('success')),'success'));@endif
 @if(session('error'))document.addEventListener('DOMContentLoaded',()=>showAdminToast(@json(session('error')),'error',6500));@endif
 @if($errors->any())document.addEventListener('DOMContentLoaded',()=>showAdminToast(@json(implode(' ',$errors->all())),'error',6500));@endif
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('premadeSearchForm');
+    let timer;
+    const refresh = async () => {
+        const url = new URL(location.href);
+        url.searchParams.set('quiz_search',form.elements.quiz_search.value);
+        url.searchParams.delete('quiz_page');
+        await loadAdminTable('premade-quizzes',url.href);
+        document.getElementById('premadeSummaryCount').textContent = document.querySelector('[data-premade-total]').textContent;
+    };
+    form.onsubmit = event => { event.preventDefault(); clearTimeout(timer); refresh(); };
+    form.elements.quiz_search.oninput = () => { clearTimeout(timer); timer = setTimeout(refresh,350); };
+    document.addEventListener('submit', async event => {
+        const target = event.target;
+        if (!target.matches('[data-ajax-table="premade-quizzes"] form')) return;
+        event.preventDefault();
+        const method = target.querySelector('[name="_method"]')?.value;
+        if (method === 'DELETE' && !confirm('Delete this quiz and all its learner test results?')) return;
+        const button = target.querySelector('[type="submit"]') || target.querySelector('button:not([type="button"])');
+        if (button) button.disabled = true;
+        try {
+            const response = await fetch(target.action,{method:'POST',body:new FormData(target),headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'});
+            const data = await response.json();
+            if (!response.ok) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Unable to save changes.');
+            await refresh();
+            showAdminToast(data.message,'success');
+        } catch (error) { showAdminToast(error.message,'error',6500); if(button) button.disabled=false; }
+    });
+});
 </script>
 @endsection
