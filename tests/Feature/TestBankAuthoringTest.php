@@ -52,6 +52,34 @@ class TestBankAuthoringTest extends TestCase
         return compact('admin', 'course', 'subject', 'secondSubject', 'bank');
     }
 
+    public function test_delete_all_requires_admin_password_and_clears_shared_pool_and_related_records(): void
+    {
+        extract($this->catalog());
+        $admin->update(['password'=>bcrypt('Admin-secret-123')]);
+        $otherBank = TestBank::create(['course_id'=>$course->id,'title'=>'Shared bank','code'=>'SHARED','price'=>100,'access_days'=>30,'status'=>'active']);
+        $question = TestBankQuestion::create(['test_bank_id'=>$bank->id,'course_id'=>$course->id,'subject_id'=>$subject->id,'question'=>'Shared question','options'=>['A','B'],'correct_answer'=>0,'status'=>'active']);
+        $question->subjects()->attach($subject);
+        $quiz = $otherBank->premadeQuizzes()->create(['title'=>'Custom exam','quiz_type'=>'learner','item_count'=>1,'subject_ids'=>[$subject->id],'status'=>'active']);
+        $quiz->questions()->attach($question);
+        $attempt = TestBankQuizAttempt::create(['user_id'=>$admin->id,'test_bank_id'=>$otherBank->id,'test_bank_quiz_id'=>$quiz->id,'score'=>1,'total'=>1,'passed'=>true,'review_data'=>[['questionId'=>$question->id,'question'=>'Shared question']]]);
+        $flag = \App\Models\QuestionFlag::create(['user_id'=>$admin->id,'attempt_type'=>'test_bank','attempt_id'=>$attempt->id,'question_index'=>0,'question_snapshot'=>['questionId'=>$question->id],'reason'=>'Explain this']);
+        $url = route('admin.content.test-banks.questions.delete-all',[$course,$bank]);
+        $this->actingAs($admin)->delete($url,['password'=>'wrong'])->assertSessionHasErrors('password');
+        $this->assertDatabaseHas('test_bank_questions',['id'=>$question->id]);
+        $encoder = User::factory()->create(['role'=>'encoder','is_admin'=>false]);
+        $this->actingAs($encoder)->delete($url,['password'=>'Admin-secret-123'])->assertNotFound();
+        $this->actingAs($admin)->delete($url,['password'=>'Admin-secret-123'])->assertRedirect();
+        $this->assertDatabaseMissing('test_bank_questions',['id'=>$question->id]);
+        $this->assertDatabaseMissing('test_bank_quizzes',['id'=>$quiz->id]);
+        $this->assertDatabaseMissing('test_bank_quiz_attempts',['id'=>$attempt->id]);
+        $this->assertDatabaseMissing('question_flags',['id'=>$flag->id]);
+        $this->assertDatabaseCount('test_bank_question_subject',0);
+        $this->assertDatabaseCount('test_bank_quiz_questions',0);
+        $this->assertDatabaseHas('test_banks',['id'=>$bank->id]);
+        $this->assertDatabaseHas('test_banks',['id'=>$otherBank->id]);
+        $this->assertDatabaseHas('subjects',['id'=>$subject->id]);
+    }
+
     public function test_admin_can_open_catalog_and_add_a_multiple_choice_question(): void
     {
         extract($this->catalog());

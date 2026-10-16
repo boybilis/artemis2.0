@@ -934,6 +934,27 @@ class TestBankController extends Controller
         return back()->with('success', $message);
     }
 
+    public function deleteAllQuestions(Request $request, Course $course, TestBank $testBank)
+    {
+        $this->guardCatalog($course, $testBank);
+        $request->validate(['password' => ['required', 'string', 'current_password']]);
+        DB::transaction(function () use ($course) {
+            $questionIds = TestBankQuestion::where('course_id', $course->id)->lockForUpdate()->pluck('id');
+            $bankIds = TestBank::where('course_id', $course->id)->pluck('id');
+            $quizIds = TestBankQuiz::whereIn('test_bank_id', $bankIds)
+                ->orWhereHas('questions', fn ($q) => $q->whereIn('test_bank_questions.id', $questionIds))
+                ->lockForUpdate()->pluck('id');
+            $attemptIds = TestBankQuizAttempt::whereIn('test_bank_id', $bankIds)
+                ->orWhereIn('test_bank_quiz_id', $quizIds)->pluck('id');
+            \App\Models\QuestionFlag::where('attempt_type', 'test_bank')
+                ->whereIn('attempt_id', $attemptIds)->delete();
+            TestBankQuizAttempt::whereIn('id', $attemptIds)->delete();
+            TestBankQuiz::whereIn('id', $quizIds)->delete();
+            TestBankQuestion::whereIn('id', $questionIds)->delete();
+        });
+        return back()->with('success', 'All shared course Test Bank questions, related quizzes, attempts/results, and flagged queries were permanently deleted. Payments and subscriptions were preserved.');
+    }
+
     public function updateQuiz(Request $request, Course $course, TestBank $testBank, TestBankQuiz $quiz)
     {
         $this->guardCatalog($course, $testBank);
