@@ -157,7 +157,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         if (!latest) return;
         const assessmentTitle = $('quiz-assessment-title');
         if (assessmentTitle) assessmentTitle.textContent = latest.title;
-        showAssessmentSummary({score:latest.score,total:latest.total,passed:latest.passed,questions:latest.questions || [],incorrectQuestions:(latest.questions || []).filter(question => !question.correct)}, async () => {
+showAssessmentSummary({score:latest.score,total:latest.total,correctItems:latest.correctItems,totalItems:latest.totalItems,passed:latest.passed,questions:latest.questions || [],incorrectQuestions:(latest.questions || []).filter(question => !question.correct)}, async () => {
             showScreen('dashboard-screen');
             await openTestBankWorkspace(workspace.id);
             $('test-bank-workspace-area').querySelector(`[data-guided-builder="${itemCount}"]`)?.click();
@@ -225,7 +225,7 @@ function renderV2GeneratedQuizzes(container,workspace,itemCount,page = 0) {
         const attempt = (workspace.history || []).find(attempt => Number(attempt.id) === Number(button.dataset.v2GeneratedReview));
         if (!attempt || attempt.cancelled) return;
         const title = $('quiz-assessment-title'); if (title) title.textContent = attempt.title;
-        showAssessmentSummary({score:attempt.score,total:attempt.total,passed:attempt.passed,questions:attempt.questions || [],incorrectQuestions:(attempt.questions || []).filter(question => !question.correct)},async () => {
+        showAssessmentSummary({score:attempt.score,total:attempt.total,correctItems:attempt.correctItems,totalItems:attempt.totalItems,passed:attempt.passed,questions:attempt.questions || [],incorrectQuestions:(attempt.questions || []).filter(question => !question.correct)},async () => {
             showScreen('dashboard-screen');
             await openTestBankWorkspace(workspace.id);
             $('test-bank-workspace-area').querySelector(`[data-guided-builder="${itemCount}"]`)?.click();
@@ -295,7 +295,7 @@ return `<article class="test-bank-tracker-row"><div class="test-bank-tracker-cop
             if (button.dataset.v2RecordReview) {
                 dialog.close();
                 const title = $('quiz-assessment-title'); if (title) title.textContent = attempt.title;
-                showAssessmentSummary({score:attempt.score,total:attempt.total,passed:attempt.passed,questions:attempt.questions || [],incorrectQuestions:(attempt.questions || []).filter(question => !question.correct)},async () => { showScreen('dashboard-screen'); await openTestBankWorkspace(workspace.id,'v2'); openV2ProgressModal(workspace,'tracker'); });
+                showAssessmentSummary({score:attempt.score,total:attempt.total,correctItems:attempt.correctItems,totalItems:attempt.totalItems,passed:attempt.passed,questions:attempt.questions || [],incorrectQuestions:(attempt.questions || []).filter(question => !question.correct)},async () => { showScreen('dashboard-screen'); await openTestBankWorkspace(workspace.id,'v2'); openV2ProgressModal(workspace,'tracker'); });
             } else if (attempt.quizType !== 'subject') {
                 dialog.close();
                 if (await showTestBankInstructions({title:attempt.title,itemCount:attempt.totalItems,timeLimitMinutes:attempt.timeLimitMinutes,coverage:[attempt.coverage || 'Mixed']})) await startTestBankPremadeQuiz(workspace.id,Number(attempt.quizId),button);

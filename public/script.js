@@ -3453,15 +3453,22 @@ let assessmentSummaryQuestions = [];
 function escapeHtml(value) {
     return String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[character]));
 }
+function assessmentDisplayScore(data) {
+    const usesItems = Number(data.totalItems) > 0 && Number.isFinite(Number(data.correctItems));
+    const score = Number(usesItems ? data.correctItems : data.score || 0);
+    const total = Number(usesItems ? data.totalItems : data.total || 0);
+    return {score,total,percentage:total > 0 ? Math.round(score / total * 100) : 0};
+}
 function showAssessmentSummary(data, continueAction) {
     assessmentSummaryContinueAction = continueAction;
     const activeAssessmentTitle = $('quiz-assessment-title')?.dataset.examTitle || $('quiz-assessment-title')?.textContent?.trim() || 'Assessment';
     const summaryAssessmentTitle = $('assessment-summary-assessment-title');
     if (summaryAssessmentTitle) summaryAssessmentTitle.textContent = `${activeAssessmentTitle} Summary`;
-    const score = Number(data.score || 0).toLocaleString(undefined, {maximumFractionDigits: 2});
-    const total = Number(data.total || 0).toLocaleString(undefined, {maximumFractionDigits: 2});
+    const display = assessmentDisplayScore(data);
+    const score = display.score.toLocaleString(undefined, {maximumFractionDigits: 2});
+    const total = display.total.toLocaleString(undefined, {maximumFractionDigits: 2});
     $('assessment-summary-title').textContent = data.passed ? 'Assessment Passed' : 'Assessment Completed';
-    const percentage = Number(data.total) > 0 ? Math.round(Number(data.score) / Number(data.total) * 100) : 0;
+    const percentage = display.percentage;
     $('assessment-summary-score').innerHTML = `Score: ${score}/${total} · ${percentage}% · <span style="color:${data.passed ? '#079383' : '#dc2626'};font-weight:700">${data.passed ? 'Passed' : 'Failed'}</span>`;
     const wrong = Array.isArray(data.incorrectQuestions) ? data.incorrectQuestions : [];
     assessmentSummaryQuestions = Array.isArray(data.questions) && data.questions.length
@@ -3525,8 +3532,8 @@ function showAssessmentResultModal(data) {
         const type = explicitType || (state.examType === 'test_bank'
             ? (/simulation/i.test(title) || items === 150 ? 'Exam Simulation' : items === 20 ? 'Mastery Test' : 'Warm Up Quiz')
             : state.examType === 'final' ? 'Mock Exam' : state.examType === 'mid' ? 'Practice Test' : 'Assessment');
-        const percentage = Number(data.total) > 0 ? Math.round(Number(data.score) / Number(data.total) * 100) : 0;
-        dialog.innerHTML = `<small>ASSESSMENT RESULT</small><h2 id="assessment-result-modal-title">${escapeHtml(title)}</h2><p>${escapeHtml(type)} · ${Number(items)} items</p><div class="assessment-result-score"><strong>${Number(data.score || 0)}/${Number(data.total || 0)}</strong><span>${percentage}%</span></div><p class="assessment-result-status ${data.passed ? 'passed' : 'failed'}">${data.passed ? 'Passed' : 'Failed'}</p><button type="button">OK</button>`;
+        const display = assessmentDisplayScore(data);
+        dialog.innerHTML = `<small>ASSESSMENT RESULT</small><h2 id="assessment-result-modal-title">${escapeHtml(title)}</h2><p>${escapeHtml(type)} · ${Number(items)} items</p><div class="assessment-result-score"><strong>${display.score}/${display.total}</strong><span>${display.percentage}%</span></div><p class="assessment-result-status ${data.passed ? 'passed' : 'failed'}">${data.passed ? 'Passed' : 'Failed'}</p><button type="button">OK</button>`;
         document.body.appendChild(dialog);
         dialog.addEventListener('cancel', event => event.preventDefault());
         dialog.querySelector('button').addEventListener('click', () => { dialog.close(); dialog.remove(); resolve(); });

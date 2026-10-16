@@ -614,6 +614,8 @@ class TestBankController extends Controller
             'passed' => $passed,
             'score' => $earned,
             'total' => $possible,
+            'correctItems' => $score,
+            'totalItems' => count($review),
             'questions' => $review,
             'incorrectQuestions' => collect($review)->where('correct', false)->values(),
         ]);
