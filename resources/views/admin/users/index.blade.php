@@ -5,7 +5,7 @@
 
 @section('content')
 <style>
-    .users-directory-table thead th { background: #4b5563; color: #fff; }
+    body .users-directory-table thead th, body.light-mode .users-directory-table thead th { background: #4b5563; color: #fff; }
     .users-directory-table tbody tr:nth-child(odd) td { background: #fff; color: #073b63; }
     .users-directory-table tbody tr:nth-child(even) td { background: #f1f3f5; color: #073b63; }
     .users-directory-table .role-select { color: #073b63; }
