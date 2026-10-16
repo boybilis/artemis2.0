@@ -12,6 +12,8 @@
 @section('content')
 <style>
 #simulationLicensureField[hidden]{display:none}
+select.form-control[name="licensure_ids[]"][multiple]{height:190px!important;min-height:190px!important;max-height:none;overflow-y:auto;padding:8px;font-size:.9rem;line-height:1.5}
+select.form-control[name="licensure_ids[]"][multiple] option{padding:7px 8px;min-height:28px}
 body .tb-table thead th,body.light-mode .tb-table thead th{background:#4b5563;color:#fff}
 body .tb-table tbody tr:nth-child(odd) td{background:#fff;color:#073b63}
 body .tb-table tbody tr:nth-child(even) td{background:#f1f3f5;color:#073b63}
