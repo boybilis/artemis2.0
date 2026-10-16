@@ -10,7 +10,13 @@
 @endsection
 
 @section('content')
-<style>#simulationLicensureField[hidden]{display:none}</style>
+<style>
+#simulationLicensureField[hidden]{display:none}
+body .tb-table thead th,body.light-mode .tb-table thead th{background:#4b5563;color:#fff}
+body .tb-table tbody tr:nth-child(odd) td{background:#fff;color:#073b63}
+body .tb-table tbody tr:nth-child(even) td{background:#f1f3f5;color:#073b63}
+body .tb-table tbody td:first-child,body .tb-table tbody td:nth-child(3){font-size:calc(1rem - 2pt);line-height:1.5}
+</style>
 <style>
 #importModal .admin-modal-body>p.muted{margin:.8rem 0;line-height:1.6}
 #importModal .admin-modal-body>button[onclick="downloadTemplate()"]{margin-top:.75rem;margin-bottom:.25rem}
