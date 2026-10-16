@@ -185,6 +185,7 @@ class TestBankController extends Controller
                 ->latest(),
         ]);
         $learnerQuizzes = $testBank->premadeQuizzes()
+            // Learner-created quizzes do not have licensure restrictions.
             ->where('quiz_type', 'learner')
             ->where('owner_user_id', $user->id)
             ->where('status', 'active')
@@ -306,7 +307,7 @@ class TestBankController extends Controller
                     'phase' => str_ends_with($attempt->quiz->title, 'Mastery Test') ? 'mastery' : 'warm_up',
                     'score' => (float) $attempt->points_possible > 0 ? round((float) $attempt->points_earned / (float) $attempt->points_possible * 100, 1) : 0,
                 ])->unique(fn ($result) => $result['subjectId'].':'.$result['phase'])->values(),
-            'premadeTests' => $testBank->premadeQuizzes->map(fn ($quiz) => [
+            'premadeTests' => $testBank->premadeQuizzes->filter(fn ($quiz) => $quiz->matchesLicensure($enrollment->enrollment_option))->map(fn ($quiz) => [
                 'id' => $quiz->id, 'title' => $quiz->title, 'description' => $quiz->description,
                 'itemCount' => $quiz->questions_count, 'subjectIds' => $quiz->subject_ids,
                 'randomized' => $quiz->randomize_questions,
@@ -936,22 +937,23 @@ class TestBankController extends Controller
         ]);
         $data['test_type'] ??= (int) $data['item_count'] === 20 ? 'mastery' : 'warm_up';
         if ($data['test_type'] === 'simulation') {
-            $data['item_count'] = 150;
-            $data['time_limit_minutes'] = 300;
+            $data['time_limit_minutes'] ??= 300;
         }
+        $licensureIds = $this->validatedLicensureIds($request, $testBank);
         $validSubjectIds = $course->subjects()->whereIn('id', $data['subject_ids'])->pluck('id');
         if ($validSubjectIds->count() !== count(array_unique($data['subject_ids']))) abort(422, 'One or more subjects do not belong to this course.');
         $questionIds = TestBankQuestion::where('course_id', $course->id)->where('status', 'active')
             ->whereHas('subjects', fn ($query) => $query->whereIn('subjects.id', $validSubjectIds))
             ->inRandomOrder()->limit($data['item_count'])->pluck('id');
         if ($questionIds->isEmpty()) return back()->withErrors(['subject_ids' => 'The selected subjects do not have active Test Bank questions yet.']);
-        if ($data['test_type'] === 'simulation' && $questionIds->count() < 150) return back()->withErrors(['subject_ids' => 'A simulation requires 150 active questions in the selected subjects.']);
+        if ($data['test_type'] === 'simulation' && $questionIds->count() < $data['item_count']) return back()->withErrors(['subject_ids' => 'Not enough active questions for the requested simulation item count.']);
 
-        DB::transaction(function () use ($request, $testBank, $data, $validSubjectIds, $questionIds) {
+        DB::transaction(function () use ($request, $testBank, $data, $validSubjectIds, $questionIds, $licensureIds) {
             $quiz = $testBank->premadeQuizzes()->create([
                 'title' => $data['title'], 'description' => $data['description'] ?? null,
                 'quiz_type' => 'premade',
                 'test_type' => $data['test_type'],
+                'licensure_ids' => $data['test_type'] === 'simulation' ? $licensureIds : null,
                 'item_count' => $questionIds->count(), 'subject_ids' => $validSubjectIds->values()->all(),
                 'time_limit_minutes' => $data['time_limit_minutes'] ?? null,
                 'randomize_questions' => true, 'status' => 'active', 'created_by' => $request->user()->id,
@@ -994,9 +996,22 @@ class TestBankController extends Controller
             'description' => ['nullable', 'string', 'max:5000'],
             'time_limit_minutes' => ['nullable', 'integer', 'min:1', 'max:600'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
+            'item_count' => ['sometimes','required','integer','min:1','max:500'],
         ]);
-        if ($this->isSimulationQuiz($quiz)) $data['time_limit_minutes'] = 300;
-        $quiz->update($data);
+        if ($this->isSimulationQuiz($quiz)) {
+            $data['time_limit_minutes'] ??= $quiz->time_limit_minutes ?: 300;
+            if ($request->has('audience_configured') || $request->has('licensure_ids')) $data['licensure_ids'] = $this->validatedLicensureIds($request, $testBank);
+        }
+        DB::transaction(function () use ($data, $quiz, $course) {
+            if (isset($data['item_count']) && (int)$data['item_count'] !== (int)$quiz->item_count) {
+                $ids = TestBankQuestion::where('course_id',$course->id)->where('status','active')
+                    ->whereHas('subjects',fn($q)=>$q->whereIn('subjects.id',$quiz->subject_ids ?? []))
+                    ->inRandomOrder()->limit($data['item_count'])->pluck('id');
+                if ($ids->count() < $data['item_count']) throw ValidationException::withMessages(['item_count'=>'Not enough active questions for the requested item count.']);
+                $quiz->questions()->sync($ids);
+            }
+            $quiz->update($data);
+        });
         return back()->with('success', 'Premade quiz information updated.');
     }
 
@@ -1106,6 +1121,8 @@ class TestBankController extends Controller
         $belongsToLearner = $quiz->quiz_type === 'premade'
             || (in_array($quiz->quiz_type, ['learner', 'subject'], true) && $quiz->owner_user_id === $user->id);
         abort_unless($quiz->test_bank_id === $testBank->id && $quiz->status === 'active' && $belongsToLearner, 404);
+        $enrollment = $user->testBankEnrollments()->where('test_bank_id',$testBank->id)->first();
+        abort_unless($quiz->matchesLicensure($enrollment?->enrollment_option), 403, 'This simulation is not assigned to your enrolled licensure.');
         if ($this->isSimulationQuiz($quiz) && !$testBank->simulation_unlocked_by_admin) {
             $attempts = TestBankQuizAttempt::query()
                 ->where('user_id', $user->id)
@@ -1121,6 +1138,10 @@ class TestBankController extends Controller
     private function isSimulationQuiz(TestBankQuiz $quiz): bool
     {
         return $quiz->test_type === 'simulation';
+    }
+    private function validatedLicensureIds(Request $request, TestBank $testBank): array {
+        $data = $request->validate(['licensure_ids'=>['nullable','array','max:50'],'licensure_ids.*'=>['required','string','distinct',Rule::in(collect($testBank->enrollment_options ?? [])->pluck('id')->all())]]);
+        return array_values($data['licensure_ids'] ?? []);
     }
 
     private function simulationPassCounts($attempts): array

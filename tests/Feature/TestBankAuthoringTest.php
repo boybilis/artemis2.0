@@ -34,12 +34,41 @@ class TestBankAuthoringTest extends TestCase
         $this->assertSame('Updated Simulation', $quiz->title);
         $this->assertSame('Updated description', $quiz->description);
         $this->assertSame('inactive', $quiz->status);
-        $this->assertEquals(300, $quiz->time_limit_minutes);
+        $this->assertEquals(60, $quiz->time_limit_minutes);
         $this->assertEquals(150, $quiz->item_count);
         $this->assertSame('simulation', $quiz->test_type);
         $this->put($url, ['title' => '', 'status' => 'invalid'])->assertSessionHasErrors(['title', 'status']);
         $otherBank = TestBank::create(['course_id' => $course->id, 'title' => 'Other', 'code' => 'OTHER', 'price' => 100, 'access_days' => 30, 'status' => 'active', 'created_by' => $admin->id]);
         $this->put(route('admin.content.test-banks.quizzes.update', [$course, $otherBank, $quiz]), ['title' => 'Wrong bank', 'status' => 'active'])->assertNotFound();
+    }
+
+    public function test_simulation_custom_size_and_licensure_are_enforced_on_listing_and_start(): void
+    {
+        extract($this->catalog());
+        $bank->enrollment_options = [['id'=>'dha','name'=>'DHA','country'=>'UAE','active'=>true],['id'=>'oman','name'=>'OMSB','country'=>'Oman','active'=>true]];
+        $bank->simulation_unlocked_by_admin = true;
+        $bank->save();
+        foreach(range(1,9) as $i) {
+            $q=TestBankQuestion::create(['course_id'=>$course->id,'test_bank_id'=>$bank->id,'subject_id'=>$subject->id,'question'=>'Licensure Q'.$i,'options'=>['A','B'],'correct_answer'=>0,'status'=>'active']);
+            $q->subjects()->attach($subject->id);
+        }
+        $payload=['title'=>'Custom Licensure Simulation','test_type'=>'simulation','item_count'=>7,'time_limit_minutes'=>95,'subject_ids'=>[$subject->id],'licensure_ids'=>['dha']];
+        $this->actingAs($admin)->post(route('admin.content.test-banks.quizzes.store',[$course,$bank]),$payload)->assertSessionHasNoErrors();
+        $quiz=$bank->premadeQuizzes()->firstOrFail();
+        $this->assertEquals(7,$quiz->questions()->count());
+        $this->assertEquals(95,$quiz->time_limit_minutes);
+        $this->assertSame(['dha'],$quiz->licensure_ids);
+        $learner=User::factory()->create();
+        $enrollment=$bank->enrollments()->create(['user_id'=>$learner->id,'status'=>'active','enrolled_at'=>now(),'expires_at'=>now()->addDays(30),'enrollment_option'=>['id'=>'oman']]);
+        $this->actingAs($learner)->getJson('/api/test-banks/'.$bank->id.'/workspace')->assertJsonCount(0,'workspace.premadeTests');
+        $this->getJson('/api/test-banks/'.$bank->id.'/quizzes/'.$quiz->id.'/questions')->assertForbidden();
+        $enrollment->update(['enrollment_option'=>['id'=>'dha']]);
+        $this->getJson('/api/test-banks/'.$bank->id.'/workspace')->assertJsonCount(1,'workspace.premadeTests');
+        $this->getJson('/api/test-banks/'.$bank->id.'/quizzes/'.$quiz->id.'/questions')->assertOk()->assertJsonCount(7,'questions');
+        $this->actingAs($admin)->put(route('admin.content.test-banks.quizzes.update',[$course,$bank,$quiz]),['title'=>$quiz->title,'status'=>'active','item_count'=>9,'time_limit_minutes'=>110,'audience_configured'=>1])->assertSessionHasNoErrors();
+        $this->assertEquals(9,$quiz->fresh()->questions()->count());
+        $this->assertSame([],$quiz->fresh()->licensure_ids);
+        $this->post(route('admin.content.test-banks.quizzes.store',[$course,$bank]),array_replace($payload,['licensure_ids'=>['foreign']]))->assertSessionHasErrors('licensure_ids.0');
     }
 
     private function catalog(): array
@@ -201,7 +230,7 @@ class TestBankAuthoringTest extends TestCase
             $this->actingAs($admin)->post($url, ['title' => 'Typed '.$type, 'test_type' => $type, 'item_count' => 10, 'subject_ids' => [$subject->id]])->assertSessionHas('success');
         }
         $simulation = $bank->premadeQuizzes()->where('test_type', 'simulation')->firstOrFail();
-        $this->assertSame(150, $simulation->item_count);
+        $this->assertSame(10, $simulation->item_count);
         $this->assertSame(300, $simulation->time_limit_minutes);
         $learner = User::factory()->create();
         $bank->enrollments()->create(['user_id' => $learner->id, 'status' => 'active', 'enrolled_at' => now(), 'expires_at' => now()->addDays(30)]);

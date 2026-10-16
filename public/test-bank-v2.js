@@ -20,7 +20,7 @@ function renderTestBankWorkspaceV2(workspace) {
             <div class="test-bank-study-path-grid">
                 <article class="test-bank-study-phase active"><header class="test-bank-phase-header"><small>PHASE 01</small></header><h3>Warm Up Quizzes</h3><p>Create unlimited 10-item quizzes to start your daily review journey.</p><button type="button" data-guided-builder="10">Select Warm Up</button></article>
                 <article class="test-bank-study-phase"><header class="test-bank-phase-header"><small>PHASE 02</small></header><h3>Mastery Tests</h3><p>Create unlimited 20-item tests for mastery. 60% is the passing score. Aim for 100% to gain confidence that you have mastered the concepts and are on the right track.</p><button type="button" data-guided-builder="20">Select Mastery Tests</button></article>
-                <article class="test-bank-study-phase"><header class="test-bank-phase-header"><small>PHASE 03</small></header><h3>Simulation Test</h3><p>Practice in an exam setting with Simulation 1 and Simulation 2. Retakes are unlimited. Each timed test has 150 items, a 300-minute time limit, and cannot be paused. Unlock after passing at least 10 Warm Up Quizzes and 5 Mastery Tests.</p><b>${Number(workspace.simulationProgress?.warmUpPassed || 0)}/10 Warm Up passed · ${Number(workspace.simulationProgress?.masteryPassed || 0)}/5 Mastery Tests passed</b><button type="button" data-guided-simulation>Select Simulation</button></article>
+<article class="test-bank-study-phase"><header class="test-bank-phase-header"><small>PHASE 03</small></header><h3>Simulation Test</h3><p>Practice simulations for your enrolled licensure. Item counts and time limits are shown for each test. Retakes are unlimited and tests cannot be paused. Unlock after passing at least 10 Warm Up Quizzes and 5 Mastery Tests.</p><b>${Number(workspace.simulationProgress?.warmUpPassed || 0)}/10 Warm Up passed · ${Number(workspace.simulationProgress?.masteryPassed || 0)}/5 Mastery Tests passed</b><button type="button" data-guided-simulation>Select Simulation</button></article>
             </div>
         </section>
 <div class="v2-practice-area" aria-live="polite"></div>`;
@@ -52,7 +52,7 @@ function renderV2SimulationCard(workspace) {
     host.innerHTML = `<section class="v2-practice-card v2-simulation-card">
         <small class="v2-practice-eyebrow">EXAM CONDITIONS</small><h2>Exam Simulations</h2>
         <p class="v2-practice-description">Practice a full-length test with a timer, no pause, and no explanations until submission.</p>
-        <div class="v2-practice-facts"><div><strong>150</strong><span>Items per simulation</span></div><div><strong>300 minutes</strong><span>Timed · No pause</span></div><div><strong>${tests.length}</strong><span>Simulations</span></div></div>
+        <div class="v2-practice-facts"><div><strong>Per test</strong><span>Items per simulation</span></div><div><strong>Timed</strong><span>Timed · No pause</span></div><div><strong>${tests.length}</strong><span>Simulations</span></div></div>
         <section class="v2-simulation-eligibility"><h3>Simulation test eligibility</h3>
             <div class="v2-eligibility-label"><span>Warm Up Quizzes</span><strong>${warm}/10 passed</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="Warm Up quizzes passed" aria-valuemin="0" aria-valuemax="10" aria-valuenow="${Math.min(10, warm)}"><i style="width:${Math.min(100, warm * 10)}%"></i></div>
             <div class="v2-eligibility-label"><span>Mastery Tests</span><strong>${mastery}/5 passed</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="Mastery tests passed" aria-valuemin="0" aria-valuemax="5" aria-valuenow="${Math.min(5, mastery)}"><i style="width:${Math.min(100, mastery * 20)}%"></i></div>
@@ -60,7 +60,7 @@ function renderV2SimulationCard(workspace) {
         </section>
         ${tests.length ? tests.map(test => {
             const locked = !unlocked || Boolean(test.locked);
-            return `<div class="v2-simulation-row"><div><h3>${escapeHtml(test.title || 'Simulation Test')}</h3><p>Full-length practice · Unlimited retakes</p>${test.description ? `<p>${escapeHtml(test.description)}</p>` : ''}</div><button type="button" data-v2-simulation="${Number(test.id)}" ${locked ? 'disabled' : ''}>${locked ? 'Locked' : 'Start Simulation'}</button></div>`;
+            return `<div class="v2-simulation-row"><div><h3>${escapeHtml(test.title || 'Simulation Test')}</h3><p>${Number(test.itemCount)} items · ${Number(test.timeLimitMinutes)} minutes · Unlimited retakes</p>${test.description ? `<p>${escapeHtml(test.description)}</p>` : ''}</div><button type="button" data-v2-simulation="${Number(test.id)}" ${locked ? 'disabled' : ''}>${locked ? 'Locked' : 'Start Simulation'}</button></div>`;
         }).join('') : '<p>No pre-made simulation tests are available yet.</p>'}
     </section>`;
     host.querySelectorAll('[data-v2-simulation]').forEach(button => button.addEventListener('click', async () => {
