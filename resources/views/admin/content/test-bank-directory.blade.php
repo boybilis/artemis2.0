@@ -81,9 +81,9 @@ function openDirectoryBankForm(item = null) {
 function closeDirectoryBankForm() { document.getElementById('directoryBankModal').classList.remove('open'); }
 function addBankOptionRow(option = {}) {
     const row = document.createElement('div');
-    row.style.cssText = 'display:grid;grid-template-columns:2fr 1fr auto auto;gap:8px;margin:12px 0;align-items:center';
+    row.className = 'bank-option-row';
     row.dataset.optionId = option.id || crypto.randomUUID();
-    row.innerHTML = '<input class="form-control" placeholder="Exam name" aria-label="Exam name" maxlength="255" required><input class="form-control" placeholder="Country/location" aria-label="Country or location" maxlength="100" required><label><input type="checkbox"> Active</label><button type="button" class="btn-ghost" aria-label="Remove enrollment option">×</button>';
+    row.innerHTML = '<input class="form-control" placeholder="Exam name" aria-label="Exam name" maxlength="255" required><input class="form-control" placeholder="Country/location" aria-label="Country or location" maxlength="100" required><label class="bank-option-active"><input type="checkbox"> Active</label><button type="button" class="btn-ghost bank-option-remove" aria-label="Remove enrollment option"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8"/></svg></button>';
     const inputs = row.querySelectorAll('input');
     inputs[0].value = option.name || ''; inputs[1].value = option.country || ''; inputs[2].checked = option.active ?? true;
     row.querySelector('button').onclick = () => row.remove();
@@ -100,6 +100,12 @@ directoryForm.addEventListener('submit', () => {
 @if($errors->any()) document.addEventListener('DOMContentLoaded', () => showAdminToast(@json(implode(' ', $errors->all())), 'error', 6500)); @endif
 </script>
 <style>
+    #directoryBankForm .bank-option-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto 32px;gap:10px;margin:12px 0;align-items:center;font-size:.9rem}
+    #directoryBankForm .bank-option-active{display:inline-flex;align-items:center;gap:6px;margin:0;white-space:nowrap;font-size:inherit;font-weight:400;line-height:1.4}
+    #directoryBankForm .bank-option-active input[type="checkbox"]{appearance:auto;width:16px;height:16px;min-width:16px;min-height:0;padding:0;margin:0;accent-color:#08a991;box-shadow:none}
+    #directoryBankForm .bank-option-remove{display:grid;place-items:center;width:32px;height:32px;min-height:32px;padding:0;border-radius:8px;color:#dc2626;border-color:#e8b5b5;background:transparent}
+    #directoryBankForm .bank-option-remove:hover{background:#fef2f2}
+    @media(max-width:550px){#directoryBankForm .bank-option-row{grid-template-columns:minmax(0,1fr) auto 32px}#directoryBankForm .bank-option-row>.form-control:first-child{grid-column:1/-1}}
     .directory-actions{display:flex;gap:.65rem;align-items:center}@media(max-width:600px){.directory-actions{flex-direction:column;align-items:stretch}}
     .test-bank-directory{display:grid;gap:1rem;margin:1.25rem 0}.test-bank-directory-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.25rem;border:1px solid var(--border);border-radius:14px;background:var(--surface)}.test-bank-directory-card h3{margin:0;font-size:1.05rem}.test-bank-directory-card p{margin:.4rem 0 0;font-size:.8rem}.test-bank-directory-card a{text-decoration:none;white-space:nowrap}@media(max-width:600px){.test-bank-directory-card{align-items:stretch;flex-direction:column}.test-bank-directory-card a{text-align:center}}
 </style>
