@@ -21,7 +21,7 @@
     body.light-mode .floating-save-toast { box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
 </style>
 
-<div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
+<div data-ajax-table="users"><div class="stat-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2rem;">
     <article class="metric-card">
         <p class="metric-label">All users</p>
         <p class="metric-value">{{ number_format($stats['total']) }}</p>
@@ -113,6 +113,7 @@
     </div>
 </section>
 
+</div>
 <!-- Floating Save Toast -->
 <div class="floating-save-toast" id="saveToast">
     <div class="toast-message">You have unsaved role changes.</div>
@@ -125,64 +126,56 @@
 </div>
 
 <script>
-    let changedForms = new Set();
-    const saveToast = document.getElementById('saveToast');
-    const toastSaveBtn = document.getElementById('toastSaveBtn');
-    const roleSelects = document.querySelectorAll('.role-select');
-
-    roleSelects.forEach(select => {
-        select.addEventListener('change', function() {
-            const form = this.closest('form');
-            if (this.value !== this.dataset.original) {
-                this.classList.add('changed');
-                changedForms.add(form);
-            } else {
-                this.classList.remove('changed');
-                changedForms.delete(form);
-            }
-            
-            if (changedForms.size > 0) {
-                saveToast.classList.add('visible');
-            } else {
-                saveToast.classList.remove('visible');
-            }
-        });
-    });
-
-    function cancelChanges() {
-        roleSelects.forEach(select => {
-            select.value = select.dataset.original;
-            select.classList.remove('changed');
-        });
-        changedForms.clear();
-        saveToast.classList.remove('visible');
-    }
-
-    async function saveChanges() {
-        if (changedForms.size === 0) return;
-        
-        toastSaveBtn.innerHTML = 'Saving...';
-        toastSaveBtn.disabled = true;
-
-        const promises = [];
-        changedForms.forEach(form => {
-            promises.push(
-                fetch(form.action, {
-                    method: 'POST',
-                    body: new FormData(form),
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                })
-            );
-        });
-
-        try {
-            await Promise.all(promises);
-            window.location.reload();
-        } catch (error) {
-            alert('Error saving changes. Please try again.');
-            toastSaveBtn.innerHTML = 'Save Changes';
-            toastSaveBtn.disabled = false;
-        }
-    }
+let changedForms = new Set();
+const saveToast = document.getElementById('saveToast'), toastSaveBtn = document.getElementById('toastSaveBtn');
+function syncRoleToast(){saveToast.classList.toggle('visible',changedForms.size>0);}
+document.addEventListener('change',event=>{
+ if(!event.target.matches('[data-ajax-table="users"] .role-select'))return;
+ const select=event.target,form=select.closest('form');
+ [...changedForms].filter(item=>item.action===form.action).forEach(item=>changedForms.delete(item));
+ if(select.value!==select.dataset.original)changedForms.add(form);
+ select.classList.toggle('changed',select.value!==select.dataset.original);syncRoleToast();
+});
+function cancelChanges(){changedForms.forEach(form=>{const select=form.querySelector('select');select.value=select.dataset.original;select.classList.remove('changed')});changedForms.clear();document.querySelectorAll('.role-select').forEach(select=>{select.value=select.dataset.original;select.classList.remove('changed')});syncRoleToast();}
+async function saveChanges(){
+ if(!changedForms.size)return;
+ toastSaveBtn.disabled=true;toastSaveBtn.textContent='Saving…';
+ try{
+  const results=await Promise.allSettled([...changedForms].map(async form=>{
+   const response=await fetch(form.action,{method:'POST',body:new FormData(form),headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});
+   const data=await response.json();if(!response.ok)throw new Error(data.message||'Unable to save role.');
+   changedForms.delete(form);
+  }));
+  syncRoleToast();await loadAdminTable('users',location.href,false);
+  if(results.some(result=>result.status==='rejected'))throw new Error('Some role changes could not be saved. Please try again.');
+  showAdminToast('Roles updated.','success');
+ }catch(error){showAdminToast(error.message,'error')}
+ finally{toastSaveBtn.disabled=false;toastSaveBtn.textContent='Save Changes';}
+}
+document.addEventListener('admin-table:updated',event=>{
+ if(event.detail.tableId!=='users')return;
+ document.querySelectorAll('.role-select').forEach(select=>{
+  const form=select.closest('form'),pending=[...changedForms].find(item=>item.action===form.action);
+  if(pending){select.value=pending.querySelector('select').value;select.classList.add('changed');changedForms.delete(pending);changedForms.add(form);}
+ });
+});
+let userSearchTimer;
+function searchUsers(form){const url=new URL(form.action);url.search=new URLSearchParams(new FormData(form));loadAdminTable('users',url.href);}
+document.addEventListener('input',event=>{
+ if(!event.target.matches('[data-ajax-table="users"] input[name="search"]'))return;
+ const form=event.target.form;clearTimeout(userSearchTimer);userSearchTimer=setTimeout(()=>searchUsers(form),350);
+});
+document.addEventListener('submit',async event=>{
+ const form=event.target;if(!form.closest('[data-ajax-table="users"]'))return;
+ event.preventDefault();
+ if(form.method.toUpperCase()==='GET'){clearTimeout(userSearchTimer);searchUsers(form);return;}
+ if(form.classList.contains('ajax-role-form')){saveChanges();return;}
+ const button=form.querySelector('button');if(button)button.disabled=true;
+ try{const response=await fetch(form.action,{method:'POST',body:new FormData(form),headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});
+ const data=await response.json();if(!response.ok)throw new Error(data.message||'Unable to update user.');
+ await loadAdminTable('users',location.href,false);showAdminToast(data.message,'success');
+ }catch(error){if(button)button.disabled=false;showAdminToast(error.message,'error')}
+});
+document.addEventListener('click',event=>{const link=event.target.closest('[data-ajax-table="users"] .toolbar a');if(link){event.preventDefault();loadAdminTable('users',link.href);}});
 </script>
 @endsection

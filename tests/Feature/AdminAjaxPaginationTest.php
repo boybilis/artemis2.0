@@ -11,6 +11,18 @@ class AdminAjaxPaginationTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_users_table_and_mutations_support_ajax_without_redirecting(): void
+    {
+        $admin=User::factory()->create(['role'=>'admin','is_admin'=>true]);
+        $learner=User::factory()->create(['role'=>'student','is_admin'=>false,'is_active'=>true]);
+        $this->actingAs($admin)->get('/admin/users')->assertOk()->assertSee('data-ajax-table="users"',false);
+        $this->postJson(route('admin.users.toggle',$learner))->assertOk()->assertJsonPath('success',true);
+        $this->assertFalse((bool)$learner->fresh()->is_active);
+        $this->postJson(route('admin.users.role',$learner),['role'=>'encoder'])->assertOk()->assertJsonPath('success',true);
+        $this->assertSame('encoder',$learner->fresh()->role);
+        $this->postJson(route('admin.users.role',$learner),['role'=>'invalid'])->assertUnprocessable();
+    }
+
     public function test_priority_admin_tables_use_independent_database_paginators(): void
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

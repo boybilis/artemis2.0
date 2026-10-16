@@ -7,6 +7,48 @@
 <button class="btn-primary" type="button" onclick="openModal('questionModal')">Add Question</button>
 <button class="btn-ghost" type="button" onclick="openModal('importModal')">Upload CSV</button>
 <button class="btn-ghost" type="button" onclick="openModal('quizModal')">Create Premade Quiz</button>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    let timer;
+    document.addEventListener('admin-table:updated', event => {
+        if(event.detail.tableId==='bank-questions') {
+            questions=JSON.parse(event.detail.element.querySelector('[data-question-payload]').textContent);
+            document.getElementById('questionSummaryCount').textContent=event.detail.element.querySelector('[data-question-total]').textContent;
+        }
+        if(event.detail.tableId==='premade-quizzes') document.getElementById('premadeSummaryCount').textContent=event.detail.element.querySelector('[data-premade-total]').textContent;
+    });
+    const searchQuestions = form => {
+        const url=new URL(form.action);url.search=new URLSearchParams(new FormData(form));
+        url.searchParams.delete('page');loadAdminTable('bank-questions',url.href);
+    };
+    document.addEventListener('input', event => {
+        if(event.target.id!=='questionSearch')return;
+        clearTimeout(timer);const form=event.target.form;timer=setTimeout(()=>searchQuestions(form),350);
+    });
+    document.addEventListener('change',event=>{if(event.target.id==='questionStatus'){clearTimeout(timer);searchQuestions(event.target.form);}});
+    document.addEventListener('click',event=>{
+        const link=event.target.closest('[data-ajax-table="bank-questions"] a');
+        if(!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey)return;
+        event.preventDefault();loadAdminTable('bank-questions',link.href);
+    });
+    document.addEventListener('submit',async event=>{
+        const form=event.target;
+        const isQuestionForm=form.closest('[data-ajax-table="bank-questions"]') || form.id==='editQuestionForm' || form.closest('#questionModal,#importModal,#deleteAllQuestionsModal');
+        if(!isQuestionForm)return;
+        event.preventDefault();
+        if(form.method.toUpperCase()==='GET'){clearTimeout(timer);searchQuestions(form);return;}
+        const button=form.querySelector('button:not([type="button"])');if(button)button.disabled=true;
+        try{
+            const response=await fetch(form.action,{method:'POST',body:new FormData(form),headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'});
+            const data=await response.json();if(!response.ok)throw new Error(Object.values(data.errors||{}).flat().join(' ')||data.message||'Unable to update questions.');
+            const modal=form.closest('.admin-modal');if(modal)closeModal(modal.id);
+            await loadAdminTable('bank-questions',location.href,false);
+            await loadAdminTable('premade-quizzes',location.href,false);
+            showAdminToast(data.message,'success');
+        }catch(error){showAdminToast(error.message,'error',6500)}finally{if(button)button.disabled=false;}
+    });
+});
+</script>
 @endsection
 
 @section('content')
@@ -36,7 +78,7 @@ body .tb-table tbody td:first-child,body .tb-table tbody td:nth-child(3){font-si
 
 <a class="btn-ghost" href="{{ route('admin.test-banks.index') }}" style="display:inline-flex;text-decoration:none;margin-bottom:1rem">← Test Bank Catalogs</a>
 <p class="panel-label">{{ $testBank->code }} · {{ $course->title }}</p><h2 class="panel-title">{{ $testBank->title }}</h2><p class="panel-subtitle">Build the multiple-choice question bank and learner-facing premade quizzes.</p>
-<div class="tb-summary"><div class="tb-stat"><small>Questions</small><strong>{{ $questionTotal }}</strong></div><div class="tb-stat"><small>Premade quizzes</small><strong id="premadeSummaryCount">{{ $testBank->premadeQuizzes()->where('quiz_type','premade')->count() }}</strong></div><div class="tb-stat"><small>Question format</small><strong>Multiple choice</strong></div></div>
+<div class="tb-summary"><div class="tb-stat"><small>Questions</small><strong id="questionSummaryCount">{{ $questionTotal }}</strong></div><div class="tb-stat"><small>Premade quizzes</small><strong id="premadeSummaryCount">{{ $testBank->premadeQuizzes()->where('quiz_type','premade')->count() }}</strong></div><div class="tb-stat"><small>Question format</small><strong>Multiple choice</strong></div></div>
 
 <form id="premadeSearchForm" style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:12px"><input class="form-control" type="search" name="quiz_search" value="{{ request('quiz_search') }}" placeholder="Search pre-made quizzes" aria-label="Search pre-made quizzes"></form>
 <div data-ajax-table="premade-quizzes">
@@ -70,6 +112,7 @@ body .tb-table tbody td:first-child,body .tb-table tbody td:nth-child(3){font-si
 <div class="field" style="margin-top:20px"><label for="deleteQuestionsPassword">Your administrator password</label><input id="deleteQuestionsPassword" class="form-control" type="password" name="password" autocomplete="current-password" required></div></div>
 <div class="admin-modal-footer"><button type="button" class="btn-ghost" onclick="closeModal('deleteAllQuestionsModal')">Cancel</button><button type="submit" class="btn-primary" style="background:#dc2626;color:white">Delete All Questions</button></div></form></div>
 @endif
+<div data-ajax-table="bank-questions"><span hidden data-question-total>{{ $questionTotal }}</span><script type="application/json" data-question-payload>@json($questionPayload)</script>
 <section class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap"><div><p class="panel-label">Question Bank</p><h2 class="panel-title">Multiple-Choice Questions</h2></div>
 @if(auth()->user()->is_admin || strtolower(trim(auth()->user()->role)) === 'admin')
 <button type="button" class="btn-primary" style="background:#dc2626;color:white;display:inline-flex;align-items:center;gap:8px" onclick="openModal('deleteAllQuestionsModal')"><svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m4 4 10 10M14 4 4 14"/></svg>Delete All Questions</button>
@@ -79,6 +122,7 @@ body .tb-table tbody td:first-child,body .tb-table tbody td:nth-child(3){font-si
 <div class="tb-table-wrap" role="region" aria-label="Test Bank questions table" tabindex="0"><table class="tb-table"><thead><tr><th><a class="tb-sort" href="{{ request()->fullUrlWithQuery(['sort'=>'question','direction'=>$nextDirection,'page'=>1]) }}">Question ↕</a></th><th>Subjects</th><th>Answer</th><th><a class="tb-sort" href="{{ request()->fullUrlWithQuery(['sort'=>'points','direction'=>$nextDirection,'page'=>1]) }}">Points ↕</a></th><th><a class="tb-sort" href="{{ request()->fullUrlWithQuery(['sort'=>'status','direction'=>$nextDirection,'page'=>1]) }}">Status ↕</a></th><th>Actions</th></tr></thead><tbody id="questionTableBody">
 @forelse($questions as $question)<tr data-question-id="{{ $question->id }}"><td class="tb-question">@if($question->image_path)<img class="tb-question-reference" src="{{ asset('storage/'.$question->image_path) }}" alt="Question reference image">@endif<span class="tb-question-text">{{ $question->question }}</span></td><td><div class="tb-subject-list">@foreach($question->subjects as $subject)<span class="tb-tag" title="{{ $subject->title }}">{{ $subject->subject_code }}</span>@endforeach</div></td><td>{{ chr(65+$question->correct_answer) }}. {{ $question->options[$question->correct_answer] ?? '' }}</td><td>{{ rtrim(rtrim(number_format((float)$question->points,2,'.',''),'0'),'.') }}</td><td><span class="tb-tag {{ $question->status==='active'?'tb-active':'' }}">{{ $question->status==='active'?'Active':'Archived' }}</span></td><td><div class="tb-actions"><button class="btn-ghost" type="button" onclick="openQuestionPreview({{ $question->id }})">Preview</button><button class="btn-ghost" type="button" onclick="openQuestionEdit({{ $question->id }})">Edit</button><form method="POST" action="{{ route('admin.content.test-banks.questions.status',[$course,$testBank,$question]) }}">@csrf<button class="btn-ghost" style="color:{{ $question->status==='active'?'var(--wrong)':'var(--success)' }}">{{ $question->status==='active'?'Archive':'Restore' }}</button></form></div></td></tr>@empty<tr><td colspan="6" class="tb-empty">No Test Bank questions yet. Add one manually or upload the CSV template.</td></tr>@endforelse
 </tbody></table></div><div class="tb-pagination"><small class="muted">@if($questions->total())Showing {{ $questions->firstItem() }}–{{ $questions->lastItem() }} of {{ $questions->total() }} · Page {{ $questions->currentPage() }} of {{ $questions->lastPage() }}@else No matching questions @endif</small><div class="tb-page-actions">@if($questions->previousPageUrl())<a class="btn-ghost" href="{{ $questions->previousPageUrl() }}" style="text-decoration:none">Previous 20</a>@else<button class="btn-ghost" type="button" disabled>Previous 20</button>@endif @if($questions->nextPageUrl())<a class="btn-ghost" href="{{ $questions->nextPageUrl() }}" style="text-decoration:none">Next 20</a>@else<button class="btn-ghost" type="button" disabled>Next 20</button>@endif</div></div></section>
+</div>
 
 <div id="previewQuestionModal" class="admin-modal"><div class="admin-modal-content tb-question-modal" style="max-width:760px"><div class="admin-modal-header"><h3 class="admin-modal-title">Question Preview</h3><button type="button" class="admin-modal-close" onclick="closeModal('previewQuestionModal')">&times;</button></div><div id="questionPreviewBody" class="admin-modal-body"></div><div class="admin-modal-footer"><button type="button" class="btn-ghost" onclick="closeModal('previewQuestionModal')">Close</button></div></div></div>
 
@@ -94,7 +138,7 @@ body .tb-table tbody td:first-child,body .tb-table tbody td:nth-child(3){font-si
 
 <script>
 document.addEventListener('DOMContentLoaded',()=>{const type=document.getElementById('premadeTestType'),form=type.closest('form'),items=form.querySelector('[name="item_count"]'),time=form.querySelector('[name="time_limit_minutes"]');type.addEventListener('change',()=>{const simulation=type.value==='simulation';items.value=simulation?150:type.value==='mastery'?20:10;items.readOnly=false;time.value=simulation?300:'';time.readOnly=false;time.required=simulation;document.getElementById('simulationLicensureField').hidden=!simulation})});
-const questions={{ Illuminate\Support\Js::from($questionPayload) }};const updateUrl=@json($questionUpdateUrl);const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]));function openModal(id){document.getElementById(id)?.classList.add('open')}function closeModal(id){document.getElementById(id)?.classList.remove('open')}
+let questions={{ Illuminate\Support\Js::from($questionPayload) }};const updateUrl=@json($questionUpdateUrl);const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]));function openModal(id){document.getElementById(id)?.classList.add('open')}function closeModal(id){document.getElementById(id)?.classList.remove('open')}
 const quizSelectAll=document.getElementById('quizSelectAllSubjects'),quizSubjectChecks=[...document.querySelectorAll('#quizSubjectGrid input[name="subject_ids[]"]')];function syncQuizSelectAll(){const selected=quizSubjectChecks.filter(input=>input.checked).length;quizSelectAll.checked=quizSubjectChecks.length>0&&selected===quizSubjectChecks.length;quizSelectAll.indeterminate=selected>0&&selected<quizSubjectChecks.length}quizSelectAll?.addEventListener('change',()=>{quizSubjectChecks.forEach(input=>input.checked=quizSelectAll.checked);syncQuizSelectAll()});quizSubjectChecks.forEach(input=>input.addEventListener('change',syncQuizSelectAll));
 function openQuestionPreview(id){const q=questions[id];if(!q)return;const rationale=(q.rationale||q.rationaleImageUrl||q.rationaleVideoUrl)?`<div class="tb-rationale"><strong>Rationale</strong>${q.rationaleImageUrl?`<img class="tb-preview-image" style="margin-top:.75rem" src="${esc(q.rationaleImageUrl)}" alt="Rationale image">`:''}${q.rationale?`<div>${esc(q.rationale)}</div>`:''}${q.rationaleVideoUrl?`<div style="margin-top:.75rem"><a class="btn-ghost" href="${esc(q.rationaleVideoUrl)}" target="_blank" rel="noopener noreferrer">Watch rationale video ↗</a></div>`:''}</div>`:'';document.getElementById('questionPreviewBody').innerHTML=`${q.imageUrl?`<img class="tb-preview-image" src="${esc(q.imageUrl)}" alt="Question reference image">`:''}<div class="tb-meta">${q.subjects.map(s=>`<span class="tb-tag">${esc(s.code)}</span>`).join('')}<span class="tb-tag">${esc(q.points)} point${Number(q.points)===1?'':'s'}</span><span class="tb-tag ${q.status==='active'?'tb-active':''}">${q.status==='active'?'Active':'Archived'}</span></div><div class="tb-preview-question">${esc(q.question)}</div><div class="tb-preview-choices">${q.options.map((o,i)=>`<div class="tb-preview-choice ${i===Number(q.correctAnswer)?'correct':''}"><strong>${String.fromCharCode(65+i)}.</strong> ${esc(o)}${i===Number(q.correctAnswer)?' <strong>· Correct</strong>':''}</div>`).join('')}</div>${rationale}`;openModal('previewQuestionModal')}
 function openQuestionEdit(id){const q=questions[id],form=document.getElementById('editQuestionForm');if(!q)return;form.action=updateUrl.replace('__ID__',id);form.reset();document.querySelectorAll('.edit-subject').forEach(x=>x.checked=q.subjectIds.includes(Number(x.value)));document.getElementById('editQuestion').value=q.question;for(let i=0;i<8;i++)document.getElementById(`editOption${i}`).value=q.options[i]??'';document.getElementById('editCorrectAnswer').value=q.correctAnswer;document.getElementById('editPoints').value=q.points;document.getElementById('editRationale').value=q.rationale??'';document.getElementById('editRationaleVideoUrl').value=q.rationaleVideoUrl??'';const current=document.getElementById('editCurrentImage'),remove=document.getElementById('editRemoveImage');remove.disabled=!q.imageUrl;if(q.imageUrl){current.hidden=false;document.getElementById('editCurrentImagePreview').src=q.imageUrl;document.getElementById('editCurrentImageName').textContent=q.imageFilename??'Current reference image'}else current.hidden=true;const rationaleCurrent=document.getElementById('editCurrentRationaleImage'),rationaleRemove=document.getElementById('editRemoveRationaleImage');rationaleRemove.disabled=!q.rationaleImageUrl;if(q.rationaleImageUrl){rationaleCurrent.hidden=false;document.getElementById('editCurrentRationaleImagePreview').src=q.rationaleImageUrl;document.getElementById('editCurrentRationaleImageName').textContent=q.rationaleImageFilename??'Current rationale image'}else rationaleCurrent.hidden=true;openModal('editQuestionModal')}
@@ -118,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.elements.quiz_search.oninput = () => { clearTimeout(timer); timer = setTimeout(refresh,350); };
     document.addEventListener('submit', async event => {
         const target = event.target;
-        if (!target.matches('[data-ajax-table="premade-quizzes"] form')) return;
+        if (!target.matches('[data-ajax-table="premade-quizzes"] form, #quizModal form')) return;
         event.preventDefault();
         const method = target.querySelector('[name="_method"]')?.value;
         if (method === 'DELETE' && !confirm('Delete this quiz and all its learner test results?')) return;
@@ -128,6 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch(target.action,{method:'POST',body:new FormData(target),headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'},credentials:'same-origin'});
             const data = await response.json();
             if (!response.ok) throw new Error(Object.values(data.errors || {}).flat().join(' ') || data.message || 'Unable to save changes.');
+            const modal=target.closest('.admin-modal');if(modal)closeModal(modal.id);
             await refresh();
             showAdminToast(data.message,'success');
         } catch (error) { showAdminToast(error.message,'error',6500); if(button) button.disabled=false; }

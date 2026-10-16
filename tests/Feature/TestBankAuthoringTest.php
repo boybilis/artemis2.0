@@ -81,6 +81,18 @@ class TestBankAuthoringTest extends TestCase
         $this->get($url.'?quiz_search=Premade%2012')->assertOk()->assertSee('1 matching quizzes')->assertSee('Page 1 of 1');
     }
 
+    public function test_question_table_ajax_payload_and_edit_archive_responses(): void
+    {
+        extract($this->catalog());
+        $data=['subject_ids'=>[$subject->id],'question'=>'AJAX question','options'=>['First','Second'],'correct_answer'=>0,'points'=>1];
+        $this->actingAs($admin)->postJson(route('admin.content.test-banks.questions.store',[$course,$bank]),$data)->assertOk()->assertJsonPath('success',true);
+        $question=TestBankQuestion::firstOrFail();
+        $this->get(route('admin.content.test-banks.manage',[$course,$bank]))->assertOk()->assertSee('data-ajax-table="bank-questions"',false)->assertSee('data-question-payload',false);
+        $this->putJson(route('admin.content.test-banks.questions.update',[$course,$bank,$question]),array_replace($data,['question'=>'AJAX updated']))->assertOk()->assertJsonPath('success',true);
+        $this->postJson(route('admin.content.test-banks.questions.status',[$course,$bank,$question]))->assertOk()->assertJsonPath('success',true);
+        $this->assertSame('inactive',$question->fresh()->status);
+    }
+
     private function catalog(): array
     {
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);

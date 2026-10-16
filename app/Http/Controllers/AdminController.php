@@ -337,6 +337,7 @@ class AdminController extends Controller
             'ip_address' => $request->ip()
         ]);
 
+        if ($request->expectsJson()) return response()->json(['success'=>true,'message'=>$user->is_active ? 'User activated.' : 'User disabled.']);
         return back();
     }
 
@@ -364,6 +365,7 @@ class AdminController extends Controller
             'ip_address' => $request->ip()
         ]);
 
+        if ($request->expectsJson()) return response()->json(['success'=>true,'message'=>'User role updated.']);
         return back()->with('success', "User role successfully updated to " . ucfirst($newRole) . ".");
     }
 

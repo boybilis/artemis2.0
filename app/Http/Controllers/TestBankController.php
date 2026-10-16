@@ -774,6 +774,7 @@ class TestBankController extends Controller
         $question = $testBank->questions()->create($questionData);
         $question->subjects()->sync($subjectIds);
 
+        if ($request->expectsJson()) return response()->json(['success'=>true,'message'=>'Question added.']);
         return back()->with('success', 'Multiple-choice question added to the Test Bank.');
     }
 
@@ -815,6 +816,7 @@ class TestBankController extends Controller
         $question->update($questionData);
         $question->subjects()->sync($subjectIds);
 
+        if ($request->expectsJson()) return response()->json(['success'=>true,'message'=>'Question updated.']);
         return back()->with('success', 'Test Bank question updated.');
     }
 
@@ -829,7 +831,7 @@ class TestBankController extends Controller
         $images = [];
         foreach ($request->file('images', []) as $image) {
             $name = $image->getClientOriginalName();
-            if (isset($images[$name])) return back()->withErrors(['images' => "Duplicate image filename: {$name}."]);
+            if (isset($images[$name])) throw ValidationException::withMessages(['images' => "Duplicate image filename: {$name}."]);
             $images[$name] = $image;
         }
         $handle = fopen($request->file('csv_file')->getRealPath(), 'rb');
@@ -838,7 +840,7 @@ class TestBankController extends Controller
         $required = [$subjectHeader, 'question', 'option_a', 'option_b', 'correct_answer'];
         if (array_diff($required, $headers)) {
             fclose($handle);
-            return back()->withErrors(['csv_file' => 'CSV must include subject_codes (or subject_code), question, option_a, option_b, and correct_answer.']);
+            throw ValidationException::withMessages(['csv_file' => 'CSV must include subject_codes (or subject_code), question, option_a, option_b, and correct_answer.']);
         }
 
         $subjects = $course->subjects()->get()->keyBy(fn ($subject) => strtolower(trim($subject->subject_code)));
@@ -847,7 +849,7 @@ class TestBankController extends Controller
         while (($values = fgetcsv($handle)) !== false) {
             $line++;
             if (count(array_filter($values, fn ($value) => trim((string) $value) !== '')) === 0) continue;
-            if (count($rows) >= 5000) { fclose($handle); return back()->withErrors(['csv_file' => 'A CSV upload is limited to 5,000 questions.']); }
+            if (count($rows) >= 5000) { fclose($handle); throw ValidationException::withMessages(['csv_file' => 'A CSV upload is limited to 5,000 questions.']); }
             $values = array_pad($values, count($headers), null);
             $row = array_combine($headers, array_slice($values, 0, count($headers)));
             $subjectCodes = collect(explode('|', (string) ($row[$subjectHeader] ?? '')))
@@ -859,19 +861,19 @@ class TestBankController extends Controller
             $points = trim((string) ($row['points'] ?? '')) === '' ? 1 : filter_var($row['points'], FILTER_VALIDATE_FLOAT);
             if ($subjectCodes->isEmpty() || $rowSubjects->count() !== $subjectCodes->count() || trim((string) ($row['question'] ?? '')) === '' || count($options) < 2 || $correctIndex < 0 || $correctIndex >= count($options) || $points === false || $points < 0.01 || $points > 1000) {
                 fclose($handle);
-                return back()->withErrors(['csv_file' => "Invalid data on CSV row {$line}. Check the subject codes, question, choices, answer letter, and points."]);
+                throw ValidationException::withMessages(['csv_file' => "Invalid data on CSV row {$line}. Check the subject codes, question, choices, answer letter, and points."]);
             }
             $imageNames = [];
             $videoUrl = trim((string) ($row['rationale_video_url'] ?? ''));
             if ($videoUrl !== '' && validator(['url' => $videoUrl], ['url' => ['url:http,https', 'max:2048']])->fails()) {
                 fclose($handle);
-                return back()->withErrors(['csv_file' => "Invalid rationale video URL on CSV row {$line}. Use a valid HTTP or HTTPS URL."]);
+                throw ValidationException::withMessages(['csv_file' => "Invalid rationale video URL on CSV row {$line}. Use a valid HTTP or HTTPS URL."]);
             }
             foreach (['reference_image', 'rationale_image'] as $column) {
                 $name = trim((string) ($row[$column] ?? ''));
                 if ($name !== '' && !isset($images[$name])) {
                     fclose($handle);
-                    return back()->withErrors(['csv_file' => "Missing image on CSV row {$line}: {$name}. Upload the matching image using its exact filename."]);
+                    throw ValidationException::withMessages(['csv_file' => "Missing image on CSV row {$line}: {$name}. Upload the matching image using its exact filename."]);
                 }
                 $imageNames[$column] = $name;
             }
@@ -887,7 +889,7 @@ class TestBankController extends Controller
             ];
         }
         fclose($handle);
-        if (!$rows) return back()->withErrors(['csv_file' => 'The CSV contains no question rows.']);
+        if (!$rows) throw ValidationException::withMessages(['csv_file' => 'The CSV contains no question rows.']);
         $storedPaths = [];
         try {
         DB::transaction(function () use ($rows, $images, &$storedPaths) {
@@ -913,14 +915,16 @@ class TestBankController extends Controller
             throw $error;
         }
 
+        if ($request->expectsJson()) return response()->json(['success'=>true,'message'=>count($rows).' questions imported.']);
         return back()->with('success', count($rows).' Test Bank questions imported.');
     }
 
-    public function toggleQuestionStatus(Course $course, TestBank $testBank, TestBankQuestion $question)
+    public function toggleQuestionStatus(Request $request, Course $course, TestBank $testBank, TestBankQuestion $question)
     {
         $this->guardQuestion($course, $testBank, $question);
         $question->update(['status' => $question->status === 'active' ? 'inactive' : 'active']);
 
+        if ($request->expectsJson()) return response()->json(['success'=>true,'message'=>$question->status === 'active' ? 'Question restored.' : 'Question archived.']);
         return back()->with('success', $question->status === 'active'
             ? 'Test Bank question restored.'
             : 'Test Bank question archived and removed from learner tests.');
@@ -964,6 +968,7 @@ class TestBankController extends Controller
         $message = $questionIds->count() < $data['item_count']
             ? "Premade quiz saved with all {$questionIds->count()} available questions."
             : 'Premade randomized quiz saved.';
+        if ($request->expectsJson()) return response()->json(['success'=>true,'message'=>$message]);
         return back()->with('success', $message);
     }
 
@@ -985,6 +990,7 @@ class TestBankController extends Controller
             TestBankQuiz::whereIn('id', $quizIds)->delete();
             TestBankQuestion::whereIn('id', $questionIds)->delete();
         });
+        if ($request->expectsJson()) return response()->json(['success'=>true,'message'=>'All questions and associated exam records deleted. Payments and subscriptions preserved.']);
         return back()->with('success', 'All shared course Test Bank questions, related quizzes, attempts/results, and flagged queries were permanently deleted. Payments and subscriptions were preserved.');
     }
 

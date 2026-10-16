@@ -511,7 +511,11 @@
         }
 
         // Shared AJAX pagination for admin data tables.
+        const adminTableRequests = new Map();
         async function loadAdminTable(tableId, url, pushHistory = true) {
+            adminTableRequests.get(tableId)?.abort();
+            const controller = new AbortController();
+            adminTableRequests.set(tableId, controller);
             const current = [...document.querySelectorAll('[data-ajax-table]')]
                 .find(element => element.dataset.ajaxTable === tableId);
             if (!current) return;
@@ -526,7 +530,7 @@
                         'Accept': 'text/html',
                         'X-Requested-With': 'XMLHttpRequest'
                     },
-                    credentials: 'same-origin'
+                    credentials: 'same-origin', signal: controller.signal
                 });
                 if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
 
@@ -535,7 +539,16 @@
                     .find(element => element.dataset.ajaxTable === tableId);
                 if (!replacement) throw new Error('The requested table was not found in the response.');
 
+                const focused = current.contains(document.activeElement) ? document.activeElement : null;
+                const focusName = focused?.name;
+                const selectionStart = focused?.selectionStart, selectionEnd = focused?.selectionEnd;
                 current.replaceWith(replacement);
+                if (focusName && ['search','text'].includes(focused.type)) {
+                    const input = replacement.querySelector(`[name="${CSS.escape(focusName)}"]`);
+                    input?.focus({preventScroll:true});
+                    if (input && selectionStart !== null) { try { input.setSelectionRange(selectionStart,selectionEnd); } catch {} }
+                }
+                document.dispatchEvent(new CustomEvent('admin-table:updated', {detail:{tableId,element:replacement}}));
                 setupTableScrollHints(replacement);
                 if (pushHistory) {
                     history.pushState({ ajaxTable: tableId }, '', url);
@@ -543,11 +556,12 @@
                 replacement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 if (window.lucide) lucide.createIcons({ root: replacement });
             } catch (error) {
+                if (error.name === 'AbortError') return;
                 current.removeAttribute('aria-busy');
                 current.style.opacity = '';
                 current.style.pointerEvents = '';
                 console.error('AJAX pagination failed:', error);
-                window.location.href = url;
+                showAdminToast('Unable to load the table. Please try again.', 'error');
             }
         }
 
