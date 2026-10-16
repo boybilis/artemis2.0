@@ -56,10 +56,20 @@ class TestBankController extends Controller
         ])->values()]);
     }
 
-    public function enrollmentReport(Course $course, TestBank $testBank)
+    public function enrollmentReport(Request $request, Course $course, TestBank $testBank)
     {
         $this->guardCatalog($course, $testBank);
-        $enrollments = $testBank->enrollments()->with('user:id,name,email')->latest('enrolled_at')->paginate(20);
+        $query = $testBank->enrollments()->with('user:id,name,email');
+        $search = trim((string) $request->query('search', ''));
+        if ($search !== '') {
+            $query->where(function ($query) use ($search) {
+                $query->whereHas('user', fn ($user) => $user->where('name','like',"%{$search}%")->orWhere('email','like',"%{$search}%"))
+                    ->orWhere('enrollment_option->name','like',"%{$search}%")
+                    ->orWhere('enrollment_option->country','like',"%{$search}%");
+            });
+        }
+        $perPage = in_array((int) $request->query('per_page'), [10,20,50,100], true) ? (int) $request->query('per_page') : 10;
+        $enrollments = $query->latest('enrolled_at')->orderByDesc('id')->paginate($perPage)->withQueryString();
         return view('admin.content.test-bank-enrollments', compact('testBank', 'enrollments'));
     }
 

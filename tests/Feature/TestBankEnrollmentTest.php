@@ -17,6 +17,24 @@ class TestBankEnrollmentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_enrollment_report_searches_all_rows_and_paginates_within_the_selected_bank(): void
+    {
+        $admin = User::factory()->create(['role'=>'admin','is_admin'=>true]);
+        $course = Course::create(['title'=>'Report Course']);
+        $bank = TestBank::create(['course_id'=>$course->id,'title'=>'Report Bank','code'=>'REPORT','price'=>999,'access_days'=>30,'status'=>'active']);
+        foreach (range(1,12) as $index) {
+            $user = User::factory()->create(['name'=>'Report Learner '.$index,'email'=>'report'.$index.'@example.com']);
+            TestBankEnrollment::activate($bank,$user,['id'=>'dha','name'=>'DHA RN','country'=>$index === 1 ? 'UniqueCountry' : 'UAE','active'=>true]);
+        }
+        $url = route('admin.content.test-banks.enrollments',[$course,$bank]);
+        $this->actingAs($admin)->get($url)->assertOk()->assertSee('Showing 1 to 10 of 12 entries')->assertSee('Page 1 of 2');
+        $this->get($url.'?page=2')->assertOk()->assertSee('Showing 11 to 12 of 12 entries');
+        $this->get($url.'?search=UniqueCountry')->assertOk()->assertSee('Showing 1 to 1 of 1 entries')->assertSee('report1@example.com')->assertDontSee('report2@example.com');
+        $this->get($url.'?search=report12%40example.com')->assertOk()->assertSee('Showing 1 to 1 of 1 entries');
+        $this->get($url.'?search=DHA&per_page=20')->assertOk()->assertSee('Showing 1 to 12 of 12 entries');
+        $this->get($url.'?search=missing')->assertOk()->assertSee('No matching enrollments.');
+    }
+
     public function test_exam_location_options_are_validated_and_saved_on_payment_and_enrollment(): void
     {
         $admin = User::factory()->create(['role'=>'admin','is_admin'=>true]);
