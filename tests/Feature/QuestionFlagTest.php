@@ -5,6 +5,15 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 class QuestionFlagTest extends TestCase {
     use RefreshDatabase;
+    public function test_learner_can_mark_reply_read_using_timestamp_returned_to_browser(): void {
+        $learner=User::factory()->create(['role'=>'student','is_admin'=>false]);
+        $flag=QuestionFlag::create(['user_id'=>$learner->id,'attempt_type'=>'assessment','attempt_id'=>1,'question_index'=>0,
+            'question_snapshot'=>['question'=>'Question'],'reason'=>'Please explain','reply'=>'Explanation','replied_at'=>now()]);
+        $timestamp=$this->actingAs($learner)->getJson('/api/question-flags')->assertOk()->json('flags.data.0.replied_at');
+        $this->postJson('/api/question-flags/'.$flag->id.'/read',['replied_at'=>$timestamp])->assertOk()->assertJsonPath('unreadCount',0);
+        $this->assertNotNull($flag->fresh()->learner_read_at);
+        $this->getJson('/api/question-flags/unread')->assertJsonPath('count',0);
+    }
     public function test_read_responses_return_remaining_unread_count_on_both_sides(): void {
         $learner=User::factory()->create(['role'=>'student','is_admin'=>false]);
         $admin=User::factory()->create(['role'=>'admin','is_admin'=>true]);

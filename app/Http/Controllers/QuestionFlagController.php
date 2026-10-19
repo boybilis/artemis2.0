@@ -9,7 +9,9 @@ class QuestionFlagController extends Controller {
     public function read(Request $request, QuestionFlag $flag) {
         abort_unless($flag->user_id === $request->user()->id,404);
         $data=$request->validate(['replied_at'=>['required','date']]);
-        QuestionFlag::whereKey($flag->id)->where('user_id',$request->user()->id)->where('replied_at',\Carbon\Carbon::parse($data['replied_at']))->update(['learner_read_at'=>now()]);
+        // API dates are UTC; database timestamps use the application's local timezone.
+        $replyTime=\Carbon\Carbon::parse($data['replied_at'])->setTimezone(config('app.timezone'));
+        QuestionFlag::whereKey($flag->id)->where('user_id',$request->user()->id)->where('replied_at',$replyTime)->update(['learner_read_at'=>now()]);
         return response()->json(['success'=>true,'unreadCount'=>QuestionFlag::where('user_id',$request->user()->id)->whereNotNull('replied_at')->whereNull('learner_read_at')->count()]);
     }
     public function staffUnread() {
