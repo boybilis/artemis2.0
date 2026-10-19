@@ -38,6 +38,8 @@ Route::prefix('api')->group(function () {
     Route::middleware('auth')->group(function () {
         Route::post('/profile/settings', [AuthController::class, 'updateSettings']);
         Route::get('/question-flags', [\App\Http\Controllers\QuestionFlagController::class, 'index']);
+        Route::get('/question-flags/unread', [\App\Http\Controllers\QuestionFlagController::class, 'unread']);
+        Route::post('/question-flags/{flag}/read', [\App\Http\Controllers\QuestionFlagController::class, 'read']);
         Route::post('/question-flags', [\App\Http\Controllers\QuestionFlagController::class, 'store'])->middleware('throttle:10,1');
         Route::post('/profile/email/verify', [AuthController::class, 'verifyEmailChange']);
         Route::post('/profile/email/resend', [AuthController::class, 'resendEmailChangeCode']);
@@ -72,6 +74,7 @@ Route::prefix('api')->group(function () {
         Route::get('/test-banks/{testBank}/quizzes/{quiz}/questions', [TestBankController::class, 'quizQuestions']);
         Route::delete('/test-banks/{testBank}/quizzes/{quiz}/attempt', [TestBankController::class, 'invalidateQuizAttempt']);
         Route::post('/test-banks/{testBank}/quizzes/{quiz}/submit', [TestBankController::class, 'submitQuiz']);
+        Route::post('/test-banks/{testBank}/quizzes/{quiz}/draft', [TestBankController::class, 'saveQuizDraft']);
         Route::get('/test-banks/enrolled', [TestBankController::class, 'enrolled']);
 
         // Exam & Certificate
@@ -155,6 +158,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\ManagementDashboardController::class, 'index'])->name('dashboard');
         Route::middleware(RoleMiddleware::class.':admin,instructor')->group(function () {
             Route::get('/question-flags', [\App\Http\Controllers\QuestionFlagController::class, 'manage'])->name('question-flags.index');
+            Route::get('/question-flags/unread', [\App\Http\Controllers\QuestionFlagController::class, 'staffUnread'])->name('question-flags.unread');
+            Route::post('/question-flags/{flag}/read', [\App\Http\Controllers\QuestionFlagController::class, 'staffRead'])->name('question-flags.read');
             Route::put('/question-flags/{flag}/reply', [\App\Http\Controllers\QuestionFlagController::class, 'reply'])->name('question-flags.reply');
         });
 

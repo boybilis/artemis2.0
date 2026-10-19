@@ -2927,16 +2927,23 @@ async function exitTestBankFullscreen() {
 async function invalidateActiveTestBankExam(message = 'The exam was invalidated because full-screen mode was exited.') {
     if (!activeTestBankId || !activeTestBankQuizId || testBankAttemptInvalidating) return;
     testBankAttemptInvalidating = true;
-    testBankExamActive = false;
-    clearInterval(quizTimerInterval);
     const testBankId = activeTestBankId;
     const quizId = activeTestBankQuizId;
-    try { await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/attempt`, 'DELETE'); } catch (error) {}
-    activeTestBankQuizId = null;
-    testBankAttemptInvalidating = false;
-    showToast(message, 'error');
-    showScreen('dashboard-screen');
-    openTestBankWorkspace(testBankId);
+    try {
+        const result = await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/attempt`, 'DELETE');
+        if (!result.success) throw new Error('Cancellation was not confirmed.');
+        testBankExamActive = false;
+        clearInterval(quizTimerInterval);
+        clearTestBankRecovery(testBankId,quizId);
+        activeTestBankQuizId = null;
+        await exitTestBankFullscreen().catch(()=>{});
+        showToast(message, 'info');
+        showScreen('dashboard-screen');
+        openTestBankWorkspace(testBankId);
+    } catch (error) {
+        showToast('Cancellation was not confirmed. Your exam progress is preserved. Please try again.', 'error');
+        showTestBankExitWarning(!currentTestBankFullscreenElement());
+    } finally { testBankAttemptInvalidating = false; }
 }
 
 function showTestBankExitWarning(fullscreenExited = false) {
@@ -2954,7 +2961,7 @@ function showTestBankExitWarning(fullscreenExited = false) {
     document.body.appendChild(backdrop);
     if (window.lucide) lucide.createIcons({root:backdrop});
     const cleanup = () => { document.removeEventListener('keydown', onKeydown); backdrop.remove(); testBankExitWarningOpen = false; };
-    const cancelExam = async () => { cleanup(); await invalidateActiveTestBankExam('Exam cancelled and recorded in Quiz History.'); await exitTestBankFullscreen(); };
+    const cancelExam = async () => { cleanup(); await invalidateActiveTestBankExam('Exam cancelled and recorded in Quiz History.'); };
     const continueExam = async () => {
         try { await enterTestBankFullscreen(); } catch (error) {
             showToast('Return to full-screen mode to continue the exam.', 'error');
@@ -2988,13 +2995,17 @@ async function startTestBankPremadeQuiz(testBankId, quizId, button) {
     const originalText = button?.textContent || 'Start Test';
     if (button) { button.disabled = true; button.textContent = 'Loading…'; }
     try {
-        const data = await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/questions?shuffle_choices=1`);
+        if(await retrySavedTestBankSubmission(testBankId,quizId))return;
+        const localDraft=readTestBankDraft(testBankId,quizId);
+        const data = await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/questions?shuffle_choices=1${localDraft?.token ? '&resume_token='+encodeURIComponent(localDraft.token) : ''}`);
         activeTestBankId = testBankId;
         activeTestBankQuizId = quizId;
         testBankExamActive = true;
         document.body.classList.add('test-bank-exam-mode');
         state.examType = 'test_bank';
-        startQuiz(data.questions, {title: data.title, timeLimitMinutes: data.timeLimitMinutes, lazyLoad: data.lazyLoad, totalQuestions: data.totalQuestions, prometricSimulation: data.prometricSimulation, testType: data.testType});
+        const draft=beginTestBankRecovery(data,testBankId,quizId);
+        startQuiz(data.questions, {title: data.title, timeLimitMinutes: data.timeLimitMinutes, lazyLoad: data.lazyLoad, totalQuestions: data.totalQuestions, prometricSimulation: data.prometricSimulation, testType: data.testType, draft, deadlineMs:testBankRecovery.deadline});
+        if(data.resumed)showToast('Your unfinished exam has been restored. The original time limit still applies.','info');
         handleTestBankFullscreenChange();
     } catch (error) {
         testBankExamActive = false;
@@ -3028,6 +3039,7 @@ function startQuiz(data, settings = {}) {
     quizData = testBankLazyLoading ? Array.from({length:Number(settings.totalQuestions || data.length)}) : data;
     if (testBankLazyLoading) data.forEach((question, index) => { quizData[index] = question; });
     qIndex = 0; score = 0; answersList = []; reviewQuestions = new Set();
+    if(state.examType==='test_bank' && settings.draft){answersList=settings.draft.answers || [];reviewQuestions=new Set(settings.draft.marked || []);qIndex=Math.max(0,Math.min(quizData.length-1,Number(settings.draft.index)||0));}
     assessmentReviewActive = false; editingQuestionFromReview = false;
     if ($('quiz-question-panel')) $('quiz-question-panel').style.display = '';
     if ($('assessment-review-panel')) $('assessment-review-panel').style.display = 'none';
@@ -3045,7 +3057,8 @@ function startQuiz(data, settings = {}) {
     const timerEl = $('quiz-timer');
     const configuredMinutes = Number(settings.timeLimitMinutes || 0);
     if (configuredMinutes > 0) {
-        quizTimerSeconds = Math.max(60, Math.round(configuredMinutes * 60));
+        const deadlineMs=settings.deadlineMs ?? Date.now()+Math.round(configuredMinutes*60000);
+        quizTimerSeconds = Math.max(0, Math.ceil((deadlineMs-Date.now())/1000));
         timerEl.innerHTML = `<i data-lucide="timer" style="width: 16px; height: 16px; margin-right: 6px; vertical-align: text-bottom;"></i> <span id="quiz-timer-text" style="font-weight: bold; font-family: monospace; font-size: 1.1rem;">${formatTime(quizTimerSeconds)}</span>`;
         timerEl.style.display = 'inline-block';
         timerEl.style.padding = '0.4rem 0.8rem';
@@ -3057,7 +3070,7 @@ function startQuiz(data, settings = {}) {
         if (typeof lucide !== 'undefined') lucide.createIcons({ root: timerEl });
         
         quizTimerInterval = setInterval(() => {
-            quizTimerSeconds--;
+            quizTimerSeconds=Math.max(0,Math.ceil((deadlineMs-Date.now())/1000));
             const timerText = $('quiz-timer-text');
             if (timerText) timerText.textContent = formatTime(quizTimerSeconds);
             if (quizTimerSeconds <= 0) {
@@ -3362,6 +3375,7 @@ if (quizCloseBtn) {
 }
 if (nextQBtn) {
     nextQBtn.addEventListener('click', () => {
+        if (state.examType==='test_bank' && testBankRecovery?.pending) { finishQuiz(); return; }
         if (assessmentReviewActive) {
             finishQuiz();
             return;
@@ -3543,22 +3557,33 @@ function showAssessmentResultModal(data) {
 }
 
 async function finishQuiz() {
-    clearInterval(quizTimerInterval);
+    if(state.examType!=='test_bank')clearInterval(quizTimerInterval);
     if (state.examType === 'test_bank' && activeTestBankId && activeTestBankQuizId) {
+        if(window.testBankSubmissionInFlight)return;
+        window.testBankSubmissionInFlight=true;
         const testBankId = activeTestBankId;
         const quizId = activeTestBankQuizId;
+        if(testBankRecovery)testBankRecovery.pending=true;
+        persistTestBankDraft();
+        const submitButton=$('next-q-btn');if(submitButton){submitButton.disabled=true;submitButton.textContent='Saving submission…';}
         try {
-            const data = await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/submit`, 'POST', {answers: answersList});
+            const data = await apiRequest(`/api/test-banks/${testBankId}/quizzes/${quizId}/submit`, 'POST', {answers: answersList,attempt_token:testBankRecovery?.token});
+            if(!data.success || !data.attemptId)throw new Error('Submission was not confirmed. Please retry.');
+            clearInterval(quizTimerInterval);
+            clearTestBankRecovery(testBankId,quizId);
             testBankExamActive = false;
             activeTestBankQuizId = null;
-            await exitTestBankFullscreen();
+            await exitTestBankFullscreen().catch(()=>{});
             await showAssessmentResultModal(data);
             showAssessmentSummary(data, () => {
                 showScreen('dashboard-screen');
                 openTestBankWorkspace(testBankId);
             });
         } catch (error) {
-            showToast(error.message || 'Unable to submit this Test Bank attempt.', 'error');
+            showToast('Submission was not confirmed. Your answers are kept. Reconnect and retry; the original time limit still applies.', 'error');
+            if(submitButton){submitButton.disabled=false;submitButton.textContent='Retry Submission';}
+        } finally {
+            window.testBankSubmissionInFlight=false;
         }
         return;
     }

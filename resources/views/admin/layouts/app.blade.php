@@ -593,5 +593,23 @@
         });
     </script>
 <script src="{{ asset('admin-client-tables.js') }}?v=1"></script>
+@if($isAdmin || $role === 'instructor')
+<script>
+(() => {
+    const link=document.querySelector('a[href="{{ route('admin.question-flags.index') }}"]');
+    if(!link) return;
+    link.style.position='relative';
+    const badge=document.createElement('span'); badge.hidden=true; badge.setAttribute('aria-live','polite');
+    badge.style.cssText='position:absolute;right:6px;top:4px;min-width:19px;padding:2px 5px;border-radius:999px;background:#dc2626;color:white;font-size:11px;font-weight:700;line-height:16px;text-align:center';link.append(badge);
+    window.refreshFlagUnread=async()=>{
+        try { const response=await fetch(@json(route('admin.question-flags.unread')),{headers:{Accept:'application/json'},credentials:'same-origin'});if(!response.ok)return;const data=await response.json();badge.textContent=data.count;badge.hidden=!data.count;badge.setAttribute('aria-label',`${data.count} new flagged questions`); } catch(_){}
+    };
+    window.markStaffFlagRead=async(id)=>{
+        try {const response=await fetch(@json(url('/admin/question-flags'))+'/'+id+'/read',{method:'POST',headers:{Accept:'application/json','X-CSRF-TOKEN':@json(csrf_token())},credentials:'same-origin'});if(response.ok)await window.refreshFlagUnread();}catch(_){}
+    };
+    window.refreshFlagUnread();setInterval(()=>{if(!document.hidden)window.refreshFlagUnread();},30000);window.addEventListener('focus',window.refreshFlagUnread);
+})();
+</script>
+@endif
 </body>
 </html>

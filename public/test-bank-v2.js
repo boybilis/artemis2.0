@@ -34,6 +34,13 @@ function renderTestBankWorkspaceV2(workspace) {
         renderV2SimulationCard(workspace);
     });
     renderV2PracticeCard(workspace, 10, false);
+    const unfinished=typeof latestTestBankDraft==='function' ? latestTestBankDraft(workspace.id) : null;
+    if(unfinished){
+        const banner=document.createElement('section');banner.className='test-bank-subscription-panel';banner.style.marginBottom='20px';
+        banner.innerHTML=`<div><h3>Unfinished test: ${escapeHtml(unfinished.title)}</h3><p>Your saved answers can be restored. Timed tests keep their original deadline.</p></div><button type="button" class="btn-primary">${unfinished.submitting?'Retry Saved Submission':'Resume Test'}</button>`;
+        banner.querySelector('button').onclick=async event=>{if(await showTestBankInstructions({title:unfinished.title,itemCount:unfinished.total,timeLimitMinutes:unfinished.minutes,coverage:[]}))await startTestBankPremadeQuiz(workspace.id,unfinished.quiz,event.currentTarget);};
+        workspaceArea.prepend(banner);
+    }
     if (window.lucide) lucide.createIcons();
 }
 

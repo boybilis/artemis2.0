@@ -222,8 +222,8 @@ class ExamController extends Controller
         }
         $passingRatio = ((float) ($item->passing_percentage ?? 80)) / 100;
         $passed = $possible > 0 && ($earned / $possible) >= $passingRatio;
-        QuizAttempt::create(['user_id'=>$user->id,'course_id'=>$course->id,'batch_id'=>CourseEnrollment::where('user_id',$user->id)->whereHas('batch.courses',fn($query)=>$query->where('courses.id',$course->id))->where('status','active')->value('batch_id'),'topic_id'=>$item->topic_id,'subtopic_id'=>$item->id,'assessment_type'=>$item->content_type,'score'=>$score,'total'=>count($ids),'points_earned'=>$earned,'points_possible'=>$possible,'passed'=>$passed,'review_data'=>$reviewQuestions]);
-        return response()->json(['success'=>true,'passed'=>$passed,'score'=>$earned,'total'=>$possible,'attemptsUsed'=>$used+1,'maximumAttempts'=>$limit,'questions'=>$reviewQuestions,'incorrectQuestions'=>$incorrectQuestions]);
+        $attempt = QuizAttempt::create(['user_id'=>$user->id,'course_id'=>$course->id,'batch_id'=>CourseEnrollment::where('user_id',$user->id)->whereHas('batch.courses',fn($query)=>$query->where('courses.id',$course->id))->where('status','active')->value('batch_id'),'topic_id'=>$item->topic_id,'subtopic_id'=>$item->id,'assessment_type'=>$item->content_type,'score'=>$score,'total'=>count($ids),'points_earned'=>$earned,'points_possible'=>$possible,'passed'=>$passed,'review_data'=>$reviewQuestions]);
+        return response()->json(['success'=>true,'passed'=>$passed,'score'=>$earned,'total'=>$possible,'attemptsUsed'=>$used+1,'maximumAttempts'=>$limit,'questions'=>\App\Models\QuestionFlag::reviewQuestions($attempt, 'assessment'),'incorrectQuestions'=>$incorrectQuestions]);
     }
 
     public function getQuestions(Request $request, $courseId)
@@ -357,7 +357,7 @@ class ExamController extends Controller
             : 0.80;
         $passed = ($pointsPossible > 0 && ($pointsEarned / $pointsPossible) >= $passingRatio);
 
-        QuizAttempt::create([
+        $attempt = QuizAttempt::create([
             'user_id' => $user->id,
             'course_id' => $courseId,
             'batch_id' => CourseEnrollment::where('user_id', $user->id)->whereHas('batch.courses', fn ($query) => $query->where('courses.id', $courseId))->where('status', 'active')->value('batch_id'),
@@ -417,7 +417,7 @@ class ExamController extends Controller
                 'courseName' => $course->title
             ] : null,
             'incorrectQuestions' => $incorrectQuestions,
-            'questions' => $reviewQuestions,
+            'questions' => \App\Models\QuestionFlag::reviewQuestions($attempt, 'assessment'),
         ]);
     }
 
@@ -429,7 +429,7 @@ class ExamController extends Controller
         $item = $this->subtopicAssessment($course, (int) $subtopicId);
         $batch = $this->activeBatch($user->id, $course->id);
         $attempt = QuizAttempt::where('user_id',$user->id)->where('course_id',$course->id)->where('batch_id',$batch->id)->where('subtopic_id',$item->id)->latest('id')->firstOrFail();
-        $questions = collect($attempt->review_data ?? [])->map(fn ($item) => array_merge(['correct'=>false], $item))->values()->all();
+        $questions = collect(\App\Models\QuestionFlag::reviewQuestions($attempt, 'assessment'))->map(fn ($item) => array_merge(['correct'=>false], $item))->values()->all();
         return response()->json(['success'=>true,'passed'=>(bool)$attempt->passed,'score'=>(float)($attempt->points_earned ?? $attempt->score),'total'=>(float)($attempt->points_possible ?? $attempt->total),'questions'=>$questions,'incorrectQuestions'=>collect($questions)->where('correct',false)->values()->all(),'reviewAvailable'=>$attempt->review_data !== null]);
     }
 
@@ -440,7 +440,7 @@ class ExamController extends Controller
         if (! $user->hasActiveEnrollment((int) $course->id)) return response()->json(['success'=>false,'message'=>'An active enrollment is required.'], 403);
         $batch = $this->activeBatch($user->id, $course->id);
         $attempt = QuizAttempt::where('user_id',$user->id)->where('course_id',$course->id)->where('batch_id',$batch->id)->where('assessment_type','final')->latest('id')->firstOrFail();
-        $questions = collect($attempt->review_data ?? [])->map(fn ($item) => array_merge(['correct'=>false], $item))->values()->all();
+        $questions = collect(\App\Models\QuestionFlag::reviewQuestions($attempt, 'assessment'))->map(fn ($item) => array_merge(['correct'=>false], $item))->values()->all();
         return response()->json(['success'=>true,'passed'=>(bool)$attempt->passed,'score'=>(float)($attempt->points_earned ?? $attempt->score),'total'=>(float)($attempt->points_possible ?? $attempt->total),'questions'=>$questions,'incorrectQuestions'=>collect($questions)->where('correct',false)->values()->all(),'reviewAvailable'=>$attempt->review_data !== null]);
     }
 

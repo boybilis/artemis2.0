@@ -12,6 +12,7 @@ use App\Models\TestBankQuizAttempt;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -244,7 +245,7 @@ class TestBankController extends Controller
                 'passed' => $attempt->passed,
                 'cancelled' => $cancelled,
                 'takenAt' => $attempt->created_at?->toIso8601String(),
-                'questions' => $cancelled ? [] : ($attempt->review_data ?: []),
+                'questions' => $cancelled ? [] : \App\Models\QuestionFlag::reviewQuestions($attempt, 'test_bank'),
             ];
         })->reverse()->values();
         $subjects = $testBank->course->subjects->map(function ($subject) use ($testBank, $attempts) {
@@ -498,6 +499,20 @@ class TestBankController extends Controller
         $attemptKey = "test_bank_quiz_{$user->id}_{$quiz->id}";
         $deadlineKey = "test_bank_quiz_deadline_{$user->id}_{$quiz->id}";
         $choiceKey = "test_bank_quiz_choices_{$user->id}_{$quiz->id}";
+        $recoveryKey = "tb_recovery_{$user->id}_{$quiz->id}";
+        $recovery = Cache::get($recoveryKey);
+        if ($recovery && TestBankQuizAttempt::where('user_id',$user->id)->where('attempt_token',$recovery['token'])->exists()) {
+            Cache::forget($recoveryKey);$recovery=null;
+        }
+        if ($request->filled('resume_token') && (!$recovery || !hash_equals($recovery['token'],(string)$request->query('resume_token')))) {
+            return response()->json(['success'=>false,'message'=>'This saved attempt is no longer available to resume. No new exam was started.'],409);
+        }
+        if ($recovery) {
+            session()->put($attemptKey, $recovery['ids']);
+            session()->put($deadlineKey, $recovery['deadline']);
+            session()->put($choiceKey, $recovery['choices']);
+            session()->put($attemptKey.'_token', $recovery['token']);
+        }
         $offset = max(0, (int) $request->query('offset', 0));
         $lazyLoad = $this->isSimulationQuiz($quiz);
         $serialize = fn (TestBankQuestion $question) => [
@@ -526,6 +541,18 @@ class TestBankController extends Controller
             ]);
         }
 
+        if ($recovery) {
+            $lookup = TestBankQuestion::whereIn('id',$recovery['ids'])->where('course_id',$testBank->course_id)->get()->keyBy('id');
+            $questions = collect($recovery['ids'])->map(fn($id)=>$lookup->get($id))->filter();
+            return response()->json([
+                'success'=>true,'title'=>$quiz->title,'timeLimitMinutes'=>$quiz->time_limit_minutes,'lazyLoad'=>$lazyLoad,
+                'prometricSimulation'=>$lazyLoad && str_contains(strtolower($testBank->title.' '.$testBank->code.' '.$testBank->course->title),'prometric'),
+                'testType'=>$quiz->test_type,'offset'=>0,'totalQuestions'=>count($recovery['ids']),
+                'questions'=>($lazyLoad ? $questions->take(20) : $questions)->map($serialize)->values(),
+                'attemptToken'=>$recovery['token'],'deadline'=>$recovery['deadline'],'serverTime'=>now()->timestamp,'resumed'=>true,
+                'draft'=>$recovery['draft'] ?? [],
+            ]);
+        }
         $questions = $quiz->questions()
             ->where('test_bank_questions.status', 'active')
             ->get();
@@ -548,6 +575,9 @@ class TestBankController extends Controller
         );
 
         if ($lazyLoad) $questions = $questions->take(20);
+        $token = bin2hex(random_bytes(24));
+        session()->put($attemptKey.'_token', $token);
+        Cache::put($recoveryKey, ['ids'=>$questionIds,'choices'=>session()->get($choiceKey,[]),'deadline'=>session()->get($deadlineKey),'token'=>$token,'draft'=>[]], now()->addDays(2));
 
         return response()->json([
             'success' => true,
@@ -558,23 +588,39 @@ class TestBankController extends Controller
             'testType' => $quiz->test_type,
             'offset' => 0,
             'totalQuestions' => count($questionIds),
+            'attemptToken' => $token, 'deadline'=>session()->get($deadlineKey), 'serverTime'=>now()->timestamp,
             'questions' => $questions->map($serialize)->values(),
         ]);
     }
 
     public function submitQuiz(Request $request, TestBank $testBank, TestBankQuiz $quiz)
     {
-        $request->validate(['answers' => ['required', 'array']]);
+        $request->validate(['answers'=>['present','array','max:500'],'attempt_token'=>['nullable','string','max:64']]);
+        return Cache::lock('tb_submission_'.Auth::id().'_'.$quiz->id, 30)->block(10, fn()=> $this->completeQuizSubmission($request,$testBank,$quiz));
+    }
+
+    private function completeQuizSubmission(Request $request, TestBank $testBank, TestBankQuiz $quiz)
+    {
         $user = Auth::user();
+        $attemptKey="test_bank_quiz_{$user->id}_{$quiz->id}";
+        $recoveryKey="tb_recovery_{$user->id}_{$quiz->id}";
+        $recovery=Cache::get($recoveryKey);
+        $token=$request->input('attempt_token') ?: ($recovery['token'] ?? session()->get($attemptKey.'_token'));
+        if (!$request->filled('attempt_token')) { $this->guardLearnerCatalog($user,$testBank);$this->guardLearnerQuiz($user,$testBank,$quiz); }
+        if ($token && ($saved=TestBankQuizAttempt::where('user_id',$user->id)->where('test_bank_quiz_id',$quiz->id)->where('attempt_token',$token)->first())) return response()->json($this->quizSubmissionResult($saved));
+        $expectedToken=$recovery['token'] ?? session()->get($attemptKey.'_token');
+        if($expectedToken && $token!==$expectedToken)abort(409,'The submission does not match the active attempt.');
+        if ($recovery && $token !== $recovery['token']) abort(409,'This attempt has changed. Resume the current exam.');
         $this->guardLearnerCatalog($user, $testBank);
         $this->guardLearnerQuiz($user, $testBank, $quiz);
 
-        $ids = session()->pull("test_bank_quiz_{$user->id}_{$quiz->id}", []);
-        $deadline = session()->pull("test_bank_quiz_deadline_{$user->id}_{$quiz->id}");
-        $choiceOrders = session()->pull("test_bank_quiz_choices_{$user->id}_{$quiz->id}", []);
+        $ids = $recovery['ids'] ?? session()->get($attemptKey, []);
+        $deadline = $recovery ? $recovery['deadline'] : session()->get("test_bank_quiz_deadline_{$user->id}_{$quiz->id}");
+        $choiceOrders = $recovery['choices'] ?? session()->get("test_bank_quiz_choices_{$user->id}_{$quiz->id}", []);
         if (!$ids) return response()->json(['success' => false, 'message' => 'No active Test Bank attempt was found. Please start the test again.'], 422);
         if ($deadline && now()->timestamp > ((int) $deadline + 30)) {
-            return response()->json(['success' => false, 'message' => 'The time limit for this Test Bank attempt has expired.'], 422);
+            // Late reconnection cannot introduce answers changed after the deadline.
+            $request->merge(['answers'=>$recovery['draft']['answers'] ?? []]);
         }
 
         $questions = TestBankQuestion::whereIn('id', $ids)
@@ -592,7 +638,7 @@ class TestBankController extends Controller
                 $submitted = is_numeric($submitted) ? ($choiceOrders[$id][(int) $submitted] ?? null) : null;
                 $correct = is_numeric($submitted) && (int) $submitted === (int) $question->correct_answer;
             } else {
-                $correct = (int) $submitted === (int) $question->correct_answer;
+                $correct = is_numeric($submitted) && (int) $submitted === (int) $question->correct_answer;
             }
             $points = (float) $question->points;
             $possible += $points;
@@ -612,7 +658,8 @@ class TestBankController extends Controller
             ];
         }
         $passed = $possible > 0 && ($earned / $possible) >= .60;
-        TestBankQuizAttempt::create([
+        $attempt = DB::transaction(fn()=>TestBankQuizAttempt::create([
+            'attempt_token'=>$token,
             'user_id' => $user->id,
             'test_bank_id' => $testBank->id,
             'test_bank_quiz_id' => $quiz->id,
@@ -622,27 +669,49 @@ class TestBankController extends Controller
             'points_possible' => $possible,
             'passed' => $passed,
             'review_data' => $review,
-        ]);
+        ]));
 
-        return response()->json([
-            'success' => true,
-            'passed' => $passed,
-            'score' => $earned,
-            'total' => $possible,
-            'correctItems' => $score,
-            'totalItems' => count($review),
-            'questions' => $review,
-            'incorrectQuestions' => collect($review)->where('correct', false)->values(),
-        ]);
+        $result = $this->quizSubmissionResult($attempt);
+        Cache::forget($recoveryKey);
+        session()->forget([$attemptKey,"test_bank_quiz_deadline_{$user->id}_{$quiz->id}","test_bank_quiz_choices_{$user->id}_{$quiz->id}"]);
+        return response()->json($result);
+    }
+
+    private function quizSubmissionResult(TestBankQuizAttempt $attempt): array {
+        return ['success'=>true,'passed'=>$attempt->passed,'score'=>(float)$attempt->points_earned,'total'=>(float)$attempt->points_possible,
+            'correctItems'=>$attempt->score,'totalItems'=>$attempt->total,'questions'=>\App\Models\QuestionFlag::reviewQuestions($attempt, 'test_bank'),
+            'incorrectQuestions'=>collect($attempt->review_data)->where('correct',false)->values(),'attemptId'=>$attempt->id];
+    }
+
+    public function saveQuizDraft(Request $request, TestBank $testBank, TestBankQuiz $quiz)
+    {
+        $data=$request->validate(['attempt_token'=>['required','string','max:64'],'answers'=>['present','array','max:500'],'marked'=>['array','max:500'],'marked.*'=>['integer','min:0','max:499'],'index'=>['required','integer','min:0','max:499']]);
+        $user=Auth::user();$this->guardLearnerCatalog($user,$testBank);$this->guardLearnerQuiz($user,$testBank,$quiz);
+        return Cache::lock('tb_submission_'.$user->id.'_'.$quiz->id,30)->block(10,function()use($data,$user,$quiz){
+            $key="tb_recovery_{$user->id}_{$quiz->id}";$recovery=Cache::get($key);
+            abort_unless($recovery && hash_equals($recovery['token'],$data['attempt_token']),409,'No matching active attempt was found.');
+            abort_if($recovery['deadline'] && now()->timestamp > $recovery['deadline'],422,'The exam time has ended. Submit your saved answers.');
+            $recovery['draft']=['answers'=>$data['answers'],'marked'=>$data['marked'] ?? [],'index'=>$data['index'],'savedAt'=>now()->timestamp];
+            Cache::put($key,$recovery,now()->addDays(2));
+            return response()->json(['success'=>true,'savedAt'=>now()->timestamp]);
+        });
     }
 
     public function invalidateQuizAttempt(TestBank $testBank, TestBankQuiz $quiz)
+    {
+        return Cache::lock('tb_submission_'.Auth::id().'_'.$quiz->id,30)->block(10,fn()=> $this->cancelQuizAttempt($testBank,$quiz));
+    }
+
+    private function cancelQuizAttempt(TestBank $testBank, TestBankQuiz $quiz)
     {
         $user = Auth::user();
         $this->guardLearnerCatalog($user, $testBank);
         $this->guardLearnerQuiz($user, $testBank, $quiz);
         $attemptKey = "test_bank_quiz_{$user->id}_{$quiz->id}";
-        $questionIds = session()->get($attemptKey, []);
+        $recovery = Cache::get('tb_recovery_'.$user->id.'_'.$quiz->id);
+        $token = $recovery['token'] ?? session()->get($attemptKey.'_token');
+        abort_if($token && TestBankQuizAttempt::where('user_id',$user->id)->where('test_bank_quiz_id',$quiz->id)->where('attempt_token',$token)->exists(),409,'This attempt was already submitted.');
+        $questionIds = session()->get($attemptKey, $recovery['ids'] ?? []);
         if ($questionIds) {
             TestBankQuizAttempt::create([
                 'user_id' => $user->id,
@@ -660,6 +729,7 @@ class TestBankController extends Controller
             $attemptKey,
             "test_bank_quiz_deadline_{$user->id}_{$quiz->id}",
         ]);
+        Cache::forget('tb_recovery_'.$user->id.'_'.$quiz->id);
 
         return response()->json(['success' => true, 'message' => 'The exam attempt was invalidated.']);
     }

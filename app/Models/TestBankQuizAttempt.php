@@ -9,6 +9,7 @@ class TestBankQuizAttempt extends Model
     protected $fillable = [
         'user_id', 'test_bank_id', 'test_bank_quiz_id', 'score', 'total',
         'points_earned', 'points_possible', 'passed', 'review_data',
+        'attempt_token',
     ];
 
     protected function casts(): array

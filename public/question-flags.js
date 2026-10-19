@@ -51,7 +51,8 @@
         form.onsubmit = async event => {
             event.preventDefault(); const submit = form.querySelector('[type="submit"]'); submit.disabled = true;
             try {
-                await apiRequest('/api/question-flags', 'POST', {question:question.question,reason:form.elements.reason.value});
+                if (!question.flagReference) throw new Error('Please reopen this completed test review before flagging the question.');
+                await apiRequest('/api/question-flags', 'POST', {...question.flagReference,reason:form.elements.reason.value});
                 dialog.close(); showToast('Question flagged. View replies in Flagged Questions.', 'success');
             } catch (error) { form.querySelector('[role="status"]').textContent = error.message; submit.disabled = false; }
         };
@@ -60,6 +61,18 @@
     const progress = document.getElementById('sidebar-my-progress-btn');
     const menu = document.createElement('button'); menu.type = 'button'; menu.className = 'learner-sidebar-item';
     menu.innerHTML = '<i data-lucide="flag"></i><span>Flagged Questions</span>'; progress?.after(menu);
+    menu.style.position = 'relative';
+    const badge=document.createElement('span');
+    badge.hidden=true; badge.setAttribute('aria-live','polite');
+    badge.style.cssText='position:absolute;right:6px;top:4px;min-width:19px;padding:2px 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:700;line-height:16px;text-align:center';
+    menu.append(badge);
+    async function refreshUnread() {
+        if (!state.user) { badge.hidden=true; return; }
+        try { const data=await apiRequest('/api/question-flags/unread'); badge.textContent=data.count; badge.hidden=!data.count; badge.setAttribute('aria-label',`${data.count} unread replies`); } catch (_) {}
+    }
+    setTimeout(refreshUnread,1500);
+    setInterval(()=>{if(!document.hidden) refreshUnread();},30000);
+    window.addEventListener('focus',refreshUnread);
     menu.onclick = async () => {
         const dialog = modal('Flagged Questions');
         dialog.style.width = 'min(850px,calc(100vw - 32px))';
@@ -69,6 +82,18 @@
             try {
                 const result = await apiRequest(`/api/question-flags?page=${page}`), records = result.flags;
                 content.innerHTML = records.data.map(flag => `<article class="question-flag-card"><span class="badge question-flag-status ${flag.reply ? 'answered' : ''}">${flag.reply ? 'Answered' : 'Awaiting reply'}</span><p><strong>Question:</strong> ${escapeHtml(flag.question_snapshot.question)}</p><p><strong>Your reason:</strong> ${escapeHtml(flag.reason)}</p>${flag.reply ? `<p class="question-flag-reply"><strong>Reply from ${escapeHtml(flag.responder?.name || 'Management')}:</strong> ${escapeHtml(flag.reply)}</p>` : '<p>Your instructor or administrator will reply here.</p>'}</article>`).join('') || '<p>You have not flagged any questions yet.</p>';
+                content.querySelectorAll('.question-flag-card').forEach((card,index)=>{
+                    const flag=records.data[index];
+                    if(!flag.reply) return;
+                    const reply=card.querySelector('.question-flag-reply'); reply.hidden=true;
+                    const view=document.createElement('button'); view.className='btn-ghost'; view.type='button';
+                    view.textContent=flag.learner_read_at ? 'View reply' : 'View new reply';
+                    view.onclick=async()=>{
+                        reply.hidden=false;
+                        try { await apiRequest(`/api/question-flags/${flag.id}/read`,'POST',{replied_at:flag.replied_at}); view.textContent='View reply'; await refreshUnread(); } catch(error){showToast(error.message,'error');}
+                    };
+                    reply.before(view);
+                });
                 const pages = document.createElement('div'); pages.className = 'question-flag-actions';
                 pages.innerHTML = `<button class="btn-ghost" ${page <= 1 ? 'disabled' : ''}>Previous</button><span>Page ${page} of ${records.last_page}</span><button class="btn-ghost" ${page >= records.last_page ? 'disabled' : ''}>Next</button>`;
                 pages.firstElementChild.onclick = () => load(page - 1); pages.lastElementChild.onclick = () => load(page + 1); content.append(pages);

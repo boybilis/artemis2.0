@@ -44,6 +44,7 @@ function openModal(id) {
     if (!modal) return;
     modal.returnFocus = document.activeElement;
     modal.classList.add('open');
+    window.markStaffFlagRead?.(id.replace('flagModal',''));
     modal.querySelector('textarea')?.focus();
 }
 function closeModal(id) {

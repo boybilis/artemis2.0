@@ -865,7 +865,7 @@ class CourseController extends Controller
         $passingRatio = ((float) ($topic->quiz_passing_percentage ?? 80)) / 100;
         $passed = $pointsPossible > 0 && ($pointsEarned / $pointsPossible) >= $passingRatio;
 
-        QuizAttempt::create([
+        $attempt = QuizAttempt::create([
             'user_id' => $user->id,
             'course_id' => $topic->course_id,
             'batch_id' => CourseEnrollment::where('user_id', $user->id)->whereHas('batch.courses', fn ($query) => $query->where('courses.id', $topic->course_id))->where('status', 'active')->value('batch_id'),
@@ -907,7 +907,7 @@ class CourseController extends Controller
             'progressPercentage' => $totalTopics > 0 ? (int) round(($completedCount / $totalTopics) * 100) : 0,
             'modulesCompletedCount' => $completedCount,
             'hasCertificate' => Certificate::where('user_id', $user->id)->where('course_id', $topic->course_id)->exists(),
-            'questions' => $reviewQuestions,
+            'questions' => \App\Models\QuestionFlag::reviewQuestions($attempt, 'assessment'),
             'incorrectQuestions' => $incorrectQuestions,
         ]);
     }
