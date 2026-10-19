@@ -615,7 +615,9 @@ class TestBankAuthoringTest extends TestCase
         foreach ([2,3] as $number) {
             $this->postJson($endpoint,['quiz_type'=>'warm_up','reuse_set'=>true])->assertOk()->assertJsonPath('quizId',$warmId);
             $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/questions")->assertOk();
-            $this->postJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/submit",['answers'=>array_fill(0,10,0)])->assertOk();
+            $answers=array_fill(0,10,1);
+            foreach(range(0,($number===2 ? 6 : 3)-1) as $index) $answers[$index]=0;
+            $this->postJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/submit",['answers'=>$answers])->assertOk();
         }
         $this->postJson($endpoint, ['quiz_type' => 'warm_up', 'reuse_set' => true])->assertStatus(422);
         $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/questions")->assertStatus(422);
@@ -629,7 +631,9 @@ class TestBankAuthoringTest extends TestCase
         $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$masteryId}/questions")->assertUnprocessable();
         $results = $this->getJson("/api/test-banks/{$bank->id}/workspace")->assertOk()->json('workspace.v2SubjectResults');
         $warmResult=collect($results)->firstWhere('phase','warm_up');
-        $this->assertEquals(100, $warmResult['score']);
+        $this->assertEquals(30, $warmResult['score']);
+        $this->assertEquals(63.3,$warmResult['averageScore']);
+        $this->assertEquals(100,$warmResult['highestScore']);
         $this->assertSame(3,$warmResult['attemptCount']);
         $this->assertSame(3,collect($results)->firstWhere('phase','mastery')['attemptCount']);
 

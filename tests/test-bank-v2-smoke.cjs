@@ -176,9 +176,12 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(carousel.innerHTML.includes('data-v2-subject-start="1"'));
     assert(!carousel.innerHTML.includes('Subject progress'));
     assert(!carousel.innerHTML.includes('Average'));
-    context.renderV2SubjectCarousel(carousel,{...workspace,v2SubjectResults:[{subjectId:1,phase:'warm_up',score:30}]},10);
-    assert(carousel.innerHTML.includes('30%'));
-    assert(carousel.innerHTML.includes('Latest score'));
+    context.renderV2SubjectCarousel(carousel,{...workspace,v2SubjectResults:[{subjectId:1,phase:'warm_up',score:30,averageScore:45,highestScore:60}]},10);
+    assert(carousel.innerHTML.includes('45%'));
+    assert(carousel.innerHTML.includes('60%'));
+    assert(carousel.innerHTML.includes('Ave Score'));
+    assert(carousel.innerHTML.includes('Highest Score'));
+    assert(!carousel.innerHTML.includes('Latest score'));
     assert(carousel.innerHTML.includes('Retake Test'));
     assert(carousel.innerHTML.includes('1/3'));
     context.renderV2SubjectCarousel(carousel,{...workspace,v2SubjectResults:[{subjectId:1,phase:'warm_up',score:70,attemptCount:3}]},10);

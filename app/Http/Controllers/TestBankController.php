@@ -309,9 +309,13 @@ class TestBankController extends Controller
                 ->map(fn ($attempt) => [
                     'subjectId' => collect($attempt->quiz->subject_ids)->first(),
                     'phase' => $attempt->quiz->test_type ?: (str_ends_with($attempt->quiz->title, 'Mastery Test') ? 'mastery' : 'warm_up'),
-                    'score' => round($attempt->percentage(), 1),
+                    'score' => $attempt->percentage(),
                 ])->groupBy(fn ($result) => $result['subjectId'].':'.$result['phase'])
-                ->map(fn ($results) => $results->first() + ['attemptCount'=>$results->count(),'maximumAttempts'=>3])->values(),
+                ->map(fn ($results) => $results->first() + [
+                    'attemptCount'=>$results->count(),'maximumAttempts'=>3,
+                    'averageScore'=>round($results->avg('score'),1),
+                    'highestScore'=>round($results->max('score'),1),
+                ])->values(),
             'premadeTests' => $testBank->premadeQuizzes->filter(fn ($quiz) => $quiz->matchesLicensure($enrollment->enrollment_option))->map(fn ($quiz) => [
                 'id' => $quiz->id, 'title' => $quiz->title, 'description' => $quiz->description,
                 'itemCount' => $quiz->questions_count, 'subjectIds' => $quiz->subject_ids,
