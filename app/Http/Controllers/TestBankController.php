@@ -210,9 +210,9 @@ class TestBankController extends Controller
         $bestPercentages = TestBankQuizAttempt::where('test_bank_id', $testBank->id)
             ->whereHas('quiz', fn ($query) => $query->where('quiz_type', 'premade'))
             ->whereIn('user_id', $testBank->enrollments()->select('user_id'))
-            ->get(['user_id', 'score', 'total', 'points_possible', 'review_data'])
+            ->get(['user_id', 'score', 'total', 'review_data'])
             ->reject(fn ($attempt) => data_get($attempt->review_data, 'cancelled', false)
-                || (float) $attempt->points_possible <= 0 || $attempt->total <= 0)
+                || $attempt->total <= 0)
             ->groupBy('user_id')
             ->map(fn ($learnerAttempts) => $learnerAttempts->max(fn ($attempt) => round($attempt->score / $attempt->total * 100, 6)));
         $bestPercentage = $bestPercentages->get($user->id);
@@ -238,8 +238,8 @@ class TestBankController extends Controller
                 'rank' => ! $cancelled && $attempt->quiz?->quiz_type === 'premade' ? $learnerRank : null,
                 'coverage' => count($attempt->quiz?->subject_ids ?: []) > 1 ? 'Mixed'
                     : $historySubjects->get(collect($attempt->quiz?->subject_ids)->first())?->title,
-                'score' => (float) $attempt->points_earned,
-                'total' => (float) $attempt->points_possible,
+                'score' => $attempt->score,
+                'total' => $attempt->total,
                 'correctItems' => $attempt->score,
                 'totalItems' => $attempt->total,
                 'passed' => $attempt->passed,
@@ -264,11 +264,9 @@ class TestBankController extends Controller
                     true
                 )
             )->reject(fn (TestBankQuizAttempt $attempt) => (bool) data_get($attempt->review_data, 'cancelled', false)
-                || (float) $attempt->points_possible <= 0);
+                || $attempt->total <= 0);
             $averageScore = $subjectAttempts->isEmpty() ? null : round((float) $subjectAttempts
-                ->avg(fn (TestBankQuizAttempt $attempt) => (float) $attempt->points_possible > 0
-                    ? ((float) $attempt->points_earned / (float) $attempt->points_possible) * 100
-                    : 0), 1);
+                ->avg(fn (TestBankQuizAttempt $attempt) => $attempt->percentage()), 1);
 
             return [
                 'id' => $subject->id,
@@ -310,7 +308,7 @@ class TestBankController extends Controller
                 ->map(fn ($attempt) => [
                     'subjectId' => collect($attempt->quiz->subject_ids)->first(),
                     'phase' => str_ends_with($attempt->quiz->title, 'Mastery Test') ? 'mastery' : 'warm_up',
-                    'score' => (float) $attempt->points_possible > 0 ? round((float) $attempt->points_earned / (float) $attempt->points_possible * 100, 1) : 0,
+                    'score' => round($attempt->percentage(), 1),
                 ])->unique(fn ($result) => $result['subjectId'].':'.$result['phase'])->values(),
             'premadeTests' => $testBank->premadeQuizzes->filter(fn ($quiz) => $quiz->matchesLicensure($enrollment->enrollment_option))->map(fn ($quiz) => [
                 'id' => $quiz->id, 'title' => $quiz->title, 'description' => $quiz->description,
@@ -522,7 +520,7 @@ class TestBankController extends Controller
             'options' => collect(session()->get($choiceKey.'.'.$question->id, array_keys($question->options)))
                 ->map(fn ($index) => $question->options[$index])->values()->all(),
             'responseType' => 'single',
-            'maximumPoints' => (float) $question->points,
+            'maximumPoints' => 1,
         ];
 
         if ($lazyLoad && $offset > 0) {
@@ -628,8 +626,6 @@ class TestBankController extends Controller
             ->where('status', 'active')
             ->with('subjects:id')->get()->keyBy('id');
         $score = 0;
-        $earned = 0.0;
-        $possible = 0.0;
         $review = [];
         foreach ($ids as $index => $id) {
             if (!$question = $questions->get($id)) continue;
@@ -640,9 +636,7 @@ class TestBankController extends Controller
             } else {
                 $correct = is_numeric($submitted) && (int) $submitted === (int) $question->correct_answer;
             }
-            $points = (float) $question->points;
-            $possible += $points;
-            if ($correct) { $score++; $earned += $points; }
+            if ($correct) $score++;
             $options = $question->options;
             $review[] = [
                 'questionId' => $question->id,
@@ -657,16 +651,17 @@ class TestBankController extends Controller
                 'correct' => $correct,
             ];
         }
-        $passed = $possible > 0 && ($earned / $possible) >= .60;
+        $total = count($review);
+        $passed = $total > 0 && $score * 100 >= $total * 60;
         $attempt = DB::transaction(fn()=>TestBankQuizAttempt::create([
             'attempt_token'=>$token,
             'user_id' => $user->id,
             'test_bank_id' => $testBank->id,
             'test_bank_quiz_id' => $quiz->id,
             'score' => $score,
-            'total' => count($review),
-            'points_earned' => $earned,
-            'points_possible' => $possible,
+            'total' => $total,
+            'points_earned' => $score,
+            'points_possible' => $total,
             'passed' => $passed,
             'review_data' => $review,
         ]));
@@ -678,7 +673,7 @@ class TestBankController extends Controller
     }
 
     private function quizSubmissionResult(TestBankQuizAttempt $attempt): array {
-        return ['success'=>true,'passed'=>$attempt->passed,'score'=>(float)$attempt->points_earned,'total'=>(float)$attempt->points_possible,
+        return ['success'=>true,'passed'=>$attempt->passed,'score'=>$attempt->score,'total'=>$attempt->total,
             'correctItems'=>$attempt->score,'totalItems'=>$attempt->total,'questions'=>\App\Models\QuestionFlag::reviewQuestions($attempt, 'test_bank'),
             'incorrectQuestions'=>collect($attempt->review_data)->where('correct',false)->values(),'attemptId'=>$attempt->id];
     }
@@ -1231,7 +1226,7 @@ class TestBankController extends Controller
             $attempts = TestBankQuizAttempt::query()
                 ->where('user_id', $user->id)
                 ->where('test_bank_id', $testBank->id)
-                ->where('passed', true)
+                ->where('total', '>', 0)->whereRaw('score * 100 >= total * 60')
                 ->with('quiz:id,quiz_type,item_count,test_type')
                 ->get();
             [$warmUpPassed, $masteryPassed] = $this->simulationPassCounts($attempts);

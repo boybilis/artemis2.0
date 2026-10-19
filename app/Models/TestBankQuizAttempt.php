@@ -6,6 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class TestBankQuizAttempt extends Model
 {
+    public function percentage(): float
+    {
+        return $this->total > 0 ? $this->score / $this->total * 100 : 0;
+    }
+
+    public function getPassedAttribute($value): bool
+    {
+        return !data_get($this->review_data, 'cancelled', false)
+            && $this->total > 0 && $this->score * 100 >= $this->total * 60;
+    }
     protected $fillable = [
         'user_id', 'test_bank_id', 'test_bank_quiz_id', 'score', 'total',
         'points_earned', 'points_possible', 'passed', 'review_data',

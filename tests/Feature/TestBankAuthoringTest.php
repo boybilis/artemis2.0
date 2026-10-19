@@ -461,8 +461,8 @@ class TestBankAuthoringTest extends TestCase
         ]);
         $result->assertOk()
             ->assertJsonPath('passed', true)
-            ->assertJsonPath('score', 2)
-            ->assertJsonPath('total', 2)
+            ->assertJsonPath('score', 1)
+            ->assertJsonPath('total', 1)
             ->assertJsonPath('questions.0.correct', true)
             ->assertJsonPath('questions.0.rationale', 'This explains the correct answer.')
             ->assertJsonPath('questions.0.rationaleVideoUrl', 'https://www.youtube.com/watch?v=example123');
@@ -525,7 +525,7 @@ class TestBankAuthoringTest extends TestCase
             $question = TestBankQuestion::create([
                 'test_bank_id' => $bank->id, 'course_id' => $course->id, 'subject_id' => $subject->id,
                 'question' => "Passing question {$number}", 'options' => ['Correct', 'Wrong'],
-                'correct_answer' => 0, 'points' => 1, 'status' => 'active', 'created_by' => $admin->id,
+                'correct_answer' => 0, 'points' => $number > 3 ? 20 : 1, 'status' => 'active', 'created_by' => $admin->id,
             ]);
             $question->subjects()->sync([$subject->id]);
             return $question->id;
@@ -545,6 +545,27 @@ class TestBankAuthoringTest extends TestCase
         $this->actingAs($learner)->postJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/submit", [
             'answers' => [0, 0, 0, 1, 1],
         ])->assertOk()->assertJsonPath('score', 3)->assertJsonPath('total', 5)->assertJsonPath('passed', true);
+        $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")->assertOk();
+        $this->postJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/submit", [
+            'answers'=>[1,1,1,0,0],
+        ])->assertOk()->assertJsonPath('score',2)->assertJsonPath('total',5)->assertJsonPath('passed',false);
+    }
+
+    public function test_legacy_weighted_results_use_raw_percentages_for_history_and_subject_progress(): void
+    {
+        extract($this->catalog());
+        $learner=User::factory()->create();
+        $bank->enrollments()->create(['user_id'=>$learner->id,'status'=>'active','enrolled_at'=>now(),'expires_at'=>now()->addDays(30)]);
+        $question=TestBankQuestion::create(['test_bank_id'=>$bank->id,'course_id'=>$course->id,'subject_id'=>$subject->id,'question'=>'Visible subject','options'=>['A','B'],'correct_answer'=>0,'points'=>9,'status'=>'active']);
+        $question->subjects()->sync([$subject->id]);
+        $quiz=$bank->premadeQuizzes()->create(['title'=>'Legacy Warm-up','quiz_type'=>'subject','test_type'=>'warm_up','owner_user_id'=>$learner->id,'item_count'=>5,'subject_ids'=>[$subject->id],'status'=>'active']);
+        $attempt=TestBankQuizAttempt::create(['user_id'=>$learner->id,'test_bank_id'=>$bank->id,'test_bank_quiz_id'=>$quiz->id,'score'=>3,'total'=>5,'points_earned'=>3,'points_possible'=>43,'passed'=>false]);
+        $this->assertTrue($attempt->fresh()->passed);
+        $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace")->assertOk()
+            ->assertJsonPath('workspace.history.0.score',3)->assertJsonPath('workspace.history.0.total',5)
+            ->assertJsonPath('workspace.history.0.passed',true)->assertJsonPath('workspace.subjects.0.averageScore',60)
+            ->assertJsonPath('workspace.simulationProgress.warmUpPassed',1)
+            ->assertJsonPath('workspace.v2SubjectResults.0.score',60);
     }
 
     public function test_learner_can_start_a_random_subject_only_warm_up_test(): void
@@ -633,7 +654,7 @@ class TestBankAuthoringTest extends TestCase
             'user_id' => $learner->id, 'test_bank_id' => $bank->id,
             'test_bank_quiz_id' => $quiz->id, 'score' => 0, 'total' => 10,
             'points_earned' => 0, 'points_possible' => 0,
-            'passed' => false, 'review_data' => [],
+            'passed' => false, 'review_data' => ['cancelled'=>true],
         ]);
         $customQuiz = $bank->premadeQuizzes()->create([
             'quiz_type' => 'learner', 'owner_user_id' => $learner->id,
