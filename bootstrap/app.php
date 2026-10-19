@@ -11,6 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [\App\Http\Middleware\EnsureSingleLearnerSession::class]);
         $middleware->validateCsrfTokens(except: [
             'api/payments/paymongo/webhook',
         ]);

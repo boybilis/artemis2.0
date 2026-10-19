@@ -67,10 +67,10 @@ class QuestionFlagTest extends TestCase {
         $this->actingAs($admin)->get(route('admin.question-flags.index'))->assertOk()->assertSee('Please explain')->assertSee('Quiz name')->assertSee('Quiz type')->assertSee('Exam date taken')->assertSee('Date flagged')->assertSee('flagModal'.$flag->id)->assertSee('View');
         $this->put(route('admin.question-flags.reply',$flag),['reply'=>'Assess the patient first.'])->assertRedirect();
         $this->actingAs($learner)->getJson('/api/question-flags')->assertJsonPath('flags.data.0.reply','Assess the patient first.');
-        $this->actingAs($other)->getJson('/api/question-flags')->assertJsonCount(0,'flags.data');
+        $this->actingAs($other)->withSession(['learner_login_token'=>$other->fresh()->active_login_token])->getJson('/api/question-flags')->assertJsonCount(0,'flags.data');
         $instructor=User::factory()->create(['role'=>'instructor','is_admin'=>false]);
         $this->actingAs($instructor)->get(route('admin.question-flags.index'))->assertOk();
         $this->put(route('admin.question-flags.reply',$flag),['reply'=>'Further explanation from your instructor.'])->assertRedirect();
-        $this->actingAs($learner)->getJson('/api/question-flags')->assertJsonPath('flags.data.0.responder.name',$instructor->name);
+        $this->actingAs($learner)->withSession(['learner_login_token'=>$learner->fresh()->active_login_token])->getJson('/api/question-flags')->assertJsonPath('flags.data.0.responder.name',$instructor->name);
     }
 }

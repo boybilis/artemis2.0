@@ -8,7 +8,7 @@ class TestBankRecoveryTest extends TestCase {
     use RefreshDatabase;
     public function test_explicit_cancellation_records_recovered_attempt_and_clears_draft(): void {
         extract($this->exam());
-        $this->flushSession();$this->actingAs($user);
+        $this->flushSession();$this->postJson('/api/auth/login',['email'=>$user->email,'password'=>'password'])->assertOk();
         $this->deleteJson($url.'/attempt')->assertOk();
         $this->assertTrue(TestBankQuizAttempt::firstOrFail()->review_data['cancelled']);
         $this->assertNull(Cache::get('tb_recovery_'.$user->id.'_'.$quiz->id));
@@ -39,7 +39,7 @@ class TestBankRecoveryTest extends TestCase {
     public function test_resume_keeps_original_deadline_choices_and_saved_progress_after_session_loss(): void {
         extract($this->exam());
         $this->postJson($url.'/draft',['attempt_token'=>$start['attemptToken'],'answers'=>[$answer],'marked'=>[0],'index'=>0])->assertOk();
-        $this->travel(2)->minutes();$this->flushSession();$this->actingAs($user);
+        $this->travel(2)->minutes();$this->flushSession();$this->postJson('/api/auth/login',['email'=>$user->email,'password'=>'password'])->assertOk();
         $resume=$this->getJson($url.'/questions?shuffle_choices=1')->assertOk()->assertJsonPath('resumed',true)->json();
         $this->assertSame($start['attemptToken'],$resume['attemptToken']);
         $this->assertSame($start['deadline'],$resume['deadline']);

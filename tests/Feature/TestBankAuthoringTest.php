@@ -804,19 +804,20 @@ class TestBankAuthoringTest extends TestCase
             ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")
             ->assertNotFound();
 
-        $this->actingAs($learner)->putJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}", [
+        $this->actingAs($learner)->withSession(['learner_login_token'=>$learner->fresh()->active_login_token])->putJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}", [
             'subject_ids' => [$subject->id], 'item_count' => 1,
             'timed' => false, 'time_limit_minutes' => null,
         ])->assertOk()->assertJsonPath('message', 'Practice test updated.');
         $quiz->refresh();
         $this->assertNull($quiz->time_limit_minutes);
         $this->assertSame(1, $quiz->questions()->count());
-        $this->actingAs($otherLearner)->putJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}", [
+        $this->actingAs($otherLearner)->withSession(['learner_login_token'=>$otherLearner->fresh()->active_login_token])->putJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}", [
             'subject_ids' => [$subject->id], 'item_count' => 1,
             'timed' => false, 'time_limit_minutes' => null,
         ])->assertNotFound();
 
         $this->actingAs($learner)
+            ->withSession(['learner_login_token'=>$learner->fresh()->active_login_token])
             ->deleteJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}")
             ->assertOk();
         $this->assertDatabaseMissing('test_bank_quizzes', ['id' => $quiz->id]);

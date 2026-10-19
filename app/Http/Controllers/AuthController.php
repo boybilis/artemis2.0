@@ -20,6 +20,13 @@ use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
+    private function claimLearnerSession(Request $request, User $user): void
+    {
+        if ($user->is_admin || strtolower(trim((string)$user->role)) !== 'student') return;
+        $token=bin2hex(random_bytes(32));
+        User::whereKey($user->id)->update(['active_login_token'=>$token]);
+        $request->session()->put('learner_login_token',$token);
+    }
     public function updateSettings(Request $request)
     {
         $user = Auth::user();
@@ -177,6 +184,7 @@ class AuthController extends Controller
             $pending->delete(); return $user;
         });
         Auth::login($user); $request->session()->regenerate();
+        $this->claimLearnerSession($request,$user);
         AuditLog::create(['user_id'=>$user->id,'action'=>'Registration','description'=>$user->name.' verified their email and registered a learner account.','ip_address'=>$request->ip()]);
         return response()->json(['success'=>true,'message'=>'Email verified. Your learner account is ready.','user'=>['name'=>$user->name,'firstName'=>$user->first_name,'lastName'=>$user->last_name,'email'=>$user->email,'role'=>'student','affName'=>$user->affiliation_name,'phone'=>$user->phone,'countryCode'=>$user->country_code,'hasCertificate'=>false,'isSubscribed'=>false]]);
     }
@@ -248,6 +256,7 @@ class AuthController extends Controller
         RateLimiter::clear($rateKey);
         Auth::login($user);
         $request->session()->regenerate();
+        $this->claimLearnerSession($request,$user);
 
         AuditLog::create([
             'user_id' => $user->id,

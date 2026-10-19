@@ -53,6 +53,7 @@ async function syncTestBankDraft() {
         const response=await fetch(`/api/test-banks/${draft.bank}/quizzes/${draft.quiz}/draft`,{method:'POST',credentials:'same-origin',keepalive:true,
             headers:{Accept:'application/json','Content-Type':'application/json','X-XSRF-TOKEN':getCsrfToken()},
             body:JSON.stringify({attempt_token:draft.token,answers:draft.answers,marked:draft.marked,index:draft.index})});
+        if(response.status===401){const result=await response.json();if(result.code==='session_replaced')window.handleLearnerSessionReplaced?.();}
         const status=document.getElementById('test-bank-save-status');
         if(status)status.textContent=response.ok?'Progress saved':'Saved on this browser · server sync pending';
     } catch { const status=document.getElementById('test-bank-save-status');if(status)status.textContent='Saved on this browser · offline'; }

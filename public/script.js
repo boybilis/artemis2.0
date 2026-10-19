@@ -100,6 +100,7 @@ async function apiRequest(url, method = 'GET', data = null) {
     try {
         const response = await fetch(url, options);
         const result = await response.json();
+        if(result.code==='session_replaced')window.handleLearnerSessionReplaced?.();
 
         if (!response.ok) {
             throw new Error(result.message || 'Something went wrong with the request.');
