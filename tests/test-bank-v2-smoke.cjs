@@ -81,7 +81,8 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(savedList.innerHTML.includes('data-v2-generated-prev disabled'));
     assert(savedList.innerHTML.includes('data-v2-generated-next disabled'));
     const progressStats = context.getV2ProgressStats({...workspace,simulationProgress:{warmUpPassed:7,masteryPassed:3},history:[{totalItems:10,total:10,score:5,cancelled:false},{totalItems:20,total:20,score:15,cancelled:false},{cancelled:true,totalItems:10}]});
-    assert.equal(progressStats.readiness,67);
+    assert.equal(progressStats.readiness,0);
+    assert.equal(context.getV2ProgressStats({...workspace,readiness:60}).readiness,60);
     assert.equal(progressStats.completed,2);
     assert.equal(progressStats.cancelled,1);
     assert.equal(progressStats.questions,30);

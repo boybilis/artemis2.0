@@ -565,6 +565,9 @@ class TestBankAuthoringTest extends TestCase
             ->assertJsonPath('workspace.history.0.score',3)->assertJsonPath('workspace.history.0.total',5)
             ->assertJsonPath('workspace.history.0.passed',true)->assertJsonPath('workspace.subjects.0.averageScore',60)
             ->assertJsonPath('workspace.simulationProgress.warmUpPassed',1)
+            ->assertJsonPath('workspace.readiness',15)
+            ->assertJsonPath('workspace.readinessBreakdown.premade.contribution',15)
+            ->assertJsonPath('workspace.readinessBreakdown.custom.contribution',0)
             ->assertJsonPath('workspace.v2SubjectResults.0.score',60);
     }
 

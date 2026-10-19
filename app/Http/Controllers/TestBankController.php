@@ -281,6 +281,7 @@ class TestBankController extends Controller
             ];
         })->filter(fn ($subject) => $subject['questionCount'] > 0)->values();
         $subjectLookup = $testBank->course->subjects->keyBy('id');
+        $readiness=\App\Services\TestBankReadiness::calculate($subjects,$attempts,$testBank->premadeQuizzes->filter(fn ($quiz)=>$quiz->matchesLicensure($enrollment->enrollment_option)));
 
         return response()->json(['success' => true, 'workspace' => [
             'id' => $testBank->id,
@@ -293,7 +294,8 @@ class TestBankController extends Controller
             'expiresAt' => $enrollment->expires_at?->toIso8601String(),
             'enrollmentOption' => $enrollment->enrollment_option,
             'daysRemaining' => $enrollment->expires_at ? max(0, (int) ceil(now()->diffInDays($enrollment->expires_at, false))) : null,
-            'readiness' => 0,
+            'readiness' => $readiness['percentage'],
+            'readinessBreakdown' => $readiness['categories'],
             'simulationProgress' => [
                 'warmUpPassed' => $warmUpPassed,
                 'warmUpRequired' => 10,
@@ -364,6 +366,7 @@ class TestBankController extends Controller
                 ->count() + 1;
             $quiz = $testBank->premadeQuizzes()->create([
                 'quiz_type' => 'learner',
+                'test_type' => $isMastery ? 'mastery' : 'warm_up',
                 'owner_user_id' => $user->id,
                 'title' => $titlePrefix.$sequence,
                 'description' => $subjectIds->count() > 1
