@@ -184,9 +184,15 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(!carousel.innerHTML.includes('Latest score'));
     assert(carousel.innerHTML.includes('Retake Test'));
     assert(carousel.innerHTML.includes('1/3'));
+    assert(carousel.innerHTML.includes('v2-retake-passed'));
+    context.renderV2SubjectCarousel(carousel,{...workspace,v2SubjectResults:[{subjectId:1,phase:'warm_up',score:30,averageScore:40,highestScore:50,attemptCount:2}]},10);
+    assert(carousel.innerHTML.includes('v2-retake-needed'));
+    assert(!carousel.innerHTML.includes('v2-retake-passed'));
     context.renderV2SubjectCarousel(carousel,{...workspace,v2SubjectResults:[{subjectId:1,phase:'warm_up',score:70,attemptCount:3}]},10);
     assert(carousel.innerHTML.includes('disabled>Attempts used'));
     assert(carousel.innerHTML.includes('3/3'));
+    assert(!carousel.innerHTML.includes('v2-retake-passed'));
+    assert(!carousel.innerHTML.includes('v2-retake-needed'));
     context.renderV2SubjectCarousel(carousel,{...workspace,v2SubjectResults:[{subjectId:1,phase:'warm_up',score:30}]},20);
     assert(!carousel.innerHTML.includes('30%'));
     context.renderV2PracticeCard(workspace,20);
