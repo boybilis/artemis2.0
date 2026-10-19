@@ -96,7 +96,7 @@
 .test-bank-v2 .v2-tracker-pagination{display:flex;justify-content:flex-end;align-items:center;gap:1rem;margin-top:1rem}.test-bank-v2 .v2-tracker-pagination button,.test-bank-v2 .v2-progress-modal .test-bank-tracker-buttons button{border:1px solid var(--border);border-radius:999px;padding:.6rem 1rem;background:#11a7c0;color:#fff}.test-bank-v2 .v2-progress-modal .test-bank-tracker-buttons button[data-v2-record-retake]{background:#f47721}
 .test-bank-v2 .v2-tracker-pagination button:disabled{opacity:.4;cursor:default}
 @media(max-width:600px){.test-bank-v2 dialog.v2-progress-modal{padding:1rem}.test-bank-v2 .v2-progress-modal .test-bank-tracker-row{display:flex;flex-direction:column;align-items:stretch}.test-bank-v2 .v2-progress-modal .test-bank-progress-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.test-bank-v2 .v2-tracker-pagination{gap:.5rem;justify-content:space-between}.test-bank-v2 .v2-snapshot-stats{gap:1rem;padding:1rem}}
-.test-bank-v2 .v2-subject-stats .v2-subject-score strong{color:#994306;font-size:1rem;font-weight:700}
+.test-bank-v2 .v2-subject-stats .v2-subject-score strong{color:#994306;font-size:.8rem;font-weight:700}
 .test-bank-v2 .v2-subject-stats .v2-subject-score{font-size:.7rem;font-weight:700}
 .test-bank-v2 .v2-subject-carousel{overflow:hidden}
 .test-bank-v2 .v2-subject-card .v2-start{background:linear-gradient(180deg,#062e52 0%,#073b65 52%,#052743 100%);color:#fff;margin:.6rem 0 0;padding:.7rem .85rem;width:100%}
