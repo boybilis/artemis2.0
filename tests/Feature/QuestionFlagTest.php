@@ -5,6 +5,20 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 class QuestionFlagTest extends TestCase {
     use RefreshDatabase;
+    public function test_read_responses_return_remaining_unread_count_on_both_sides(): void {
+        $learner=User::factory()->create(['role'=>'student','is_admin'=>false]);
+        $admin=User::factory()->create(['role'=>'admin','is_admin'=>true]);
+        $flags=collect([1,2])->map(fn ($index)=>QuestionFlag::create([
+            'user_id'=>$learner->id,'attempt_type'=>'assessment','attempt_id'=>$index,'question_index'=>0,
+            'question_snapshot'=>['question'=>'Question '.$index],'reason'=>'Please explain',
+            'reply'=>'Explanation','replied_at'=>now(),
+        ]));
+        $this->actingAs($admin)->postJson(route('admin.question-flags.read',$flags[0]))->assertOk()->assertJsonPath('unreadCount',1);
+        $this->postJson(route('admin.question-flags.read',$flags[1]))->assertOk()->assertJsonPath('unreadCount',0);
+        $this->actingAs($learner)->postJson('/api/question-flags/'.$flags[0]->id.'/read',['replied_at'=>$flags[0]->replied_at->toIso8601String()])->assertOk()->assertJsonPath('unreadCount',1);
+        $this->postJson('/api/question-flags/'.$flags[1]->id.'/read',['replied_at'=>$flags[1]->replied_at->toIso8601String()])->assertOk()->assertJsonPath('unreadCount',0);
+        $this->getJson('/api/question-flags/unread')->assertJsonPath('count',0);
+    }
     public function test_unread_counts_clear_only_on_view_and_reply_updates_become_unread(): void {
         $learner=User::factory()->create(['role'=>'student','is_admin'=>false]);
         $other=User::factory()->create(['role'=>'student','is_admin'=>false]);

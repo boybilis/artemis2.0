@@ -66,9 +66,20 @@
     badge.hidden=true; badge.setAttribute('aria-live','polite');
     badge.style.cssText='position:absolute;right:6px;top:4px;min-width:19px;padding:2px 5px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px;font-weight:700;line-height:16px;text-align:center';
     menu.append(badge);
+    let unreadRevision=0;
+    function paintUnread(count) {
+        count=Math.max(0,Number(count)||0);
+        badge.textContent=count ? String(count) : '';
+        badge.hidden=!count;
+        // Bootstrap's badge display rule can otherwise override the hidden attribute.
+        badge.style.setProperty('display',count ? 'inline-flex' : 'none','important');
+        badge.setAttribute('aria-label',`${count} unread replies`);
+    }
+    paintUnread(0);
     async function refreshUnread() {
-        if (!state.user) { badge.hidden=true; return; }
-        try { const data=await apiRequest('/api/question-flags/unread'); badge.textContent=data.count; badge.hidden=!data.count; badge.setAttribute('aria-label',`${data.count} unread replies`); } catch (_) {}
+        const revision=++unreadRevision;
+        if (!state.user) { paintUnread(0); return; }
+        try { const data=await apiRequest('/api/question-flags/unread'); if(revision===unreadRevision)paintUnread(data.count); } catch (_) {}
     }
     setTimeout(refreshUnread,1500);
     setInterval(()=>{if(!document.hidden) refreshUnread();},30000);
@@ -90,7 +101,11 @@
                     view.textContent=flag.learner_read_at ? 'View reply' : 'View new reply';
                     view.onclick=async()=>{
                         reply.hidden=false;
-                        try { await apiRequest(`/api/question-flags/${flag.id}/read`,'POST',{replied_at:flag.replied_at}); view.textContent='View reply'; await refreshUnread(); } catch(error){showToast(error.message,'error');}
+                        try {
+                            const result=await apiRequest(`/api/question-flags/${flag.id}/read`,'POST',{replied_at:flag.replied_at});
+                            view.textContent='View reply';
+                            ++unreadRevision;paintUnread(result.unreadCount);
+                        } catch(error){showToast(error.message,'error');}
                     };
                     reply.before(view);
                 });

@@ -601,11 +601,19 @@
     link.style.position='relative';
     const badge=document.createElement('span'); badge.hidden=true; badge.setAttribute('aria-live','polite');
     badge.style.cssText='position:absolute;right:6px;top:4px;min-width:19px;padding:2px 5px;border-radius:999px;background:#dc2626;color:white;font-size:11px;font-weight:700;line-height:16px;text-align:center';link.append(badge);
+    let unreadRevision=0;
+    const paintUnread=count=>{
+        count=Math.max(0,Number(count)||0);badge.textContent=count ? String(count) : '';badge.hidden=!count;
+        badge.style.setProperty('display',count ? 'inline-flex' : 'none','important');
+        badge.setAttribute('aria-label',`${count} new flagged questions`);
+    };
+    paintUnread(0);
     window.refreshFlagUnread=async()=>{
-        try { const response=await fetch(@json(route('admin.question-flags.unread')),{headers:{Accept:'application/json'},credentials:'same-origin'});if(!response.ok)return;const data=await response.json();badge.textContent=data.count;badge.hidden=!data.count;badge.setAttribute('aria-label',`${data.count} new flagged questions`); } catch(_){}
+        const revision=++unreadRevision;
+        try { const response=await fetch(@json(route('admin.question-flags.unread')),{headers:{Accept:'application/json'},credentials:'same-origin'});if(!response.ok)return;const data=await response.json();if(revision===unreadRevision)paintUnread(data.count); } catch(_){}
     };
     window.markStaffFlagRead=async(id)=>{
-        try {const response=await fetch(@json(url('/admin/question-flags'))+'/'+id+'/read',{method:'POST',headers:{Accept:'application/json','X-CSRF-TOKEN':@json(csrf_token())},credentials:'same-origin'});if(response.ok)await window.refreshFlagUnread();}catch(_){}
+        try {const response=await fetch(@json(url('/admin/question-flags'))+'/'+id+'/read',{method:'POST',headers:{Accept:'application/json','X-CSRF-TOKEN':@json(csrf_token())},credentials:'same-origin'});if(response.ok){const result=await response.json();++unreadRevision;paintUnread(result.unreadCount);}}catch(_){}
     };
     window.refreshFlagUnread();setInterval(()=>{if(!document.hidden)window.refreshFlagUnread();},30000);window.addEventListener('focus',window.refreshFlagUnread);
 })();

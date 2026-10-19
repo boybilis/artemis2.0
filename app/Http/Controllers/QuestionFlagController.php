@@ -10,14 +10,14 @@ class QuestionFlagController extends Controller {
         abort_unless($flag->user_id === $request->user()->id,404);
         $data=$request->validate(['replied_at'=>['required','date']]);
         QuestionFlag::whereKey($flag->id)->where('user_id',$request->user()->id)->where('replied_at',\Carbon\Carbon::parse($data['replied_at']))->update(['learner_read_at'=>now()]);
-        return response()->json(['success'=>true]);
+        return response()->json(['success'=>true,'unreadCount'=>QuestionFlag::where('user_id',$request->user()->id)->whereNotNull('replied_at')->whereNull('learner_read_at')->count()]);
     }
     public function staffUnread() {
         return response()->json(['count'=>QuestionFlag::whereNull('staff_read_at')->count()]);
     }
     public function staffRead(QuestionFlag $flag) {
         QuestionFlag::whereKey($flag->id)->whereNull('staff_read_at')->update(['staff_read_at'=>now()]);
-        return response()->json(['success'=>true]);
+        return response()->json(['success'=>true,'unreadCount'=>QuestionFlag::whereNull('staff_read_at')->count()]);
     }
     public function index(Request $request) {
         return response()->json(['success'=>true,'flags'=>QuestionFlag::where('user_id',$request->user()->id)->with('responder:id,name')->latest()->paginate(10)]);
