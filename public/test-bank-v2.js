@@ -242,21 +242,24 @@ function renderV2GeneratedQuizzes(container,workspace,itemCount,page = 0) {
 }
 
 function renderV2ReadinessTooltip(workspace,id) {
-    return `<div class="v2-readiness-help"><button type="button" class="v2-readiness-info" aria-label="How exam readiness is calculated" aria-expanded="false" aria-describedby="${id}" data-v2-readiness-help><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v1"/></svg></button><div class="v2-readiness-tooltip" id="${id}" role="tooltip" hidden><strong>How exam readiness is calculated</strong><p>50% pre-made + 30% Create Your Own + 20% simulations. Scores contribute proportionally; 60% is passing.</p>${renderV2ReadinessBreakdown(workspace)}</div></div>`;
+    return `<div class="v2-readiness-help"><button type="button" class="v2-readiness-info" aria-label="How exam readiness is calculated" aria-haspopup="dialog" aria-expanded="false" aria-controls="${id}" data-v2-readiness-help><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v1"/></svg></button><dialog class="v2-readiness-tooltip" id="${id}" role="dialog" aria-modal="true" aria-labelledby="${id}-title"><header class="v2-readiness-help-heading"><strong id="${id}-title">How exam readiness is calculated</strong><button type="button" data-v2-readiness-close aria-label="Close explanation">×</button></header><p>50% pre-made + 30% Create Your Own + 20% simulations. Scores contribute proportionally; 60% is passing.</p>${renderV2ReadinessBreakdown(workspace)}</dialog></div>`;
 }
 
 function bindV2ReadinessTooltips(root) {
     root.querySelectorAll('[data-v2-readiness-help]').forEach(button=>{
-        const wrapper=button.parentElement,tooltip=wrapper.querySelector('[role="tooltip"]');
-        let pinned=false;
-        const show=()=>{tooltip.hidden=false;button.setAttribute('aria-expanded','true');};
-        const hide=()=>{tooltip.hidden=true;button.setAttribute('aria-expanded','false');};
-        wrapper.addEventListener('mouseenter',show);
-        wrapper.addEventListener('mouseleave',()=>{if(!pinned)hide();});
-        button.addEventListener('focus',show);
-        button.addEventListener('blur',()=>{pinned=false;hide();});
-        button.addEventListener('click',()=>{pinned=!pinned;if(pinned)show();else hide();});
-        button.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();pinned=false;hide();}});
+        const wrapper=button.parentElement,tooltip=wrapper.querySelector('dialog');
+        button.addEventListener('click',()=>{
+            if(tooltip.open)return;
+            tooltip.showModal();button.setAttribute('aria-expanded','true');
+            tooltip.querySelector('[data-v2-readiness-close]').focus({preventScroll:true});
+        });
+        tooltip.querySelector('[data-v2-readiness-close]').addEventListener('click',()=>tooltip.close());
+        tooltip.addEventListener('close',()=>{button.setAttribute('aria-expanded','false');button.focus({preventScroll:true});});
+        tooltip.addEventListener('click',event=>{
+            if(event.target!==tooltip)return;
+            const rect=tooltip.getBoundingClientRect();
+            if(event.clientX<rect.left || event.clientX>rect.right || event.clientY<rect.top || event.clientY>rect.bottom)tooltip.close();
+        });
     });
 }
 
