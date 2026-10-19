@@ -558,7 +558,7 @@ class TestBankAuthoringTest extends TestCase
         $bank->enrollments()->create(['user_id'=>$learner->id,'status'=>'active','enrolled_at'=>now(),'expires_at'=>now()->addDays(30)]);
         $question=TestBankQuestion::create(['test_bank_id'=>$bank->id,'course_id'=>$course->id,'subject_id'=>$subject->id,'question'=>'Visible subject','options'=>['A','B'],'correct_answer'=>0,'points'=>9,'status'=>'active']);
         $question->subjects()->sync([$subject->id]);
-        $quiz=$bank->premadeQuizzes()->create(['title'=>'Legacy Warm-up','quiz_type'=>'subject','test_type'=>'warm_up','owner_user_id'=>$learner->id,'item_count'=>5,'subject_ids'=>[$subject->id],'status'=>'active']);
+        $quiz=$bank->premadeQuizzes()->create(['title'=>'Legacy Warm-up','quiz_type'=>'subject','test_type'=>'warm_up','description'=>'V2 one-time subject test.','owner_user_id'=>$learner->id,'item_count'=>5,'subject_ids'=>[$subject->id],'status'=>'active']);
         $attempt=TestBankQuizAttempt::create(['user_id'=>$learner->id,'test_bank_id'=>$bank->id,'test_bank_quiz_id'=>$quiz->id,'score'=>3,'total'=>5,'points_earned'=>3,'points_possible'=>43,'passed'=>false]);
         $this->assertTrue($attempt->fresh()->passed);
         $this->actingAs($learner)->getJson("/api/test-banks/{$bank->id}/workspace")->assertOk()
@@ -607,14 +607,31 @@ class TestBankAuthoringTest extends TestCase
         $this->postJson($endpoint, ['quiz_type' => 'mastery', 'reuse_set' => true])->assertOk()->assertJsonPath('quizId', $masteryId);
         $this->assertSame(3, $bank->premadeQuizzes()->where('quiz_type', 'subject')->count());
         $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/questions")->assertOk();
+        $this->deleteJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/attempt")->assertOk();
+        $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/questions")->assertOk();
         $this->postJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/submit", ['answers' => array_fill(0, 10, 0)])->assertOk();
+        $results=$this->getJson("/api/test-banks/{$bank->id}/workspace")->assertOk()->json('workspace.v2SubjectResults');
+        $this->assertSame(1,$results[0]['attemptCount']);
+        foreach ([2,3] as $number) {
+            $this->postJson($endpoint,['quiz_type'=>'warm_up','reuse_set'=>true])->assertOk()->assertJsonPath('quizId',$warmId);
+            $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/questions")->assertOk();
+            $this->postJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/submit",['answers'=>array_fill(0,10,0)])->assertOk();
+        }
         $this->postJson($endpoint, ['quiz_type' => 'warm_up', 'reuse_set' => true])->assertStatus(422);
         $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/questions")->assertStatus(422);
         $this->postJson("/api/test-banks/{$bank->id}/quizzes/{$warmId}/submit", ['answers' => array_fill(0, 10, 0)])->assertStatus(422);
         $this->postJson($endpoint, ['quiz_type' => 'mastery', 'reuse_set' => true])->assertOk()->assertJsonPath('quizId', $masteryId);
+        foreach ([1,2,3] as $number) {
+            $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$masteryId}/questions")->assertOk();
+            $this->postJson("/api/test-banks/{$bank->id}/quizzes/{$masteryId}/submit",['answers'=>array_fill(0,12,0)])->assertOk();
+        }
+        $this->postJson($endpoint,['quiz_type'=>'mastery','reuse_set'=>true])->assertUnprocessable();
+        $this->getJson("/api/test-banks/{$bank->id}/quizzes/{$masteryId}/questions")->assertUnprocessable();
         $results = $this->getJson("/api/test-banks/{$bank->id}/workspace")->assertOk()->json('workspace.v2SubjectResults');
-        $this->assertSame('warm_up', $results[0]['phase']);
-        $this->assertEquals(100, $results[0]['score']);
+        $warmResult=collect($results)->firstWhere('phase','warm_up');
+        $this->assertEquals(100, $warmResult['score']);
+        $this->assertSame(3,$warmResult['attemptCount']);
+        $this->assertSame(3,collect($results)->firstWhere('phase','mastery')['attemptCount']);
 
         $this->actingAs($learner)
             ->getJson("/api/test-banks/{$bank->id}/quizzes/{$quiz->id}/questions")
