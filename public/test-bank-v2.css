@@ -83,6 +83,16 @@
 .test-bank-v2 .v2-progress-modal .test-bank-tracker-action button{min-width:0;min-height:34px;padding:.35rem .65rem;border:0;font-size:.75rem;font-weight:700}
 @media(max-width:850px){.test-bank-v2 .v2-progress-modal .test-bank-tracker-row{grid-template-columns:repeat(3,minmax(0,1fr))}.test-bank-v2 .v2-progress-modal .test-bank-tracker-copy,.test-bank-v2 .v2-progress-modal .test-bank-tracker-action{grid-column:1 / -1}}
 .test-bank-v2 .v2-readiness-value{display:block;color:#994306;font-size:2.3rem}
+.test-bank-v2 .v2-readiness-score{display:flex;align-items:center;gap:.5rem}
+.test-bank-v2 .v2-readiness-help{position:relative;display:inline-flex}
+.test-bank-v2 .v2-readiness-help .v2-readiness-info{display:grid;place-items:center;min-width:30px;min-height:30px;padding:4px;margin:0;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--text-muted);cursor:pointer}
+.test-bank-v2 .v2-readiness-info:focus-visible{outline:2px solid #078b9b;outline-offset:3px}
+.test-bank-v2 .v2-readiness-tooltip{position:absolute;z-index:30;top:calc(100% + 8px);right:-30px;width:min(320px,calc(100vw - 64px));max-height:60vh;overflow-y:auto;box-sizing:border-box;padding:1rem;border:1px solid var(--border);border-radius:12px;background:var(--surface-solid,#fff);color:var(--text);box-shadow:0 8px 28px #073b6333;font-size:.75rem;line-height:1.5;font-weight:400}
+.test-bank-v2 .v2-readiness-tooltip[hidden]{display:none!important}
+.test-bank-v2 .v2-readiness-tooltip p{font-size:.75rem;margin:.6rem 0}
+.test-bank-v2 .v2-readiness-tooltip small{font-size:.68rem}
+.test-bank-v2 .v2-readiness-tooltip::before{content:"";position:absolute;top:-10px;left:0;right:0;height:10px}
+@media(max-width:900px){.test-bank-v2 .v2-readiness-tooltip{right:auto;left:-60px}}
 .test-bank-v2 dialog.v2-progress-modal{box-sizing:border-box;width:min(680px,calc(100vw - 2rem));max-width:none;max-height:calc(100dvh - 2rem);margin:auto;padding:1.75rem;border:1px solid var(--border);border-radius:20px;background:var(--surface-solid);color:var(--text);overflow:auto}
 .test-bank-v2 dialog.v2-progress-wide{width:min(1200px,calc(100vw - 2rem))}
 .test-bank-v2 .v2-progress-modal::backdrop{background:rgba(3,24,44,.65)}

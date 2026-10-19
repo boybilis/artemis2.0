@@ -100,7 +100,7 @@ function renderV2PracticeCard(workspace,itemCount = 10, scrollToCard = true) {
         <section class="v2-rail-card"><h2>Latest result</h2>${latest ? `<p>${escapeHtml(latest.coverage || latest.title)}</p><strong class="v2-result-score ${latest.passed ? 'passed' : ''}">${percent}%</strong><span class="v2-result-status ${latest.passed ? 'passed' : ''}">${latest.passed ? 'Passed · Well done' : 'Failed · Try again'}</span><p>${latest.passed ? 'Great work! Keep practicing to strengthen your knowledge.' : 'Keep practicing. Review your answers, then try again.'}</p><div class="v2-rail-actions"><button type="button" data-v2-review>Review Answers</button><button type="button" class="v2-retake" data-v2-retake>Retake</button></div>` : '<p>No completed results yet. Start a test to see your latest result here.</p>'}</section>
         <section class="v2-rail-card"><h2>Your next step</h2><p>${latest && !latest.passed ? `Spend a few minutes reviewing <strong>${escapeHtml(latest.coverage || latest.title)}</strong>, then check your understanding with fresh questions.` : 'Build confidence with fresh questions and review explanations after each test.'}</p><button type="button" data-v2-weak>Practice ${latest && !latest.passed ? 'Weak Topics' : 'More Questions'}</button></section>
         <section class="v2-rail-card"><h2>Simulation readiness</h2>${[['Warm Up Quizzes',Number(progress.warmUpPassed || 0),10],['Mastery Tests',Number(progress.masteryPassed || 0),5]].map(([label,count,total]) => `<div class="v2-eligibility-label"><span>${label}</span><strong>${count}/${total} passed</strong></div><div class="v2-eligibility-track" role="progressbar" aria-label="${label} passed" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${Math.max(0,Math.min(total,count))}"><i style="width:${Math.max(0,Math.min(100,count / total * 100))}%"></i></div>`).join('')}<button type="button" data-v2-view-simulation>View exam simulations →</button></section>
-        <section class="v2-rail-card"><h2>Exam Readiness %</h2><strong class="v2-readiness-value">${getV2ProgressStats(workspace).readiness}%</strong><p>50% pre-made + 30% Create Your Own + 20% simulations. Scores contribute proportionally; 60% is passing.</p>${renderV2ReadinessBreakdown(workspace)}<div class="v2-rail-actions"><button type="button" data-v2-progress-snapshot>Progress Snapshot</button><button type="button" data-v2-progress-tracker>Progress Tracker</button></div></section>
+        <section class="v2-rail-card"><h2>Exam Readiness %</h2><div class="v2-readiness-score"><strong class="v2-readiness-value">${getV2ProgressStats(workspace).readiness}%</strong>${renderV2ReadinessTooltip(workspace,`v2-readiness-help-${workspace.id}-${itemCount}`)}</div><div class="v2-rail-actions"><button type="button" data-v2-progress-snapshot>Progress Snapshot</button><button type="button" data-v2-progress-tracker>Progress Tracker</button></div></section>
     </aside></div>`;
     let mode = 'custom';
     const subjectSelect = host.querySelector('#v2-practice-subject'), testSelect = host.querySelector('#v2-practice-premade'), start = host.querySelector('#v2-practice-start');
@@ -187,6 +187,7 @@ showAssessmentSummary({score:latest.score,total:latest.total,correctItems:latest
     host.querySelector('[data-v2-view-simulation]')?.addEventListener('click', () => $('test-bank-workspace-area').querySelector('[data-guided-simulation]')?.click());
     host.querySelector('[data-v2-progress-snapshot]')?.addEventListener('click', () => openV2ProgressModal(workspace,'snapshot'));
     host.querySelector('[data-v2-progress-tracker]')?.addEventListener('click', () => openV2ProgressModal(workspace,'tracker'));
+    bindV2ReadinessTooltips(host);
     if (scrollToCard) host.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -238,6 +239,25 @@ function renderV2GeneratedQuizzes(container,workspace,itemCount,page = 0) {
             $('test-bank-workspace-area').querySelector(`[data-guided-builder="${itemCount}"]`)?.click();
         });
     }));
+}
+
+function renderV2ReadinessTooltip(workspace,id) {
+    return `<div class="v2-readiness-help"><button type="button" class="v2-readiness-info" aria-label="How exam readiness is calculated" aria-expanded="false" aria-describedby="${id}" data-v2-readiness-help><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7v1"/></svg></button><div class="v2-readiness-tooltip" id="${id}" role="tooltip" hidden><strong>How exam readiness is calculated</strong><p>50% pre-made + 30% Create Your Own + 20% simulations. Scores contribute proportionally; 60% is passing.</p>${renderV2ReadinessBreakdown(workspace)}</div></div>`;
+}
+
+function bindV2ReadinessTooltips(root) {
+    root.querySelectorAll('[data-v2-readiness-help]').forEach(button=>{
+        const wrapper=button.parentElement,tooltip=wrapper.querySelector('[role="tooltip"]');
+        let pinned=false;
+        const show=()=>{tooltip.hidden=false;button.setAttribute('aria-expanded','true');};
+        const hide=()=>{tooltip.hidden=true;button.setAttribute('aria-expanded','false');};
+        wrapper.addEventListener('mouseenter',show);
+        wrapper.addEventListener('mouseleave',()=>{if(!pinned)hide();});
+        button.addEventListener('focus',show);
+        button.addEventListener('blur',()=>{pinned=false;hide();});
+        button.addEventListener('click',()=>{pinned=!pinned;if(pinned)show();else hide();});
+        button.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();pinned=false;hide();}});
+    });
 }
 
 function renderV2ReadinessBreakdown(workspace) {
