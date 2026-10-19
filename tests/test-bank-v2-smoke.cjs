@@ -113,6 +113,7 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(modal.innerHTML.includes('test-bank-progress-report-head'));
     assert(modal.innerHTML.includes('test-bank-progress-report-icon'));
     assert(modal.innerHTML.includes('aria-label="Exam readiness"'));
+    assert(!modal.innerHTML.includes('v2-readiness-breakdown'));
     assert(!modal.innerHTML.includes('v2-tracker-summary'));
     assert(modalNodes['[data-v2-record-list]'].innerHTML.includes('30%'));
     assert(modalNodes['[data-v2-record-list]'].innerHTML.includes('data-v2-record-review'));
