@@ -274,6 +274,28 @@ class CourseController extends Controller
             ];
         });
 
+        $savedLearningProgress=UserProgress::where('user_id',$user->id)->where('course_id',$courseId)->pluck('max_unlocked_index','topic_id');
+        $topicsBySubject=$formattedTopics->groupBy('subjectId');
+        $formattedTopics=$formattedTopics->map(function ($topic) use ($topicsBySubject,$savedLearningProgress,$completedPreTestSubjectIds) {
+            if($topic['subjectId']===null)return $topic;
+            $related=$topicsBySubject->get($topic['subjectId'],collect());
+            $policy=$related->firstWhere('isPolicyTopic',true);
+            $policyItems=collect($policy['subtopics'] ?? [])->flatMap(function ($sub) {
+                if(in_array($sub['contentType'],['mock_exam','pre_test'],true))return [];
+                if($sub['contentType'] && $sub['contentType']!=='subtopic')return [['type'=>'assessment','attempts'=>$sub['attemptsUsed']]];
+                $items=[];
+                if($sub['documentationPath'])$items[]=['type'=>'doc'];
+                if($sub['videoUrl'] || $sub['videoUploadUrl'])$items[]=['type'=>'video'];
+                return $items ?: [['type'=>'none']];
+            });
+            $required=$policyItems->filter(fn ($item)=>$item['type']!=='none');
+            $policyComplete=!$policy || ($required->isNotEmpty() && $required->every(fn ($item,$index)=>$index < (int)$savedLearningProgress->get($policy['id'],0)
+                && ($item['type']!=='assessment' || $item['attempts']>0)));
+            $hasPreTest=$related->contains('isPreTestTopic',true);
+            $ready=$hasPreTest ? $completedPreTestSubjectIds->contains($topic['subjectId']) : $policyComplete;
+            $topic['isLocked']=!$topic['isPolicyTopic'] && !($topic['isPreTestTopic'] ? $policyComplete : $ready);
+            return $topic;
+        });
         $completedTopicIds = UserProgress::where('user_id', $user->id)->where('course_id', $courseId)->pluck('topic_id');
         $subjects = Subject::where('course_id', $courseId)->where('status', 'approved')
             ->tap(fn ($query) => $activeBatch->filterSubjects($query))

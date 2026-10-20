@@ -1444,9 +1444,9 @@ function isPreTestLearningTopic(topic) {
 }
 
 function hasCompletedSubjectPreTest(subjectId) {
-    return topics
-        .filter(topic => Number(topic.subjectId) === Number(subjectId))
-        .some(topic => (topic.subtopics || []).some(subtopic =>
+    const subjectTopics=topics.filter(topic=>Number(topic.subjectId)===Number(subjectId));
+    if(!subjectTopics.some(isPreTestLearningTopic))return hasCompletedSubjectPolicy(subjectId);
+    return subjectTopics.some(topic => (topic.subtopics || []).some(subtopic =>
             subtopic.contentType === 'pre_test' && Number(subtopic.attemptsUsed || 0) > 0
         ));
 }
@@ -2037,6 +2037,14 @@ function renderLesson(openIdx = 0) {
     const topic = topics[state.currentTopicIndex];
     if (!topic) return;
     if($('subject-workspace-welcome'))$('subject-workspace-welcome').style.display='none';
+    // Never leave the previous document/video onscreen when the new topic is locked.
+    for(const id of ['video-container','docs-container','subtopic-assessment-container','zoom-session-container','mark-complete-bar']) {
+        if($(id))$(id).style.display='none';
+    }
+    if($('subtopic-header-num'))$('subtopic-header-num').textContent='Topic';
+    if($('subtopic-header-title'))$('subtopic-header-title').textContent=topic.title;
+    const emptyMessage=$('no-subtopics-msg')?.querySelector('p');
+    if(emptyMessage)emptyMessage.textContent='This topic has no subtopics yet. Check back later.';
 
     // Determine current unlocked progress for this topic from backend
     let maxUnlocked = state.topicProgressMap[topic.id] || 0;
@@ -2207,6 +2215,7 @@ function renderLesson(openIdx = 0) {
     // Open target item
     if (window.currentFlattenedItems.length > 0) {
         if (initialAccessibleIndex >= 0) openFlattenedItem(initialAccessibleIndex);
+        else if(noSubMsg){noSubMsg.style.display='flex';if(emptyMessage)emptyMessage.textContent='Complete the required Agreement or Pre-Test to unlock this content.';}
     }
 }
 
@@ -2423,15 +2432,15 @@ function renderZoomSession(sub) {
 }
 
 async function markCurrentLearningItemComplete(index) {
-    if (window.currentLearningItemIndex !== index) return;
+    if (window.currentLearningItemIndex !== index) return false;
+    const topic=topics[state.currentTopicIndex];
+    if(!topic || !window.currentFlattenedItems[index])return false;
     const completeBtn = $('mark-complete-btn');
-    if (!completeBtn) return;
-    completeBtn.disabled = false;
-    completeBtn.title = completeBtn.dataset.readyTitle || 'Continue.';
+    if (!completeBtn) return false;
 
     const completedIndex = index + 1;
     if (completedIndex > window.currentUnlockedIdx) {
-        const topic = topics[state.currentTopicIndex];
+        completeBtn.disabled=true;
         const activeItem = window.currentFlattenedItems[index];
         try {
             const savedProgress = await apiRequest('/api/progress/unlock', 'POST', {
@@ -2439,15 +2448,18 @@ async function markCurrentLearningItemComplete(index) {
                 subtopic_id: activeItem.sub.id,
                 item_type: activeItem.type
             });
-            window.currentUnlockedIdx = Number(savedProgress.max_unlocked_index || 0);
-            state.topicProgressMap[topic.id] = window.currentUnlockedIdx;
+            state.topicProgressMap[topic.id] = Number(savedProgress.max_unlocked_index || 0);
+            if(topics[state.currentTopicIndex]?.id!==topic.id || window.currentLearningItemIndex!==index)return false;
+            window.currentUnlockedIdx = state.topicProgressMap[topic.id];
         } catch (error) {
             console.error('Failed to save completed learning content');
             completeBtn.disabled = true;
             showToast(error.message || 'Progress could not be saved. Please try again.', 'error');
-            return;
+            return false;
         }
     }
+    completeBtn.disabled=false;
+    completeBtn.title=completeBtn.dataset.readyTitle || 'Continue.';
 
     const activeItem = window.currentFlattenedItems[index];
     if (activeItem) {
@@ -2465,6 +2477,8 @@ async function markCurrentLearningItemComplete(index) {
             if (window.lucide) lucide.createIcons({root: groupHeader});
         }
     }
+    renderCompleteSubjectSidebar(topic);
+    return true;
 }
 
 function renderSubtopicAssessment(sub) {
@@ -2821,16 +2835,18 @@ async function renderTrackedPdf(path, shouldTrackCompletion = true) {
             await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
         }
         let completed = false;
-        wrap.onscroll = () => {
+        wrap.onscroll = async () => {
             updatePdfPageIndicator(wrap);
             if (!shouldTrackCompletion) return;
             if (completed || sequence !== pdfRenderSequence) return;
             const atBottom = wrap.scrollTop + wrap.clientHeight >= wrap.scrollHeight - 24;
             if (!atBottom) return;
             completed = true;
+            const saved=await markCurrentLearningItemComplete(learningItemIndex);
+            if(!saved){completed=false;return;}
+            if(sequence!==pdfRenderSequence)return;
             const notice = document.createElement('div');
             notice.className = 'pdf-auto-complete-notice'; notice.textContent = 'Document completed'; pages.appendChild(notice);
-            markCurrentLearningItemComplete(learningItemIndex);
             showToast('Document completed. You may now continue.', 'success');
         };
     } catch (error) {

@@ -8,6 +8,23 @@ use Tests\TestCase;
 class SubjectEntryTopicTest extends TestCase
 {
     use RefreshDatabase;
+    public function test_agreement_completion_unlocks_videos_when_subject_has_no_pre_test(): void {
+        extract($this->subject());
+        $agreement=Topic::create(['course_id'=>$course->id,'subject_id'=>$subject->id,'title'=>'End User Agreement','status'=>'approved']);
+        $document=Subtopic::create(['topic_id'=>$agreement->id,'title'=>'Read agreement','content_type'=>'subtopic','documentation_path'=>'https://example.test/agreement.pdf','status'=>'approved']);
+        $lesson=Topic::create(['course_id'=>$course->id,'subject_id'=>$subject->id,'title'=>'Renal videos','status'=>'approved']);
+        Subtopic::create(['topic_id'=>$lesson->id,'title'=>'Video 1','content_type'=>'subtopic','video_url'=>'https://example.test/video','status'=>'approved']);
+        $assessment=Subtopic::create(['topic_id'=>$lesson->id,'title'=>'Post-Test','content_type'=>'post_test','status'=>'approved']);
+        QuizQuestion::create(['course_id'=>$course->id,'topic_id'=>$lesson->id,'subtopic_id'=>$assessment->id,'question_type'=>'subtopic_assessment','response_type'=>'single','question'=>'Question','options'=>['A','B'],'answer'=>0,'correct_answers'=>[0],'maximum_points'=>1,'status'=>'approved']);
+        $url="/api/courses/{$course->id}/subtopics/{$assessment->id}/assessment/questions";
+        $this->getJson($url)->assertForbidden();
+        $data=$this->getJson("/api/courses/{$course->id}/topics")->assertOk()->json('topics');
+        $this->assertTrue(collect($data)->firstWhere('id',$lesson->id)['isLocked']);
+        $this->postJson('/api/progress/unlock',['topic_id'=>$agreement->id,'subtopic_id'=>$document->id,'item_type'=>'doc'])->assertOk()->assertJsonPath('max_unlocked_index',1);
+        $data=$this->getJson("/api/courses/{$course->id}/topics")->assertOk()->json('topics');
+        $this->assertFalse(collect($data)->firstWhere('id',$lesson->id)['isLocked']);
+        $this->getJson($url)->assertOk();
+    }
     private function subject(): array {
         $user=User::factory()->create();
         $course=Course::create(['title'=>'Review','approval_status'=>'approved','is_published'=>true]);

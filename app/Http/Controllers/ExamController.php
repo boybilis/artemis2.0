@@ -55,6 +55,10 @@ class ExamController extends Controller
     private function hasCompletedPreTest(int $userId, Subtopic $item): bool
     {
         $subjectId = $item->topic->subject_id;
+        $hasPreTest=Topic::where('course_id',$item->topic->course_id)->where('subject_id',$subjectId)->where('status','approved')
+            ->where(fn ($query)=>$query->whereRaw("LOWER(REPLACE(REPLACE(title, '-', ''), ' ', '')) LIKE ?",['%pretest%'])
+                ->orWhereHas('subtopics',fn ($query)=>$query->where('status','approved')->where('content_type','pre_test')))->exists();
+        if(!$hasPreTest)return $this->policyTopicComplete($userId,$item);
         $batch = $this->activeBatch($userId, (int) $item->topic->course_id);
         return QuizAttempt::where('user_id', $userId)
             ->where('batch_id', $batch->id)

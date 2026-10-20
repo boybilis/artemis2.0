@@ -18,6 +18,11 @@ assert(context.isLearningItemAccessible(pre,{sub:pre.subtopics[0],type:'assessme
 assert(!context.isLearningItemAccessible(lesson,{sub:lesson.subtopics[0],type:'video'},0));
 pre.subtopics[0].attemptsUsed=1;
 assert(context.isLearningItemAccessible(lesson,{sub:lesson.subtopics[0],type:'video'},0));
+context.topics=[agreement,lesson];context.state.topicProgressMap[1]=0;
+assert(!context.isLearningItemAccessible(lesson,{sub:lesson.subtopics[0],type:'video'},0));
+context.state.topicProgressMap[1]=1;
+assert(context.isLearningItemAccessible(lesson,{sub:lesson.subtopics[0],type:'video'},0));
+assert(!context.isLearningItemAccessible(lesson,{sub:lesson.subtopics[0],type:'video'},1));
 context.topics=[{...pre,subjectId:17,subtopics:[{contentType:'pre_test',attemptsUsed:0}]}];
 assert(context.isLearningItemAccessible(context.topics[0],{sub:context.topics[0].subtopics[0],type:'assessment'},0));
 console.log('Policy, End User Agreement, and standalone Pre-Test entries open without bypassing the lesson sequence.');
