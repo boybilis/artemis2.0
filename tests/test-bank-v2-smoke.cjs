@@ -221,6 +221,26 @@ const workspace = {id:7,title:'Test Bank',accessDays:30,daysRemaining:28,subject
     assert(host.innerHTML.includes('Failed · Try again'));
     assert(host.innerHTML.includes('data-v2-review'));
     assert(host.innerHTML.includes('data-v2-retake'));
+    const sharedWorkspace={...workspace,readiness:58.4,simulationProgress:{warmUpPassed:7,masteryPassed:3},history:[
+        {id:1,quizId:1,title:'Older Warm-up',totalItems:10,total:10,score:10,passed:true,takenAt:'2026-10-12'},
+        {id:2,quizId:2,title:'Newest Mastery',coverage:'Nursing',totalItems:20,total:20,score:10,passed:false,takenAt:'2026-10-13'},
+        {id:3,quizId:3,title:'Cancelled simulation',totalItems:150,total:150,score:150,passed:true,cancelled:true,takenAt:'2026-10-14'},
+    ]};
+    context.renderV2PracticeCard(sharedWorkspace,10);
+    const warmRail=host.innerHTML.match(/<aside class="v2-practice-rail"[\s\S]*?<\/aside>/)[0].replaceAll('v2-readiness-help-7-10','readiness-help');
+    assert(warmRail.includes('Newest Mastery'));
+    assert(!warmRail.includes('Older Warm-up'));
+    assert(!warmRail.includes('Cancelled simulation'));
+    assert(warmRail.includes('Failed · Try again'));
+    assert(warmRail.includes('7/10 passed'));
+    assert(warmRail.includes('3/5 passed'));
+    assert(warmRail.includes('58.4%'));
+    context.renderV2PracticeCard(sharedWorkspace,20);
+    const masteryRail=host.innerHTML.match(/<aside class="v2-practice-rail"[\s\S]*?<\/aside>/)[0].replaceAll('v2-readiness-help-7-20','readiness-help');
+    assert.equal(warmRail,masteryRail,'All four side cards must be identical across Warm-up and Mastery');
+    context.renderV2PracticeCard({...sharedWorkspace,history:[...sharedWorkspace.history,{id:4,title:'Latest completed simulation',totalItems:150,total:150,score:120,passed:true,takenAt:'2026-10-15'}]},10);
+    assert(host.innerHTML.includes('Latest completed simulation'));
+    assert(host.innerHTML.includes('80%'));
     const css = fs.readFileSync('public/test-bank-v2.css','utf8');
     assert(css.includes('grid-template-columns:minmax(0,3fr) minmax(0,1fr)'));
     assert(css.includes('@media(max-width:900px)'));
