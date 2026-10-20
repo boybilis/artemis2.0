@@ -1648,7 +1648,6 @@ function renderSubjects() {
         });
         container.appendChild(row);
     });
-    setupSubjectCarousel();
     const mockContainer = $('course-mock-exams-container');
     if (mockContainer) {
         const allSubjectsComplete = subjects.length > 0 && subjects.every(subject =>
@@ -1694,49 +1693,6 @@ function renderSubjects() {
     if (back) back.onclick = () => { currentSubjectId = null; renderSubjects(); };
 }
 
-function setupSubjectCarousel() {
-    const container = $('subjects-container');
-    const controls = $('subject-carousel-controls');
-    const range = $('subject-carousel-range');
-    const previous = $('subject-carousel-prev');
-    const next = $('subject-carousel-next');
-    if (!container || !controls || !range || !previous || !next) return;
-
-    const updateControls = () => {
-        const cards = container.querySelectorAll('.learner-subject-row');
-        const firstCard = cards[0];
-        const gap = parseFloat(getComputedStyle(container).gap) || 0;
-        const cardWidth = firstCard?.getBoundingClientRect().width || container.clientWidth;
-        const step = cardWidth + gap;
-        const visibleCount = Math.max(1, Math.round((container.clientWidth + gap) / step));
-        const pageCount = Math.max(1, Math.ceil(cards.length / visibleCount));
-        const currentPage = Math.min(pageCount - 1, Math.max(0, Math.round(container.scrollLeft / (step * visibleCount))));
-        const start = cards.length ? currentPage * visibleCount + 1 : 0;
-        const end = Math.min(cards.length, start + visibleCount - 1);
-        const overflow = container.scrollWidth > container.clientWidth + 2;
-        controls.classList.toggle('hidden', !overflow);
-        range.textContent = `Subjects ${start}–${end} of ${cards.length}`;
-        previous.disabled = !overflow || currentPage === 0;
-        next.disabled = !overflow || currentPage >= pageCount - 1;
-        return {currentPage, pageCount, visibleCount, step};
-    };
-    const slide = direction => {
-        const {currentPage, pageCount, visibleCount, step} = updateControls();
-        const targetPage = Math.min(pageCount - 1, Math.max(0, currentPage + direction));
-        container.scrollTo({left: targetPage * visibleCount * step, behavior: 'smooth'});
-    };
-
-    container.scrollLeft = 0;
-    previous.onclick = () => slide(-1);
-    next.onclick = () => slide(1);
-    container.onscroll = updateControls;
-    requestAnimationFrame(updateControls);
-    if (window.ResizeObserver) {
-        window.subjectCarouselObserver?.disconnect();
-        window.subjectCarouselObserver = new ResizeObserver(updateControls);
-        window.subjectCarouselObserver.observe(container);
-    }
-}
 
 const confirmStartMockExam = $('confirm-start-mock-exam');
 if (confirmStartMockExam) confirmStartMockExam.addEventListener('click', async () => {
