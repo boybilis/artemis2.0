@@ -1,6 +1,6 @@
 .gra-brand{--gra-logo-width:150px;display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex-shrink:0;max-width:100%;color:inherit;background:none;-webkit-text-fill-color:currentColor;text-decoration:none;line-height:1.2;text-transform:none;letter-spacing:normal}
-.gra-brand .gra-brand-image{display:block;position:relative;width:var(--gra-logo-width);max-width:100%;aspect-ratio:1.85;overflow:hidden;border-radius:5px;background:#fff;flex:none}
-.gra-brand .gra-brand-image img{display:block;position:absolute;width:100%;max-width:none;height:auto;left:0;top:-50%;margin:0;padding:0;border:0;box-shadow:none}
+.gra-brand .gra-brand-image{display:block;position:relative;width:var(--gra-logo-width);max-width:100%;aspect-ratio:1.75;overflow:hidden;border-radius:5px;background:#fff;flex:none}
+.gra-brand .gra-brand-image img{display:block;position:absolute;width:100%;max-width:none;height:auto;left:0;top:-40%;margin:0;padding:0;border:0;box-shadow:none}
 .gra-brand .gra-brand-powered{display:block;font-family:Arial,sans-serif;font-size:10px;font-weight:500;line-height:1.2;text-align:center;white-space:nowrap;letter-spacing:0;text-transform:none;color:var(--gra-powered-color,var(--text,#073b65));-webkit-text-fill-color:currentColor}
 .gra-brand--compact{--gra-logo-width:90px;gap:2px}
 .gra-brand--compact .gra-brand-powered{font-size:8px}
