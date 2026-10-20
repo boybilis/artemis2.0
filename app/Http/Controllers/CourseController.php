@@ -238,9 +238,11 @@ class CourseController extends Controller
             return [
                 'id'         => $topic->id,
                 'subjectId'  => $topic->subject_id,
-                'isPolicyTopic' => str_contains(strtolower(trim($topic->title)), 'policy'),
+                'isPolicyTopic' => $topic->isPolicyPrerequisite(),
+                'isPreTestTopic' => (bool) preg_match('/\bpre[\s_-]*test\b/i', (string) $topic->title)
+                    || $subtopics->contains('contentType','pre_test'),
                 'isLocked' => $topic->subject_id !== null
-                    && ! str_contains(strtolower(trim($topic->title)), 'policy')
+                    && ! $topic->isPolicyPrerequisite()
                     && ! $completedPreTestSubjectIds->contains($topic->subject_id),
                 'title'      => $topic->title,
                 'sort_order' => $topic->sort_order,

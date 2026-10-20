@@ -1434,6 +1434,15 @@ function getTopicFlatLearningItems(topic) {
     return items;
 }
 
+function isPolicyLearningTopic(topic) {
+    return topic?.isPolicyTopic === true || /policy|end[\s_-]*user[\s_-]*agreement/i.test(String(topic?.title || ''));
+}
+
+function isPreTestLearningTopic(topic) {
+    return topic?.isPreTestTopic === true || /\bpre[\s_-]*test\b/i.test(String(topic?.title || ''))
+        || (topic?.subtopics || []).some(subtopic => subtopic.contentType === 'pre_test');
+}
+
 function hasCompletedSubjectPreTest(subjectId) {
     return topics
         .filter(topic => Number(topic.subjectId) === Number(subjectId))
@@ -1445,9 +1454,9 @@ function hasCompletedSubjectPreTest(subjectId) {
 function hasCompletedSubjectPolicy(subjectId) {
     const policyTopic = topics.find(topic =>
         Number(topic.subjectId) === Number(subjectId) &&
-        (topic.isPolicyTopic === true || /policy/i.test(String(topic.title || '')))
+        (isPolicyLearningTopic(topic))
     );
-    if (!policyTopic) return false;
+    if (!policyTopic) return true;
     const unlockedIndex = Number(state.topicProgressMap[policyTopic.id] || 0);
     const requiredItems = getTopicFlatLearningItems(policyTopic)
         .map((item, flatIndex) => ({item, flatIndex}))
@@ -1486,8 +1495,8 @@ function isTopicContentComplete(topic) {
 
 function isLearningItemAccessible(topic, item, flatIndex) {
     const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
-    const isPolicyTopic = topic.isPolicyTopic === true || /policy/i.test(String(topic.title || ''));
-    const isPreTestTopic = (topic.subtopics || []).some(subtopic => subtopic.contentType === 'pre_test');
+    const isPolicyTopic = isPolicyLearningTopic(topic);
+    const isPreTestTopic = isPreTestLearningTopic(topic);
     // The Policy topic remains a normal sequential lesson before the gate is met:
     // its readings/videos open first, followed by its Pre-test. Other topics stay locked.
     if (!preTestCompleted) {
@@ -1616,14 +1625,14 @@ function renderSubjects() {
                 .filter(item => Number(item.topic.subjectId) === currentSubjectId);
             const isTopicAccessible = topic => {
                 const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
-                const isPolicyTopic = topic.isPolicyTopic === true || /policy/i.test(String(topic.title || ''));
-                const isPreTestTopic = (topic.subtopics || []).some(subtopic => subtopic.contentType === 'pre_test');
+                const isPolicyTopic = isPolicyLearningTopic(topic);
+                const isPreTestTopic = isPreTestLearningTopic(topic);
                 return isPolicyTopic || preTestCompleted || (isPreTestTopic && hasCompletedSubjectPolicy(topic.subjectId));
             };
             const destination = subjectTopics.find(item => isTopicAccessible(item.topic) && !isTopicContentComplete(item.topic))
                 || subjectTopics.find(item => isTopicAccessible(item.topic));
             if (!destination) {
-                showToast('No learning content is available for this subject yet.', 'info');
+                showToast(subjectTopics.length ? 'Learning content exists, but its prerequisites are not available. Please ask your instructor to check the Policy, End User Agreement, or Pre-Test topic.' : 'No learning content is available for this subject yet.', 'info');
                 return;
             }
             openTopic(destination.originalIndex);
@@ -1746,14 +1755,14 @@ function renderTopics() {
     subjectTopics.forEach(({topic, originalIndex}, index) => {
         const done = isTopicContentComplete(topic);
         const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
-        const isPolicyTopic = topic.isPolicyTopic === true || /policy/i.test(String(topic.title || ''));
-        const isPreTestTopic = (topic.subtopics || []).some(subtopic => subtopic.contentType === 'pre_test');
+        const isPolicyTopic = isPolicyLearningTopic(topic);
+        const isPreTestTopic = isPreTestLearningTopic(topic);
         const policyCompleted = hasCompletedSubjectPolicy(topic.subjectId);
         const unlocked = isPolicyTopic || preTestCompleted || (isPreTestTopic && policyCompleted);
         let lockMsg = '';
         
         if (!unlocked) {
-            lockMsg = `<span class="topic-lock"><i data-lucide="lock"></i>${isPreTestTopic ? 'Complete the Policy topic to unlock' : 'Complete the Pre-test to unlock'}</span>`;
+            lockMsg = `<span class="topic-lock"><i data-lucide="lock"></i>${isPreTestTopic ? 'Complete Policy / End User Agreement to unlock' : 'Complete the Pre-test to unlock'}</span>`;
         }
 
         const card = document.createElement('div');
@@ -2202,8 +2211,8 @@ function renderCompleteSubjectSidebar(activeTopic) {
         const progressIndex = Number(state.topicProgressMap[topic.id] || 0);
         const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
         const policyCompleted = hasCompletedSubjectPolicy(topic.subjectId);
-        const isPolicy = topic.isPolicyTopic === true || /policy/i.test(String(topic.title || ''));
-        const isPreTestTopic = (topic.subtopics || []).some(subtopic => subtopic.contentType === 'pre_test');
+        const isPolicy = isPolicyLearningTopic(topic);
+        const isPreTestTopic = isPreTestLearningTopic(topic);
         const topicUnlocked = isPolicy || preTestCompleted || (isPreTestTopic && policyCompleted);
         const requiredItems = items.filter(item => item.type !== 'none');
         const topicCompleted = requiredItems.length > 0 && requiredItems.every((item, index) => {
@@ -2257,8 +2266,8 @@ function outlineItemAccessible(topic, item, itemIndex) {
     if (item.sub.contentType === 'mock_exam') return false;
     const progressIndex = Number(state.topicProgressMap[topic.id] || 0);
     const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
-    const isPolicy = topic.isPolicyTopic === true || /policy/i.test(String(topic.title || ''));
-    const isPreTestTopic = (topic.subtopics || []).some(subtopic => subtopic.contentType === 'pre_test');
+    const isPolicy = isPolicyLearningTopic(topic);
+    const isPreTestTopic = isPreTestLearningTopic(topic);
     if (!preTestCompleted && !isPolicy && !(isPreTestTopic && hasCompletedSubjectPolicy(topic.subjectId))) return false;
     return itemIndex <= progressIndex;
 }
@@ -2314,11 +2323,11 @@ function openFlattenedItem(index) {
     if (completeBar && completeBtn) {
         const isLastItem = index === window.currentFlattenedItems.length - 1;
         const currentTopic = topics[state.currentTopicIndex];
-        const currentIsPolicy = currentTopic?.isPolicyTopic === true || /policy/i.test(String(currentTopic?.title || ''));
+        const currentIsPolicy = isPolicyLearningTopic(currentTopic);
         const preTestTopicIndex = currentIsPolicy
             ? topics.findIndex(candidate =>
                 Number(candidate.subjectId || 0) === Number(currentTopic?.subjectId || 0) &&
-                (candidate.subtopics || []).some(subtopic => subtopic.contentType === 'pre_test')
+                isPreTestLearningTopic(candidate)
             )
             : -1;
         const nextTopicIndex = preTestTopicIndex >= 0 && preTestTopicIndex !== state.currentTopicIndex

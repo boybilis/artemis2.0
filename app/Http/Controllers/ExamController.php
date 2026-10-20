@@ -129,7 +129,7 @@ class ExamController extends Controller
     {
         if ($item->content_type === 'pre_test') {
             if (! $this->policyTopicComplete($userId, $item)) {
-                return 'Complete the Policy topic before opening the Pre-test.';
+                return 'Complete the Policy / End User Agreement topic before opening the Pre-test.';
             }
             return null;
         }
@@ -147,11 +147,11 @@ class ExamController extends Controller
         $policyTopic = Topic::where('course_id', $preTest->topic->course_id)
             ->where('subject_id', $preTest->topic->subject_id)
             ->where('status', 'approved')
-            ->whereRaw('LOWER(title) LIKE ?', ['%policy%'])
             ->with(['subtopics' => fn ($query) => $query->where('status', 'approved')])
-            ->first();
+            ->get()->first(fn (Topic $topic) => $topic->isPolicyPrerequisite());
 
-        if (! $policyTopic) return false;
+        // A standalone Pre-Test is a valid subject entry when no agreement is configured.
+        if (! $policyTopic) return true;
 
         $requiredItems = $policyTopic->subtopics->sum(function (Subtopic $subtopic) {
             if ($subtopic->content_type !== 'subtopic') {

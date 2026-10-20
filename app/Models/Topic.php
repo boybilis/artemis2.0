@@ -9,6 +9,11 @@ class Topic extends Model
 {
     use HasFactory;
 
+    public function isPolicyPrerequisite(): bool
+    {
+        return (bool) preg_match('/policy|end[\s_-]*user[\s_-]*agreement/i', (string) $this->title);
+    }
+
     protected $fillable = [
         'title',
         'sort_order',
