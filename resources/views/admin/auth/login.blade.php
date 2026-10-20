@@ -120,7 +120,7 @@
             font-size: 14px;
         }
     </style>
-<link rel="stylesheet" href="{{ asset('branding.css') }}?v=1"></head>
+<link rel="stylesheet" href="{{ asset('branding.css') }}?v=2"></head>
 <body>
     <main class="login-card">
         <div class="brand">

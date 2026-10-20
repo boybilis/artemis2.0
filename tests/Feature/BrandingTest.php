@@ -8,9 +8,19 @@ class BrandingTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_powered_caption_uses_explicit_dark_surface_and_certificate_overrides(): void
+    {
+        $css=file_get_contents(public_path('branding.css'));
+        $this->assertStringContainsString('color:var(--gra-powered-color,var(--text,#073b65))',$css);
+        $this->assertStringContainsString('.learner-dashboard-sidebar .gra-brand,.lesson-sidebar .gra-brand',$css);
+        $this->assertStringContainsString('--gra-powered-color:#fff',$css);
+        $this->assertStringContainsString('.cert-paper-logo .gra-brand{--gra-powered-color:#1e293b}',$css);
+        $this->assertStringNotContainsString('#landing-screen .gra-brand{color:#fff}',$css);
+    }
+
     public function test_learner_branding_uses_supplied_logo_and_preserves_exam_controls(): void
     {
-        $response=$this->get('/')->assertOk()->assertSee('branding.css?v=1',false)
+        $response=$this->get('/')->assertOk()->assertSee('branding.css?v=2',false)
             ->assertSee('alt="GRA Test Prep"',false)->assertSee('Powered by Artemis 2.0');
         $html=$response->getContent();
         $this->assertGreaterThan(10,substr_count($html,'/images/gra-test-prep-logo.png'));

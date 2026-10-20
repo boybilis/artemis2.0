@@ -201,7 +201,7 @@
             .question-option-row .btn-ghost { grid-column: 2; justify-self: start; }
         }
     </style>
-<link rel="stylesheet" href="{{ asset('branding.css') }}?v=1"></head>
+<link rel="stylesheet" href="{{ asset('branding.css') }}?v=2"></head>
 <body class="light-mode">
     <script>
         (function () {
