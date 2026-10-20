@@ -201,7 +201,7 @@
             .question-option-row .btn-ghost { grid-column: 2; justify-self: start; }
         }
     </style>
-</head>
+<link rel="stylesheet" href="{{ asset('branding.css') }}?v=1"></head>
 <body class="light-mode">
     <script>
         (function () {
@@ -216,7 +216,7 @@
             <button type="button" id="admin-mobile-menu" class="admin-mobile-menu" aria-label="Open admin navigation" aria-controls="admin-sidebar" aria-expanded="false">
                 <i data-lucide="menu"></i>
             </button>
-            Artemis 2.0 <span aria-hidden="true">|</span> {{ $workspaceRole }}
+            @include('components.gra-brand') <span aria-hidden="true">|</span> {{ $workspaceRole }}
         </div>
         <div class="nav-actions">
             @yield('header_actions')

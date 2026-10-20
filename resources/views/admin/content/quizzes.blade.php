@@ -437,7 +437,7 @@
 <div id="questionPreviewModal" class="admin-modal">
     <div class="admin-modal-content question-preview-modal-content quiz-preview-shell">
         <header class="preview-exam-header">
-            <div class="preview-exam-brand"><span class="preview-exam-mark">A2</span><strong>Artemis 2.0</strong><span id="bank_preview_assessment_title" class="preview-exam-title">Topic Quiz</span></div>
+            <div class="preview-exam-brand">@include('components.gra-brand')<span id="bank_preview_assessment_title" class="preview-exam-title">Topic Quiz</span></div>
             <div class="preview-exam-progress">
                 <div class="preview-exam-meta"><strong>Question 1 of 1</strong><span>100%</span></div>
                 <div class="preview-exam-track"><span></span></div>

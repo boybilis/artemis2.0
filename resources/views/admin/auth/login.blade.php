@@ -120,11 +120,11 @@
             font-size: 14px;
         }
     </style>
-</head>
+<link rel="stylesheet" href="{{ asset('branding.css') }}?v=1"></head>
 <body>
     <main class="login-card">
         <div class="brand">
-            <div class="brand-mark">LC</div>
+            @include('components.gra-brand')
             <div>
                 <h1>Admin Login</h1>
                 <p>Sign in to your Artemis 2.0 management account.</p>
