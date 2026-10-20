@@ -1539,6 +1539,31 @@ function getSubjectLearningProgress(subjectId) {
     };
 }
 
+function openSubjectLearningWorkspace(subjectId) {
+    const subject=subjects.find(item=>Number(item.id)===Number(subjectId));
+    if(!subject)return;
+    pauseActiveLessonVideo();
+    setLessonSidebarOpen(false);
+    currentSubjectId=Number(subject.id);
+    state.currentTopicIndex=null;
+    window.currentFlattenedItems=[];
+    window.currentLearningItemIndex=-1;
+    for(const id of ['no-subtopics-msg','video-container','docs-container','subtopic-assessment-container','zoom-session-container','mark-complete-bar']) {
+        const element=$(id);if(element)element.style.display='none';
+    }
+    if($('subtopic-header'))$('subtopic-header').style.display='flex';
+    if($('subtopic-header-num'))$('subtopic-header-num').textContent='Subject workspace';
+    if($('subtopic-header-title'))$('subtopic-header-title').textContent=subject.title;
+    if($('current-topic-title'))$('current-topic-title').textContent=subject.title;
+    const progress=getSubjectLearningProgress(subject.id);
+    if($('subject-workspace-progress'))$('subject-workspace-progress').textContent=`${progress.completed}/${progress.total} contents completed · ${progress.percentage}%`;
+    if($('subject-workspace-welcome'))$('subject-workspace-welcome').style.display='flex';
+    // The subject opens independently of completion; individual lessons retain their gates.
+    renderCompleteSubjectSidebar({subjectId:currentSubjectId,id:null});
+    showScreen('lesson-screen');
+    if(window.lucide)lucide.createIcons({root:$('lesson-screen')});
+}
+
 function renderCourseOverview() {
     const course = courses.find(item => Number(item.id) === Number(currentCourseId) && Number(item.batch_id) === Number(currentBatchId));
     if (!course) return;
@@ -1619,23 +1644,7 @@ function renderSubjects() {
             <div class="learner-subject-progress"><div class="learner-subject-progress-meta"><span>Progress (${learningProgress.completed}/${learningProgress.total} contents)</span><strong>${learningProgress.percentage}%</strong></div><div class="learner-subject-progress-track"><span style="width:${learningProgress.percentage}%"></span></div></div>
             <div class="learner-subject-action"><button type="button" class="btn-primary">Open</button></div>`;
         row.querySelector('button').addEventListener('click', () => {
-            currentSubjectId = Number(subject.id);
-            const subjectTopics = topics
-                .map((topic, originalIndex) => ({topic, originalIndex}))
-                .filter(item => Number(item.topic.subjectId) === currentSubjectId);
-            const isTopicAccessible = topic => {
-                const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
-                const isPolicyTopic = isPolicyLearningTopic(topic);
-                const isPreTestTopic = isPreTestLearningTopic(topic);
-                return isPolicyTopic || preTestCompleted || (isPreTestTopic && hasCompletedSubjectPolicy(topic.subjectId));
-            };
-            const destination = subjectTopics.find(item => isTopicAccessible(item.topic) && !isTopicContentComplete(item.topic))
-                || subjectTopics.find(item => isTopicAccessible(item.topic));
-            if (!destination) {
-                showToast(subjectTopics.length ? 'Learning content exists, but its prerequisites are not available. Please ask your instructor to check the Policy, End User Agreement, or Pre-Test topic.' : 'No learning content is available for this subject yet.', 'info');
-                return;
-            }
-            openTopic(destination.originalIndex);
+            openSubjectLearningWorkspace(Number(subject.id));
         });
         container.appendChild(row);
     });
@@ -2027,6 +2036,7 @@ function openTopic(index) {
 function renderLesson(openIdx = 0) {
     const topic = topics[state.currentTopicIndex];
     if (!topic) return;
+    if($('subject-workspace-welcome'))$('subject-workspace-welcome').style.display='none';
 
     // Determine current unlocked progress for this topic from backend
     let maxUnlocked = state.topicProgressMap[topic.id] || 0;
@@ -2072,6 +2082,7 @@ function renderLesson(openIdx = 0) {
             if (videoWrap) videoWrap.style.display = 'block';
             if (docsWrap)  docsWrap.style.display  = 'flex';
         }
+        renderCompleteSubjectSidebar(topic);
         return;
     }
 
