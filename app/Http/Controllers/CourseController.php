@@ -117,7 +117,7 @@ class CourseController extends Controller
                     'completed_topic_count'=>$isEnrolled ? $topicCompleted : 0,
                     'topic_count'=>$topicTotal,
                     'course_progress'=>$isEnrolled && $topicTotal > 0 ? (int) round(($topicCompleted / $topicTotal) * 100) : 0,
-                    'zoom_sessions'=>$isEnrolled ? $batch->zoomSessions->filter(fn ($session)=>!$session->course_id || (int)$session->course_id===(int)$course->id)->values()->map(fn ($session) => [
+                    'zoom_sessions'=>$isEnrolled ? $batch->zoomSessions->map(fn ($session) => [
                         'id'=>$session->id, 'title'=>$session->title, 'description'=>$session->description,
                         'starts_at'=>$session->starts_at?->toIso8601String(), 'ends_at'=>$session->ends_at?->toIso8601String(),
                         'status'=>$session->status, 'zoom_url'=>$session->status === 'scheduled' ? $session->zoom_url : null,
@@ -151,12 +151,8 @@ class CourseController extends Controller
             ->when($request->filled('batch_id'), fn ($query)=>$query->whereKey($request->integer('batch_id')))
             ->whereHas('enrollments', fn ($query)=>$query->where('user_id',$request->user()->id)->where('status','active')->where(fn ($query)=>$query->whereNull('expires_at')->orWhere('expires_at','>',now())))
             ->firstOrFail();
-        $subjectIds = Subject::where('course_id',$courseId)->where('status','approved')->tap(fn ($query)=>$batch->filterSubjects($query))->pluck('id');
-        $baseTopics = Topic::where('course_id',$courseId)->where('status','approved')->whereIn('subject_id',$subjectIds)->orderBy('sort_order')->get()
-            ->map(fn ($topic)=>['id'=>$topic->id,'subjectId'=>$topic->subject_id,'title'=>$topic->title,'subtopics'=>[]]);
-        $workspace = app(\App\Services\BatchZoomWorkspace::class)->apply($baseTopics,$batch,(int)$courseId,$subjectIds)
-            ->filter(fn ($topic)=>collect($topic['subtopics'])->isNotEmpty())->values();
-        $sessions = $batch->zoomSessions()->where('status','scheduled')->where(fn ($query)=>$query->whereNull('course_id')->orWhere('course_id',$courseId))->get()->map(fn ($session)=>[
+        $workspace = app(\App\Services\BatchZoomWorkspace::class)->apply(collect(),$batch);
+        $sessions = $batch->zoomSessions()->where('status','scheduled')->get()->map(fn ($session)=>[
             'id'=>$session->id,'title'=>$session->title,'description'=>$session->description,'status'=>$session->status,
             'starts_at'=>$session->starts_at?->toIso8601String(),'ends_at'=>$session->ends_at?->toIso8601String(),
             'zoom_url'=>$session->zoom_url,'recording_url'=>$session->recording_url,
@@ -333,7 +329,7 @@ class CourseController extends Controller
 
         $mockAttempts = QuizAttempt::where('user_id', $user->id)->where('course_id', $courseId)->where('batch_id', $activeBatch->id)
             ->where('assessment_type', 'final');
-        $formattedTopics = app(\App\Services\BatchZoomWorkspace::class)->apply($formattedTopics, $activeBatch, (int)$courseId, $subjects->pluck('id'));
+        $formattedTopics = app(\App\Services\BatchZoomWorkspace::class)->apply($formattedTopics, $activeBatch);
         $mockAttemptsUsed = (clone $mockAttempts)->count();
         $mockExamPassed = (clone $mockAttempts)->where('passed', true)->exists();
         $latestMockAttempt = (clone $mockAttempts)->latest('id')->first();

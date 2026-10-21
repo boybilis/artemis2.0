@@ -21,19 +21,19 @@
         incoming.forEach(placement=>{
             const target=topics.find(topic=>Number(topic.id)===Number(placement.id));
             if(target)target.subtopics.push(...placement.subtopics);
-            else if(placement.isBatchZoomTopic && subjects.some(subject=>Number(subject.id)===Number(placement.subjectId)))topics.push(placement);
+            else if(placement.isBatchZoomTopic && (placement.isBatchWideZoomTopic || subjects.some(subject=>Number(subject.id)===Number(placement.subjectId))))topics.push(placement);
         });
         if(activeTopicId!==undefined && state.currentTopicIndex!==null) {
             const newIndex=topics.findIndex(topic=>topic.id===activeTopicId);
             if(newIndex<0) {
-                if(activeTopic?.isBatchZoomTopic)openSubjectLearningWorkspace(activeTopic.subjectId);
+                if(activeTopic?.isBatchZoomTopic)openSubjectLearningWorkspace(activeTopic.subjectId ?? currentSubjectId);
                 return;
             }
             state.currentTopicIndex=newIndex;
             if(activeItem?.sub.isBatchZoom) {
                 const itemIndex=getTopicFlatLearningItems(topics[newIndex]).findIndex(item=>item.sub.id===activeItem.sub.id);
                 if(itemIndex>=0)renderLesson(itemIndex);
-                else openSubjectLearningWorkspace(activeTopic.subjectId);
+                else openSubjectLearningWorkspace(activeTopic.subjectId ?? currentSubjectId);
             } else {
                 // Refresh the outline only: do not reload a video, document, or assessment.
                 renderCompleteSubjectSidebar(topics[newIndex]);

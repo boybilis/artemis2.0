@@ -31,4 +31,6 @@ assert(context.isLearningItemAccessible(lesson,{sub:batchZoom,type:'zoom'},8));
 assert.equal(context.getSubtopicLearningItemCount(batchZoom),0);
 lesson.subtopics.push(batchZoom);
 assert.equal(context.getSubjectLearningProgress(lesson.subjectId).total,1);
+context.topics=[agreement,lesson];context.state.topicProgressMap={};
+assert(context.isLearningItemAccessible({subjectId:null,isBatchWideZoomTopic:true},{sub:batchZoom,type:'zoom'},9));
 console.log('Policy, End User Agreement, Pre-Test gates and non-progress batch Zoom entries behave correctly.');

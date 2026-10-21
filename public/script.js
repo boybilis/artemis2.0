@@ -1496,7 +1496,7 @@ function isLearningItemAccessible(topic, item, flatIndex) {
     const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
     const isPolicyTopic = isPolicyLearningTopic(topic);
     const isPreTestTopic = isPreTestLearningTopic(topic);
-    if (item.sub.isBatchZoom) return preTestCompleted;
+    if (item.sub.isBatchZoom) return topic.isBatchWideZoomTopic || preTestCompleted;
     // The Policy topic remains a normal sequential lesson before the gate is met:
     // its readings/videos open first, followed by its Pre-test. Other topics stay locked.
     if (!preTestCompleted) {
@@ -2186,7 +2186,8 @@ function renderCompleteSubjectSidebar(activeTopic) {
     const navList = $('subtopics-nav-list');
     if (!navList) return;
     navList.innerHTML = '';
-    const subjectTopics = topics.filter(topic => Number(topic.subjectId) === Number(activeTopic.subjectId));
+    const outlineSubjectId = activeTopic.isBatchWideZoomTopic ? currentSubjectId : activeTopic.subjectId;
+    const subjectTopics = topics.filter(topic => topic.isBatchWideZoomTopic || Number(topic.subjectId) === Number(outlineSubjectId));
 
     subjectTopics.forEach(topic => {
         const topicIndex = topics.indexOf(topic);
@@ -2196,7 +2197,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
         const policyCompleted = hasCompletedSubjectPolicy(topic.subjectId);
         const isPolicy = isPolicyLearningTopic(topic);
         const isPreTestTopic = isPreTestLearningTopic(topic);
-        const topicUnlocked = isPolicy || preTestCompleted || (isPreTestTopic && policyCompleted);
+        const topicUnlocked = topic.isBatchWideZoomTopic || isPolicy || preTestCompleted || (isPreTestTopic && policyCompleted);
         const requiredItems = items.filter(item => item.type !== 'none' && !item.sub.isBatchZoom);
         const topicCompleted = requiredItems.length > 0 && requiredItems.every((item, index) => {
             const actualIndex = items.indexOf(item);
@@ -2247,7 +2248,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
 
 function outlineItemAccessible(topic, item, itemIndex) {
     if (item.sub.contentType === 'mock_exam') return false;
-    if (item.sub.isBatchZoom) return hasCompletedSubjectPreTest(topic.subjectId);
+    if (item.sub.isBatchZoom) return topic.isBatchWideZoomTopic || hasCompletedSubjectPreTest(topic.subjectId);
     const progressIndex = Number(state.topicProgressMap[topic.id] || 0);
     const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
     const isPolicy = isPolicyLearningTopic(topic);
