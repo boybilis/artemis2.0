@@ -3,7 +3,7 @@ const source=fs.readFileSync('public/script.js','utf8');
 let resolveSave,sidebarUpdates=0;
 const button={disabled:false,dataset:{readyTitle:'Continue'},title:''};
 const topic={id:1,subjectId:16,title:'End User Agreement'};
-const context={topics:[topic],state:{currentTopicIndex:0,topicProgressMap:{}},window:{currentLearningItemIndex:0,currentUnlockedIdx:0,currentFlattenedItems:[{sub:{id:3},subIndex:0,type:'doc'}]},
+const context={currentBatchId:7,topics:[topic],state:{currentTopicIndex:0,topicProgressMap:{}},window:{currentLearningItemIndex:0,currentUnlockedIdx:0,currentFlattenedItems:[{sub:{id:3},subIndex:0,type:'doc'}]},
  $:()=>button,document:{querySelector:()=>null},apiRequest:()=>new Promise(resolve=>resolveSave=resolve),renderCompleteSubjectSidebar:()=>sidebarUpdates++,showToast(){},console};
 vm.createContext(context);
 vm.runInContext(source.slice(source.indexOf('async function markCurrentLearningItemComplete('),source.indexOf('function renderSubtopicAssessment(')),context);

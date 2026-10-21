@@ -808,6 +808,7 @@ class CourseController extends Controller
 
             if ($expected['type'] === 'assessment') {
                 $batchId = CourseEnrollment::where('user_id', $user->id)
+                    ->when($request->filled('batch_id'), fn ($query)=>$query->where('batch_id',$request->integer('batch_id')))
                     ->where('status', 'active')
                     ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
                     ->whereHas('batch.courses', fn ($query) => $query->where('courses.id', $topic->course_id))

@@ -2352,6 +2352,7 @@ function openFlattenedItem(index) {
                 try {
                     const savedProgress = await apiRequest('/api/progress/unlock', 'POST', {
                         topic_id: currentTopic.id,
+                        batch_id: currentBatchId,
                         subtopic_id: item.sub.id,
                         item_type: item.type
                     });
@@ -2415,6 +2416,7 @@ async function markCurrentLearningItemComplete(index) {
         try {
             const savedProgress = await apiRequest('/api/progress/unlock', 'POST', {
                 topic_id: topic.id,
+                batch_id: currentBatchId,
                 subtopic_id: activeItem.sub.id,
                 item_type: activeItem.type
             });
@@ -2479,7 +2481,7 @@ function renderSubtopicAssessment(sub) {
     if (!sub.questionCount) attempts.textContent = 'No approved questions are available yet.';
     else if (exhausted) attempts.textContent = 'Maximum attempts reached.';
     button.onclick = async () => {
-        const result = await apiRequest(`/api/courses/${currentCourseId}/subtopics/${sub.id}/assessment/questions`);
+        const result = await apiRequest(`/api/courses/${currentCourseId}/subtopics/${sub.id}/assessment/questions${currentBatchId ? `?batch_id=${currentBatchId}` : ''}`);
         if (!result?.success) return;
         activeSubtopicAssessmentId = sub.id;
         activeSubtopicAssessmentContext = 'topic';
@@ -2490,7 +2492,7 @@ function renderSubtopicAssessment(sub) {
     if (summaryButton) {
         summaryButton.style.display = exhausted && Number(sub.attemptsUsed || 0) > 0 ? '' : 'none';
         summaryButton.onclick = async () => {
-            const result = await apiRequest(`/api/courses/${currentCourseId}/subtopics/${sub.id}/assessment/summary`);
+            const result = await apiRequest(`/api/courses/${currentCourseId}/subtopics/${sub.id}/assessment/summary${currentBatchId ? `?batch_id=${currentBatchId}` : ''}`);
             if (result?.success) showAssessmentSummary(result, () => { renderLesson(window.currentLearningItemIndex || 0); showScreen('lesson-screen'); });
         };
     }
@@ -3598,7 +3600,7 @@ async function finishQuiz() {
         const completedLearningItemIndex = window.currentLearningItemIndex;
         const assessmentContext = activeSubtopicAssessmentContext;
         try {
-            const data = await apiRequest(`/api/courses/${currentCourseId}/subtopics/${activeSubtopicAssessmentId}/assessment/submit`, 'POST', {answers: answersList});
+            const data = await apiRequest(`/api/courses/${currentCourseId}/subtopics/${activeSubtopicAssessmentId}/assessment/submit`, 'POST', {answers: answersList, batch_id: currentBatchId});
             const hasScoredResult = data?.success &&
                 Number.isFinite(Number(data.score)) &&
                 Number.isFinite(Number(data.total));

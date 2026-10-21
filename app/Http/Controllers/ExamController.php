@@ -22,7 +22,7 @@ class ExamController extends Controller
 {
     private function activeBatch(int $userId, int $courseId): CourseBatch
     {
-        return CourseBatch::forCourse($courseId)->whereHas('enrollments', fn ($query) => $query->where('user_id', $userId)->where('status', 'active')->where(fn ($active) => $active->whereNull('expires_at')->orWhere('expires_at', '>', now())))->firstOrFail();
+        return CourseBatch::forCourse($courseId)->when(request()->filled('batch_id'), fn ($query)=>$query->whereKey(request()->integer('batch_id')))->whereHas('enrollments', fn ($query) => $query->where('user_id', $userId)->where('status', 'active')->where(fn ($active) => $active->whereNull('expires_at')->orWhere('expires_at', '>', now())))->firstOrFail();
     }
 
     private function mockExamAttemptMessage(int $userId, Course $course): ?string
@@ -178,8 +178,9 @@ class ExamController extends Controller
         $course = Course::findOrFail($courseId);
         if (!$user->hasActiveEnrollment((int) $course->id)) return response()->json(['success' => false, 'message' => 'An active enrollment is required.'], 403);
         $item = $this->subtopicAssessment($course, (int) $subtopicId);
+        $batch = $this->activeBatch($user->id, $course->id);
         if ($message = $this->assessmentPrerequisiteMessage($user->id, $item)) return response()->json(['success' => false, 'message' => $message], 403);
-        $used = QuizAttempt::where('user_id', $user->id)->where('subtopic_id', $item->id)->count();
+        $used = QuizAttempt::where('user_id', $user->id)->where('course_id',$course->id)->where('batch_id',$batch->id)->where('subtopic_id', $item->id)->count();
         $limit = $this->allowedAttempts($item);
         if ($limit !== null && $used >= $limit) return response()->json(['success' => false, 'message' => 'You have used all allowed attempts for this assessment.'], 422);
         // Generate a fresh database-randomized order for every new attempt, then
@@ -189,8 +190,8 @@ class ExamController extends Controller
             ->where('status', 'approved');
         $questions = app(AssessmentQuestionSelector::class)->select($questionQuery, $item->assessment_question_count);
         if ($questions->isEmpty()) return response()->json(['success' => false, 'message' => 'No approved questions are available for this assessment.'], 422);
-        session()->put("subtopic_exam_{$user->id}_{$item->id}", $questions->pluck('id')->all());
-        session()->put("subtopic_exam_deadline_{$user->id}_{$item->id}", $item->assessment_time_limit_minutes ? now()->addMinutes((int) $item->assessment_time_limit_minutes)->timestamp : null);
+        session()->put("subtopic_exam_{$user->id}_{$batch->id}_{$item->id}", $questions->pluck('id')->all());
+        session()->put("subtopic_exam_deadline_{$user->id}_{$batch->id}_{$item->id}", $item->assessment_time_limit_minutes ? now()->addMinutes((int) $item->assessment_time_limit_minutes)->timestamp : null);
         return response()->json(['success' => true, 'title' => $item->title, 'questions' => $questions->map(fn ($q) => [
             'id' => $q->id, 'question' => $q->question, 'imageUrl' => $q->image_path ? asset('storage/'.$q->image_path) : null,
             'options' => $q->options, 'responseType' => $q->response_type, 'responseConfig' => $q->learnerResponseConfig(), 'maximumPoints' => (float) $q->maximum_points,
@@ -204,12 +205,13 @@ class ExamController extends Controller
         $course = Course::findOrFail($courseId);
         if (!$user->hasActiveEnrollment((int) $course->id)) return response()->json(['success' => false, 'message' => 'An active enrollment is required.'], 403);
         $item = $this->subtopicAssessment($course, (int) $subtopicId);
+        $batch = $this->activeBatch($user->id, $course->id);
         if ($message = $this->assessmentPrerequisiteMessage($user->id, $item)) return response()->json(['success' => false, 'message' => $message], 403);
-        $used = QuizAttempt::where('user_id', $user->id)->where('subtopic_id', $item->id)->count();
+        $used = QuizAttempt::where('user_id', $user->id)->where('course_id',$course->id)->where('batch_id',$batch->id)->where('subtopic_id', $item->id)->count();
         $limit = $this->allowedAttempts($item);
         if ($limit !== null && $used >= $limit) return response()->json(['success' => false, 'message' => 'You have used all allowed attempts for this assessment.'], 422);
-        $ids = session()->pull("subtopic_exam_{$user->id}_{$item->id}", []);
-        $deadline = session()->pull("subtopic_exam_deadline_{$user->id}_{$item->id}");
+        $ids = session()->pull("subtopic_exam_{$user->id}_{$batch->id}_{$item->id}", []);
+        $deadline = session()->pull("subtopic_exam_deadline_{$user->id}_{$batch->id}_{$item->id}");
         if (!$ids) return response()->json(['success' => false, 'message' => 'No active assessment session found.'], 400);
         if ($deadline && now()->timestamp > ((int) $deadline + 30)) return response()->json(['success' => false, 'message' => 'The time limit for this assessment has expired.'], 422);
         $questions = QuizQuestion::whereIn('id', $ids)->get()->keyBy('id');
@@ -226,7 +228,7 @@ class ExamController extends Controller
         }
         $passingRatio = ((float) ($item->passing_percentage ?? 80)) / 100;
         $passed = $possible > 0 && ($earned / $possible) >= $passingRatio;
-        $attempt = QuizAttempt::create(['user_id'=>$user->id,'course_id'=>$course->id,'batch_id'=>CourseEnrollment::where('user_id',$user->id)->whereHas('batch.courses',fn($query)=>$query->where('courses.id',$course->id))->where('status','active')->value('batch_id'),'topic_id'=>$item->topic_id,'subtopic_id'=>$item->id,'assessment_type'=>$item->content_type,'score'=>$score,'total'=>count($ids),'points_earned'=>$earned,'points_possible'=>$possible,'passed'=>$passed,'review_data'=>$reviewQuestions]);
+        $attempt = QuizAttempt::create(['user_id'=>$user->id,'course_id'=>$course->id,'batch_id'=>$batch->id,'topic_id'=>$item->topic_id,'subtopic_id'=>$item->id,'assessment_type'=>$item->content_type,'score'=>$score,'total'=>count($ids),'points_earned'=>$earned,'points_possible'=>$possible,'passed'=>$passed,'review_data'=>$reviewQuestions]);
         return response()->json(['success'=>true,'passed'=>$passed,'score'=>$earned,'total'=>$possible,'attemptsUsed'=>$used+1,'maximumAttempts'=>$limit,'questions'=>\App\Models\QuestionFlag::reviewQuestions($attempt, 'assessment'),'incorrectQuestions'=>$incorrectQuestions]);
     }
 
