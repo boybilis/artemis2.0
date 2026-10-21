@@ -18,9 +18,11 @@
             <article class="test-bank-directory-card">
                 <div><h3>{{ $testBank->title }}</h3><p class="muted">{{ $testBank->code }} · {{ $testBank->course?->title }}</p><p class="muted">{{ $testBank->status === 'active' ? 'Approved' : 'Pending' }} · {{ $testBank->access_days }} days · ₱{{ number_format($testBank->price, 2) }}</p></div>
                 <div class="directory-actions"><a class="btn-primary" href="{{ route('admin.content.test-banks.manage', [$testBank->course_id, $testBank]) }}">Manage Test Bank</a><button type="button" class="btn-ghost" onclick='openDirectoryBankForm(@json($testBank))'>Edit</button>
-                @if(auth()->user()->is_admin || strtolower(trim(auth()->user()->role)) === 'admin')
+                @if(auth()->user()->hasAdminAccess())
                 <a class="btn-ghost" href="{{ route('admin.content.test-banks.enrollments', [$testBank->course_id,$testBank]) }}">Enrollments</a>
+                @if(!auth()->user()->isAssistantAdmin())
                 <button type="button" class="btn-ghost" style="color:#dc2626;border-color:#dc2626" onclick="document.getElementById('deleteBank{{ $testBank->id }}').classList.add('open')">Delete</button>
+                @endif
                 @endif</div>
             </article>
             @if(auth()->user()->is_admin || strtolower(trim(auth()->user()->role)) === 'admin')

@@ -9,7 +9,7 @@
 @endsection
 
 @section('content')
-@php($isAdmin = Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin')
+@php($isAdmin = Auth::user()->hasAdminAccess())
 <style>
     .course-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
     .course-info { flex: 1 1 auto; min-width: 0; padding-right: 1rem; }

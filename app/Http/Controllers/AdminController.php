@@ -87,7 +87,7 @@ class AdminController extends Controller
     // ─── AUTHENTICATION ──────────────────────────────────────────
     public function showLogin()
     {
-        if (Auth::check() && (Auth::user()->is_admin || in_array(trim(strtolower(Auth::user()->role)), ['admin', 'instructor', 'encoder', 'staff'], true))) {
+        if (Auth::check() && (Auth::user()->is_admin || in_array(trim(strtolower(Auth::user()->role)), ['admin', 'assistant_admin', 'instructor', 'encoder', 'staff'], true))) {
             return redirect()->route('admin.dashboard');
         }
         return view('admin.auth.login');
@@ -104,7 +104,7 @@ class AdminController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
-            if ($user->is_admin || in_array(trim(strtolower($user->role)), ['admin', 'instructor', 'encoder', 'staff'], true)) {
+            if ($user->is_admin || in_array(trim(strtolower($user->role)), ['admin', 'assistant_admin', 'instructor', 'encoder', 'staff'], true)) {
                 AuditLog::create([
                     'user_id' => $user->id,
                     'action' => 'Admin Login',
@@ -165,7 +165,7 @@ class AdminController extends Controller
             ['label' => 'Certificates issued', 'value' => number_format($certificatesIssued), 'note' => 'Verified completions']
         ];
 
-        if (Auth::user()->is_admin || trim(strtolower(Auth::user()->role)) === 'admin') {
+        if (Auth::user()->hasAdminAccess()) {
             $stats[] = ['label' => 'Vouchers sold', 'value' => number_format($vouchersSold), 'note' => Voucher::where('used', true)->count() . ' already used'];
             $stats[] = ['label' => 'Voucher revenue', 'value' => 'PHP ' . number_format($revenue, 2), 'note' => 'Lifetime earnings'];
         }
@@ -198,7 +198,7 @@ class AdminController extends Controller
                 'id'=>$u->id,'name'=>$u->name,'email'=>$u->email,'affiliation'=>$u->affiliation_name ?: 'N/A',
                 'role'=>$u->is_admin ? 'admin' : ($u->role ?: 'student'),'active'=>(bool)$u->is_active,
                 'toggleUrl'=>route('admin.users.toggle',$u),'roleUrl'=>route('admin.users.role',$u),
-            ]),'canEditRoles'=>(bool)Auth::user()->is_admin || Auth::user()->role==='admin']);
+            ]),'canEditRoles'=>!Auth::user()->isAssistantAdmin() && Auth::user()->hasAdminAccess()]);
         }
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -350,12 +350,12 @@ class AdminController extends Controller
 
     public function updateUserRole($id, Request $request)
     {
-        if (!Auth::user()->is_admin && Auth::user()->role !== 'admin') {
+        if (Auth::user()->isAssistantAdmin() || !Auth::user()->hasAdminAccess()) {
             abort(403, 'Unauthorized action.');
         }
 
         $request->validate([
-            'role' => 'required|in:admin,instructor,encoder,staff,student'
+            'role' => 'required|in:admin,assistant_admin,instructor,encoder,staff,student'
         ]);
 
         $user = User::findOrFail($id);
@@ -496,7 +496,7 @@ class AdminController extends Controller
 
     public function storeCourseBatch(Request $request, $courseId)
     {
-        abort_unless(Auth::user()->is_admin || in_array(strtolower((string) Auth::user()->role), ['admin', 'staff'], true), 403, 'Only administrators and staff can create batches.');
+        abort_unless(Auth::user()->is_admin || in_array(strtolower((string) Auth::user()->role), ['admin', 'assistant_admin', 'staff'], true), 403, 'Only administrators and staff can create batches.');
         $request->validate(['course_id'=>'required|integer|exists:courses,id']);
         $course = Course::findOrFail($request->integer('course_id'));
         $data = $request->validate(['name'=>'required|string|max:255','code'=>'required|string|max:80|unique:course_batches,code','description'=>'nullable|string|max:2000','starts_at'=>'nullable|date','ends_at'=>'nullable|date|after_or_equal:starts_at','schedule_day'=>'nullable|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday','start_time'=>'nullable|date_format:H:i','end_time'=>'nullable|date_format:H:i|after:start_time','modality'=>'nullable|in:Online,Blended,Live via Zoom','price'=>'required|numeric|min:0','usd_price'=>'nullable|numeric|min:0','capacity'=>'nullable|integer|min:1|max:100000','status'=>'required|in:draft,open,closed,completed']);
@@ -507,7 +507,7 @@ class AdminController extends Controller
 
     public function updateCourseBatch(Request $request, $courseId, $batchId)
     {
-        abort_unless(Auth::user()->is_admin || in_array(strtolower((string) Auth::user()->role), ['admin', 'staff'], true), 403, 'Only administrators and staff can edit batches.');
+        abort_unless(Auth::user()->is_admin || in_array(strtolower((string) Auth::user()->role), ['admin', 'assistant_admin', 'staff'], true), 403, 'Only administrators and staff can edit batches.');
         $course = Course::findOrFail($courseId);
         $batch = CourseBatch::forCourse($course->id)->findOrFail($batchId);
         $request->validate(['course_id'=>'required|integer|exists:courses,id']);
@@ -612,7 +612,7 @@ class AdminController extends Controller
 
         return response()->json([
             'success' => true,
-            'canUnenroll' => Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin',
+            'canUnenroll' => !Auth::user()->isAssistantAdmin() && Auth::user()->hasAdminAccess(),
             'course' => ['id' => $course->id, 'title' => $course->title],
             'batch' => ['id' => $batch->id, 'name' => $batch->name, 'code' => $batch->code],
             'subjects' => Subject::where('course_id', $course->id)->orderBy('sort_order')->get(['id','subject_code','title']),
@@ -687,7 +687,7 @@ class AdminController extends Controller
     public function unenrollCourseStudent(Request $request, $courseId, User $user)
     {
         $actor = Auth::user();
-        abort_unless($actor->is_admin || in_array(strtolower((string) $actor->role), ['admin', 'staff'], true), 403, 'Only administrators and staff can unenroll students.');
+        abort_unless($actor->is_admin || in_array(strtolower((string) $actor->role), ['admin', 'assistant_admin', 'staff'], true), 403, 'Only administrators and staff can unenroll students.');
         $course = Course::findOrFail($courseId);
         $enrollment = CourseEnrollment::whereHas('batch.courses', fn ($query) => $query->where('courses.id', $course->id))->where('user_id', $user->id)->firstOrFail();
         $enrollment->delete();
@@ -797,7 +797,7 @@ class AdminController extends Controller
     // ─── COURSE CRUD ──────────────────────────────────────────────
     public function storeCourse(Request $request)
     {
-        $isAdmin = Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin';
+        $isAdmin = Auth::user()->hasAdminAccess();
         $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -826,7 +826,7 @@ class AdminController extends Controller
     public function updateCourse(Request $request, $id)
     {
         $course = Course::findOrFail($id);
-        $isAdmin = Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin';
+        $isAdmin = Auth::user()->hasAdminAccess();
         $request->validate([
             'title'       => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -922,7 +922,7 @@ class AdminController extends Controller
         $subject = $course->subjects()->create([
             ...$data,
             'sort_order' => $data['sort_order'] ?? ($course->subjects()->max('sort_order') + 1),
-            'status' => (Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin') ? 'approved' : 'pending',
+            'status' => (Auth::user()->hasAdminAccess()) ? 'approved' : 'pending',
         ]);
 
         AuditLog::create([
@@ -987,7 +987,7 @@ class AdminController extends Controller
 
     public function approveSubject(Request $request, $course_id, $subject_id)
     {
-        if (!Auth::user()->is_admin && strtolower((string) Auth::user()->role) !== 'admin') abort(403);
+        if (!Auth::user()->hasAdminAccess()) abort(403);
         $subject = Subject::where('course_id', $course_id)->findOrFail($subject_id);
         $subject->update(['status' => 'approved']);
         return back()->with('success', 'Subject approved successfully.');
@@ -1120,7 +1120,7 @@ class AdminController extends Controller
             return back()->withErrors(['source_topic_id' => 'Choose a topic from another subject.']);
         }
 
-        $status = (Auth::user()->is_admin || strtolower((string) Auth::user()->role) === 'admin') ? 'approved' : 'pending';
+        $status = (Auth::user()->hasAdminAccess()) ? 'approved' : 'pending';
         $newTopic = DB::transaction(function () use ($source, $targetSubject, $course, $status) {
             $topicCopy = $source->replicate();
             $topicCopy->course_id = $course->id;
@@ -1190,7 +1190,7 @@ class AdminController extends Controller
             'description' => 'nullable|string',
         ]);
 
-        $status       = (Auth::user()->is_admin || Auth::user()->role === 'admin') ? 'approved' : 'pending';
+        $status       = (Auth::user()->hasAdminAccess()) ? 'approved' : 'pending';
         $maxSortOrder = Topic::where('course_id', $course->id)->max('sort_order') ?? 0;
 
         $topic = Topic::create([
@@ -1276,7 +1276,7 @@ class AdminController extends Controller
             'zoom_ends_at' => 'nullable|date|after:zoom_starts_at',
         ]);
 
-        $status = (Auth::user()->is_admin || Auth::user()->role === 'admin') ? 'approved' : 'pending';
+        $status = (Auth::user()->hasAdminAccess()) ? 'approved' : 'pending';
         $maxOrder = Subtopic::where('topic_id', $request->input('topic_id'))->max('sort_order') ?? 0;
 
         $contentType = $request->input('content_type');
@@ -1432,7 +1432,7 @@ class AdminController extends Controller
 
     public function approveSubtopic(Request $request, $course_id, $id)
     {
-        if (!Auth::user()->is_admin && Auth::user()->role !== 'admin') {
+        if (!Auth::user()->hasAdminAccess()) {
             abort(403, 'Unauthorized action.');
         }
         $sub = Subtopic::findOrFail($id);
@@ -1569,7 +1569,7 @@ class AdminController extends Controller
 
     public function storeQuiz(Request $request, $course_id)
     {
-        $status = (Auth::user()->is_admin || Auth::user()->role === 'admin') ? 'approved' : 'pending';
+        $status = (Auth::user()->hasAdminAccess()) ? 'approved' : 'pending';
         $questionData = $this->validatedQuestionData($request, (int) $course_id);
         if ($request->hasFile('question_image')) {
             $file = $request->file('question_image');
@@ -1668,7 +1668,7 @@ class AdminController extends Controller
                 'question'=>$question, 'rationale'=>trim((string) ($row['rationale'] ?? '')) ?: null,
                 'options'=>$options, 'answer'=>$correctIndex, 'correct_answers'=>[$correctIndex],
                 'maximum_points'=>(float) $points, 'scoring_method'=>'all_or_nothing',
-                'status'=>(Auth::user()->is_admin || Auth::user()->role === 'admin') ? 'approved' : 'pending',
+                'status'=>(Auth::user()->hasAdminAccess()) ? 'approved' : 'pending',
             ];
         }
         fclose($handle);
@@ -1728,7 +1728,7 @@ class AdminController extends Controller
     // ─── APPROVAL METHODS ────────────────────────────────────────
     public function approveTopic($course_id, $id)
     {
-        if (!Auth::user()->is_admin && Auth::user()->role !== 'admin') {
+        if (!Auth::user()->hasAdminAccess()) {
             abort(403, 'Unauthorized action.');
         }
         $topic = Topic::where('course_id', $course_id)->findOrFail($id);
@@ -1740,7 +1740,7 @@ class AdminController extends Controller
 
     public function approveQuiz($course_id, $id)
     {
-        if (!Auth::user()->is_admin && Auth::user()->role !== 'admin') {
+        if (!Auth::user()->hasAdminAccess()) {
             abort(403, 'Unauthorized action.');
         }
         $quiz = QuizQuestion::where('course_id', $course_id)->findOrFail($id);
@@ -1750,7 +1750,7 @@ class AdminController extends Controller
 
     public function approveAllQuizzes(Request $request, $course_id)
     {
-        if (!Auth::user()->is_admin && strtolower(trim((string) Auth::user()->role)) !== 'admin') {
+        if (!Auth::user()->hasAdminAccess()) {
             abort(403, 'Unauthorized action.');
         }
 

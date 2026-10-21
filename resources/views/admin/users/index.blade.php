@@ -71,7 +71,7 @@
                         <td style="color: var(--text-muted);">{{ $user['email'] }}</td>
                         <td>{{ $user['affiliation'] }}</td>
                         <td>
-                            @if(Auth::user()->is_admin || trim(strtolower(Auth::user()->role)) === 'admin')
+                            @if(!Auth::user()->isAssistantAdmin() && Auth::user()->hasAdminAccess())
                                 <form action="{{ route('admin.users.role', $user['id']) }}" method="POST" class="role-form ajax-role-form">
                                     @csrf
                                     <select name="role" class="role-select" data-original="{{ strtolower($user['role']) }}">
@@ -80,10 +80,11 @@
                                         <option value="encoder" {{ strtolower($user['role']) === 'encoder' ? 'selected' : '' }}>Encoder</option>
                                         <option value="staff" {{ strtolower($user['role']) === 'staff' ? 'selected' : '' }}>Staff</option>
                                         <option value="admin" {{ strtolower($user['role']) === 'admin' ? 'selected' : '' }}>Admin</option>
+                                        <option value="assistant_admin" {{ in_array(strtolower($user['role']), ['assistant_admin', 'assistant admin']) ? 'selected' : '' }}>Asst. Admin</option>
                                     </select>
                                 </form>
                             @else
-                                {{ ucfirst($user['role']) }}
+                                {{ strtolower($user['role']) === 'assistant_admin' ? 'Asst. Admin' : ucfirst($user['role']) }}
                             @endif
                         </td>
                         <td style="text-align: right;">

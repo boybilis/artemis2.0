@@ -1,8 +1,8 @@
 @php
     $pageTitle = trim($__env->yieldContent('title')) ?: 'Admin';
-    $isAdmin = Auth::user()->is_admin || trim(strtolower(Auth::user()->role)) === 'admin';
+    $isAdmin = Auth::user()->hasAdminAccess();
     $role = $isAdmin ? 'admin' : trim(strtolower((string) Auth::user()->role));
-    $workspaceRole = ucfirst($role);
+    $workspaceRole = Auth::user()->isAssistantAdmin() ? 'Asst. Admin' : ucfirst($role);
     
     $pendingContentCount = 0;
     if ($isAdmin) {
@@ -203,6 +203,9 @@
     </style>
 <link rel="stylesheet" href="{{ asset('branding.css') }}?v=3"></head>
 <body class="light-mode">
+    @if(Auth::user()->isAssistantAdmin())
+    <script src="{{ asset('assistant-admin.js') }}?v=1" defer></script>
+    @endif
     <script>
         (function () {
             const saved = localStorage.getItem('cssm_theme');
@@ -592,7 +595,7 @@
             }
         });
     </script>
-<script src="{{ asset('admin-client-tables.js') }}?v=1"></script>
+<script src="{{ asset('admin-client-tables.js') }}?v=2"></script>
 @if($isAdmin || $role === 'instructor')
 <script>
 (() => {

@@ -817,7 +817,7 @@ async function loadPublicCurriculum() {
 }
 
 async function loginUser(user) {
-    if (user && user.role === 'admin') {
+    if (user && ['admin', 'assistant_admin'].includes(user.role)) {
         window.location.href = '/admin/dashboard';
         return;
     }

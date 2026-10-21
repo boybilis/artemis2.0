@@ -10,6 +10,16 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
+    public function isAssistantAdmin(): bool
+    {
+        return strtolower(trim((string) $this->role)) === 'assistant_admin';
+    }
+
+    public function hasAdminAccess(): bool
+    {
+        return $this->isAssistantAdmin() || $this->is_admin || strtolower(trim((string) $this->role)) === 'admin';
+    }
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 

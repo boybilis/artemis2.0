@@ -13,7 +13,7 @@ class RoleMiddleware
         $user = $request->user();
         $role = trim(strtolower((string) $user?->role));
 
-        if ($user && ($user->is_admin || in_array($role, $roles, true))) {
+        if ($user && ($user->hasAdminAccess() || in_array($role, $roles, true))) {
             return $next($request);
         }
 

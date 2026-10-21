@@ -15,7 +15,7 @@ class AdminPasswordController extends Controller
     private function portalUser(string $email): ?User
     {
         $user = User::where('email', strtolower(trim($email)))->first();
-        return $user && ($user->is_admin || in_array(strtolower(trim($user->role ?? '')), ['admin', 'instructor', 'encoder', 'staff'], true)) ? $user : null;
+        return $user && ($user->is_admin || in_array(strtolower(trim($user->role ?? '')), ['admin', 'assistant_admin', 'instructor', 'encoder', 'staff'], true)) ? $user : null;
     }
 
     public function requestForm()

@@ -12,7 +12,7 @@
 
 @section('content')
 @php
-    $isAdmin = Auth::user()->is_admin || trim(strtolower(Auth::user()->role)) === 'admin';
+    $isAdmin = Auth::user()->hasAdminAccess();
     $isInstructor = trim(strtolower(Auth::user()->role)) === 'instructor' && !Auth::user()->is_admin;
 @endphp
 <style>

@@ -11,7 +11,7 @@ class AdministratorMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if ($user && ($user->is_admin || trim(strtolower((string) $user->role)) === 'admin')) {
+        if ($user && $user->hasAdminAccess()) {
             return $next($request);
         }
 
