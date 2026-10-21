@@ -1122,9 +1122,7 @@ function renderDashboard() {
         cContainer.classList.toggle('available-catalog-view', state.courseListFilter === 'available');
         let visibleCourses = state.courseListFilter === 'enrolled'
             ? courses.filter(course => course.is_enrolled)
-            : state.courseListFilter === 'available'
-                ? courses.filter(course => !course.is_enrolled)
-                : courses;
+            : courses;
 
         if (state.courseListFilter === 'available') {
             const totalCourses = visibleCourses.length;
@@ -1165,7 +1163,7 @@ function renderDashboard() {
         if (listSubtitle) listSubtitle.textContent = state.courseListFilter === 'enrolled'
             ? 'Continue learning from the courses included in your active batch enrollments.'
             : state.courseListFilter === 'available'
-                ? 'Browse review courses you are not currently enrolled in.'
+                ? 'Browse all review courses, including your current enrollments.'
                 : 'View your enrolled courses or browse other available review courses.';
 
         document.querySelectorAll('.learner-sidebar-item').forEach(button => button.classList.remove('active'));
@@ -1218,7 +1216,7 @@ function renderDashboard() {
                     <div class="enrolled-card-content">
                         <div class="enrolled-card-eyebrow">
                             <span class="enrolled-card-icon"><i data-lucide="graduation-cap"></i></span>
-                            <span><strong>Active Enrollment</strong><small>${escapeHtml(course.batch_code || course.batch_name || 'Batch')}</small></span>
+                            <span><strong>${state.courseListFilter === 'available' ? 'Currently Enrolled' : 'Active Enrollment'}</strong><small>${escapeHtml(course.batch_code || course.batch_name || 'Batch')}</small></span>
                         </div>
                         <h3>${escapeHtml(course.title)}</h3>
                         <p class="enrolled-card-until">Access until ${formatCourseDate(course.enrollment_expires_at || course.batch_ends_at) || 'further notice'}</p>
