@@ -318,7 +318,7 @@ body.light-mode #landing-screen .landing-nav .nav-logo { background:none !import
 .learner-course-context-dates { overflow:hidden; color:var(--text-muted); font-size:.7rem; line-height:1.35; text-overflow:ellipsis; white-space:nowrap; }
 
 .dashboard-body { padding:2.5rem 3rem 3.5rem; max-width:1180px; margin:0 auto; width:100%; }
-.dashboard-course-list-title { margin:0; font-family:'Outfit',sans-serif; font-size:1.45rem; font-weight:800; letter-spacing:-.02em; }
+.dashboard-course-list-title, .enrolled-test-bank-section .test-bank-catalog-heading h2 { margin:0; font-family:'Outfit',sans-serif; font-size:1.45rem; font-weight:800; letter-spacing:-.02em; }
 .dashboard-hero { display:grid; grid-template-columns:minmax(0,1.45fr) minmax(280px,.95fr); gap:1.25rem; align-items:stretch; margin-bottom:2rem; }
 .dashboard-hero-copy, .dashboard-hero-panel { border:1px solid var(--border); border-radius:22px; background:var(--surface); }
 .dashboard-hero-copy { padding:2rem; position:relative; overflow:hidden; display:flex; flex-direction:column; justify-content:center; }
