@@ -145,6 +145,26 @@ class CourseController extends Controller
         ]);
     }
 
+    public function learnerZoomSessions(Request $request, $courseId)
+    {
+        $batch = CourseBatch::forCourse((int)$courseId)
+            ->when($request->filled('batch_id'), fn ($query)=>$query->whereKey($request->integer('batch_id')))
+            ->whereHas('enrollments', fn ($query)=>$query->where('user_id',$request->user()->id)->where('status','active')->where(fn ($query)=>$query->whereNull('expires_at')->orWhere('expires_at','>',now())))
+            ->firstOrFail();
+        $subjectIds = Subject::where('course_id',$courseId)->where('status','approved')->tap(fn ($query)=>$batch->filterSubjects($query))->pluck('id');
+        $baseTopics = Topic::where('course_id',$courseId)->where('status','approved')->whereIn('subject_id',$subjectIds)->orderBy('sort_order')->get()
+            ->map(fn ($topic)=>['id'=>$topic->id,'subjectId'=>$topic->subject_id,'title'=>$topic->title,'subtopics'=>[]]);
+        $workspace = app(\App\Services\BatchZoomWorkspace::class)->apply($baseTopics,$batch,(int)$courseId,$subjectIds)
+            ->filter(fn ($topic)=>collect($topic['subtopics'])->isNotEmpty())->values();
+        $sessions = $batch->zoomSessions()->where('status','scheduled')->where(fn ($query)=>$query->whereNull('course_id')->orWhere('course_id',$courseId))->get()->map(fn ($session)=>[
+            'id'=>$session->id,'title'=>$session->title,'description'=>$session->description,'status'=>$session->status,
+            'starts_at'=>$session->starts_at?->toIso8601String(),'ends_at'=>$session->ends_at?->toIso8601String(),
+            'zoom_url'=>$session->zoom_url,'recording_url'=>$session->recording_url,
+        ]);
+        return response()->json(['success'=>true,'batchId'=>$batch->id,'sessions'=>$sessions,'workspaceTopics'=>$workspace])
+            ->header('Cache-Control','private, no-store, max-age=0');
+    }
+
     public function getTopics($courseId)
     {
         if (! Auth::user()->hasActiveEnrollment((int) $courseId)) {

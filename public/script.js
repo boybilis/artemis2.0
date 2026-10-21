@@ -1563,6 +1563,7 @@ function openSubjectLearningWorkspace(subjectId) {
     renderCompleteSubjectSidebar({subjectId:currentSubjectId,id:null});
     showScreen('lesson-screen');
     if(window.lucide)lucide.createIcons({root:$('lesson-screen')});
+    window.refreshLearnerCourseZoom?.();
 }
 
 function renderCourseOverview() {
@@ -1571,8 +1572,9 @@ function renderCourseOverview() {
     const batchLabel = $('course-overview-batch');
     if (batchLabel) batchLabel.textContent = course.batch_code || course.batch_name || 'ENROLLED BATCH';
 
-    const totalTopics = topics.length;
-    const completedTopics = topics.filter(topic => isTopicContentComplete(topic)).length;
+    const masterTopics = topics.filter(topic => !topic.isBatchZoomTopic);
+    const totalTopics = masterTopics.length;
+    const completedTopics = masterTopics.filter(topic => isTopicContentComplete(topic)).length;
     const subjectProgress = subjects.map(subject => getSubjectLearningProgress(subject.id));
     const totalContents = subjectProgress.reduce((sum, item) => sum + item.total, 0);
     const completedContents = subjectProgress.reduce((sum, item) => sum + item.completed, 0);
@@ -1692,6 +1694,7 @@ function renderSubjects() {
     }
     const back = $('back-to-subjects-btn');
     if (back) back.onclick = () => { currentSubjectId = null; renderSubjects(); };
+    window.refreshLearnerCourseZoom?.();
 }
 
 
