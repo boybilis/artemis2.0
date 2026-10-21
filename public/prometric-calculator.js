@@ -5,6 +5,7 @@
     const style = document.createElement('style');
     style.textContent = `
         .prometric-calculator-toggle{display:none}
+        #quiz-screen.active .exam-calculator-toggle{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0;padding:9px;border:1px solid #0b6a82;border-radius:8px;background:#073b63;color:#fff;cursor:pointer}
         #quiz-screen.prometric-simulation-exam .prometric-calculator-toggle{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:9px;border:1px solid #8ac43f;border-radius:8px;background:#8ac43f;color:#17220b;cursor:pointer}
         .prometric-calculator{position:fixed;inset:auto;top:var(--calculator-top,104px);right:16px;margin:0;width:min(300px,calc(100vw - 32px));max-height:var(--calculator-height,70vh);overflow:auto;box-sizing:border-box;padding:18px;border:2px solid #8ac43f;border-radius:14px;background:#fff;color:#222;box-shadow:0 12px 48px #0006;font:16px Arial,sans-serif}
         .prometric-calculator::backdrop{background:#0004}
@@ -20,7 +21,7 @@
     document.head.append(style);
     const toggle = document.createElement('button');
     toggle.type = 'button';
-    toggle.className = 'prometric-calculator-toggle';
+    toggle.className = 'prometric-calculator-toggle exam-calculator-toggle';
     toggle.title = 'Calculator';
     toggle.setAttribute('aria-label', 'Open calculator');
     toggle.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M7 6h10M7 10h2m2 0h2m2 0h2M7 14h2m2 0h2m2 0h2M7 18h2m2 0h2m2 0h2"/></svg>';
@@ -141,7 +142,7 @@
         dialog.style.setProperty('--calculator-height', `${Math.max(44, Math.min(body.bottom, window.innerHeight) - top - 16)}px`);
     }
     toggle.addEventListener('click', () => {
-        if (exam.classList.contains('prometric-simulation-exam') && !dialog.open) {
+        if (exam.classList.contains('active') && !dialog.open) {
             positionCalculator();
             dialog.showModal();
         }
@@ -154,6 +155,6 @@
     });
     new MutationObserver(() => {
         if (summary.open && (!exam.classList.contains('prometric-simulation-exam') || !exam.classList.contains('active'))) summary.close();
-        if (dialog.open && (!exam.classList.contains('prometric-simulation-exam') || !exam.classList.contains('active'))) dialog.close();
+        if (dialog.open && !exam.classList.contains('active')) dialog.close();
     }).observe(exam, {attributes:true, attributeFilter:['class']});
 })();
