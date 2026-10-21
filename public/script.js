@@ -1554,7 +1554,8 @@ function openSubjectLearningWorkspace(subjectId) {
     if($('subtopic-header'))$('subtopic-header').style.display='flex';
     if($('subtopic-header-num'))$('subtopic-header-num').textContent='Subject workspace';
     if($('subtopic-header-title'))$('subtopic-header-title').textContent=subject.title;
-    if($('current-topic-title'))$('current-topic-title').textContent=subject.title;
+    if($('current-subject-title'))$('current-subject-title').textContent=subject.title;
+    if($('current-topic-title'))$('current-topic-title').textContent='Select a topic';
     const progress=getSubjectLearningProgress(subject.id);
     if($('subject-workspace-progress'))$('subject-workspace-progress').textContent=`${progress.completed}/${progress.total} contents completed · ${progress.percentage}%`;
     if($('subject-workspace-welcome'))$('subject-workspace-welcome').style.display='flex';
@@ -2007,7 +2008,10 @@ function renderLesson(openIdx = 0) {
     window.currentUnlockedIdx = maxUnlocked;
     window.currentTopicStorageKey = `certApp_progress_${topic.id}`; // legacy fallback if needed
 
-    // Set topic title in sidebar
+    // Keep the subject visible above the selected topic in the sidebar.
+    const subject = subjects.find(item => Number(item.id) === Number(topic.subjectId ?? currentSubjectId));
+    const subjectTitleEl = $('current-subject-title');
+    if (subjectTitleEl) subjectTitleEl.textContent = subject?.title || 'Subject';
     const titleEl = $('current-topic-title');
     if (titleEl) titleEl.textContent = topic.title;
 

@@ -14,6 +14,8 @@ for(const percentage of [0,50,100]){
  assert.equal(calls[2],'lesson-screen');assert.equal(elements['subject-workspace-welcome'].style.display,'flex');
  assert(elements['subject-workspace-progress'].textContent.includes(`${percentage}%`));
  assert.equal(elements['subtopic-header-title'].textContent,'Renal Nursing');
+ assert.equal(elements['current-subject-title'].textContent,'Renal Nursing');
+ assert.equal(elements['current-topic-title'].textContent,'Select a topic');
  assert.equal(elements['no-subtopics-msg'].style.display,'none');
 }
 const cards=source.slice(source.indexOf('function renderSubjects('),source.indexOf('function setupSubjectCarousel('));
