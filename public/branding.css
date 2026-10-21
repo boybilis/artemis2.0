@@ -14,4 +14,10 @@
 .landing-nav:has(.gra-brand){min-height:75px;padding-top:.35rem!important;padding-bottom:.35rem!important;box-sizing:border-box}
 .landing-footer:has(.gra-brand){align-items:center;gap:1rem;flex-wrap:wrap}
 .cert-paper-logo:has(.gra-brand){text-align:center;color:#1e293b}
+/* White lettering on transparent navy/dark surfaces; retain the original logo on light panels. */
+:is(.learner-dashboard-sidebar,.lesson-sidebar,.exam-brand,.preview-exam-brand,.landing-nav,.landing-footer) .gra-brand{--gra-powered-color:#fff}
+:is(.learner-dashboard-sidebar,.lesson-sidebar,.exam-brand,.preview-exam-brand,.landing-nav,.landing-footer) .gra-brand .gra-brand-image,
+body:not(.light-mode) #modal-overlay .gra-brand .gra-brand-image{background:transparent;border-radius:0}
+:is(.learner-dashboard-sidebar,.lesson-sidebar,.exam-brand,.preview-exam-brand,.landing-nav,.landing-footer) .gra-brand .gra-brand-image img,
+body:not(.light-mode) #modal-overlay .gra-brand .gra-brand-image img{content:url('/images/gra-test-prep-white.svg');position:static;width:100%;height:100%;object-fit:contain}
 @media(max-width:600px){.exam-brand:has(.gra-brand),.preview-exam-brand:has(.gra-brand){gap:.4rem;white-space:normal}.exam-brand .gra-brand,.preview-exam-brand .gra-brand{--gra-logo-width:72px}.exam-brand .gra-brand-powered,.preview-exam-brand .gra-brand-powered{font-size:7px}}

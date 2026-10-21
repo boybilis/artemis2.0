@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Artemis 2.0 — Professional Exam Review</title>
+        <title>GRA Test Prep — Powered by Artemis360</title>
         <meta
             name="description"
             content="Prepare for professional licensure, eligibility, and certification exams through structured lessons, quizzes, and course assessments."
@@ -17,7 +17,8 @@
     <link rel="stylesheet" href="style.css?v=201" />
     <link rel="stylesheet" href="test-bank-v2.css?v=49" />
     <link rel="stylesheet" href="course-subject-cards.css?v=1" />
-        <link rel="stylesheet" href="branding.css?v=3" />
+        <link rel="stylesheet" href="branding.css?v=4" />
+        <link rel="stylesheet" href="landing-campus.css?v=2" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     </head>
@@ -421,129 +422,91 @@
         <div id="app">
             <!-- ─── Landing ─────────────────────────────────── -->
             <section id="landing-screen" class="screen active">
-                <nav class="landing-nav">
-                    <div class="nav-logo"><span class="gra-brand gra-brand--compact"><span class="gra-brand-image"><img src="/images/gra-test-prep-logo.png" alt="GRA Test Prep" width="1080" height="1080"></span><small class="gra-brand-powered">Powered by Artemis 2.0</small></span></div>
-                    <button
-                        id="landing-menu-btn"
-                        class="mobile-menu-btn"
-                        aria-label="Toggle menu"
-                    >
-                        <div class="burger-bars">
-                            <span></span><span></span><span></span>
-                        </div>
-                    </button>
+                <nav class="landing-nav" aria-label="Main navigation">
+                    <div class="nav-logo campus-brand">
+                        <span class="campus-logo"><img src="/images/gra-test-prep-white.svg" alt="GRA Test Prep" width="220" height="115"></span>
+                        <span class="campus-brand-divider" aria-hidden="true"></span>
+                        <span class="campus-powered"><small>Powered by</small><strong>Artemis360</strong></span>
+                    </div>
+                    <button id="landing-menu-btn" class="mobile-menu-btn" type="button" aria-label="Toggle menu" aria-controls="landing-nav-actions" aria-expanded="false"><div class="burger-bars"><span></span><span></span><span></span></div></button>
                     <div class="nav-actions" id="landing-nav-actions">
-                        <button class="btn-ghost" id="nav-login-btn">
-                            Sign In
-                        </button>
-                        <button class="btn-primary" id="nav-signup-btn">
-                            Create an Account
-                        </button>
-                        <button
-                            id="landing-theme-toggle"
-                            class="btn-icon-round"
-                            title="Toggle light/dark mode"
-                            aria-label="Toggle theme"
-                        >
-                            <i id="landing-theme-icon" data-lucide="moon"></i>
-                        </button>
+                        <button class="btn-ghost" id="nav-login-btn" type="button">Sign In</button>
+                        <button class="btn-primary" id="nav-signup-btn" type="button">Create an Account</button>
+                        <button id="landing-theme-toggle" class="btn-icon-round" type="button" title="Toggle light/dark mode" aria-label="Toggle theme"><i id="landing-theme-icon" data-lucide="moon"></i></button>
                     </div>
                 </nav>
 
-                <div class="hero">
-                    <div class="hero-content">
-                        <p class="section-eyebrow">Your Review. Our Mission. Your Success.</p>
-                        <h1>
-                            Learn Smarter.<br />Practice Better.<br />Pass Easier with <span
-                                class="gradient-text"
-                                >Artemis 2.0.</span
-                            >
-                        </h1>
-                        <p class="hero-desc">
-                            The exclusive learning platform of Gapuz Review Academy—built
-                            for online review, recorded lectures, NGN-style practice
-                            tests, and progress tracking.
-                        </p>
-                        <div class="hero-cta">
-                            <button
-                                class="btn-primary btn-lg"
-                                id="hero-signup-btn"
-                            >
-                                Start Learning
-                            </button>
-                            <button
-                                class="btn-ghost btn-lg"
-                                id="hero-login-btn"
-                            >
-                                I Have an Account
-                            </button>
+                <div class="campus-hero-wrap">
+                    <div class="hero">
+                        <div class="hero-content">
+                            <p class="campus-kicker">YOUR ONLINE REVIEW CAMPUS</p>
+                            <h1>Learn Smarter.<br>Practice Better.<br>Pass Easier with<br><span>GRA Test Prep.</span></h1>
+                            <p class="hero-desc">Your online campus for review courses, recorded lectures, practice tests, and progress tracking.<small>Powered by Artemis360</small></p>
+                            <div class="hero-cta">
+                                <button class="btn-primary btn-lg" id="hero-signup-btn" type="button">Start Learning for Free <i data-lucide="arrow-right" aria-hidden="true"></i></button>
+                                <button class="btn-ghost btn-lg" id="hero-login-btn" type="button">I Have an Account</button>
+                                <button class="campus-pending-link" type="button" disabled title="Main website link will be added later">Visit Our Main Website <i data-lucide="external-link" aria-hidden="true"></i><small>Coming soon</small></button>
+                            </div>
+                            <p class="campus-access-note">Free account registration. Paid courses and test banks are purchased separately.</p>
                         </div>
-                    </div>
-                    <div class="hero-visual">
-                        <div class="hero-certificate hero-product-preview">
-                            <img
-                                src="artemis-test-bank-preview.png"
-                                alt="Artemis 2.0 Test Bank learning workspace"
-                            />
+                        <div class="hero-visual">
+                            <div class="campus-dashboard-preview" role="img" aria-label="Platform preview showing courses, test banks, progress tracking, and a continuing lesson">
+                                <div class="campus-preview-sidebar"><strong>GRA<small>TEST PREP</small></strong><span class="selected"><i data-lucide="layout-dashboard"></i>Dashboard</span><span><i data-lucide="graduation-cap"></i>My Courses</span><span><i data-lucide="notebook-tabs"></i>Test Banks</span><span><i data-lucide="chart-no-axes-combined"></i>My Progress</span><span class="campus-preview-settings"><i data-lucide="settings"></i>Settings</span><span><i data-lucide="log-out"></i>Log Out</span></div>
+                                <div class="campus-preview-main"><div class="campus-preview-top"><span>YOUR ONLINE CAMPUS</span><i data-lucide="bell"></i></div><h2>My Learning Dashboard</h2><p>Welcome back! Continue your preparation.</p>
+                                    <div class="campus-preview-tiles">
+                                        <div><i data-lucide="book-open"></i><strong>My Courses</strong><small>Access your enrolled review courses.</small><span>View courses →</span></div>
+                                        <div><i data-lucide="square-play"></i><strong>My Test Banks</strong><small>Practice and build your confidence.</small><span>Practice now →</span></div>
+                                        <div><i data-lucide="chart-no-axes-column-increasing"></i><strong>My Progress</strong><small>Track your learning and improvement.</small><span>View progress →</span></div>
+                                    </div>
+                                    <div class="campus-preview-continue"><strong>Continue Learning</strong><small>View all</small></div>
+                                    <div class="campus-preview-lesson"><i data-lucide="book-open"></i><div><strong>Medical-Surgical Nursing Review</strong><span></span></div><i data-lucide="chevron-right"></i></div>
+                                    <span class="campus-preview-caption">A preview of your learning experience</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Why This Course -->
-                <div class="why-section reveal">
-                    <p class="section-eyebrow">Artemis 2.0</p>
-                    <h2>
-                        Learn. Practice. Improve. Succeed.
-                    </h2>
-
-                    <div class="why-grid">
-                        <div class="why-card">
-                            <div class="why-icon">
-                                <i data-lucide="book-open"></i>
-                            </div>
-                            <h3>Smart Learning</h3>
-                            <p>
-                                Personalized lessons and review paths designed to
-                                help you study with purpose.
-                            </p>
-                        </div>
-                        <div class="why-card">
-                            <div class="why-icon">
-                                <i data-lucide="smartphone"></i>
-                            </div>
-                            <h3>Practice Anywhere</h3>
-                            <p>
-                                Access quizzes, test banks, and mock exams through
-                                your Artemis learning workspace.
-                            </p>
-                        </div>
-                        <div class="why-card">
-                            <div class="why-icon">
-                                <i data-lucide="chart-no-axes-column-increasing"></i>
-                            </div>
-                            <h3>Track Your Progress</h3>
-                            <p>
-                                Monitor your assessment scores, course progress,
-                                ranking, and exam readiness.
-                            </p>
-                        </div>
-                        <div class="why-card">
-                            <div class="why-icon">
-                                <i data-lucide="star"></i>
-                            </div>
-                            <h3>Achieve More</h3>
-                            <p>
-                                Build knowledge, readiness, and confidence until
-                                exam day.
-                            </p>
-                        </div>
+                <section class="campus-features" aria-labelledby="campus-features-heading">
+                    <h2 id="campus-features-heading">Everything you need to keep learning.</h2>
+                    <div class="campus-feature-grid">
+                        <article><i data-lucide="book-open"></i><h3>Complete Review<br>Courses</h3><p>Learn with expert<br>review materials.</p></article>
+                        <article><i data-lucide="square-play"></i><h3>Recorded Lectures</h3><p>Revisit lessons during<br>your access period.</p></article>
+                        <article><i data-lucide="notebook-text"></i><h3>Practice Test Banks</h3><p>Warm-up. Mastery.<br>Simulation.</p></article>
+                        <article><i data-lucide="chart-no-axes-column-increasing"></i><h3>Progress Tracking</h3><p>See how your practice<br>is improving.</p></article>
                     </div>
-                </div>
+                </section>
+
+                <section class="campus-paths" aria-labelledby="campus-paths-heading">
+                    <h2 id="campus-paths-heading">Choose how you prepare.</h2>
+                    <div class="campus-path-grid">
+                        <article class="campus-path-card">
+                            <div class="campus-course-art" aria-hidden="true"><div class="campus-video-window"><span><i data-lucide="video"></i>REVIEW CLASS</span><i data-lucide="graduation-cap"></i><div class="campus-video-toolbar"><i data-lucide="play"></i><span></span><i data-lucide="volume-2"></i></div></div><div class="campus-course-caption"><i data-lucide="book-open-check"></i><span>Learn at your own pace</span></div></div>
+                            <div class="campus-path-copy"><h3>Online Review Packages</h3><p>Learn with guided lessons and review materials.</p><button id="curriculum-signup-btn" class="btn-primary" type="button">Explore Courses <i data-lucide="arrow-right" aria-hidden="true"></i></button></div>
+                        </article>
+                        <article class="campus-path-card">
+                            <div class="campus-test-art"><img src="artemis-test-bank-preview.png" alt="Preview of the existing GRA practice test bank" width="1200" height="560" loading="lazy"></div>
+                            <div class="campus-path-copy"><h3>Test Bank Only</h3><p>Build confidence with focused practice questions.</p><button id="preview-signup-btn" class="btn-primary" type="button">Explore Test Banks <i data-lucide="arrow-right" aria-hidden="true"></i></button></div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="campus-account-wrap" aria-labelledby="campus-account-heading">
+                    <div class="campus-account-card">
+                        <i class="campus-account-icon" data-lucide="user-round-plus" aria-hidden="true"></i>
+                        <h2 id="campus-account-heading">Create Your Free Account</h2>
+                        <p>Explore review courses and test banks—all through one<br class="campus-desktop-break"> GRA Online Campus account.</p>
+                        <ul><li><i data-lucide="circle-check"></i>One Learning Account</li><li><i data-lucide="circle-check"></i>Review Courses</li><li><i data-lucide="circle-check"></i>Practice Test Banks</li></ul>
+                        <button id="campus-account-signup-btn" class="btn-primary" type="button">Create My Free Account <i data-lucide="arrow-right" aria-hidden="true"></i></button>
+                        <small>Account registration is free. Paid courses and test banks are purchased separately.</small>
+                    </div>
+                </section>
 
                 <footer class="landing-footer">
-                    <span class="gra-brand gra-brand--compact"><span class="gra-brand-image"><img src="/images/gra-test-prep-logo.png" alt="GRA Test Prep" width="1080" height="1080"></span><small class="gra-brand-powered">Powered by Artemis 2.0</small></span>
-                    <span>© 2026 Artemis 2.0, All rights reserved</span>
-                    <span>Built with passion for learning</span>
+                    <div class="campus-brand"><span class="campus-logo"><img src="/images/gra-test-prep-white.svg" alt="GRA Test Prep" width="220" height="115" loading="lazy"></span><span class="campus-brand-divider" aria-hidden="true"></span><span class="campus-powered"><small>Powered by</small><strong>Artemis360</strong></span></div>
+                    <div class="campus-footer-support"><strong>Need help?</strong><span>Support links coming soon.</span></div>
+                    <div class="campus-footer-links" aria-label="Links not yet available"><button type="button" disabled>Main Website</button><button type="button" disabled>Help</button><button type="button" disabled>Terms</button><button type="button" disabled>Privacy</button></div>
+                    <small class="campus-copyright">© 2026 GRA Test Prep. All rights reserved.</small>
                 </footer>
             </section>
 
@@ -1434,7 +1397,7 @@
             </div>
         </div>
 
-        <script src="script.js?v=203"></script>
+        <script src="script.js?v=204"></script>
         <script src="learner-course-zoom.js?v=1"></script>
         <script src="test-bank-recovery.js?v=2"></script>
         <script src="learner-session.js?v=1"></script>

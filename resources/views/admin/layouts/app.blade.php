@@ -201,7 +201,7 @@
             .question-option-row .btn-ghost { grid-column: 2; justify-self: start; }
         }
     </style>
-<link rel="stylesheet" href="{{ asset('branding.css') }}?v=3"></head>
+<link rel="stylesheet" href="{{ asset('branding.css') }}?v=4"></head>
 <body class="light-mode">
     @if(Auth::user()->isAssistantAdmin())
     <script src="{{ asset('assistant-admin.js') }}?v=1" defer></script>

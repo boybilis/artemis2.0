@@ -400,6 +400,7 @@ const triggers = [
     { id: 'nav-signup-btn', modal: 'modal-signup' },
     { id: 'hero-signup-btn', modal: 'modal-signup' },
     { id: 'hero-login-btn', modal: 'modal-login' },
+    { id: 'campus-account-signup-btn', modal: 'modal-signup' },
     { id: 'curriculum-signup-btn', modal: 'modal-signup' },
     { id: 'preview-signup-btn', modal: 'modal-signup' },
     { id: 'go-login', modal: 'modal-login', prevent: true },
