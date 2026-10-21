@@ -1,0 +1,49 @@
+/* My Course only: clean, geometric subject cards without decorative shapes. */
+#subjects-container { gap:1rem; }
+#subjects-container .learner-subject-row {
+    position:relative;
+    gap:.85rem;
+    min-height:235px;
+    padding:1.2rem;
+    border:1px solid var(--border);
+    border-top:3px solid #109eaf;
+    border-radius:16px;
+    background:linear-gradient(145deg,rgba(17,167,192,.09),transparent 65%),var(--surface);
+    box-shadow:0 4px 16px rgba(7,59,101,.045);
+    transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+#subjects-container .learner-subject-row:hover {
+    transform:translateY(-3px);
+    border-color:#109eaf;
+    box-shadow:0 10px 24px rgba(7,59,101,.1);
+}
+#subjects-container .learner-subject-code {
+    align-self:flex-start;
+    padding:.3rem .5rem;
+    border:1px solid rgba(17,167,192,.18);
+    border-radius:5px;
+    color:var(--text);
+    background:rgba(17,167,192,.08);
+    font-size:.62rem;
+    font-weight:700;
+    letter-spacing:.075em;
+}
+#subjects-container .learner-subject-name strong { font-size:.95rem;line-height:1.4;font-weight:700; }
+#subjects-container .learner-subject-name span { font-size:.7rem; }
+#subjects-container .learner-subject-progress { padding-top:.45rem; }
+#subjects-container .learner-subject-progress-meta { gap:.4rem;font-size:.65rem; }
+#subjects-container .learner-subject-progress-meta strong { color:var(--text);font-weight:700; }
+#subjects-container .learner-subject-progress-track { height:5px; }
+#subjects-container .learner-subject-progress-track span { background:linear-gradient(90deg,#089eac,#08b89f); }
+#subjects-container .learner-subject-action { padding-top:.7rem;border-top:1px solid var(--border); }
+#subjects-container .learner-subject-action .btn-primary {
+    display:inline-flex;align-items:center;justify-content:center;gap:.6rem;
+    min-height:38px;padding:.5rem .9rem;border:0;border-radius:8px;
+    color:#fff;background:linear-gradient(115deg,#08476c,#087a8c);
+    font-size:.7rem;font-weight:700;box-shadow:none;
+}
+#subjects-container .learner-subject-action .btn-primary:focus-visible { outline:3px solid #109eaf;outline-offset:3px; }
+@media(prefers-reduced-motion:reduce) {
+    #subjects-container .learner-subject-row { transition:none; }
+    #subjects-container .learner-subject-row:hover { transform:none; }
+}
