@@ -742,7 +742,7 @@ function showTestBankInstructions({title, itemCount, timeLimitMinutes, coverage 
 
 async function loadTopicsIfNeeded(courseId) {
     try {
-        const topicData = await apiRequest(`/api/courses/${courseId}/topics`);
+        const topicData = await apiRequest(`/api/courses/${courseId}/topics${currentBatchId ? `?batch_id=${currentBatchId}` : ''}`);
         if (topicData && topicData.success) {
             topics = topicData.topics;
             subjects = topicData.subjects || [];
@@ -1406,6 +1406,7 @@ function renderDashboard() {
 }
 
 function getSubtopicLearningItemCount(subtopic) {
+    if (subtopic.isBatchZoom) return 0;
     if (subtopic.contentType && subtopic.contentType !== 'subtopic') return 1;
     let count = 0;
     if (subtopic.documentationPath) count++;
@@ -1458,7 +1459,7 @@ function hasCompletedSubjectPolicy(subjectId) {
     const unlockedIndex = Number(state.topicProgressMap[policyTopic.id] || 0);
     const requiredItems = getTopicFlatLearningItems(policyTopic)
         .map((item, flatIndex) => ({item, flatIndex}))
-        .filter(({item}) => item.type !== 'none' && item.sub.contentType !== 'pre_test');
+        .filter(({item}) => item.type !== 'none' && !item.sub.isBatchZoom && item.sub.contentType !== 'pre_test');
     return requiredItems.length > 0 && requiredItems.every(({item, flatIndex}) => {
         const hasSavedScore = item.type !== 'assessment' || Number(item.sub.attemptsUsed || 0) > 0;
         return flatIndex < unlockedIndex && hasSavedScore;
@@ -1472,7 +1473,7 @@ function isSubjectMockExamUnlocked(subjectId) {
         .forEach(topic => {
             const unlockedIndex = Number(state.topicProgressMap[topic.id] || 0);
             getTopicFlatLearningItems(topic).forEach((item, flatIndex) => {
-                if (item.sub.contentType === 'mock_exam' || item.type === 'none') return;
+                if (item.sub.isBatchZoom || item.sub.contentType === 'mock_exam' || item.type === 'none') return;
                 const hasSavedScore = item.type !== 'assessment' || Number(item.sub.attemptsUsed || 0) > 0;
                 requiredItems.push(flatIndex < unlockedIndex && hasSavedScore);
             });
@@ -1484,7 +1485,7 @@ function isTopicContentComplete(topic) {
     const unlockedIndex = Number(state.topicProgressMap[topic.id] || 0);
     const requiredItems = getTopicFlatLearningItems(topic)
         .map((item, flatIndex) => ({item, flatIndex}))
-        .filter(({item}) => item.type !== 'none');
+        .filter(({item}) => item.type !== 'none' && !item.sub.isBatchZoom);
     return requiredItems.length > 0 && requiredItems.every(({item, flatIndex}) => {
         const hasSavedScore = item.type !== 'assessment' || Number(item.sub.attemptsUsed || 0) > 0;
         return flatIndex < unlockedIndex && hasSavedScore;
@@ -1495,6 +1496,7 @@ function isLearningItemAccessible(topic, item, flatIndex) {
     const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
     const isPolicyTopic = isPolicyLearningTopic(topic);
     const isPreTestTopic = isPreTestLearningTopic(topic);
+    if (item.sub.isBatchZoom) return preTestCompleted;
     // The Policy topic remains a normal sequential lesson before the gate is met:
     // its readings/videos open first, followed by its Pre-test. Other topics stay locked.
     if (!preTestCompleted) {
@@ -1975,7 +1977,7 @@ function openTopic(index) {
     state.currentTopicIndex = index;
     currentSubtopicIndex = 0;
 
-    if (topics[index]) {
+    if (topics[index] && !topics[index].isBatchZoomTopic) {
         apiRequest('/api/progress/start', 'POST', { topic_id: topics[index].id })
             .then(res => {
                 if (res && res.success && res.lastTopicStarted) {
@@ -2192,7 +2194,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
         const isPolicy = isPolicyLearningTopic(topic);
         const isPreTestTopic = isPreTestLearningTopic(topic);
         const topicUnlocked = isPolicy || preTestCompleted || (isPreTestTopic && policyCompleted);
-        const requiredItems = items.filter(item => item.type !== 'none');
+        const requiredItems = items.filter(item => item.type !== 'none' && !item.sub.isBatchZoom);
         const topicCompleted = requiredItems.length > 0 && requiredItems.every((item, index) => {
             const actualIndex = items.indexOf(item);
             const hasScore = item.type !== 'assessment' || Number(item.sub.attemptsUsed || 0) > 0;
@@ -2242,6 +2244,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
 
 function outlineItemAccessible(topic, item, itemIndex) {
     if (item.sub.contentType === 'mock_exam') return false;
+    if (item.sub.isBatchZoom) return hasCompletedSubjectPreTest(topic.subjectId);
     const progressIndex = Number(state.topicProgressMap[topic.id] || 0);
     const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
     const isPolicy = isPolicyLearningTopic(topic);
@@ -2339,7 +2342,7 @@ function openFlattenedItem(index) {
             pauseActiveLessonVideo();
             const nextIdx = index + 1;
 
-            if (nextIdx > window.currentUnlockedIdx) {
+            if (!item.sub.isBatchZoom && nextIdx > window.currentUnlockedIdx) {
                 completeBtn.disabled = true;
 
                 try {
@@ -2387,6 +2390,11 @@ function renderZoomSession(sub) {
     const join = $('zoom-session-join');
     join.href = sub.zoomUrl || '#';
     join.style.display = sub.zoomUrl ? 'inline-flex' : 'none';
+    const recording = $('zoom-session-recording');
+    if (recording) {
+        recording.href = sub.zoomRecordingUrl || '#';
+        recording.style.display = sub.zoomRecordingUrl ? 'inline-flex' : 'none';
+    }
 }
 
 async function markCurrentLearningItemComplete(index) {
@@ -3596,7 +3604,7 @@ async function finishQuiz() {
             if (hasScoredResult) showToast(`Assessment submitted. Score: ${data.score}/${data.total}`, data.passed ? 'success' : 'info');
             activeSubtopicAssessmentId = null;
             activeSubtopicAssessmentContext = 'topic';
-            const refreshed = await apiRequest('/api/courses/' + currentCourseId + '/topics');
+            const refreshed = await apiRequest('/api/courses/' + currentCourseId + '/topics' + (currentBatchId ? '?batch_id=' + currentBatchId : ''));
             if (refreshed?.success) {
                 topics = refreshed.topics;
                 subjects = refreshed.subjects || subjects;

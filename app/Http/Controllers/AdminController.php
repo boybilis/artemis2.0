@@ -466,19 +466,20 @@ class AdminController extends Controller
 
     public function classBatchZoomSessions(CourseBatch $batch)
     {
-        return response()->json(['success'=>true,'batch'=>['id'=>$batch->id,'name'=>$batch->name,'code'=>$batch->code], 'sessions'=>$batch->zoomSessions()->with('creator:id,name')->get()->map(fn($session)=>$this->zoomSessionData($session))]);
+        $courses = $batch->courses()->where('approval_status','approved')->with(['subjects'=>fn ($query)=>$query->where('status','approved')->tap(fn ($query)=>$batch->filterSubjects($query))->with(['topics'=>fn ($query)=>$query->where('status','approved')->orderBy('sort_order')])])->get();
+        return response()->json(['success'=>true,'batch'=>['id'=>$batch->id,'name'=>$batch->name,'code'=>$batch->code], 'courses'=>$courses->map(fn ($course)=>['id'=>$course->id,'title'=>$course->title,'subjects'=>$course->subjects->map(fn ($subject)=>['id'=>$subject->id,'title'=>$subject->title,'topics'=>$subject->topics->map(fn ($topic)=>['id'=>$topic->id,'title'=>$topic->title])])]), 'sessions'=>$batch->zoomSessions()->with('creator:id,name')->get()->map(fn($session)=>$this->zoomSessionData($session))]);
     }
 
     public function storeClassBatchZoomSession(Request $request, CourseBatch $batch)
     {
-        $session = $batch->zoomSessions()->create($this->validateZoomSession($request)+['created_by'=>Auth::id()]);
+        $session = $batch->zoomSessions()->create($this->validateZoomSession($request, $batch)+['created_by'=>Auth::id()]);
         return response()->json(['success'=>true,'session'=>$this->zoomSessionData($session)]);
     }
 
     public function updateClassBatchZoomSession(Request $request, CourseBatch $batch, BatchZoomSession $session)
     {
         abort_unless((int)$session->batch_id === (int)$batch->id, 404);
-        $session->update($this->validateZoomSession($request));
+        $session->update($this->validateZoomSession($request, $batch));
         return response()->json(['success'=>true,'session'=>$this->zoomSessionData($session)]);
     }
 
@@ -535,7 +536,7 @@ class AdminController extends Controller
     public function storeBatchZoomSession(Request $request, $courseId, $batchId)
     {
         $batch = CourseBatch::forCourse($courseId)->findOrFail($batchId);
-        $session = $batch->zoomSessions()->create($this->validateZoomSession($request) + ['created_by'=>Auth::id()]);
+        $session = $batch->zoomSessions()->create($this->validateZoomSession($request, $batch) + ['created_by'=>Auth::id()]);
         AuditLog::create(['user_id'=>Auth::id(),'action'=>'Zoom Session Created','description'=>"Scheduled {$session->title} for {$batch->name}.",'ip_address'=>$request->ip()]);
         return response()->json(['success'=>true, 'message'=>'Zoom session scheduled.', 'session'=>$this->zoomSessionData($session)]);
     }
@@ -544,7 +545,7 @@ class AdminController extends Controller
     {
         $batch = CourseBatch::forCourse($courseId)->findOrFail($batchId);
         $session = $batch->zoomSessions()->findOrFail($sessionId);
-        $session->update($this->validateZoomSession($request));
+        $session->update($this->validateZoomSession($request, $batch));
         return response()->json(['success'=>true, 'message'=>'Zoom session updated.', 'session'=>$this->zoomSessionData($session)]);
     }
 
@@ -558,18 +559,30 @@ class AdminController extends Controller
         return response()->json(['success'=>true, 'message'=>'Zoom session deleted.']);
     }
 
-    private function validateZoomSession(Request $request): array
+    private function validateZoomSession(Request $request, CourseBatch $batch): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'title'=>'required|string|max:255', 'description'=>'nullable|string|max:3000',
             'zoom_url'=>'required|url|max:1000', 'recording_url'=>'nullable|url|max:1000', 'starts_at'=>'required|date',
             'ends_at'=>'nullable|date|after:starts_at', 'status'=>'required|in:scheduled,cancelled',
+            'course_id'=>'nullable|integer', 'subject_id'=>'nullable|integer|required_with:course_id',
+            'topic_id'=>'nullable|integer',
         ]);
+        if (!empty($data['subject_id']) || !empty($data['course_id']) || !empty($data['topic_id'])) {
+            $course = $batch->courses()->where('courses.id', $data['course_id'] ?? 0)->where('approval_status','approved')->first();
+            if (!$course) throw \Illuminate\Validation\ValidationException::withMessages(['course_id'=>'Select an approved master course assigned to this batch.']);
+            $subject = Subject::where('course_id',$course->id)->where('status','approved')->tap(fn ($query)=>$batch->filterSubjects($query))->find($data['subject_id'] ?? 0);
+            if (!$subject) throw \Illuminate\Validation\ValidationException::withMessages(['subject_id'=>'Select an available subject in the selected master course.']);
+            if (!empty($data['topic_id']) && !Topic::where('course_id',$course->id)->where('subject_id',$subject->id)->where('status','approved')->whereKey($data['topic_id'])->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['topic_id'=>'Select a topic in the selected subject.']);
+            }
+        }
+        return $data;
     }
 
     private function zoomSessionData(BatchZoomSession $session): array
     {
-        return ['id'=>$session->id, 'title'=>$session->title, 'description'=>$session->description,
+        return ['id'=>$session->id, 'courseId'=>$session->course_id, 'subjectId'=>$session->subject_id, 'topicId'=>$session->topic_id, 'title'=>$session->title, 'description'=>$session->description,
             'zoomUrl'=>$session->zoom_url, 'recordingUrl'=>$session->recording_url, 'startsAt'=>$session->starts_at?->toIso8601String(),
             'endsAt'=>$session->ends_at?->toIso8601String(), 'status'=>$session->status,
             'createdBy'=>$session->creator?->name];

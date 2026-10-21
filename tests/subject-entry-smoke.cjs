@@ -25,4 +25,10 @@ assert(context.isLearningItemAccessible(lesson,{sub:lesson.subtopics[0],type:'vi
 assert(!context.isLearningItemAccessible(lesson,{sub:lesson.subtopics[0],type:'video'},1));
 context.topics=[{...pre,subjectId:17,subtopics:[{contentType:'pre_test',attemptsUsed:0}]}];
 assert(context.isLearningItemAccessible(context.topics[0],{sub:context.topics[0].subtopics[0],type:'assessment'},0));
-console.log('Policy, End User Agreement, and standalone Pre-Test entries open without bypassing the lesson sequence.');
+const batchZoom={id:-99,contentType:'zoom_link',isBatchZoom:true};
+context.topics=[lesson];context.state.topicProgressMap={};
+assert(context.isLearningItemAccessible(lesson,{sub:batchZoom,type:'zoom'},8));
+assert.equal(context.getSubtopicLearningItemCount(batchZoom),0);
+lesson.subtopics.push(batchZoom);
+assert.equal(context.getSubjectLearningProgress(lesson.subjectId).total,1);
+console.log('Policy, End User Agreement, Pre-Test gates and non-progress batch Zoom entries behave correctly.');

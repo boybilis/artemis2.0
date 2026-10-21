@@ -117,7 +117,7 @@ class CourseController extends Controller
                     'completed_topic_count'=>$isEnrolled ? $topicCompleted : 0,
                     'topic_count'=>$topicTotal,
                     'course_progress'=>$isEnrolled && $topicTotal > 0 ? (int) round(($topicCompleted / $topicTotal) * 100) : 0,
-                    'zoom_sessions'=>$isEnrolled ? $batch->zoomSessions->map(fn ($session) => [
+                    'zoom_sessions'=>$isEnrolled ? $batch->zoomSessions->filter(fn ($session)=>!$session->course_id || (int)$session->course_id===(int)$course->id)->values()->map(fn ($session) => [
                         'id'=>$session->id, 'title'=>$session->title, 'description'=>$session->description,
                         'starts_at'=>$session->starts_at?->toIso8601String(), 'ends_at'=>$session->ends_at?->toIso8601String(),
                         'status'=>$session->status, 'zoom_url'=>$session->status === 'scheduled' ? $session->zoom_url : null,
@@ -153,7 +153,8 @@ class CourseController extends Controller
         $course = Course::findOrFail($courseId);
         $user = Auth::user();
         $activeBatch = CourseBatch::forCourse($courseId)
-            ->whereHas('enrollments', fn ($query) => $query->where('user_id', $user->id)->where('status', 'active'))
+            ->when(request()->filled('batch_id'), fn ($query)=>$query->whereKey(request()->integer('batch_id')))
+            ->whereHas('enrollments', fn ($query) => $query->where('user_id', $user->id)->where('status', 'active')->where(fn ($query)=>$query->whereNull('expires_at')->orWhere('expires_at','>',now())))
             ->firstOrFail();
         $topics = Topic::where('course_id', $courseId)->where('status', 'approved')
             ->where(function ($query) use ($activeBatch) {
@@ -312,6 +313,7 @@ class CourseController extends Controller
 
         $mockAttempts = QuizAttempt::where('user_id', $user->id)->where('course_id', $courseId)->where('batch_id', $activeBatch->id)
             ->where('assessment_type', 'final');
+        $formattedTopics = app(\App\Services\BatchZoomWorkspace::class)->apply($formattedTopics, $activeBatch, (int)$courseId, $subjects->pluck('id'));
         $mockAttemptsUsed = (clone $mockAttempts)->count();
         $mockExamPassed = (clone $mockAttempts)->where('passed', true)->exists();
         $latestMockAttempt = (clone $mockAttempts)->latest('id')->first();
