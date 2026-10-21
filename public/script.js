@@ -83,7 +83,7 @@ function getCsrfToken() {
     return null;
 }
 
-async function apiRequest(url, method = 'GET', data = null) {
+async function apiRequest(url, method = 'GET', data = null, {silent = false} = {}) {
     const options = {
         method: method,
         headers: {
@@ -108,7 +108,7 @@ async function apiRequest(url, method = 'GET', data = null) {
 
         return result;
     } catch (error) {
-        showToast(error.message);
+        if (!silent) showToast(error.message);
         throw error;
     }
 }

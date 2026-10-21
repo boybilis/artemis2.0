@@ -76,10 +76,13 @@
         badge.setAttribute('aria-label',`${count} unread replies`);
     }
     paintUnread(0);
+    let unreadChecking=false;
     async function refreshUnread() {
-        const revision=++unreadRevision;
         if (!state.user) { paintUnread(0); return; }
-        try { const data=await apiRequest('/api/question-flags/unread'); if(revision===unreadRevision)paintUnread(data.count); } catch (_) {}
+        if (unreadChecking || navigator.onLine === false || document.hidden) return;
+        const revision=++unreadRevision;
+        unreadChecking=true;
+        try { const data=await apiRequest('/api/question-flags/unread','GET',null,{silent:true}); if(revision===unreadRevision)paintUnread(data.count); } catch (_) {} finally { unreadChecking=false; }
     }
     setTimeout(refreshUnread,1500);
     setInterval(()=>{if(!document.hidden) refreshUnread();},30000);
