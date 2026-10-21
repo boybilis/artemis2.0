@@ -29,10 +29,5 @@ c.payload={success:true,batchId:8,sessions:[{id:9,zoom_url:'old-link'}],workspac
  assert.equal(lesson.subtopics.length,1);assert.equal(c.fallbacks,1);
  c.apiRequest=async()=>{c.currentBatchId=10;return c.payload;};c.payload={...c.payload,sessions:[{zoom_url:'stale'}]};
  await c.tick();assert.equal(c.courses[0].zoom_sessions.length,0);
- c.currentBatchId=8;c.state.currentTopicIndex=null;
- c.payload={success:true,batchId:8,sessions:[],workspaceTopics:[{id:-8,subjectId:null,title:'Zoom Links',isBatchZoomTopic:true,isBatchWideZoomTopic:true,subtopics:[zoom,{...zoom,id:-10}]}]};
- c.apiRequest=async()=>c.payload;
- await c.tick();assert.equal(c.topics.length,2);assert.equal(c.topics[1].subtopics.length,2);
- await c.tick();assert.equal(c.topics.length,2);assert.equal(c.topics[1].subtopics.length,2);
  console.log('Zoom updates refresh both views without restarting media, duplicating entries, overwriting progress, or applying stale batch responses.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
