@@ -433,12 +433,20 @@ class AdminController extends Controller
             'name'=>'required|string|max:255', 'code'=>'nullable|string|max:80',
             'description'=>'nullable|string|max:2000', 'starts_at'=>'nullable|date', 'ends_at'=>'nullable|date|after_or_equal:starts_at',
             'schedule_day'=>'nullable|string|max:100', 'start_time'=>'nullable|date_format:H:i', 'end_time'=>'nullable|date_format:H:i|after:start_time',
+            'schedule_days_present'=>'sometimes|in:1',
+            'schedule_days'=>'nullable|array|max:7',
+            'schedule_days.*'=>'required|distinct|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
             'modality'=>'nullable|in:Online,Blended,Live via Zoom', 'price'=>'required|numeric|min:0', 'usd_price'=>'nullable|numeric|min:0',
             'capacity'=>'nullable|integer|min:1|max:100000', 'status'=>'required|in:draft,open,closed,completed',
             'includes_intensive_final_coaching'=>'nullable|boolean',
             'course_type'=>'sometimes|required|in:complete,comprehensive,final_coaching,mentoring',
             'course_ids'=>'required|array|min:1', 'course_ids.*'=>['integer',\Illuminate\Validation\Rule::exists('courses','id')->where('approval_status','approved')],
         ]);
+        if ($request->has('schedule_days_present') || $request->has('schedule_days')) {
+            $days = array_values(array_intersect(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], $data['schedule_days'] ?? []));
+            $data['schedule_day'] = $days ? implode(', ', $days) : null;
+        }
+        unset($data['schedule_days'], $data['schedule_days_present']);
         $data['course_type'] = $data['course_type'] ?? ($request->boolean('includes_intensive_final_coaching') ? 'complete' : 'comprehensive');
         $data['includes_intensive_final_coaching'] = in_array($data['course_type'], ['complete', 'final_coaching'], true);
 
