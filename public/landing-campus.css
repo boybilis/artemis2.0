@@ -25,11 +25,11 @@
 #landing-screen .hero-desc{font-size:calc(14px + 2pt);line-height:1.65;color:#102a43;margin:0 0 22px;max-width:350px;text-align:left}
 #landing-screen .hero-desc small{display:block;font-size:calc(12px + 2pt)}
 #landing-screen .hero-cta{display:flex;flex-direction:column;align-items:stretch;gap:8px;max-width:310px}
-#landing-screen .hero-cta button{min-height:41px;display:flex;align-items:center;justify-content:center;gap:9px;border-radius:6px;font-size:12px;padding:9px 14px;margin:0}
+#landing-screen .hero-cta button,#landing-screen .hero-cta .campus-website-link{min-height:41px;display:flex;align-items:center;justify-content:center;gap:9px;border-radius:6px;font-size:12px;padding:9px 14px;margin:0}
 #landing-screen .hero-cta svg{width:15px;height:15px}
 #landing-screen .hero-cta .btn-ghost{background:transparent;border:1px solid #7e77b8;color:#26365c}
-#landing-screen .campus-pending-link{border:1px solid #96a9ba;background:transparent;color:#6d8090;cursor:not-allowed}
-#landing-screen .campus-pending-link small{font-size:9px;margin-left:auto}
+#landing-screen .campus-website-link{border:1px solid #073b60;background:transparent;color:#073b60;text-decoration:none;transition:background .2s,color .2s}
+#landing-screen .campus-website-link:hover{background:#073b60;color:#fff}
 #landing-screen .campus-access-note{font-size:calc(9px + 2pt);color:#74859a;line-height:1.5;max-width:310px;margin:12px 0 0}
 #landing-screen .hero-visual{display:block;min-width:0;perspective:1200px}
 #landing-screen .campus-dashboard-preview{display:grid;grid-template-columns:100px 1fr;background:#f7fbff;border:1px solid #dce8ee;border-radius:10px;overflow:hidden;box-shadow:0 18px 45px #073b6020,0 4px 12px #073b6010;transform:rotateY(-7deg) rotateZ(1deg);transition:transform .5s ease,box-shadow .5s ease;color:#112b4f;text-align:left;min-height:305px}
@@ -113,16 +113,18 @@
 #landing-screen .campus-footer-support span{opacity:.7;font-size:calc(9px + 2pt)}
 #landing-screen .campus-footer-links{display:flex;flex-wrap:wrap;gap:12px}
 #landing-screen .campus-footer-links button{padding:0;border:0;background:none;color:#b7d2e2;font-size:calc(10px + 2pt);cursor:not-allowed}
+#landing-screen .campus-footer-links a{color:#e9f8ff;font-size:calc(10px + 2pt);text-decoration:none}
+#landing-screen .campus-footer-links a:hover{text-decoration:underline}
 #landing-screen .campus-copyright{width:100%;font-size:calc(8px + 2pt);opacity:.55;text-align:center}
 @media(max-width:680px){#landing-screen .landing-footer .campus-powered small{font-size:calc(9px + 2pt)}}
-#landing-screen button:focus-visible{outline:3px solid #00a6ce;outline-offset:4px}
+#landing-screen button:focus-visible,#landing-screen a:focus-visible{outline:3px solid #00a6ce;outline-offset:4px}
 body:not(.light-mode) #landing-screen{--campus-ink:#e4f6ff;--campus-muted:#afc6d8;--campus-paper:#0c3550;--campus-base:#082b42;--campus-line:#29506b}
 body:not(.light-mode) #landing-screen .campus-hero-wrap{background:linear-gradient(120deg,#0b344f,#0a2940)}
 body:not(.light-mode) #landing-screen .hero h1{color:#e4f6ff}
 body:not(.light-mode) #landing-screen .hero-desc,body:not(.light-mode) #landing-screen .campus-access-note{color:#afc6d8}
 body:not(.light-mode) #landing-screen .campus-kicker{color:#7ed5de}
 body:not(.light-mode) #landing-screen .hero-cta .btn-ghost{color:#dceeff;border-color:#86a7bf}
-body:not(.light-mode) #landing-screen .campus-pending-link{color:#9bb2c2}
+body:not(.light-mode) #landing-screen .campus-website-link{color:#dceeff;border-color:#86a7bf}
 body:not(.light-mode) #landing-screen .campus-account-wrap{background:linear-gradient(#082b42,#0c3d56)}
 body:not(.light-mode) #landing-screen .campus-account-card{background:linear-gradient(120deg,#0c3550,#103e55);border-color:#29506b}
 body:not(.light-mode) #landing-screen .campus-account-card>p,body:not(.light-mode) #landing-screen .campus-account-card>small,body:not(.light-mode) #landing-screen .campus-account-card li{color:#afc6d8}
