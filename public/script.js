@@ -131,6 +131,7 @@ function showToast(msg, type = 'error') {
 const $ = id => document.getElementById(id);
 
 function showScreen(id) {
+    window.updateLearnerVideoWatermark?.();
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const el = $(id);
     if (el) el.classList.add('active');
@@ -2529,6 +2530,7 @@ function pauseActiveLessonVideo() {
 }
 
 function loadVideoForSubtopic(sub) {
+    window.updateLearnerVideoWatermark?.();
     const player       = $('video-player');
     const uploadedPlayer = $('uploaded-video-player');
     const videoIframeWrap = $('video-iframe-wrap');
