@@ -20,7 +20,7 @@
 #landing-screen .hero{display:grid;grid-template-columns:.88fr 1.12fr;align-items:center;max-width:1160px;padding:62px 28px 54px;margin:auto;gap:48px;min-height:500px}
 #landing-screen .hero-content{max-width:none;text-align:left}
 #landing-screen .campus-kicker{margin:0 0 14px;color:#14788b;font-size:10px;font-weight:700;letter-spacing:.14em}
-#landing-screen .hero h1{font-size:clamp(36px,3.7vw,53px);line-height:1.02;font-weight:400;letter-spacing:.01em;margin:0 0 18px;color:#073b60;text-align:left}
+#landing-screen .hero h1{font-size:clamp(36px,3.7vw,53px);line-height:1.02;font-weight:800;letter-spacing:.01em;margin:0 0 18px;color:#073b60;text-align:left}
 #landing-screen .hero h1 span{color:#ff790a}
 #landing-screen .hero-desc{font-size:calc(14px + 2pt);line-height:1.65;color:#102a43;margin:0 0 22px;max-width:350px;text-align:left}
 #landing-screen .hero-desc small{display:block;font-size:calc(12px + 2pt)}
