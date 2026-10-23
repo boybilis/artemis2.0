@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="test-bank-v2.css?v=51" />
     <link rel="stylesheet" href="course-subject-cards.css?v=1" />
         <link rel="stylesheet" href="branding.css?v=5" />
-        <link rel="stylesheet" href="video-watermark.css?v=2" />
+        <link rel="stylesheet" href="video-watermark.css?v=3" />
         <link rel="stylesheet" href="landing-campus.css?v=10" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -1017,7 +1017,7 @@
                                     "
                                 ></iframe>
                                 <video id="uploaded-video-player" controls playsinline disablepictureinpicture disableremoteplayback controlslist="nodownload noremoteplayback nofullscreen" preload="metadata" draggable="false" oncontextmenu="return false" style="display:none;width:100%;height:100%;background:#000"></video>
-                                <div class="gra-video-watermark" aria-hidden="true"><span id="video-watermark-label"></span></div>
+                                <div class="gra-video-watermark" aria-hidden="true"><span id="video-watermark-label" hidden><b id="video-watermark-name"></b><small id="video-watermark-email"></small></span></div>
                                 <button id="video-fullscreen-btn" type="button" aria-label="View watermarked video full screen" title="View full screen"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
                                 <div id="video-loading-overlay" class="video-loading-overlay" role="status" aria-live="polite" style="display:none">
                                     <div class="video-loading-spinner" aria-hidden="true"></div>
@@ -1401,7 +1401,7 @@
         </div>
 
         <script src="script.js?v=206"></script>
-        <script src="video-watermark.js?v=2"></script>
+        <script src="video-watermark.js?v=3"></script>
         <script src="learner-course-zoom.js?v=1"></script>
         <script src="test-bank-recovery.js?v=2"></script>
         <script src="learner-session.js?v=1"></script>

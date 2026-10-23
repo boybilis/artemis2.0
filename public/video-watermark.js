@@ -4,11 +4,16 @@
     const video=document.getElementById('uploaded-video-player');
     const frame=document.getElementById('video-player');
     const label=document.getElementById('video-watermark-label');
+    const nameLabel=document.getElementById('video-watermark-name');
+    const emailLabel=document.getElementById('video-watermark-email');
     if(!wrap || !button)return;
     function updateWatermark(){
         const user=typeof state==='undefined' ? null : state.user;
         const name=user ? String(user.name || [user.first_name,user.last_name].filter(Boolean).join(' ')).trim() : '';
-        if(label)label.textContent=name;
+        const email=user ? String(user.email || '').trim() : '';
+        if(nameLabel)nameLabel.textContent=name;
+        if(emailLabel)emailLabel.textContent=email;
+        if(label)label.hidden=!name && !email;
     }
     window.updateLearnerVideoWatermark=updateWatermark;
     updateWatermark();
