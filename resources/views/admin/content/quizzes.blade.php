@@ -31,7 +31,7 @@
 
 <div class="tabs">
     <a class="tab" href="{{ route('admin.content.subjects', $course->id) }}">Subjects</a>
-    <a class="tab" href="{{ route('admin.content.topics', ['course' => $course->id, 'subject_id' => $managedSubject->id]) }}">Topics and subtopics</a>
+    <a class="tab" href="{{ route('admin.content.topics', ['course' => $course->id, 'subject_id' => $managedSubject->id]) }}">Sections and Contents</a>
     <a class="tab active" href="{{ route('admin.content.quizzes', ['course' => $course->id, 'subject_id' => $managedSubject->id]) }}">Assessments</a>
 </div>
 
