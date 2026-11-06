@@ -6,7 +6,7 @@
 @section('header_actions')
     <div style="display:flex;gap:.55rem;flex-wrap:wrap">
         <button class="btn btn-ghost" type="button" onclick="openModal('importTopicModal')" {{ $importableTopics->isEmpty() ? 'disabled' : '' }}>Import topic</button>
-        <button class="btn btn-primary" type="button" onclick="openAddTopicModal()">Add topic</button>
+        <button class="btn btn-primary" type="button" onclick="openAddTopicModal()">Add Section</button>
     </div>
 @endsection
 
