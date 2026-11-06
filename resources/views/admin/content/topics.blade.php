@@ -383,7 +383,7 @@
     <form action="{{ route('admin.content.topics.store', $course->id) }}" method="POST" enctype="multipart/form-data" class="admin-modal-content">
         @csrf
         <div class="admin-modal-header">
-            <h3 class="admin-modal-title">Add New Topic</h3>
+            <h3 class="admin-modal-title">Add Section</h3>
             <button type="button" class="admin-modal-close" onclick="closeModal('addTopicModal')">&times;</button>
         </div>
         <div class="admin-modal-body">
@@ -392,21 +392,21 @@
                     <label>Subject</label>
                     <input type="hidden" id="add_subject_id" name="subject_id" value="{{ $managedSubject->id }}">
                     <div class="input" style="padding:.8rem 1rem;border:1.5px solid var(--border);border-radius:8px;background:rgba(124,58,237,.06);font-weight:700">{{ $managedSubject->subject_code }} — {{ $managedSubject->title }}</div>
-                    <small class="muted">This topic will be added to the subject currently being managed.</small>
+                    <small class="muted">This section will be added to the subject currently being managed.</small>
                 </div>
                 <div class="field">
-                    <label for="add_title">Topic Title</label>
+                    <label for="add_title">Section Title</label>
                     <input type="text" id="add_title" name="title" required placeholder="e.g. Fundamentals of Nursing">
                 </div>
                 <div class="field">
-                    <label for="add_description">Topic Description</label>
+                    <label for="add_description">Section Description</label>
                     <textarea id="add_description" name="description" required placeholder="Brief overview shown on the dashboard..." style="width: 100%; min-height: 80px; padding: 0.8rem; border-radius: 8px; border: 1.5px solid var(--border); background: rgba(255,255,255,0.02); color: var(--text); font-family: inherit; resize: vertical;"></textarea>
                 </div>
             </div>
         </div>
         <div class="admin-modal-footer">
             <button type="button" class="btn-ghost" onclick="closeModal('addTopicModal')">Cancel</button>
-            <button type="submit" class="btn-primary">Create Topic</button>
+            <button type="submit" class="btn-primary">Create Section</button>
         </div>
     </form>
 </div>
