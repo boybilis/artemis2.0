@@ -5,7 +5,7 @@
 
 @section('header_actions')
     <div style="display:flex;gap:.55rem;flex-wrap:wrap">
-        <button class="btn btn-ghost" type="button" onclick="openModal('importTopicModal')" {{ $importableTopics->isEmpty() ? 'disabled' : '' }}>Import topic</button>
+        <button class="btn btn-ghost" type="button" onclick="openModal('importTopicModal')" {{ $importableTopics->isEmpty() ? 'disabled' : '' }}>Import Section</button>
         <button class="btn btn-primary" type="button" onclick="openAddTopicModal()">Add Section</button>
     </div>
 @endsection
@@ -348,7 +348,7 @@
         @csrf
         <input type="hidden" name="subject_id" value="{{ $managedSubject->id }}">
         <div class="admin-modal-header">
-            <h3 class="admin-modal-title">Import Topic</h3>
+            <h3 class="admin-modal-title">Import Section</h3>
             <button type="button" class="admin-modal-close" onclick="closeModal('importTopicModal')">&times;</button>
         </div>
         <div class="admin-modal-body">
@@ -373,7 +373,7 @@
         </div>
         <div class="admin-modal-footer">
             <button type="button" class="btn-ghost" onclick="closeModal('importTopicModal')">Cancel</button>
-            <button type="submit" class="btn-primary" {{ $importableTopics->isEmpty() ? 'disabled' : '' }}>Import Topic and Content</button>
+            <button type="submit" class="btn-primary" {{ $importableTopics->isEmpty() ? 'disabled' : '' }}>Import Section and Content</button>
         </div>
     </form>
 </div>
