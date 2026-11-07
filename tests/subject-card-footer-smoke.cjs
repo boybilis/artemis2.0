@@ -11,5 +11,6 @@ const css=fs.readFileSync('public/course-subject-cards.css','utf8');
 assert(css.includes('.learner-subject-footer { display:flex;align-items:center;'));
 assert(css.includes('flex:1;min-width:0;'));
 assert(css.includes('.learner-subject-action { flex-shrink:0;'));
-assert(css.includes('min-height:200px;'));
+assert(css.includes('min-height:160px;'));
+assert(/\.learner-subject-code\s*\{\s*display:none;/.test(css));
 console.log('Subject progress and Open button share a compact footer without changing progress or navigation.');
