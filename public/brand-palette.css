@@ -8,6 +8,10 @@
     --brand-aqua-strong:#087f93;
     --brand-dark-surface:#132b42;
 }
+#learner-sidebar-course-name {
+    white-space:normal;overflow-wrap:anywhere;word-break:normal;
+    text-overflow:clip;line-height:1.45;flex-shrink:0;
+}
 body {
     --bg:var(--brand-dark-surface);
     --bg2:var(--brand-slate);
