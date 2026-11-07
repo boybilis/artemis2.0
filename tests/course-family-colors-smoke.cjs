@@ -1,5 +1,12 @@
 const fs=require('fs'),assert=require('assert'),vm=require('vm');
 const js=fs.readFileSync('public/script.js','utf8');
+const html=fs.readFileSync('public/index.html','utf8');
+const hero=html.match(/<section class="course-overview-hero">([\s\S]*?)<\/section>/)[1];
+for(const id of ['back-to-courses-btn','course-profile-btn']) {
+    assert(hero.includes(`id="${id}"`));
+    assert.equal(html.split(`id="${id}"`).length-1,1);
+}
+assert(hero.includes('course-overview-enrolled'));
 const helper=js.slice(js.indexOf('function courseCardFamily('),js.indexOf('function renderDashboard()'));
 const family=vm.runInNewContext(helper+';courseCardFamily');
 for(const [title,expected] of [['NCLEX review','nclex'],['PNLE course','pnle'],['Prometric Complete','prometric'],['CSE review','cse'],['DOH HAAD','default']]) {
