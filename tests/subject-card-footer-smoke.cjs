@@ -12,5 +12,6 @@ assert(css.includes('.learner-subject-footer { display:flex;align-items:center;'
 assert(css.includes('flex:1;min-width:0;'));
 assert(css.includes('.learner-subject-action { flex-shrink:0;'));
 assert(css.includes('min-height:160px;'));
+assert(css.includes('min-height:38px;padding:.5rem .9rem;border:0;border-radius:999px;'));
 assert(/\.learner-subject-code\s*\{\s*display:none;/.test(css));
 console.log('Subject progress and Open button share a compact footer without changing progress or navigation.');

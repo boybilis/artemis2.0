@@ -32,7 +32,7 @@
 #subjects-container .learner-subject-action { flex-shrink:0;padding-top:0;border-top:0; }
 #subjects-container .learner-subject-action .btn-primary {
     display:inline-flex;align-items:center;justify-content:center;gap:.6rem;
-    min-height:38px;padding:.5rem .9rem;border:0;border-radius:8px;
+    min-height:38px;padding:.5rem .9rem;border:0;border-radius:999px;
     color:#fff;background:linear-gradient(115deg,#19344f,#087f93);
     font-size:.7rem;font-weight:700;box-shadow:none;
 }
