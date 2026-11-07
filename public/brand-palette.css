@@ -84,7 +84,7 @@ body:not(.light-mode) #courses-container .learner-course-card[data-course-family
 body:not(.light-mode) #courses-container .learner-course-card[data-course-family] .course-ranking-badge { color:#eff8fc; }
 /* Profile summary beside the learner welcome hero; no decorative background shapes. */
 #course-details-area[data-course-family] .course-overview-hero {
-    padding:1.3rem;border-radius:16px;border-top:4px solid var(--course-card-color);
+    padding:1.3rem;border-radius:16px;border:1px solid var(--course-card-color);border-top-width:4px;
     background:linear-gradient(125deg,#fff,var(--family-pale));
     color:var(--brand-slate);
 }
