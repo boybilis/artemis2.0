@@ -17,6 +17,7 @@ for(const name of ['nclex','pnle','prometric','cse'])assert(css.includes(`[data-
 for(const name of ['nclex','pnle','prometric','cse'])assert(css.includes(`#course-details-area[data-course-family="${name}"]`));
 require('postcss').parse(css);
 assert(css.includes('background:linear-gradient(125deg,#fff,var(--family-pale))'));
+assert(css.includes('border-color:var(--course-card-color);\n    border-top:3px solid var(--course-card-color);'));
 assert(css.includes('.learner-subject-action .btn-primary:not(:hover) { background:var(--course-card-color);color:var(--course-footer-text); }'));
 assert(css.includes('background:var(--course-card-color);color:var(--course-footer-text)'));
 function luminance(hex){const rgb=hex.match(/\w\w/g).map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return rgb.reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);}

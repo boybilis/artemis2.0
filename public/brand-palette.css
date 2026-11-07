@@ -91,6 +91,7 @@ body:not(.light-mode) #courses-container .learner-course-card[data-course-family
 #course-details-area[data-course-family] .course-overview-hero :is(h2,.section-subtitle,.section-eyebrow) { color:var(--brand-slate); }
 #course-details-area[data-course-family] .course-overview-enrolled { background:var(--course-card-color-dark);color:#fff; }
 #course-details-area[data-course-family] :is(.course-overview-metrics>div,.course-live-schedule,.learner-subject-row) {
+    border-color:var(--course-card-color);
     border-top:3px solid var(--course-card-color);
     background:linear-gradient(135deg,var(--family-night),#132b42);
 }
