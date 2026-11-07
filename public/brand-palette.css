@@ -50,6 +50,33 @@ body:not(.light-mode) #landing-screen #hero-login-btn:hover { border-color:var(-
 .test-bank-v2 .v2-generated-quizzes .v2-generated-heading { background:var(--brand-slate); }
 .learner-course-tab.active { background:var(--brand-slate);color:var(--brand-white); }
 .subjects-catalog-table .subject-status-toggle:hover,.subjects-catalog-table .subject-status-toggle:focus-visible { background:var(--brand-aqua-strong);color:var(--brand-white); }
+/* Permanent course-family colors, independent of catalogue position or enrollment. */
+#courses-container .learner-course-card:where([data-course-family]) {
+    --course-card-color:#184b7a;--course-card-color-dark:#102f50;
+    --course-card-accent:#184b7a;--family-pale:#eaf1fa;--family-night:#182e46;
+    --course-card-soft:var(--family-pale);--course-card-accent-soft:var(--family-pale);
+    --course-card-border:var(--course-card-color);
+    --available-course-color:var(--course-card-color);--available-course-dark:var(--course-card-color-dark);
+    --available-course-soft:var(--family-pale);--available-course-border:var(--course-card-color);
+    border-top:5px solid var(--course-card-color);
+    background:linear-gradient(145deg,var(--family-night),#132b42);
+}
+#courses-container [data-course-family="nclex"] { --course-card-color:#11a7c0;--course-card-color-dark:#075766;--course-card-accent:#076779;--family-pale:#e6f7fa;--family-night:#143c49; }
+#courses-container [data-course-family="pnle"] { --course-card-color:#e6b628;--course-card-color-dark:#806015;--course-card-accent:#795700;--family-pale:#fff7dc;--family-night:#3d3521; }
+#courses-container [data-course-family="prometric"] { --course-card-color:#28945f;--course-card-color-dark:#125337;--course-card-accent:#17633e;--family-pale:#eaf6ed;--family-night:#183c30; }
+#courses-container [data-course-family="cse"] { --course-card-color:#19344f;--course-card-color-dark:#102338;--course-card-accent:#19344f;--family-pale:#eaf0f5;--family-night:#243c52; }
+body.light-mode #courses-container .learner-course-card[data-course-family] { background:linear-gradient(145deg,#ffffff,var(--family-pale)); }
+#courses-container .learner-course-card[data-course-family] .course-card-open-label {
+    background:var(--course-card-color-dark);color:#fff;
+}
+#courses-container .learner-course-card[data-course-family] .course-card-open-label svg { color:#fff; }
+#courses-container .learner-course-card[data-course-family] .available-course-head { background:var(--course-card-color-dark);color:#fff; }
+#courses-container .learner-course-card[data-course-family] .available-course-head span { color:#fff; }
+#courses-container .learner-course-card[data-course-family] .course-subscribe-btn { background:var(--course-card-color-dark);color:#fff; }
+#courses-container .learner-course-card[data-course-family]::before,#courses-container .learner-course-card[data-course-family]::after { display:none; }
+body:not(.light-mode) #courses-container .learner-course-card[data-course-family] .course-code-btn { color:#eff8fc;border-color:#b6cbd7; }
+body:not(.light-mode) #courses-container .learner-course-card[data-course-family] { --course-card-accent:#d6edf5;--course-card-accent-soft:#24435f;--course-card-soft:#24435f; }
+body:not(.light-mode) #courses-container .learner-course-card[data-course-family] .course-ranking-badge { color:#eff8fc; }
 /* Profile summary beside the learner welcome hero; no decorative background shapes. */
 .course-overview-metrics small { color:var(--brand-orange); }
 #dashboard-hero .dashboard-hero-panel {

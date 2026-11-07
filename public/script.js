@@ -1078,6 +1078,16 @@ function filterCatalogueCourses(items, search, category) {
     });
 }
 
+function courseCardFamily(course) {
+    // Prefer the reusable course title so all of its batches retain the same family.
+    const title = String(course.title || '').toUpperCase();
+    const identify = value => /\bNCLEX\b/.test(value) ? 'nclex'
+        : /\bPNLE\b/.test(value) ? 'pnle'
+        : /\bPROMETRIC\b/.test(value) ? 'prometric'
+        : /\bCSE\b/.test(value) ? 'cse' : null;
+    return identify(title) || identify((String(course.batch_name || '') + ' ' + String(course.batch_code || '')).toUpperCase()) || 'default';
+}
+
 function renderDashboard() {
     renderEnrolledCourseSidebar();
     // Reset view to courses menu
@@ -1188,6 +1198,7 @@ function renderDashboard() {
             const isLocked = !course.is_enrolled;
             card.dataset.courseId = String(course.id);
             card.dataset.batchId = String(course.batch_id || '');
+            card.dataset.courseFamily = courseCardFamily(course);
             card.className = `topic-card learner-course-card ${isLocked ? `course-locked available-course-tone-${(courseIndex % 3) + 1}` : 'course-enrolled'}`;
             card.style.cursor = 'pointer';
 
