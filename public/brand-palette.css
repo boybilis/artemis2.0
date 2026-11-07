@@ -129,6 +129,9 @@ body.light-mode #course-details-area[data-course-family] :is(.course-overview-me
 #course-details-area[data-course-family] .course-overview-titlebar .btn-ghost { color:var(--course-footer-text);border-color:currentColor; }
 #course-details-area[data-course-family] .course-overview-titlebar .btn-ghost:hover { color:#fff;background:var(--course-card-color-dark); }
 #course-details-area[data-course-family] .course-overview-hero>.section-subtitle { margin:0;padding:1rem 1.3rem; }
+#course-details-area .course-overview-body { padding:1rem 1.3rem; }
+#course-details-area .course-overview-body .section-subtitle { margin:0; }
+#course-details-area .course-overview-titlebar .section-eyebrow { margin:0; }
 #dashboard-hero .dashboard-hero-panel {
     border-top:4px solid var(--brand-slate);
     background:linear-gradient(135deg,#24435f 0%,var(--brand-slate) 65%,var(--brand-dark-surface) 100%);
