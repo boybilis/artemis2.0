@@ -21,6 +21,8 @@ class SubjectEntryTopicTest extends TestCase
         $data=$this->getJson("/api/courses/{$course->id}/topics")->assertOk()->json('topics');
         $this->assertTrue(collect($data)->firstWhere('id',$lesson->id)['isLocked']);
         $this->postJson('/api/progress/unlock',['topic_id'=>$agreement->id,'subtopic_id'=>$document->id,'item_type'=>'doc'])->assertOk()->assertJsonPath('max_unlocked_index',1);
+        $this->getJson($url)->assertForbidden();
+        $this->postJson("/api/courses/{$course->id}/subjects/{$subject->id}/policy/accept", ['agreed'=>true])->assertOk();
         $data=$this->getJson("/api/courses/{$course->id}/topics")->assertOk()->json('topics');
         $this->assertFalse(collect($data)->firstWhere('id',$lesson->id)['isLocked']);
         $this->getJson($url)->assertOk();
@@ -50,13 +52,39 @@ class SubjectEntryTopicTest extends TestCase
         $this->assertTrue($entry['isPolicyTopic']);$this->assertFalse($entry['isLocked']);
         $this->assertTrue(collect($data)->firstWhere('id',$item->topic_id)['isPreTestTopic']);
         $url="/api/courses/{$course->id}/subtopics/{$item->id}/assessment/questions";
-        $this->getJson($url)->assertForbidden()->assertJsonPath('message','Complete the Policy / End User Agreement topic before opening the Pre-test.');
+        $this->getJson($url)->assertForbidden()->assertJsonPath('message','Read and accept this subject’s End User Agreement first.');
         UserProgress::create(['user_id'=>$user->id,'course_id'=>$course->id,'topic_id'=>$agreement->id,'max_unlocked_index'=>1]);
+        $this->getJson($url)->assertForbidden();
+        $this->postJson("/api/courses/{$course->id}/subjects/{$subject->id}/policy/accept", ['agreed'=>true])->assertOk();
         $this->getJson($url)->assertOk()->assertJsonCount(1,'questions');
     }
     public function test_pre_test_can_open_when_no_policy_or_agreement_is_configured(): void {
         extract($this->subject());$item=$this->preTest($course,$subject);
         $this->getJson("/api/courses/{$course->id}/subtopics/{$item->id}/assessment/questions")->assertOk();
+    }
+    public function test_policy_acceptance_unlocks_only_pre_test_then_scored_pre_test_unlocks_other_sections(): void {
+        extract($this->subject());
+        $policy = Topic::create(['course_id'=>$course->id, 'subject_id'=>$subject->id, 'title'=>'Policy', 'status'=>'approved', 'sort_order'=>0]);
+        $doc = Subtopic::create(['topic_id'=>$policy->id, 'title'=>'End User Agreement', 'content_type'=>'subtopic', 'documentation_path'=>'https://example.test/agreement.pdf', 'status'=>'approved']);
+        $preTest = $this->preTest($course, $subject);
+        $lecture = Topic::create(['course_id'=>$course->id, 'subject_id'=>$subject->id, 'title'=>'Lectures', 'status'=>'approved', 'sort_order'=>3]);
+        Subtopic::create(['topic_id'=>$lecture->id, 'title'=>'Video', 'content_type'=>'subtopic', 'video_url'=>'https://example.test/video', 'status'=>'approved']);
+        $url = "/api/courses/{$course->id}/topics";
+        $data = collect($this->getJson($url)->assertOk()->json('topics'));
+        $this->assertFalse($data->firstWhere('id',$policy->id)['isLocked']);
+        $this->assertTrue($data->firstWhere('id',$preTest->topic_id)['isLocked']);
+        $this->assertTrue($data->firstWhere('id',$lecture->id)['isLocked']);
+        $this->postJson('/api/progress/unlock', ['topic_id'=>$policy->id, 'subtopic_id'=>$doc->id, 'item_type'=>'doc'])->assertOk();
+        $data = collect($this->getJson($url)->assertOk()->json('topics'));
+        $this->assertTrue($data->firstWhere('id',$preTest->topic_id)['isLocked']);
+        $this->postJson("/api/courses/{$course->id}/subjects/{$subject->id}/policy/accept", ['agreed'=>true])->assertOk();
+        $data = collect($this->getJson($url)->assertOk()->json('topics'));
+        $this->assertFalse($data->firstWhere('id',$preTest->topic_id)['isLocked']);
+        $this->assertTrue($data->firstWhere('id',$lecture->id)['isLocked']);
+        $this->getJson("/api/courses/{$course->id}/subtopics/{$preTest->id}/assessment/questions")->assertOk();
+        $this->postJson("/api/courses/{$course->id}/subtopics/{$preTest->id}/assessment/submit", ['answers'=>[0]])->assertOk();
+        $data = collect($this->getJson($url)->assertOk()->json('topics'));
+        $this->assertFalse($data->firstWhere('id',$lecture->id)['isLocked']);
     }
     public function test_policy_aliases_do_not_match_ordinary_learning_topics(): void {
         foreach(['Policy','Course Policy','End User Agreement','End-User Agreement'] as $title)$this->assertTrue((new Topic(['title'=>$title]))->isPolicyPrerequisite());

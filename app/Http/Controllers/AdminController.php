@@ -964,11 +964,15 @@ class AdminController extends Controller
         $course = Course::findOrFail($course_id);
         $data = $this->validateSubject($request, $course->id);
 
-        $subject = $course->subjects()->create([
-            ...$data,
-            'sort_order' => $data['sort_order'] ?? ($course->subjects()->max('sort_order') + 1),
-            'status' => (Auth::user()->hasAdminAccess()) ? 'approved' : 'pending',
-        ]);
+        $subject = DB::transaction(function () use ($course, $data) {
+            $subject = $course->subjects()->create([
+                ...$data,
+                'sort_order' => $data['sort_order'] ?? ($course->subjects()->max('sort_order') + 1),
+                'status' => (Auth::user()->hasAdminAccess()) ? 'approved' : 'pending',
+            ]);
+            app(\App\Services\SubjectPolicy::class)->ensureDefault($subject);
+            return $subject;
+        });
 
         AuditLog::create([
             'user_id' => Auth::id(),

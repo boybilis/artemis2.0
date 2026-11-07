@@ -46,6 +46,7 @@ Route::prefix('api')->group(function () {
         // Course & Progress
         Route::get('/courses', [CourseController::class, 'getCourses']);
         Route::get('/courses/{course}/topics', [CourseController::class, 'getTopics']);
+        Route::post('/courses/{course}/subjects/{subject}/policy/accept', [CourseController::class, 'acceptSubjectPolicy']);
         Route::get('/courses/{course}/zoom-sessions', [CourseController::class, 'learnerZoomSessions']);
         Route::get('/courses/{course}/progress-report', [CourseController::class, 'assessmentProgressReport']);
         Route::get('/learning/videos/{subtopic}', [CourseController::class, 'streamSubtopicVideo'])

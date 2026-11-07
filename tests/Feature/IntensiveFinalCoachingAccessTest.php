@@ -14,6 +14,7 @@ use Tests\TestCase;
 class IntensiveFinalCoachingAccessTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\CreatesPolicyTemplate;
 
     public function test_all_four_batch_types_filter_subjects_topics_and_course_counts(): void
     {
@@ -39,6 +40,7 @@ class IntensiveFinalCoachingAccessTest extends TestCase
 
     public function test_admin_can_save_each_course_type_and_tag_mentoring_subjects(): void
     {
+        $this->createPolicyTemplate();
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
         $course = Course::create(['title' => 'Review', 'approval_status' => 'approved']);
         foreach (array_keys(CourseBatch::COURSE_TYPES) as $type) {
@@ -92,6 +94,7 @@ class IntensiveFinalCoachingAccessTest extends TestCase
 
     public function test_admin_can_tag_subject_and_batch_for_intensive_final_coaching(): void
     {
+        $this->createPolicyTemplate();
         $admin = User::factory()->create(['role' => 'admin', 'is_admin' => true]);
         $course = Course::create(['title' => 'NCLEX', 'approval_status' => 'approved', 'is_published' => true]);
         $this->actingAs($admin)->post(route('admin.content.subjects.store', $course), [

@@ -26,6 +26,7 @@ class SubtopicAssessmentTest extends TestCase
         CourseEnrollment::create(['user_id'=>$user->id,'batch_id'=>$batch->id,'status'=>'active','enrolled_at'=>now(),'expires_at'=>now()->addMonth()]);
         $subject = Subject::create(['course_id'=>$course->id,'subject_code'=>'N1','title'=>'Nursing']);
         $policyTopic = Topic::create(['course_id'=>$course->id,'subject_id'=>$subject->id,'title'=>'Policy','status'=>'approved']);
+        \Illuminate\Support\Facades\DB::table('subject_policy_acceptances')->insert(['user_id'=>$user->id, 'subject_id'=>$subject->id, 'accepted_at'=>now()]);
         $topic = Topic::create(['course_id'=>$course->id,'subject_id'=>$subject->id,'title'=>'Care','status'=>'approved']);
         $preTest = Subtopic::create(['topic_id'=>$policyTopic->id,'content_type'=>'pre_test','title'=>'Pre-test','status'=>'approved']);
         QuizAttempt::create(['user_id'=>$user->id,'course_id'=>$course->id,'batch_id'=>$batch->id,'topic_id'=>$policyTopic->id,'subtopic_id'=>$preTest->id,'assessment_type'=>'pre_test','score'=>1,'total'=>1,'points_earned'=>1,'points_possible'=>1,'passed'=>true]);

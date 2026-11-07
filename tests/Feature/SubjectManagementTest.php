@@ -11,9 +11,11 @@ use Tests\TestCase;
 class SubjectManagementTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\CreatesPolicyTemplate;
 
     public function test_instructor_can_manage_a_subject_without_delivery_schedule(): void
     {
+        $this->createPolicyTemplate();
         $instructor = User::factory()->create(['role' => 'instructor', 'is_admin' => false]);
         $course = Course::create(['title' => 'NCLEX Review', 'created_by' => $instructor->id]);
 
@@ -28,7 +30,7 @@ class SubjectManagementTest extends TestCase
             ->post(route('admin.content.subjects.store', $course), $payload)
             ->assertRedirect();
 
-        $subject = Subject::firstOrFail();
+        $subject = Subject::where('course_id', $course->id)->firstOrFail();
         $this->assertSame('NURS-101', $subject->subject_code);
         $this->assertNull($subject->start_date);
         $this->assertNull($subject->modality);

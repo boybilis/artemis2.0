@@ -295,37 +295,29 @@ class CourseController extends Controller
             ];
         });
 
-        $savedLearningProgress=UserProgress::where('user_id',$user->id)->where('course_id',$courseId)->pluck('max_unlocked_index','topic_id');
         $topicsBySubject=$formattedTopics->groupBy('subjectId');
-        $formattedTopics=$formattedTopics->map(function ($topic) use ($topicsBySubject,$savedLearningProgress,$completedPreTestSubjectIds) {
+        $acceptedPolicyIds = DB::table('subject_policy_acceptances')->where('user_id', $user->id)->pluck('subject_id');
+        $policySubjectIds = Topic::where('course_id', $courseId)->get()->filter(fn ($topic) => $topic->isPolicyPrerequisite())->pluck('subject_id');
+        $formattedTopics=$formattedTopics->map(function ($topic) use ($topicsBySubject,$completedPreTestSubjectIds,$acceptedPolicyIds,$policySubjectIds) {
             if($topic['subjectId']===null)return $topic;
             $related=$topicsBySubject->get($topic['subjectId'],collect());
-            $policy=$related->firstWhere('isPolicyTopic',true);
-            $policyItems=collect($policy['subtopics'] ?? [])->flatMap(function ($sub) {
-                if(in_array($sub['contentType'],['mock_exam','pre_test'],true))return [];
-                if($sub['contentType'] && $sub['contentType']!=='subtopic')return [['type'=>'assessment','attempts'=>$sub['attemptsUsed']]];
-                $items=[];
-                if($sub['documentationPath'])$items[]=['type'=>'doc'];
-                if($sub['videoUrl'] || $sub['videoUploadUrl'])$items[]=['type'=>'video'];
-                return $items ?: [['type'=>'none']];
-            });
-            $required=$policyItems->filter(fn ($item)=>$item['type']!=='none');
-            $policyComplete=!$policy || ($required->isNotEmpty() && $required->every(fn ($item,$index)=>$index < (int)$savedLearningProgress->get($policy['id'],0)
-                && ($item['type']!=='assessment' || $item['attempts']>0)));
+            $policyComplete = !$policySubjectIds->contains($topic['subjectId']) || $acceptedPolicyIds->contains($topic['subjectId']);
             $hasPreTest=$related->contains('isPreTestTopic',true);
-            $ready=$hasPreTest ? $completedPreTestSubjectIds->contains($topic['subjectId']) : $policyComplete;
+            $ready=$policyComplete && (!$hasPreTest || $completedPreTestSubjectIds->contains($topic['subjectId']));
             $topic['isLocked']=!$topic['isPolicyTopic'] && !($topic['isPreTestTopic'] ? $policyComplete : $ready);
             return $topic;
         });
         $completedTopicIds = UserProgress::where('user_id', $user->id)->where('course_id', $courseId)->pluck('topic_id');
         $subjects = Subject::where('course_id', $courseId)->where('status', 'approved')
             ->tap(fn ($query) => $activeBatch->filterSubjects($query))
-            ->orderBy('sort_order')->orderBy('title')->get()->map(function ($subject) use ($topics, $completedTopicIds) {
+            ->orderBy('sort_order')->orderBy('title')->get()->map(function ($subject) use ($topics, $completedTopicIds, $acceptedPolicyIds, $policySubjectIds) {
             $subjectTopicIds = $topics->where('subject_id', $subject->id)->pluck('id');
             $total = $subjectTopicIds->count();
             $completed = $subjectTopicIds->intersect($completedTopicIds)->count();
             return [
                 'id' => $subject->id, 'code' => $subject->subject_code, 'title' => $subject->title,
+                'policyAcceptanceRequired' => $policySubjectIds->contains($subject->id),
+                'policyAccepted' => $acceptedPolicyIds->contains($subject->id),
                 'description' => $subject->description, 'topicCount' => $total, 'completedTopics' => $completed,
                 'progressPercentage' => $total > 0 ? (int) round(($completed / $total) * 100) : 0,
             ];
@@ -478,6 +470,30 @@ class CourseController extends Controller
         ]);
     }
 
+    public function acceptSubjectPolicy(Request $request, $courseId, $subjectId)
+    {
+        $request->validate(['agreed' => ['required', 'accepted']]);
+        $subject = Subject::where('course_id', $courseId)->where('status', 'approved')->findOrFail($subjectId);
+        $user = Auth::user();
+        $batch = CourseBatch::forCourse($courseId)
+            ->when($request->filled('batch_id'), fn ($q) => $q->whereKey($request->integer('batch_id')))
+            ->whereHas('enrollments', fn ($q) => $q->where('user_id', $user->id)->where('status', 'active')
+                ->where(fn ($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>', now())))
+            ->firstOrFail();
+        abort_unless(Subject::whereKey($subject->id)->tap(fn ($q) => $batch->filterSubjects($q))->exists(), 403);
+        $service = app(\App\Services\SubjectPolicy::class);
+        $policy = $service->policy($subject->id);
+        abort_unless($policy, 422, 'No Policy section is configured for this subject.');
+        if (!$service->accepted($user->id, $subject->id)) {
+            abort_unless($service->completed($user->id, $policy), 422, 'Complete all Policy contents before accepting the agreement.');
+            DB::table('subject_policy_acceptances')->insertOrIgnore([
+                'user_id'=>$user->id, 'subject_id'=>$subject->id, 'accepted_at'=>now(),
+            ]);
+        }
+        return response()->json(['success'=>true, 'subjectId'=>$subject->id, 'policyAccepted'=>true,
+            'message'=>'Agreement accepted. You may continue.']);
+    }
+
     public function streamSubtopicVideo(Request $request, Subtopic $subtopic, GoogleDriveVideoService $drive)
     {
         abort_unless(hash_equals($this->videoSessionKey(), (string) $request->query('session_key')), 403, 'This video link belongs to a different or expired session.');
@@ -491,6 +507,7 @@ class CourseController extends Controller
         $subtopic->loadMissing('topic');
         abort_unless($subtopic->status === 'approved' && $subtopic->topic?->status === 'approved', 404);
         abort_unless(Auth::user()->hasActiveEnrollment((int) $subtopic->topic->course_id), 403, 'An active enrollment is required to view this video.');
+        app(\App\Services\SubjectPolicy::class)->authorizeTopic(Auth::id(), $subtopic->topic);
         if (! $subtopic->video_path) {
             $fileId = $drive->fileIdFromUrl($subtopic->video_url);
             abort_unless($fileId, 404);
@@ -532,6 +549,7 @@ class CourseController extends Controller
         $subtopic->loadMissing('topic');
         abort_unless($subtopic->status === 'approved' && $subtopic->topic?->status === 'approved', 404);
         abort_unless(Auth::user()->hasActiveEnrollment((int) $subtopic->topic->course_id), 403, 'An active enrollment is required to view this document.');
+        app(\App\Services\SubjectPolicy::class)->authorizeTopic(Auth::id(), $subtopic->topic);
 
         return $this->privateDocumentResponse($subtopic->documentation_path, $subtopic->documentation_filename);
     }
@@ -541,6 +559,7 @@ class CourseController extends Controller
         $this->authorizeDocumentSession($request);
         abort_unless($topic->status === 'approved', 404);
         abort_unless(Auth::user()->hasActiveEnrollment((int) $topic->course_id), 403, 'An active enrollment is required to view this document.');
+        app(\App\Services\SubjectPolicy::class)->authorizeTopic(Auth::id(), $topic);
 
         return $this->privateDocumentResponse($topic->documentation_path, $topic->documentation_filename);
     }
@@ -757,6 +776,7 @@ class CourseController extends Controller
             return response()->json(['success' => false, 'message' => 'You are not enrolled in this course.'], 403);
         }
         $user->last_topic_id = $topicId;
+        app(\App\Services\SubjectPolicy::class)->authorizeTopic($user->id, $topic);
         $user->save();
 
         return response()->json([
@@ -784,6 +804,7 @@ class CourseController extends Controller
             return response()->json(['success' => false, 'message' => 'You are not enrolled in this course.'], 403);
         }
 
+        app(\App\Services\SubjectPolicy::class)->authorizeTopic($user->id, $topic);
         $items = $this->topicLearningItems($topic);
         if ($items->isEmpty()) {
             return response()->json(['success' => false, 'message' => 'This topic has no learning content.'], 422);
@@ -878,6 +899,7 @@ class CourseController extends Controller
         if (! $user->hasActiveEnrollment((int) $topic->course_id)) {
             return response()->json(['success' => false, 'message' => 'You are not enrolled in this course.'], 403);
         }
+        app(\App\Services\SubjectPolicy::class)->authorizeTopic($user->id, $topic);
         $questionIds = session()->pull("topic_quiz_{$user->id}_{$topic->id}", []);
         $questionsById = $topic->quizQuestions()
             ->where('question_type', 'quiz')

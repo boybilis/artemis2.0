@@ -1400,7 +1400,15 @@
             </div>
         </div>
 
-        <script src="script.js?v=206"></script>
+        <dialog id="subject-policy-dialog" aria-labelledby="subject-policy-dialog-title" aria-describedby="subject-policy-dialog-description">
+            <h2 id="subject-policy-dialog-title">End User Agreement</h2>
+            <p id="subject-policy-dialog-description">You have completed this subject’s Policy section. Please confirm your agreement to continue.</p>
+            <label class="subject-policy-agree-label"><input type="checkbox" id="subject-policy-agree-check"> <span>I have read and agree to the End User Agreement for this subject.</span></label>
+            <div class="subject-policy-dialog-actions"><button type="button" id="subject-policy-decline" class="btn-ghost">Decline</button><button type="button" id="subject-policy-accept" class="btn-primary" disabled>Agree and Continue</button></div>
+        </dialog>
+        <link rel="stylesheet" href="subject-policy.css?v=1">
+        <script src="script.js?v=207"></script>
+        <script src="subject-policy.js?v=1"></script>
         <script src="video-watermark.js?v=3"></script>
         <script src="learner-course-zoom.js?v=1"></script>
         <script src="test-bank-recovery.js?v=2"></script>

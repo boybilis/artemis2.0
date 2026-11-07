@@ -1445,6 +1445,7 @@ function isPreTestLearningTopic(topic) {
 }
 
 function hasCompletedSubjectPreTest(subjectId) {
+    if (needsSubjectPolicyAcceptance(subjectId)) return false;
     const subjectTopics=topics.filter(topic=>Number(topic.subjectId)===Number(subjectId));
     if(!subjectTopics.some(isPreTestLearningTopic))return hasCompletedSubjectPolicy(subjectId);
     return subjectTopics.some(topic => (topic.subtopics || []).some(subtopic =>
@@ -1453,6 +1454,17 @@ function hasCompletedSubjectPreTest(subjectId) {
 }
 
 function hasCompletedSubjectPolicy(subjectId) {
+    const subject = typeof subjects === 'undefined' ? null : subjects.find(item => Number(item.id) === Number(subjectId));
+    if (subject?.policyAcceptanceRequired) return subject.policyAccepted === true;
+    return hasReadSubjectPolicy(subjectId);
+}
+
+function needsSubjectPolicyAcceptance(subjectId) {
+    const subject = typeof subjects === 'undefined' ? null : subjects.find(item => Number(item.id) === Number(subjectId));
+    return subject?.policyAcceptanceRequired === true && subject.policyAccepted !== true;
+}
+
+function hasReadSubjectPolicy(subjectId) {
     const policyTopic = topics.find(topic =>
         Number(topic.subjectId) === Number(subjectId) &&
         (isPolicyLearningTopic(topic))
@@ -2245,6 +2257,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
         navList.appendChild(section);
     });
     if (window.lucide) lucide.createIcons({root: navList});
+    window.maybePromptSubjectPolicy?.(activeTopic);
 }
 
 function outlineItemAccessible(topic, item, itemIndex) {
@@ -2323,7 +2336,8 @@ function openFlattenedItem(index) {
                 Number(candidate.subjectId || 0) === Number(currentTopic?.subjectId || 0)
             );
         const documentPath = String(item.sub?.documentationPath || '').toLowerCase();
-        const requiresPdfCompletion = item.type === 'doc' && /\.pdf(?:$|[?#])/.test(documentPath);
+        const requiresPdfCompletion = item.type === 'doc' && (item.sub?.documentationType === 'pdf'
+            || /\.pdf(?:$|[?#])/.test(documentPath) || /\.pdf$/i.test(item.sub?.documentationFilename || ''));
         const wasPreviouslyCompleted = index < window.currentUnlockedIdx;
         const requiresVideoCompletion = item.type === 'video' && Boolean(item.sub?.videoUploadUrl);
         const requiresAssessmentCompletion = item.type === 'assessment' && Number(item.sub?.attemptsUsed || 0) === 0;
@@ -2367,6 +2381,7 @@ function openFlattenedItem(index) {
                 }
             }
 
+            if (window.maybePromptSubjectPolicy?.(currentTopic)) return;
             if (!isLastItem) {
                 renderLesson(nextIdx);
             } else if (nextTopicIndex >= 0) {
@@ -2451,6 +2466,7 @@ async function markCurrentLearningItemComplete(index) {
         }
     }
     renderCompleteSubjectSidebar(topic);
+    window.maybePromptSubjectPolicy?.(topic);
     return true;
 }
 
@@ -2823,6 +2839,7 @@ async function renderTrackedPdf(path, shouldTrackCompletion = true) {
             notice.className = 'pdf-auto-complete-notice'; notice.textContent = 'Document completed'; pages.appendChild(notice);
             showToast('Document completed. You may now continue.', 'success');
         };
+        requestAnimationFrame(() => { if (sequence === pdfRenderSequence) wrap.onscroll?.(); });
     } catch (error) {
         pages.innerHTML = '<div class="pdf-render-status">The PDF preview could not be loaded. Use Download to open the document.</div>';
     }

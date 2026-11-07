@@ -80,6 +80,7 @@ class ExamController extends Controller
         $hasRequiredContent = false;
 
         foreach ($topics as $topic) {
+            if (!app(\App\Services\SubjectPolicy::class)->accepted($userId, $topic->subject_id)) return false;
             $unlockedIndex = (int) UserProgress::where('user_id', $userId)
                 ->where('topic_id', $topic->id)
                 ->value('max_unlocked_index');
@@ -131,6 +132,10 @@ class ExamController extends Controller
 
     private function assessmentPrerequisiteMessage(int $userId, Subtopic $item): ?string
     {
+        if ($item->topic->isPolicyPrerequisite() && !in_array($item->content_type, ['pre_test', 'mock_exam'], true)) return null;
+        if (!app(\App\Services\SubjectPolicy::class)->accepted($userId, $item->topic->subject_id)) {
+            return 'Read and accept this subject’s End User Agreement first.';
+        }
         if ($item->content_type === 'pre_test') {
             if (! $this->policyTopicComplete($userId, $item)) {
                 return 'Complete the Policy / End User Agreement topic before opening the Pre-test.';
@@ -148,28 +153,7 @@ class ExamController extends Controller
 
     private function policyTopicComplete(int $userId, Subtopic $preTest): bool
     {
-        $policyTopic = Topic::where('course_id', $preTest->topic->course_id)
-            ->where('subject_id', $preTest->topic->subject_id)
-            ->where('status', 'approved')
-            ->with(['subtopics' => fn ($query) => $query->where('status', 'approved')])
-            ->get()->first(fn (Topic $topic) => $topic->isPolicyPrerequisite());
-
-        // A standalone Pre-Test is a valid subject entry when no agreement is configured.
-        if (! $policyTopic) return true;
-
-        $requiredItems = $policyTopic->subtopics->sum(function (Subtopic $subtopic) {
-            if ($subtopic->content_type !== 'subtopic') {
-                return in_array($subtopic->content_type, ['mock_exam', 'pre_test'], true) ? 0 : 1;
-            }
-            $count = filled($subtopic->documentation_path) ? 1 : 0;
-            $count += (filled($subtopic->video_url) || filled($subtopic->video_path)) ? 1 : 0;
-            return $count ?: 1;
-        });
-        $unlockedIndex = (int) UserProgress::where('user_id', $userId)
-            ->where('topic_id', $policyTopic->id)
-            ->value('max_unlocked_index');
-
-        return $requiredItems > 0 && $unlockedIndex >= $requiredItems;
+        return app(\App\Services\SubjectPolicy::class)->accepted($userId, $preTest->topic->subject_id);
     }
 
     public function getSubtopicQuestions(Request $request, $courseId, $subtopicId)
