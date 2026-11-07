@@ -1481,6 +1481,7 @@ function hasReadSubjectPolicy(subjectId) {
 }
 
 function isSubjectMockExamUnlocked(subjectId) {
+    if (needsSubjectPolicyAcceptance(subjectId)) return false;
     const requiredItems = [];
     topics
         .filter(topic => Number(topic.subjectId) === Number(subjectId))
@@ -1496,6 +1497,7 @@ function isSubjectMockExamUnlocked(subjectId) {
 }
 
 function isTopicContentComplete(topic) {
+    if (isPolicyLearningTopic(topic) && needsSubjectPolicyAcceptance(topic.subjectId)) return false;
     const unlockedIndex = Number(state.topicProgressMap[topic.id] || 0);
     const requiredItems = getTopicFlatLearningItems(topic)
         .map((item, flatIndex) => ({item, flatIndex}))
@@ -1537,7 +1539,8 @@ function getSubjectLearningProgress(subjectId) {
                 for (let offset = 0; offset < itemCount; offset++) {
                     const isAssessment = subtopic.contentType && !['subtopic', 'zoom_link'].includes(subtopic.contentType);
                     const hasSavedScore = Number(subtopic.attemptsUsed || 0) > 0;
-                    if (topicContentIndex < unlockedIndex && (!isAssessment || hasSavedScore)) {
+                    if (topicContentIndex < unlockedIndex && (!isAssessment || hasSavedScore)
+                        && !(isPolicyLearningTopic(topic) && needsSubjectPolicyAcceptance(subjectId))) {
                         completedContents++;
                     }
                     topicContentIndex++;
@@ -2209,10 +2212,11 @@ function renderCompleteSubjectSidebar(activeTopic) {
         const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
         const policyCompleted = hasCompletedSubjectPolicy(topic.subjectId);
         const isPolicy = isPolicyLearningTopic(topic);
+        const awaitingAgreement = isPolicy && needsSubjectPolicyAcceptance(topic.subjectId);
         const isPreTestTopic = isPreTestLearningTopic(topic);
         const topicUnlocked = isPolicy || preTestCompleted || (isPreTestTopic && policyCompleted);
         const requiredItems = items.filter(item => item.type !== 'none' && !item.sub.isBatchZoom);
-        const topicCompleted = requiredItems.length > 0 && requiredItems.every((item, index) => {
+        const topicCompleted = !awaitingAgreement && requiredItems.length > 0 && requiredItems.every((item, index) => {
             const actualIndex = items.indexOf(item);
             const hasScore = item.type !== 'assessment' || Number(item.sub.attemptsUsed || 0) > 0;
             return actualIndex < progressIndex && hasScore;
@@ -2239,7 +2243,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
         items.forEach((item, itemIndex) => {
             const accessible = topicUnlocked && outlineItemAccessible(topic, item, itemIndex);
             const hasScore = item.type !== 'assessment' || Number(item.sub.attemptsUsed || 0) > 0;
-            const completed = itemIndex < progressIndex && hasScore;
+            const completed = !awaitingAgreement && itemIndex < progressIndex && hasScore;
             const label = item.type === 'doc' ? 'Reading' : (item.type === 'video' ? 'Video' : (item.type === 'zoom' ? 'Live Zoom Session' : (item.sub.title || 'Assessment')));
             const button = document.createElement('button');
             button.type = 'button';
@@ -2460,7 +2464,7 @@ async function markCurrentLearningItemComplete(index) {
             return flatIndex < window.currentUnlockedIdx && hasSavedScore;
         });
         const groupHeader = document.querySelector(`.sub-group-header[data-sub-index="${activeItem.subIndex}"]`);
-        if (groupCompleted && groupHeader && !groupHeader.querySelector('.subtopic-complete-check')) {
+        if (groupCompleted && groupHeader && !(isPolicyLearningTopic(topic) && needsSubjectPolicyAcceptance(topic.subjectId)) && !groupHeader.querySelector('.subtopic-complete-check')) {
             groupHeader.insertAdjacentHTML('beforeend', '<span class="subtopic-complete-check" title="Completed"><i data-lucide="check"></i></span>');
             if (window.lucide) lucide.createIcons({root: groupHeader});
         }
@@ -2836,8 +2840,12 @@ async function renderTrackedPdf(path, shouldTrackCompletion = true) {
             if(!saved){completed=false;return;}
             if(sequence!==pdfRenderSequence)return;
             const notice = document.createElement('div');
-            notice.className = 'pdf-auto-complete-notice'; notice.textContent = 'Document completed'; pages.appendChild(notice);
-            showToast('Document completed. You may now continue.', 'success');
+            const policyAwaiting = isPolicyLearningTopic(topics[state.currentTopicIndex])
+                && needsSubjectPolicyAcceptance(topics[state.currentTopicIndex]?.subjectId);
+            notice.className = 'pdf-auto-complete-notice';
+            notice.textContent = policyAwaiting ? 'Reading finished — agreement required' : 'Document completed';
+            pages.appendChild(notice);
+            showToast(policyAwaiting ? 'Reading finished. Accept the agreement to complete Policy.' : 'Document completed. You may now continue.', 'success');
         };
         requestAnimationFrame(() => { if (sequence === pdfRenderSequence) wrap.onscroll?.(); });
     } catch (error) {

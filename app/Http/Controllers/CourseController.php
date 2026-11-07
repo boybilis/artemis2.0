@@ -29,11 +29,13 @@ class CourseController extends Controller
         $user = Auth::user();
         $availableCourses = Course::available()->with(['batches' => fn ($query) => $query->available()->with('zoomSessions')->orderBy('starts_at')->orderBy('name')])->get();
         $courseIds = $availableCourses->pluck('id');
+        $unacceptedPolicyTopicIds = app(\App\Services\SubjectPolicy::class)->unacceptedTopicIds($user->id);
         $approvedTopicTotals = Topic::whereIn('course_id', $courseIds)->where('status', 'approved')
             ->selectRaw('course_id, COUNT(*) as total')->groupBy('course_id')->pluck('total', 'course_id');
         $approvedSubjectTotals = Subject::whereIn('course_id', $courseIds)->where('status', 'approved')
             ->selectRaw('course_id, COUNT(*) as total')->groupBy('course_id')->pluck('total', 'course_id');
         $completedTopicTotals = UserProgress::where('user_id', $user->id)->whereIn('course_id', $courseIds)
+            ->whereNotIn('topic_id', $unacceptedPolicyTopicIds)
             ->selectRaw('course_id, COUNT(DISTINCT topic_id) as total')->groupBy('course_id')->pluck('total', 'course_id');
         $userCertificates = Certificate::with('course:id,title')
             ->where('user_id', $user->id)
@@ -76,7 +78,7 @@ class CourseController extends Controller
             return [$courseId => ['positions' => $positions, 'total' => $bestScores->count()]];
         });
 
-        $courses = $availableCourses->flatMap(function ($course) use ($user, $rankings, $certificatesByCourse, $approvedTopicTotals, $approvedSubjectTotals, $completedTopicTotals) {
+        $courses = $availableCourses->flatMap(function ($course) use ($user, $rankings, $certificatesByCourse, $approvedTopicTotals, $approvedSubjectTotals, $completedTopicTotals, $unacceptedPolicyTopicIds) {
             $enrollment = $user->enrollments()->whereHas('batch.courses', fn ($query) => $query->where('courses.id', $course->id))->latest()->first();
             if ($enrollment?->isActive() && $enrollment->batch_id && !$course->batches->contains('id', $enrollment->batch_id)) {
                 if ($enrolledBatch = CourseBatch::with('zoomSessions')->find($enrollment->batch_id)) $course->batches->push($enrolledBatch);
@@ -84,7 +86,7 @@ class CourseController extends Controller
             $courseRanking = $rankings->get($course->id, ['positions'=>[], 'total'=>0]);
             $international = strtoupper((string) $user->country_code) !== 'PH';
             $base = collect($course->toArray())->except('batches')->all();
-            return $course->batches->unique('id')->map(function ($batch) use ($base, $course, $enrollment, $courseRanking, $user, $certificatesByCourse, $international, $approvedTopicTotals, $approvedSubjectTotals, $completedTopicTotals) {
+            return $course->batches->unique('id')->map(function ($batch) use ($base, $course, $enrollment, $courseRanking, $user, $certificatesByCourse, $international, $approvedTopicTotals, $approvedSubjectTotals, $completedTopicTotals, $unacceptedPolicyTopicIds) {
                 $isEnrolled = ($enrollment?->isActive() ?? false) && (int) $enrollment->batch_id === (int) $batch->id;
                 $visibleSubjectQuery = Subject::where('course_id', $course->id)->where('status', 'approved')
                     ->tap(fn ($query) => $batch->filterSubjects($query));
@@ -96,7 +98,7 @@ class CourseController extends Controller
                     })->pluck('id');
                 $topicTotal = $visibleTopicIds->count();
                 $topicCompleted = $isEnrolled
-                    ? UserProgress::where('user_id', $user->id)->where('course_id', $course->id)->whereIn('topic_id', $visibleTopicIds)->distinct('topic_id')->count('topic_id')
+                    ? UserProgress::where('user_id', $user->id)->where('course_id', $course->id)->whereIn('topic_id', $visibleTopicIds)->whereNotIn('topic_id', $unacceptedPolicyTopicIds)->distinct('topic_id')->count('topic_id')
                     : 0;
                 return array_merge($base, [
                     'batch_id'=>$batch->id, 'batch_name'=>$batch->name, 'batch_code'=>$batch->code,
@@ -307,7 +309,8 @@ class CourseController extends Controller
             $topic['isLocked']=!$topic['isPolicyTopic'] && !($topic['isPreTestTopic'] ? $policyComplete : $ready);
             return $topic;
         });
-        $completedTopicIds = UserProgress::where('user_id', $user->id)->where('course_id', $courseId)->pluck('topic_id');
+        $completedTopicIds = UserProgress::where('user_id', $user->id)->where('course_id', $courseId)
+            ->whereNotIn('topic_id', app(\App\Services\SubjectPolicy::class)->unacceptedTopicIds($user->id, (int) $courseId))->pluck('topic_id');
         $subjects = Subject::where('course_id', $courseId)->where('status', 'approved')
             ->tap(fn ($query) => $activeBatch->filterSubjects($query))
             ->orderBy('sort_order')->orderBy('title')->get()->map(function ($subject) use ($topics, $completedTopicIds, $acceptedPolicyIds, $policySubjectIds) {
@@ -486,11 +489,15 @@ class CourseController extends Controller
         abort_unless($policy, 422, 'No Policy section is configured for this subject.');
         if (!$service->accepted($user->id, $subject->id)) {
             abort_unless($service->completed($user->id, $policy), 422, 'Complete all Policy contents before accepting the agreement.');
-            DB::table('subject_policy_acceptances')->insertOrIgnore([
-                'user_id'=>$user->id, 'subject_id'=>$subject->id, 'accepted_at'=>now(),
-            ]);
+            DB::transaction(function () use ($user, $subject, $policy) {
+                DB::table('subject_policy_acceptances')->insertOrIgnore([
+                    'user_id'=>$user->id, 'subject_id'=>$subject->id, 'accepted_at'=>now(),
+                ]);
+                UserProgress::where('user_id', $user->id)->where('topic_id', $policy->id)
+                    ->update(['completed_at'=>now()]);
+            });
         }
-        return response()->json(['success'=>true, 'subjectId'=>$subject->id, 'policyAccepted'=>true,
+        return response()->json(['success'=>true, 'subjectId'=>$subject->id, 'policyTopicId'=>$policy->id, 'policyAccepted'=>true,
             'message'=>'Agreement accepted. You may continue.']);
     }
 
@@ -725,7 +732,8 @@ class CourseController extends Controller
         }
         $progressData = $query->get(['topic_id', 'course_id', 'max_unlocked_index']);
 
-        $completedTopics = $progressData->pluck('topic_id')->toArray();
+        $unacceptedPolicyTopicIds = app(\App\Services\SubjectPolicy::class)->unacceptedTopicIds($user->id, $courseId ? (int) $courseId : null);
+        $completedTopics = $progressData->whereNotIn('topic_id', $unacceptedPolicyTopicIds)->pluck('topic_id')->toArray();
         $topicProgressMap = $progressData->pluck('max_unlocked_index', 'topic_id')->toArray();
 
         $totalTopics = Topic::where('status', 'approved')->count();
@@ -845,7 +853,9 @@ class CourseController extends Controller
             }
 
             $progress->max_unlocked_index = $currentIndex + 1;
-            if ($progress->max_unlocked_index >= $items->count()) {
+            $awaitingAgreement = $topic->isPolicyPrerequisite()
+                && !app(\App\Services\SubjectPolicy::class)->accepted($user->id, $topic->subject_id);
+            if (!$awaitingAgreement && $progress->max_unlocked_index >= $items->count()) {
                 $progress->completed_at ??= now();
             }
             $progress->save();
@@ -962,7 +972,8 @@ class CourseController extends Controller
             ], ['course_id' => $topic->course_id]);
         }
 
-        $progress = UserProgress::where('user_id', $user->id)->where('course_id', $topic->course_id)->pluck('topic_id')->toArray();
+        $progress = UserProgress::where('user_id', $user->id)->where('course_id', $topic->course_id)
+            ->whereNotIn('topic_id', app(\App\Services\SubjectPolicy::class)->unacceptedTopicIds($user->id, (int) $topic->course_id))->pluck('topic_id')->toArray();
         $totalTopics = Topic::where('course_id', $topic->course_id)->where('status', 'approved')->count();
         $completedCount = count($progress);
 

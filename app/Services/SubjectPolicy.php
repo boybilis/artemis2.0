@@ -9,6 +9,14 @@ use Illuminate\Validation\ValidationException;
 
 class SubjectPolicy
 {
+    public function unacceptedTopicIds(int $userId, ?int $courseId = null)
+    {
+        $accepted = DB::table('subject_policy_acceptances')->where('user_id', $userId)->pluck('subject_id');
+        return Topic::when($courseId, fn ($q) => $q->where('course_id', $courseId))
+            ->whereNotNull('subject_id')->whereNotIn('subject_id', $accepted)->get(['id', 'subject_id', 'title'])
+            ->filter(fn ($topic) => $topic->isPolicyPrerequisite())->pluck('id');
+    }
+
     public function policy(?int $subjectId): ?Topic
     {
         if (!$subjectId) return null;

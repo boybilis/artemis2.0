@@ -39,6 +39,9 @@
             if (!sameContext()) { dialog.close(); context = null; return; }
             const subject = subjects.find(item => Number(item.id) === Number(context.subjectId));
             if (subject) subject.policyAccepted = true;
+            if (result.policyTopicId && !state.completedTopics?.includes(result.policyTopicId)) {
+                state.completedTopics = [...(state.completedTopics || []), result.policyTopicId];
+            }
             const activeTopic = topics[state.currentTopicIndex];
             dialog.close(); context = null;
             if (activeTopic) renderCompleteSubjectSidebar(activeTopic);

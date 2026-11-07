@@ -21,7 +21,8 @@ vm.createContext(c);vm.runInContext(fs.readFileSync('public/subject-policy.js','
  c.currentSubjectId=16;c.window.maybePromptSubjectPolicy(topic);check.checked=true;check.events.change();assert(!accept.disabled);
  const saving=accept.events.click();assert(accept.disabled);assert(check.disabled);assert(decline.disabled);
  await accept.events.click();assert.equal(requests,1);
- resolveSave({success:true,policyAccepted:true,message:'Accepted'});await saving;
+ resolveSave({success:true,policyAccepted:true,policyTopicId:1,message:'Accepted'});await saving;
+ assert(c.state.completedTopics.includes(1));
  assert(c.subjects[0].policyAccepted);assert(!dialog.open);assert.equal(notices.at(-1)[1],'success');assert(!c.window.maybePromptSubjectPolicy(topic));
  c.subjects[0].policyAccepted=false;c.window.maybePromptSubjectPolicy(topic);check.checked=true;check.events.change();
  c.apiRequest=async()=>{throw Error('Offline');};await accept.events.click();assert(dialog.open);assert(!c.subjects[0].policyAccepted);assert(!accept.disabled);assert.equal(notices.at(-1)[1],'error');

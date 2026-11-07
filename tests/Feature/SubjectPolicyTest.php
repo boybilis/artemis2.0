@@ -71,11 +71,28 @@ class SubjectPolicyTest extends TestCase
         $this->postJson('/api/progress/start', ['topic_id'=>$lecture->id])->assertForbidden();
         $this->postJson('/api/progress/unlock', ['topic_id'=>$lecture->id, 'subtopic_id'=>$video->id, 'item_type'=>'video'])->assertForbidden();
         $this->postJson('/api/progress/unlock', ['topic_id'=>$policy->id, 'subtopic_id'=>$doc->id, 'item_type'=>'doc'])->assertOk();
+        $this->assertDatabaseCount('subject_policy_acceptances', 0);
+        $progressUrl = '/api/progress?course_id='.$course->id;
+        $this->getJson($progressUrl)->assertOk()->assertJsonCount(0, 'completedTopics')
+            ->assertJsonPath('modulesCompletedCount',0)->assertJsonPath('topicProgressMap.'.$policy->id,1);
+        // Ignore even older, incorrectly stamped policy completions until consent is saved.
+        \App\Models\UserProgress::where('user_id',$user->id)->where('topic_id',$policy->id)->update(['completed_at'=>now()]);
+        $this->getJson($progressUrl)->assertOk()->assertJsonCount(0,'completedTopics');
+        $this->getJson($topics)->assertOk()->assertJsonPath('subjects.0.completedTopics',0)->assertJsonPath('subjects.0.progressPercentage',0);
+        $card = collect($this->getJson('/api/courses')->assertOk()->json('courses'))->firstWhere('id',$course->id);
+        $this->assertSame(0,$card['completed_topic_count']);
+        $this->assertSame(0,$card['course_progress']);
         $this->postJson($accept, ['agreed'=>false])->assertUnprocessable();
         $this->postJson($accept, [])->assertUnprocessable();
         $this->assertDatabaseCount('subject_policy_acceptances', 0);
         $this->getJson($topics)->assertOk()->assertJsonPath('subjects.0.policyAccepted', false);
         $this->postJson($accept, ['agreed'=>true, 'batch_id'=>$batch->id])->assertOk()->assertJsonPath('policyAccepted', true);
+        $this->assertNotNull(\App\Models\UserProgress::where('user_id',$user->id)->where('topic_id',$policy->id)->value('completed_at'));
+        $this->getJson($progressUrl)->assertOk()->assertJsonFragment(['completedTopics'=>[$policy->id]])
+            ->assertJsonPath('modulesCompletedCount',1);
+        $this->getJson($topics)->assertOk()->assertJsonPath('subjects.0.completedTopics',1)->assertJsonPath('subjects.0.progressPercentage',50);
+        $card = collect($this->getJson('/api/courses')->assertOk()->json('courses'))->firstWhere('id',$course->id);
+        $this->assertSame(1,$card['completed_topic_count']);
         $firstTime = DB::table('subject_policy_acceptances')->value('accepted_at');
         $this->postJson($accept, ['agreed'=>true, 'batch_id'=>$batch->id])->assertOk();
         $this->assertDatabaseCount('subject_policy_acceptances', 1);
