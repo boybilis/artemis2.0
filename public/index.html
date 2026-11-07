@@ -22,7 +22,7 @@
         <link rel="stylesheet" href="landing-campus.css?v=11" />
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <link rel="stylesheet" href="brand-palette.css?v=15">
+    <link rel="stylesheet" href="brand-palette.css?v=16">
 </head>
     <body class="light-mode">
         <div id="toast-container" class="toast-container"></div>
@@ -696,12 +696,13 @@
                                 </div>
                                 </div>
                                 <div class="course-overview-body"><h2 id="course-details-title">Course</h2><p class="section-subtitle">Your live classes, subjects, assessments, and progress for this enrollment.</p></div>
-                            </section>
+                            <hr class="course-overview-divider">
                             <div class="course-overview-metrics">
                                 <div><span class="course-overview-metric-icon"><i data-lucide="calendar-days"></i></span><p><small>NEXT LIVE CLASS</small><strong id="course-next-live-class">No upcoming class</strong></p></div>
                                 <div><span class="course-overview-metric-icon"><i data-lucide="layers-3"></i></span><p><small>TOPICS COMPLETED</small><strong id="course-topics-completed">0 of 0</strong></p></div>
                                 <div><span class="course-overview-metric-icon"><i data-lucide="target"></i></span><p><small>COURSE PROGRESS</small><strong id="course-overview-progress">0%</strong></p></div>
                             </div>
+                            </section>
                             <section class="course-live-schedule">
                                 <div class="course-panel-heading"><span class="course-panel-icon"><i data-lucide="video"></i></span><div><h3>Live Zoom Classes</h3><p>Join your scheduled instructor-led review sessions.</p></div></div>
                                 <div id="course-zoom-sessions" class="course-zoom-sessions"></div>

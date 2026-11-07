@@ -132,6 +132,8 @@ body.light-mode #course-details-area[data-course-family] :is(.course-overview-me
 #course-details-area .course-overview-body { padding:1rem 1.3rem; }
 #course-details-area .course-overview-body .section-subtitle { margin:0; }
 #course-details-area .course-overview-titlebar .section-eyebrow { margin:0; }
+#course-details-area .course-overview-divider { border:0;border-top:1px solid #d5e1e9;margin:0 1.3rem; }
+#course-details-area .course-overview-hero .course-overview-metrics { margin:0;padding:1rem 1.3rem 1.3rem; }
 #dashboard-hero .dashboard-hero-panel {
     border-top:4px solid var(--brand-slate);
     background:linear-gradient(135deg,#24435f 0%,var(--brand-slate) 65%,var(--brand-dark-surface) 100%);
