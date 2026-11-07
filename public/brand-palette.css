@@ -85,6 +85,7 @@ body:not(.light-mode) #courses-container .learner-course-card[data-course-family
 /* Profile summary beside the learner welcome hero; no decorative background shapes. */
 #course-details-area[data-course-family] .course-overview-hero {
     padding:1.3rem;border-radius:16px;border:1px solid var(--course-card-color);border-top-width:4px;
+    box-shadow:inset 0 0 0 1px var(--course-card-color);
     background:linear-gradient(125deg,#fff,var(--family-pale));
     color:var(--brand-slate);
 }

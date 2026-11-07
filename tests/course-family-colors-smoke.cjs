@@ -18,6 +18,7 @@ for(const name of ['nclex','pnle','prometric','cse'])assert(css.includes(`#cours
 require('postcss').parse(css);
 assert(css.includes('background:linear-gradient(125deg,#fff,var(--family-pale))'));
 assert(css.includes('border:1px solid var(--course-card-color);border-top-width:4px;'));
+assert(css.includes('box-shadow:inset 0 0 0 1px var(--course-card-color)'));
 assert(css.includes('border-color:var(--course-card-color);\n    border-top:3px solid var(--course-card-color);'));
 assert(css.includes('.learner-subject-action .btn-primary:not(:hover) { background:var(--course-card-color);color:var(--course-footer-text); }'));
 assert(css.includes('background:var(--course-card-color);color:var(--course-footer-text)'));

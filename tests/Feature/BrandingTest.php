@@ -23,7 +23,7 @@ class BrandingTest extends TestCase
 
     public function test_learner_branding_uses_supplied_logo_and_preserves_exam_controls(): void
     {
-        $response=$this->get('/')->assertOk()->assertSee('branding.css?v=6',false)->assertSee('brand-palette.css?v=9',false)
+        $response=$this->get('/')->assertOk()->assertSee('branding.css?v=6',false)->assertSee('brand-palette.css?v=10',false)
             ->assertSee('alt="GRA Test Prep"',false)->assertSee('Powered by Artemis360');
         $html=$response->getContent();
         $this->assertGreaterThan(10,substr_count($html,'/images/gra-test-prep-logo.png'));
