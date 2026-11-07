@@ -4,10 +4,6 @@
 @section('kicker', 'Course Content')
 @section('toast_notifications', 'true')
 
-@section('header_actions')
-    <button type="button" class="btn btn-primary" onclick="openSubjectModal()">Add Subject</button>
-@endsection
-
 @section('content')
 @php($isAdmin = Auth::user()->hasAdminAccess())
 <style>
