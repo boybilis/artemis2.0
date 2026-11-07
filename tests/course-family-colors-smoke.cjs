@@ -7,6 +7,7 @@ for(const id of ['back-to-courses-btn','course-profile-btn']) {
     assert.equal(html.split(`id="${id}"`).length-1,1);
 }
 assert(hero.includes('course-overview-enrolled'));
+assert(hero.includes('class="course-overview-titlebar"'));
 const helper=js.slice(js.indexOf('function courseCardFamily('),js.indexOf('function renderDashboard()'));
 const family=vm.runInNewContext(helper+';courseCardFamily');
 for(const [title,expected] of [['NCLEX review','nclex'],['PNLE course','pnle'],['Prometric Complete','prometric'],['CSE review','cse'],['DOH HAAD','default']]) {

@@ -120,6 +120,15 @@ body.light-mode #course-details-area[data-course-family] :is(.course-overview-me
 #course-details-area[data-course-family] .learner-subject-action .btn-primary:not(:hover) { background:var(--course-card-color);color:var(--course-footer-text); }
 #course-details-area[data-course-family] .learner-subject-row:hover { border-color:var(--course-card-color); }
 .course-overview-metrics small { color:var(--brand-orange); }
+#course-details-area[data-course-family] .course-overview-hero { display:block;padding:0;overflow:hidden; }
+#course-details-area[data-course-family] .course-overview-titlebar {
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;
+    padding:1.3rem;background:var(--course-card-color);color:var(--course-footer-text);
+}
+#course-details-area[data-course-family] .course-overview-titlebar :is(h2,.section-eyebrow) { color:var(--course-footer-text); }
+#course-details-area[data-course-family] .course-overview-titlebar .btn-ghost { color:var(--course-footer-text);border-color:currentColor; }
+#course-details-area[data-course-family] .course-overview-titlebar .btn-ghost:hover { color:#fff;background:var(--course-card-color-dark); }
+#course-details-area[data-course-family] .course-overview-hero>.section-subtitle { margin:0;padding:1rem 1.3rem; }
 #dashboard-hero .dashboard-hero-panel {
     border-top:4px solid var(--brand-slate);
     background:linear-gradient(135deg,#24435f 0%,var(--brand-slate) 65%,var(--brand-dark-surface) 100%);
