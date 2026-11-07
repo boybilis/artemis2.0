@@ -232,6 +232,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
             Route::middleware(RoleMiddleware::class.':admin,instructor,encoder')->group(function () {
             // Subjects CRUD
+            Route::post('/subjects/reorder', [AdminController::class, 'reorderSubjects'])->name('content.subjects.reorder');
             Route::post('/subjects', [AdminController::class, 'storeSubject'])->name('content.subjects.store');
             Route::post('/subjects/{subject}', [AdminController::class, 'updateSubject'])->name('content.subjects.update');
             Route::post('/subjects/{subject}/approve', [AdminController::class, 'approveSubject'])->name('content.subjects.approve');

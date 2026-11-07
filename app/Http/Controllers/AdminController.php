@@ -935,6 +935,30 @@ class AdminController extends Controller
         return view('admin.content.subjects', compact('subjects', 'course'));
     }
 
+    public function reorderSubjects(Request $request, $course_id)
+    {
+        abort_unless(Auth::user()->hasAdminAccess(), 403);
+        $course = Course::findOrFail($course_id);
+        $data = $request->validate([
+            'ordered_ids' => ['required', 'array', 'min:1'],
+            'ordered_ids.*' => ['required', 'integer', 'distinct'],
+        ]);
+        DB::transaction(function () use ($data, $course, $request) {
+            $current = $course->subjects()->lockForUpdate()->pluck('id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+            $requested = collect($data['ordered_ids'])->map(fn ($id) => (int) $id)->sort()->values()->all();
+            abort_unless($current === $requested, 422, 'The subject list has changed. Reload the page and try again.');
+            foreach ($data['ordered_ids'] as $index => $id) {
+                $course->subjects()->whereKey($id)->update(['sort_order' => $index + 1]);
+            }
+            AuditLog::create([
+                'user_id' => Auth::id(), 'action' => 'Reorder Subjects',
+                'description' => 'Reordered subjects for ' . $course->title,
+                'ip_address' => $request->ip(),
+            ]);
+        });
+        return response()->json(['success' => true, 'message' => 'Subject order saved.']);
+    }
+
     public function storeSubject(Request $request, $course_id)
     {
         $course = Course::findOrFail($course_id);
