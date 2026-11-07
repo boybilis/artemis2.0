@@ -16,6 +16,8 @@ const css=fs.readFileSync('public/brand-palette.css','utf8');
 for(const name of ['nclex','pnle','prometric','cse'])assert(css.includes(`[data-course-family="${name}"]`));
 for(const name of ['nclex','pnle','prometric','cse'])assert(css.includes(`#course-details-area[data-course-family="${name}"]`));
 require('postcss').parse(css);
+assert(css.includes('background:linear-gradient(125deg,#fff,var(--family-pale))'));
+assert(css.includes('.learner-subject-action .btn-primary:not(:hover) { background:var(--course-card-color);color:var(--course-footer-text); }'));
 assert(css.includes('background:var(--course-card-color);color:var(--course-footer-text)'));
 function luminance(hex){const rgb=hex.match(/\w\w/g).map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4);return rgb.reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);}
 for(const [bg,fg] of [['11a7c0','102338'],['e6b628','102338'],['28945f','081d13'],['19344f','ffffff'],['184b7a','ffffff']]){
