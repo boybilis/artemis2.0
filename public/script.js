@@ -2205,7 +2205,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
     navList.innerHTML = '';
     const subjectTopics = topics.filter(topic => Number(topic.subjectId) === Number(activeTopic.subjectId));
 
-    subjectTopics.forEach(topic => {
+    subjectTopics.forEach((topic, subjectTopicIndex) => {
         const topicIndex = topics.indexOf(topic);
         const items = getTopicFlatLearningItems(topic);
         const progressIndex = Number(state.topicProgressMap[topic.id] || 0);
@@ -2227,7 +2227,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
         const header = document.createElement('button');
         header.type = 'button';
         header.className = 'learning-outline-topic-header';
-        header.innerHTML = `<span class="learning-outline-topic-number">${topic.sort_order || topicIndex + 1}</span><span><strong>${escapeHtml(topic.title)}</strong><small>${topicCompleted ? 'Completed' : (topicUnlocked ? 'Available' : 'Locked')}</small></span><i data-lucide="${topicCompleted ? 'check-circle' : (topicUnlocked ? 'chevron-right' : 'lock')}"></i>`;
+        header.innerHTML = `<span class="learning-outline-topic-number">${subjectTopicIndex + 1}</span><span><strong>${escapeHtml(topic.title)}</strong><small>${topicCompleted ? 'Completed' : (topicUnlocked ? 'Available' : 'Locked')}</small></span><i data-lucide="${topicCompleted ? 'check-circle' : (topicUnlocked ? 'chevron-right' : 'lock')}"></i>`;
         header.disabled = !topicUnlocked;
         header.addEventListener('click', () => {
             const firstAccessible = items.findIndex((item, itemIndex) => outlineItemAccessible(topic, item, itemIndex));
