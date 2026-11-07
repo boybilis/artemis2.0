@@ -1597,6 +1597,7 @@ function openSubjectLearningWorkspace(subjectId) {
 function renderCourseOverview() {
     const course = courses.find(item => Number(item.id) === Number(currentCourseId) && Number(item.batch_id) === Number(currentBatchId));
     if (!course) return;
+    if ($('course-details-area')) $('course-details-area').dataset.courseFamily = courseCardFamily(course);
     const batchLabel = $('course-overview-batch');
     if (batchLabel) batchLabel.textContent = course.batch_code || course.batch_name || 'ENROLLED BATCH';
 
