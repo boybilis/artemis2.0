@@ -179,9 +179,10 @@ const systemAlertOk = $('system-alert-ok');
 if (systemAlertOk) systemAlertOk.addEventListener('click', closeModal);
 
 function showCourseProfile() {
-    const profile = courses.find(course => Number(course.batch_id) === Number(currentBatchId))
+    const profile = courses.find(course => Number(course.batch_id) === Number(currentBatchId) && Number(course.id) === Number(currentCourseId))
         || courses.find(course => Number(course.id) === Number(currentCourseId) && course.is_enrolled);
     if (!profile) return showSystemAlert('The selected batch profile could not be loaded.');
+    $('modal-course-profile').dataset.courseFamily = courseCardFamily(profile);
     const dateLabel = value => value ? new Date(value).toLocaleDateString(undefined,{year:'numeric',month:'long',day:'numeric'}) : 'Not specified';
     const dateTimeLabel = value => value ? new Date(value).toLocaleString(undefined,{year:'numeric',month:'long',day:'numeric',hour:'numeric',minute:'2-digit'}) : 'Not specified';
     const timeLabel = value => {

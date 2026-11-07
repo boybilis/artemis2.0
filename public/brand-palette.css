@@ -51,6 +51,24 @@ body:not(.light-mode) #landing-screen #hero-login-btn:hover { border-color:var(-
 .learner-course-tab.active { background:var(--brand-slate);color:var(--brand-white); }
 .subjects-catalog-table .subject-status-toggle:hover,.subjects-catalog-table .subject-status-toggle:focus-visible { background:var(--brand-aqua-strong);color:var(--brand-white); }
 /* Permanent course-family colors, independent of catalogue position or enrollment. */
+.course-profile-modal { --profile-color:#184b7a;--profile-ink:#102f50;--profile-pale:#eaf1fa; }
+.course-profile-modal[data-course-family="nclex"] { --profile-color:#11a7c0;--profile-ink:#075766;--profile-pale:#e6f7fa; }
+.course-profile-modal[data-course-family="pnle"] { --profile-color:#e6b628;--profile-ink:#795700;--profile-pale:#fff7dc; }
+.course-profile-modal[data-course-family="prometric"] { --profile-color:#28945f;--profile-ink:#125337;--profile-pale:#eaf6ed; }
+.course-profile-modal[data-course-family="cse"] { --profile-color:#19344f;--profile-ink:#19344f;--profile-pale:#eaf0f5; }
+#modal-course-profile[data-course-family] {
+    --text:#19344f;--text-muted:#526b7a;--border:#d5e1e9;
+    background:linear-gradient(145deg,#fff 40%,var(--profile-pale));color:var(--text);
+    border-top:5px solid var(--profile-color);
+}
+#modal-course-profile[data-course-family] :is(.section-label,h2,.modal-close) { color:var(--profile-ink); }
+#modal-course-profile[data-course-family] #course-profile-subtitle { color:#526b7a; }
+#modal-course-profile[data-course-family] .btn-primary { background:var(--profile-ink);color:#fff; }
+#modal-course-profile[data-course-family] :is(.course-profile-summary>div,.course-profile-grid>div,.course-profile-description) {
+    background:#fff;border:1px solid #d5e1e9;
+}
+#modal-course-profile[data-course-family] .course-profile-summary>div { border-top:3px solid var(--profile-color);background:linear-gradient(135deg,#fff,var(--profile-pale)); }
+#modal-course-profile[data-course-family] :is(.course-profile-summary span,.course-profile-grid span,.course-profile-description>span) { color:var(--profile-ink); }
 #courses-container .learner-course-card:where([data-course-family]) {
     --course-card-color:#184b7a;--course-card-color-dark:#102f50;
     --course-card-accent:#184b7a;--family-pale:#eaf1fa;--family-night:#182e46;
