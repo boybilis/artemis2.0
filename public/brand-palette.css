@@ -50,3 +50,12 @@ body:not(.light-mode) #landing-screen #hero-login-btn:hover { border-color:var(-
 .test-bank-v2 .v2-generated-quizzes .v2-generated-heading { background:var(--brand-slate); }
 .learner-course-tab.active { background:var(--brand-slate);color:var(--brand-white); }
 .subjects-catalog-table .subject-status-toggle:hover,.subjects-catalog-table .subject-status-toggle:focus-visible { background:var(--brand-aqua-strong);color:var(--brand-white); }
+/* Profile summary beside the learner welcome hero; no decorative background shapes. */
+#dashboard-hero .dashboard-hero-panel {
+    border-top:4px solid var(--brand-slate);
+    background:linear-gradient(135deg,#24435f 0%,var(--brand-slate) 65%,var(--brand-dark-surface) 100%);
+    box-shadow:0 12px 32px rgba(25,52,79,.12);
+}
+body.light-mode #dashboard-hero .dashboard-hero-panel {
+    background:linear-gradient(135deg,var(--brand-white) 0%,var(--brand-ice) 65%,#deedf4 100%);
+}
