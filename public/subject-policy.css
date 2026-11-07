@@ -1,4 +1,4 @@
-#subject-policy-dialog{width:min(520px,calc(100vw - 32px));box-sizing:border-box;border:1px solid #cbd5e1;border-radius:18px;padding:28px;background:#fff;color:#102a43;box-shadow:0 24px 80px #001d3680;max-height:85dvh;overflow:auto}
+#subject-policy-dialog{position:fixed;inset:0;margin:auto;height:fit-content;width:min(520px,calc(100vw - 32px));box-sizing:border-box;border:1px solid #cbd5e1;border-radius:18px;padding:28px;background:#fff;color:#102a43;box-shadow:0 24px 80px #001d3680;max-height:85dvh;overflow:auto}
 #subject-policy-dialog::backdrop{background:#062b48b3}
 #subject-policy-dialog h2{margin:0 0 16px;font-size:1.5rem;color:#073b63}
 #subject-policy-dialog p{line-height:1.6;margin-bottom:24px}

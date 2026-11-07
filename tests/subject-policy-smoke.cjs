@@ -1,4 +1,6 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const css=fs.readFileSync('public/subject-policy.css','utf8');
+assert(css.includes('position:fixed;inset:0;margin:auto;height:fit-content'), 'Dialog must override the global margin reset and center within the viewport');
 function element(){return {events:{},addEventListener(name,handler){this.events[name]=handler;}};}
 const dialog=element(),check=element(),accept=element(),decline=element();
 dialog.showModal=()=>{dialog.open=true;};dialog.close=()=>{dialog.open=false;};
