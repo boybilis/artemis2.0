@@ -97,7 +97,10 @@ body:not(.light-mode) #courses-container .learner-course-card[data-course-family
     background:linear-gradient(135deg,var(--family-night),#132b42);
 }
 body.light-mode #course-details-area[data-course-family] :is(.course-overview-metrics>div,.course-live-schedule,.learner-subject-row) { background:linear-gradient(135deg,#fff,var(--family-pale)); }
-#course-details-area[data-course-family] :is(.course-overview-metric-icon,.course-panel-icon) { background:var(--course-card-color-dark);color:#fff; }
+#course-details-area[data-course-family] :is(.course-overview-metric-icon,.course-panel-icon) {
+    background:transparent;color:var(--course-card-accent);border:1px solid currentColor;
+}
+body:not(.light-mode) #course-details-area[data-course-family] :is(.course-overview-metric-icon,.course-panel-icon) { color:var(--family-pale); }
 #course-details-area[data-course-family] .learner-subject-progress-track span { background:var(--course-card-color); }
 #course-details-area[data-course-family] .learner-subject-action .btn-primary:not(:hover) { background:var(--course-card-color);color:var(--course-footer-text); }
 #course-details-area[data-course-family] .learner-subject-row:hover { border-color:var(--course-card-color); }

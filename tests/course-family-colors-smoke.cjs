@@ -16,6 +16,7 @@ const css=fs.readFileSync('public/brand-palette.css','utf8');
 for(const name of ['nclex','pnle','prometric','cse'])assert(css.includes(`[data-course-family="${name}"]`));
 for(const name of ['nclex','pnle','prometric','cse'])assert(css.includes(`#course-details-area[data-course-family="${name}"]`));
 require('postcss').parse(css);
+assert(css.includes('background:transparent;color:var(--course-card-accent);border:1px solid currentColor;'));
 assert(css.includes('background:linear-gradient(125deg,#fff,var(--family-pale))'));
 assert(css.includes('border:1px solid var(--course-card-color);border-top-width:4px;'));
 assert(css.includes('box-shadow:inset 0 0 0 1px var(--course-card-color)'));
