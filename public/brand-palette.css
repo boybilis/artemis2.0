@@ -156,6 +156,15 @@ body.light-mode #course-details-area[data-course-family] :is(.course-overview-me
 #course-details-area .course-overview-titlebar .section-eyebrow { margin:0; }
 #course-details-area .course-overview-divider { border:0;border-top:1px solid #d5e1e9;margin:0 1.3rem; }
 #course-details-area .course-overview-hero .course-overview-metrics { margin:0;padding:1rem 1.3rem 1.3rem; }
+/* Dashboard panels follow the existing body theme switch, without changing family colors. */
+body:not(.light-mode) #course-details-area[data-course-family] :is(.course-overview-hero,.course-overview-metrics>div,.course-live-schedule) {
+    --text:#eff8fc;--text-muted:#b6cbd7;--border:#3b5368;
+    background:#19344f;border-color:var(--border);color:var(--text);
+}
+body:not(.light-mode) #course-details-area[data-course-family] .course-overview-metrics>div { background:#24435f; }
+body:not(.light-mode) #course-details-area[data-course-family] .course-overview-body :is(h2,.section-subtitle) { color:var(--text); }
+body:not(.light-mode) #course-details-area .course-overview-divider { border-top-color:#3b5368; }
+body:not(.light-mode) #course-details-area[data-course-family] :is(.course-overview-metric-icon,.course-panel-icon) { border:1px solid #698196; }
 #dashboard-hero .dashboard-hero-panel {
     border-top:4px solid var(--brand-slate);
     background:linear-gradient(135deg,#24435f 0%,var(--brand-slate) 65%,var(--brand-dark-surface) 100%);

@@ -32,6 +32,9 @@ assert(css.includes('white-space:normal;overflow-wrap:anywhere;word-break:normal
 for(const name of ['nclex','pnle','prometric','cse'])assert(css.includes(`[data-course-family="${name}"]`));
 for(const name of ['nclex','pnle','prometric','cse'])assert(css.includes(`#course-details-area[data-course-family="${name}"]`));
 require('postcss').parse(css);
+assert(css.includes('body:not(.light-mode) #course-details-area[data-course-family] :is(.course-overview-hero,.course-overview-metrics>div,.course-live-schedule)'));
+assert(css.includes('--text:#eff8fc;--text-muted:#b6cbd7;--border:#3b5368;'));
+assert(css.includes('.course-overview-body :is(h2,.section-subtitle) { color:var(--text); }'));
 assert(css.includes('background:var(--course-card-color-dark);color:#fff;border:0;'));
 assert(css.includes('background:#fff;border:1px solid #d5e1e9;color:var(--text);'));
 assert(css.includes('border-color:var(--course-card-color);\n    border-top:3px solid var(--course-card-color);'));
