@@ -6,16 +6,16 @@
     min-height:200px;
     padding:1rem;
     border:1px solid var(--border);
-    border-top:3px solid #109eaf;
+    border-top:3px solid #11a7c0;
     border-radius:16px;
     background:linear-gradient(145deg,rgba(17,167,192,.09),transparent 65%),var(--surface);
-    box-shadow:0 4px 16px rgba(7,59,101,.045);
+    box-shadow:0 4px 16px rgba(25,52,79,.045);
     transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
 }
 #subjects-container .learner-subject-row:hover {
     transform:translateY(-3px);
-    border-color:#109eaf;
-    box-shadow:0 10px 24px rgba(7,59,101,.1);
+    border-color:#11a7c0;
+    box-shadow:0 10px 24px rgba(25,52,79,.1);
 }
 #subjects-container .learner-subject-code {
     align-self:flex-start;
@@ -36,15 +36,15 @@
 #subjects-container .learner-subject-progress-meta span { min-width:0; }
 #subjects-container .learner-subject-progress-meta strong { color:var(--text);font-weight:700; }
 #subjects-container .learner-subject-progress-track { height:5px; }
-#subjects-container .learner-subject-progress-track span { background:linear-gradient(90deg,#089eac,#08b89f); }
+#subjects-container .learner-subject-progress-track span { background:linear-gradient(90deg,#11a7c0,#11a7c0); }
 #subjects-container .learner-subject-action { flex-shrink:0;padding-top:0;border-top:0; }
 #subjects-container .learner-subject-action .btn-primary {
     display:inline-flex;align-items:center;justify-content:center;gap:.6rem;
     min-height:38px;padding:.5rem .9rem;border:0;border-radius:8px;
-    color:#fff;background:linear-gradient(115deg,#08476c,#087a8c);
+    color:#fff;background:linear-gradient(115deg,#19344f,#087f93);
     font-size:.7rem;font-weight:700;box-shadow:none;
 }
-#subjects-container .learner-subject-action .btn-primary:focus-visible { outline:3px solid #109eaf;outline-offset:3px; }
+#subjects-container .learner-subject-action .btn-primary:focus-visible { outline:3px solid #11a7c0;outline-offset:3px; }
 @media(max-width:650px) {
     #subjects-container .learner-subject-row { min-height:0; }
 }

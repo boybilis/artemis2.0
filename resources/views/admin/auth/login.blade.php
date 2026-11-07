@@ -15,7 +15,7 @@
             display: grid;
             place-items: center;
             padding: 24px;
-            color: #082b45;
+            color: #19344f;
             background: #eff8fc;
             font-family: Arial, Helvetica, sans-serif;
         }
@@ -25,7 +25,7 @@
             max-width: 430px;
             padding: 28px;
             background: #ffffff;
-            border: 1px solid rgba(7, 81, 118, .16);
+            border: 1px solid rgba(25,52,79, .16);
             border-radius: 16px;
             box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
         }
@@ -44,7 +44,7 @@
             place-items: center;
             border-radius: 12px;
             background: linear-gradient(135deg, #f47721, #f47721);
-            color: #ffffff;
+            color: #19344f;
             font-weight: 800;
         }
 
@@ -83,29 +83,29 @@
 
         input:focus {
             border-color: #f47721;
-            box-shadow: 0 0 0 3px rgba(244, 81, 11, .12);
+            box-shadow: 0 0 0 3px rgba(244,119,33, .12);
         }
 
         .btn {
             width: 100%;
             margin-top: 20px;
             padding: 11px 14px;
-            border: 1px solid #08b89f;
+            border: 1px solid #11a7c0;
             border-radius: 10px;
-            background: linear-gradient(135deg, #08b89f, #06a990);
+            background: linear-gradient(135deg, #087f93, #087f93);
             color: #ffffff;
             font-weight: 800;
             cursor: pointer;
         }
         .btn:hover {
-            background: linear-gradient(135deg, #079d89, #058b7a);
+            background: linear-gradient(135deg, #11a7c0, #11a7c0);
         }
 
         .note {
             margin-top: 16px;
             padding: 13px;
             border-radius: 12px;
-            background: #eff6ff;
+            background: #eff8fc;
             color: #1e3a8a;
             border: 1px solid #bfdbfe;
             font-size: 14px;
@@ -114,14 +114,15 @@
         .back-link {
             display: inline-block;
             margin-top: 16px;
-            color: #075176;
+            color: #19344f;
             font-weight: 800;
             text-decoration: none;
             font-size: 14px;
         }
     </style>
-<link rel="stylesheet" href="{{ asset('branding.css') }}?v=5"></head>
-<body>
+<link rel="stylesheet" href="{{ asset('branding.css') }}?v=6"><link rel="stylesheet" href="{{ asset('brand-palette.css') }}?v=1">
+</head>
+<body class="light-mode">
     <main class="login-card">
         <div class="brand">
             @include('components.gra-brand')

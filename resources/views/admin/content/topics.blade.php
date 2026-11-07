@@ -117,7 +117,7 @@
         cursor: pointer;
         transition: background .2s, color .2s, border-color .2s;
     }
-    .subtopics-toggle:hover { background: rgba(124,58,237,.1); color: var(--accent); border-color: var(--accent); }
+    .subtopics-toggle:hover { background: rgba(17,167,192,.1); color: var(--accent); border-color: var(--accent); }
     .subtopics-toggle svg { width: 18px; height: 18px; transition: transform .2s; }
     .subtopics-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
     .upload-progress{display:none;margin-top:.75rem}.upload-progress-track{height:8px;overflow:hidden;border-radius:99px;background:var(--border)}.upload-progress-bar{width:0;height:100%;border-radius:99px;background:var(--gradient);transition:width .15s}.upload-progress-text{display:flex;justify-content:space-between;margin-top:.35rem;color:var(--text-muted);font-size:.75rem}
@@ -136,7 +136,7 @@
         align-items: center;
         justify-content: space-between;
         padding: 0.85rem 1.25rem;
-        background: rgba(99, 102, 241, 0.04);
+        background: rgba(17,167,192, 0.04);
         border-bottom: 1px solid var(--border);
     }
     .subtopics-panel-header h4 { margin: 0; font-size: 0.9rem; font-weight: 600; color: var(--accent); }
@@ -153,7 +153,7 @@
     .subtopic-info strong { display: block; font-size: 0.95rem; color: var(--text); margin-bottom: 0.25rem; }
     .subtopic-badges { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
     .badge-video { background: rgba(16,185,129,0.12); color: #10b981; padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
-    .badge-pdf   { background: rgba(99,102,241,0.12); color: var(--accent); padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
+    .badge-pdf   { background: rgba(17,167,192,0.12); color: var(--accent); padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
     .badge-pending { background: rgba(245,158,11,0.12); color: #f59e0b; padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
     .subtopic-actions { display: flex; gap: 0.35rem; }
 </style>
@@ -354,7 +354,7 @@
         <div class="admin-modal-body">
             <div class="field">
                 <label>Import into</label>
-                <div class="input" style="padding:.8rem 1rem;border:1.5px solid var(--border);border-radius:8px;background:rgba(124,58,237,.06);font-weight:700">{{ $managedSubject->subject_code }} — {{ $managedSubject->title }}</div>
+                <div class="input" style="padding:.8rem 1rem;border:1.5px solid var(--border);border-radius:8px;background:rgba(17,167,192,.06);font-weight:700">{{ $managedSubject->subject_code }} — {{ $managedSubject->title }}</div>
             </div>
             <div class="field" style="margin-top:1rem">
                 <label for="source_topic_id">Topic from another subject</label>
@@ -391,7 +391,7 @@
                 <div class="field">
                     <label>Subject</label>
                     <input type="hidden" id="add_subject_id" name="subject_id" value="{{ $managedSubject->id }}">
-                    <div class="input" style="padding:.8rem 1rem;border:1.5px solid var(--border);border-radius:8px;background:rgba(124,58,237,.06);font-weight:700">{{ $managedSubject->subject_code }} — {{ $managedSubject->title }}</div>
+                    <div class="input" style="padding:.8rem 1rem;border:1.5px solid var(--border);border-radius:8px;background:rgba(17,167,192,.06);font-weight:700">{{ $managedSubject->subject_code }} — {{ $managedSubject->title }}</div>
                     <small class="muted">This section will be added to the subject currently being managed.</small>
                 </div>
                 <div class="field">
@@ -424,7 +424,7 @@
                 <div class="field">
                     <label>Subject</label>
                     <input type="hidden" id="edit_subject_id" name="subject_id" value="{{ $managedSubject->id }}">
-                    <div class="input" style="padding:.8rem 1rem;border:1.5px solid var(--border);border-radius:8px;background:rgba(124,58,237,.06);font-weight:700">{{ $managedSubject->subject_code }} — {{ $managedSubject->title }}</div>
+                    <div class="input" style="padding:.8rem 1rem;border:1.5px solid var(--border);border-radius:8px;background:rgba(17,167,192,.06);font-weight:700">{{ $managedSubject->subject_code }} — {{ $managedSubject->title }}</div>
                 </div>
                 <div class="field">
                     <label for="edit_title">Topic Title</label>

@@ -56,17 +56,17 @@ document.addEventListener('DOMContentLoaded', () => {
 #simulationLicensureField[hidden]{display:none}
 .tb-premade-table{width:100%;min-width:850px;border-collapse:collapse;text-align:left;font-size:.85rem}
 .tb-premade-table th,.tb-premade-table td{padding:14px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
-body .tb-premade-table thead th{background:#4b5563;color:#fff;font-size:.7rem;text-transform:uppercase}
-.tb-premade-table tbody tr:nth-child(odd) td{background:#fff;color:#073b63}
-.tb-premade-table tbody tr:nth-child(even) td{background:#f1f3f5;color:#073b63}
+body .tb-premade-table thead th{background:#19344f;color:#fff;font-size:.7rem;text-transform:uppercase}
+.tb-premade-table tbody tr:nth-child(odd) td{background:#fff;color:#19344f}
+.tb-premade-table tbody tr:nth-child(even) td{background:#f1f3f5;color:#19344f}
 .tb-premade-table tbody tr:last-child td{border-bottom:0}
 .tb-premade-table small{display:block;margin-top:5px;color:#526b7b}
 .tb-premade-actions{display:flex;gap:10px;align-items:center}.tb-premade-actions form{margin:0}
 select.form-control[name="licensure_ids[]"][multiple]{height:190px!important;min-height:190px!important;max-height:none;overflow-y:auto;padding:8px;font-size:.9rem;line-height:1.5}
 select.form-control[name="licensure_ids[]"][multiple] option{padding:7px 8px;min-height:28px}
-body .tb-table thead th,body.light-mode .tb-table thead th{background:#4b5563;color:#fff}
-body .tb-table tbody tr:nth-child(odd) td{background:#fff;color:#073b63}
-body .tb-table tbody tr:nth-child(even) td{background:#f1f3f5;color:#073b63}
+body .tb-table thead th,body.light-mode .tb-table thead th{background:#19344f;color:#fff}
+body .tb-table tbody tr:nth-child(odd) td{background:#fff;color:#19344f}
+body .tb-table tbody tr:nth-child(even) td{background:#f1f3f5;color:#19344f}
 body .tb-table tbody td:first-child,body .tb-table tbody td:nth-child(3){font-size:calc(1rem - 2pt);line-height:1.5}
 </style>
 <style>

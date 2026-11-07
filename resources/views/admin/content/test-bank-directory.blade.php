@@ -104,7 +104,7 @@ directoryForm.addEventListener('submit', () => {
 <style>
     #directoryBankForm .bank-option-row{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) auto 32px;gap:10px;margin:12px 0;align-items:center;font-size:.9rem}
     #directoryBankForm .bank-option-active{display:inline-flex!important;flex-direction:row;align-items:center;gap:6px;margin:0;white-space:nowrap;font-size:.85rem;font-weight:400;line-height:1.4}
-    #directoryBankForm .bank-option-active input[type="checkbox"]{appearance:auto!important;flex:0 0 16px!important;width:16px!important;height:16px!important;min-width:16px!important;max-width:16px!important;min-height:16px!important;max-height:16px!important;padding:0!important;margin:0!important;transform:none!important;accent-color:#08a991;box-shadow:none}
+    #directoryBankForm .bank-option-active input[type="checkbox"]{appearance:auto!important;flex:0 0 16px!important;width:16px!important;height:16px!important;min-width:16px!important;max-width:16px!important;min-height:16px!important;max-height:16px!important;padding:0!important;margin:0!important;transform:none!important;accent-color:#11a7c0;box-shadow:none}
     #directoryBankForm .bank-option-remove{display:grid;place-items:center;width:32px;height:32px;min-height:32px;padding:0;border-radius:8px;color:#dc2626;border-color:#e8b5b5;background:transparent}
     #directoryBankForm .bank-option-remove:hover{background:#fef2f2}
     @media(max-width:550px){#directoryBankForm .bank-option-row{grid-template-columns:minmax(0,1fr) auto 32px}#directoryBankForm .bank-option-row>.form-control:first-child{grid-column:1/-1}}

@@ -11,7 +11,7 @@
 .flag-reply-field{margin-top:24px}
 .flag-reply-field .form-label{display:block;margin-bottom:8px;font-size:.95rem;font-weight:600}
 .flag-reply-field .form-control{display:block;width:100%;box-sizing:border-box;min-height:160px;padding:12px 14px;font:inherit;line-height:1.5;color:var(--text);background:var(--surface-solid,#fff);border:1px solid var(--border,#ced4da);border-radius:8px;resize:vertical;transition:border-color .15s ease-in-out,box-shadow .15s ease-in-out}
-.flag-reply-field .form-control:focus{border-color:#08a991;outline:0;box-shadow:0 0 0 .2rem rgba(8,169,145,.2)}
+.flag-reply-field .form-control:focus{border-color:#11a7c0;outline:0;box-shadow:0 0 0 .2rem rgba(8,169,145,.2)}
 .flag-reply-field .form-text{display:block;margin-top:8px;color:var(--text-muted);font-size:.8rem}
 </style>
 <section class="panel"><h2 class="panel-title">Flagged Questions</h2><p class="muted">View a flagged question to answer the learner’s query.</p>

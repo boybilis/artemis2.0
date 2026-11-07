@@ -12,7 +12,7 @@ for(const [id,modal]of [['nav-login-btn','modal-login'],['hero-login-btn','modal
 assert(landing.includes('Artemis360'));
 assert.equal((landing.match(/gra-test-prep-white.svg/g)||[]).length,2);
 const logo=fs.readFileSync('public/images/gra-test-prep-white.svg','utf8');
-assert(logo.includes('fill="#fff"'));assert(logo.includes('fill="#ff820d"'));assert(!logo.includes('<rect'));
+assert(logo.includes('fill="#fff"'));assert(logo.includes('fill="#f47721"'));assert(!logo.includes('<rect'));
 assert(!landing.includes('href="#"'));
 const externalLinks=[...landing.matchAll(/href="(https:[^"]+)"/g)].map(match=>match[1]);
 assert.deepStrictEqual(externalLinks,['https://gratestprepworldwide.com/','https://gratestprepworldwide.com/']);

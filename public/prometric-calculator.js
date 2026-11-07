@@ -5,7 +5,7 @@
     const style = document.createElement('style');
     style.textContent = `
         .prometric-calculator-toggle{display:none}
-        #quiz-screen.active .exam-calculator-toggle{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0;padding:9px;border:1px solid #0b6a82;border-radius:8px;background:#073b63;color:#fff;cursor:pointer}
+        #quiz-screen.active .exam-calculator-toggle{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0;padding:9px;border:1px solid #19344f;border-radius:8px;background:#19344f;color:#fff;cursor:pointer}
         #quiz-screen.prometric-simulation-exam .prometric-calculator-toggle{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;padding:9px;border:1px solid #8ac43f;border-radius:8px;background:#8ac43f;color:#17220b;cursor:pointer}
         .prometric-calculator{position:fixed;inset:auto;top:var(--calculator-top,104px);right:16px;margin:0;width:min(300px,calc(100vw - 32px));max-height:var(--calculator-height,70vh);overflow:auto;box-sizing:border-box;padding:18px;border:2px solid #8ac43f;border-radius:14px;background:#fff;color:#222;box-shadow:0 12px 48px #0006;font:16px Arial,sans-serif}
         .prometric-calculator::backdrop{background:#0004}

@@ -129,13 +129,13 @@
         .status.success { color: var(--correct); background: rgba(16,185,129,0.12); }
         .status.warning { color: #f59e0b; background: rgba(245,158,11,0.12); }
         .status.danger { color: var(--wrong); background: rgba(239,68,68,0.12); }
-        .status.info { color: #3b82f6; background: rgba(59,130,246,0.12); }
+        .status.info { color: #11a7c0; background: rgba(59,130,246,0.12); }
         
         .toolbar { display: flex; gap: 1rem; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 1.25rem; }
         .toolbar-group { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
 
         .notice { padding: 1rem 1.5rem; border: 1.5px solid var(--border); border-radius: 12px; margin-bottom: 1.5rem; font-size: 0.875rem; background: rgba(255,255,255,0.03); }
-        .admin-toast-stack{position:fixed;top:92px;right:1.25rem;z-index:10100;display:flex;flex-direction:column;gap:.65rem;width:min(390px,calc(100vw - 2rem));pointer-events:none}.admin-toast{display:flex;align-items:flex-start;gap:.7rem;padding:.9rem 1rem;border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;box-shadow:0 14px 35px rgba(0,0,0,.2);backdrop-filter:blur(12px);pointer-events:auto;animation:adminToastIn .25s ease both}.admin-toast.success{background:rgba(5,150,105,.94)}.admin-toast.error{background:rgba(220,38,38,.94)}.admin-toast.info{background:rgba(3,57,87,.94)}.admin-toast span{flex:1;font-size:.82rem;line-height:1.45}.admin-toast button{padding:0;border:0;background:transparent;color:inherit;font-size:1rem;cursor:pointer}.admin-toast.leaving{animation:adminToastOut .22s ease both}@keyframes adminToastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}@keyframes adminToastOut{to{opacity:0;transform:translateX(24px)}}
+        .admin-toast-stack{position:fixed;top:92px;right:1.25rem;z-index:10100;display:flex;flex-direction:column;gap:.65rem;width:min(390px,calc(100vw - 2rem));pointer-events:none}.admin-toast{display:flex;align-items:flex-start;gap:.7rem;padding:.9rem 1rem;border:1px solid rgba(255,255,255,.16);border-radius:12px;color:#fff;box-shadow:0 14px 35px rgba(0,0,0,.2);backdrop-filter:blur(12px);pointer-events:auto;animation:adminToastIn .25s ease both}.admin-toast.success{background:rgba(5,150,105,.94)}.admin-toast.error{background:rgba(220,38,38,.94)}.admin-toast.info{background:rgba(25,52,79,.94)}.admin-toast span{flex:1;font-size:.82rem;line-height:1.45}.admin-toast button{padding:0;border:0;background:transparent;color:inherit;font-size:1rem;cursor:pointer}.admin-toast.leaving{animation:adminToastOut .22s ease both}@keyframes adminToastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}@keyframes adminToastOut{to{opacity:0;transform:translateX(24px)}}
 
         .btn-danger { background: var(--wrong); color: #fff; border: none; padding: .75rem 1.5rem; border-radius: 10px; font-family: inherit; font-weight: 600; font-size: .9rem; cursor: pointer; transition: all .3s; white-space: nowrap; }
         .btn-warning { background: #f59e0b; color: #fff; border: none; padding: .75rem 1.5rem; border-radius: 10px; font-family: inherit; font-weight: 600; font-size: .9rem; cursor: pointer; transition: all .3s; white-space: nowrap; }
@@ -201,7 +201,8 @@
             .question-option-row .btn-ghost { grid-column: 2; justify-self: start; }
         }
     </style>
-<link rel="stylesheet" href="{{ asset('branding.css') }}?v=5"></head>
+<link rel="stylesheet" href="{{ asset('branding.css') }}?v=6"><link rel="stylesheet" href="{{ asset('brand-palette.css') }}?v=1">
+</head>
 <body class="light-mode">
     @if(Auth::user()->isAssistantAdmin())
     <script src="{{ asset('assistant-admin.js') }}?v=1" defer></script>
@@ -595,7 +596,7 @@
             }
         });
     </script>
-<script src="{{ asset('admin-client-tables.js') }}?v=2"></script>
+<script src="{{ asset('admin-client-tables.js') }}?v=3"></script>
 @if($isAdmin || $role === 'instructor')
 <script>
 (() => {

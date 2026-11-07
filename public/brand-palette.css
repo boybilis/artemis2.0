@@ -1,0 +1,52 @@
+/* GRA palette. Darker aqua/slate derivatives keep small text and controls readable. */
+:root {
+    --brand-aqua:#11a7c0;
+    --brand-orange:#f47721;
+    --brand-ice:#eff8fc;
+    --brand-slate:#19344f;
+    --brand-white:#ffffff;
+    --brand-aqua-strong:#087f93;
+    --brand-dark-surface:#132b42;
+}
+body {
+    --bg:var(--brand-dark-surface);
+    --bg2:var(--brand-slate);
+    --surface:rgba(239,248,252,.06);
+    --surface-solid:#24435f;
+    --text:var(--brand-ice);
+    --text-muted:#b6cbd7;
+    --border:rgba(239,248,252,.16);
+    --accent:var(--brand-orange);
+    --accent2:var(--brand-aqua);
+    --gradient:linear-gradient(135deg,var(--brand-slate),var(--brand-aqua-strong));
+    --glow:rgba(17,167,192,.16);
+}
+body.light-mode {
+    --bg:var(--brand-ice);
+    --bg2:var(--brand-white);
+    --surface:rgba(255,255,255,.9);
+    --surface-solid:var(--brand-white);
+    --text:var(--brand-slate);
+    --text-muted:#526b7a;
+    --border:rgba(25,52,79,.16);
+}
+body .btn-primary { background:var(--brand-aqua-strong);color:var(--brand-white); }
+body .btn-primary:hover:not(:disabled) { background:var(--brand-slate);color:var(--brand-white); }
+body .btn-primary:focus-visible { outline:3px solid var(--brand-orange);outline-offset:3px; }
+body.light-mode .nav-link.active { background:var(--brand-slate);border-left:3px solid var(--brand-aqua); }
+body:not(.light-mode) select,body:not(.light-mode) select option,body:not(.light-mode) select optgroup { background-color:var(--brand-slate);color:var(--brand-ice); }
+body.light-mode select option:checked,body:not(.light-mode) select option:checked { background:var(--brand-slate);color:var(--brand-white); }
+#landing-screen { --campus-ink:var(--brand-slate);--campus-base:var(--brand-ice);--campus-paper:var(--brand-white); }
+#landing-screen .landing-nav,#landing-screen .landing-footer { background:var(--brand-slate); }
+#landing-screen .hero-cta .btn-ghost { border-color:var(--brand-slate);color:var(--brand-slate); }
+#landing-screen .hero-cta .btn-ghost:hover { background:var(--brand-slate);color:var(--brand-white); }
+#landing-screen #nav-signup-btn:hover,#landing-screen #hero-signup-btn:hover,#landing-screen .campus-account-card>button:hover { background:var(--brand-slate);color:var(--brand-white); }
+body:not(.light-mode) #landing-screen { --campus-ink:var(--brand-ice);--campus-base:var(--brand-dark-surface);--campus-paper:var(--brand-slate); }
+body:not(.light-mode) #landing-screen .hero-cta .btn-ghost { border-color:var(--brand-ice);color:var(--brand-ice); }
+body:not(.light-mode) #landing-screen #hero-login-btn { border-color:var(--brand-ice);color:var(--brand-ice);background:transparent; }
+body:not(.light-mode) #landing-screen #hero-login-btn:hover { border-color:var(--brand-aqua);background:var(--brand-aqua-strong);color:var(--brand-white); }
+#subjects-container .learner-subject-action .btn-primary { background:var(--brand-slate);color:var(--brand-white); }
+#subjects-container .learner-subject-action .btn-primary:hover { background:var(--brand-aqua-strong); }
+.test-bank-v2 .v2-generated-quizzes .v2-generated-heading { background:var(--brand-slate); }
+.learner-course-tab.active { background:var(--brand-slate);color:var(--brand-white); }
+.subjects-catalog-table .subject-status-toggle:hover,.subjects-catalog-table .subject-status-toggle:focus-visible { background:var(--brand-aqua-strong);color:var(--brand-white); }

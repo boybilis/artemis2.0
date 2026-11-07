@@ -11,10 +11,10 @@ class BrandingTest extends TestCase
     public function test_powered_caption_uses_explicit_dark_surface_and_certificate_overrides(): void
     {
         $css=file_get_contents(public_path('branding.css'));
-        $this->assertStringContainsString('color:var(--gra-powered-color,var(--text,#073b65))',$css);
+        $this->assertStringContainsString('color:var(--gra-powered-color,var(--text,#19344f))',$css);
         $this->assertStringContainsString('.learner-dashboard-sidebar .gra-brand,.lesson-sidebar .gra-brand',$css);
         $this->assertStringContainsString('--gra-powered-color:#fff',$css);
-        $this->assertStringContainsString('.cert-paper-logo .gra-brand{--gra-powered-color:#1e293b}',$css);
+        $this->assertStringContainsString('.cert-paper-logo .gra-brand{--gra-powered-color:#19344f}',$css);
         $this->assertStringContainsString("--gra-logo-image:url('/images/gra-test-prep-white.svg')",$css);
         $this->assertStringContainsString('body:not(.light-mode) .landing-nav .gra-brand',$css);
         $this->assertStringNotContainsString(':is(.learner-dashboard-sidebar,.lesson-sidebar,.exam-brand,.preview-exam-brand,.landing-nav',$css);
@@ -23,7 +23,7 @@ class BrandingTest extends TestCase
 
     public function test_learner_branding_uses_supplied_logo_and_preserves_exam_controls(): void
     {
-        $response=$this->get('/')->assertOk()->assertSee('branding.css?v=5',false)
+        $response=$this->get('/')->assertOk()->assertSee('branding.css?v=6',false)->assertSee('brand-palette.css?v=1',false)
             ->assertSee('alt="GRA Test Prep"',false)->assertSee('Powered by Artemis360');
         $html=$response->getContent();
         $this->assertGreaterThan(10,substr_count($html,'/images/gra-test-prep-logo.png'));

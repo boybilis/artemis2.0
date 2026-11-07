@@ -1955,11 +1955,11 @@ function updateFinalCard() {
     } else {
         btn.className = 'topic-card final-exam-card';
         btn.style.borderColor = 'var(--accent)';
-        btn.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.15)';
+        btn.style.boxShadow = '0 4px 12px rgba(17,167,192, 0.15)';
         btn.innerHTML = `
             <div class="exam-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <p class="topic-num" style="margin: 0; font-weight: 600; color: var(--accent);">Mock Exam</p>
-                <span class="topic-unlock" style="background: rgba(99, 102, 241, 0.1); color: var(--accent); padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; display: flex; align-items: center; gap: 0.35rem; font-weight: 600;"><i data-lucide="unlock" style="width: 14px; height: 14px;"></i> Unlocked</span>
+                <span class="topic-unlock" style="background: rgba(17,167,192, 0.1); color: var(--accent); padding: 0.25rem 0.6rem; border-radius: 9999px; font-size: 0.75rem; display: flex; align-items: center; gap: 0.35rem; font-weight: 600;"><i data-lucide="unlock" style="width: 14px; height: 14px;"></i> Unlocked</span>
             </div>
             <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem; color: var(--text);">Final Course Examination</h3>
             <span id="final-card-status" style="display: block; margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">Ready to take the Mock Exam. Good luck!</span>
@@ -3521,7 +3521,7 @@ function showAssessmentSummary(data, continueAction) {
     const total = display.total.toLocaleString(undefined, {maximumFractionDigits: 2});
     $('assessment-summary-title').textContent = data.passed ? 'Assessment Passed' : 'Assessment Completed';
     const percentage = display.percentage;
-    $('assessment-summary-score').innerHTML = `Score: ${score}/${total} · ${percentage}% · <span style="color:${data.passed ? '#079383' : '#dc2626'};font-weight:700">${data.passed ? 'Passed' : 'Failed'}</span>`;
+    $('assessment-summary-score').innerHTML = `Score: ${score}/${total} · ${percentage}% · <span style="color:${data.passed ? '#11a7c0' : '#dc2626'};font-weight:700">${data.passed ? 'Passed' : 'Failed'}</span>`;
     const wrong = Array.isArray(data.incorrectQuestions) ? data.incorrectQuestions : [];
     assessmentSummaryQuestions = Array.isArray(data.questions) && data.questions.length
         ? data.questions
@@ -4315,7 +4315,7 @@ if (noCssBtn) {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
-            background: linear-gradient(135deg, #7c3aed, #4f46e5);
+            background: linear-gradient(135deg, #11a7c0, #11a7c0);
             color: #fff;
             border: none;
             padding: 0.75rem 1.5rem;
