@@ -1,0 +1,15 @@
+const fs=require('fs'),assert=require('assert');
+const source=fs.readFileSync('public/script.js','utf8');
+const cards=source.slice(source.indexOf('function renderSubjects('),source.indexOf('function setupSubjectCarousel('));
+const footer=cards.match(/<div class="learner-subject-footer">([\s\S]*?)<\/div>`/)[1];
+assert(footer.includes('class="learner-subject-progress"'));
+assert(footer.includes('class="learner-subject-action"'));
+assert(footer.includes('learningProgress.completed'));
+assert(footer.includes('learningProgress.percentage'));
+assert(cards.includes('openSubjectLearningWorkspace(Number(subject.id))'));
+const css=fs.readFileSync('public/course-subject-cards.css','utf8');
+assert(css.includes('.learner-subject-footer { display:flex;align-items:center;'));
+assert(css.includes('flex:1;min-width:0;'));
+assert(css.includes('.learner-subject-action { flex-shrink:0;'));
+assert(css.includes('min-height:200px;'));
+console.log('Subject progress and Open button share a compact footer without changing progress or navigation.');

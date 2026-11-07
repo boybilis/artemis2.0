@@ -1661,8 +1661,10 @@ function renderSubjects() {
         row.innerHTML = `
             <div class="learner-subject-code">${subject.code || 'SUBJECT'}</div>
             <div class="learner-subject-name"><strong>${subject.title}</strong><span>${subject.description || `${subject.topicCount} topic${subject.topicCount === 1 ? '' : 's'}`}</span></div>
-            <div class="learner-subject-progress"><div class="learner-subject-progress-meta"><span>Progress (${learningProgress.completed}/${learningProgress.total} contents)</span><strong>${learningProgress.percentage}%</strong></div><div class="learner-subject-progress-track"><span style="width:${learningProgress.percentage}%"></span></div></div>
-            <div class="learner-subject-action"><button type="button" class="btn-primary">Open</button></div>`;
+            <div class="learner-subject-footer">
+                <div class="learner-subject-progress"><div class="learner-subject-progress-meta"><span>Progress (${learningProgress.completed}/${learningProgress.total} contents)</span><strong>${learningProgress.percentage}%</strong></div><div class="learner-subject-progress-track"><span style="width:${learningProgress.percentage}%"></span></div></div>
+                <div class="learner-subject-action"><button type="button" class="btn-primary">Open</button></div>
+            </div>`;
         row.querySelector('button').addEventListener('click', () => {
             openSubjectLearningWorkspace(Number(subject.id));
         });
