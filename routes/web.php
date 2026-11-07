@@ -235,6 +235,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/subjects', [AdminController::class, 'storeSubject'])->name('content.subjects.store');
             Route::post('/subjects/{subject}', [AdminController::class, 'updateSubject'])->name('content.subjects.update');
             Route::post('/subjects/{subject}/approve', [AdminController::class, 'approveSubject'])->name('content.subjects.approve');
+            Route::post('/subjects/{subject}/status', [AdminController::class, 'updateSubjectStatus'])->name('content.subjects.status');
             Route::delete('/subjects/{subject}', [AdminController::class, 'destroySubject'])->name('content.subjects.destroy');
 
             // Topics CRUD

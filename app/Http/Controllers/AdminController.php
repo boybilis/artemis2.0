@@ -1006,6 +1006,23 @@ class AdminController extends Controller
         return back()->with('success', 'Subject deleted successfully.');
     }
 
+    public function updateSubjectStatus(Request $request, $course_id, $subject_id)
+    {
+        abort_unless(Auth::user()->hasAdminAccess(), 403);
+        $data = $request->validate(['status' => ['required', 'in:approved,pending']]);
+        $subject = Subject::where('course_id', $course_id)->findOrFail($subject_id);
+        $subject->update(['status' => $data['status']]);
+        AuditLog::create([
+            'user_id' => Auth::id(),
+            'action' => 'Update Subject Status',
+            'description' => 'Set subject ' . $subject->title . ' to ' . $data['status'],
+            'ip_address' => $request->ip(),
+        ]);
+        return back()->with('success', $data['status'] === 'approved'
+            ? 'Subject approved and visible to eligible learners.'
+            : 'Subject set to pending and hidden from learners.');
+    }
+
     public function approveSubject(Request $request, $course_id, $subject_id)
     {
         if (!Auth::user()->hasAdminAccess()) abort(403);
