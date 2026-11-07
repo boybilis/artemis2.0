@@ -1245,7 +1245,7 @@ function renderDashboard() {
                             <div class="enrolled-card-progress-track"><span style="width:${progress}%"></span></div>
                         </div>
                     </div>
-                    <div class="course-card-open-label"><span>Open ${escapeHtml(course.title)}</span><i data-lucide="arrow-right"></i></div>`;
+                    <div class="course-card-open-label"><span>${escapeHtml(course.title)}</span><i data-lucide="arrow-right"></i></div>`;
             } else {
                 const availabilityLabel = course.batch_modality || 'Review Course';
                 card.innerHTML = `
