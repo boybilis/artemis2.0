@@ -39,6 +39,11 @@ class SubjectStatusTest extends TestCase
         $this->assertSame('approved', $topic->fresh()->status);
         $this->assertDatabaseCount('topics', 1);
         $this->assertDatabaseCount('audit_logs', 4);
+        $this->actingAs($assistant)->postJson($url, ['status'=>'pending'])->assertOk()
+            ->assertJsonPath('success', true)->assertJsonPath('status', 'pending')
+            ->assertJsonPath('message', 'Subject set to pending and hidden from learners.');
+        $this->assertSame('pending', $subject->fresh()->status);
+        $this->postJson($url, ['status'=>'approved'])->assertOk()->assertJsonPath('status', 'approved');
         $this->actingAs($admin)->postJson($url, ['status'=>'invalid'])->assertUnprocessable();
         $otherCourse = Course::create(['title'=>'Other']);
         $this->post(route('admin.content.subjects.status', [$otherCourse, $subject]), ['status'=>'pending'])->assertNotFound();

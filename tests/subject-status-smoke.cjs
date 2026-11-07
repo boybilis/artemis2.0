@@ -1,0 +1,24 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+let submit,request,reply,fail=false,calls=0;
+const classes=new Set(['success']);
+const button={textContent:'Approved',attrs:{},classList:{toggle(name,on){on?classes.add(name):classes.delete(name);}},setAttribute(k,v){this.attrs[k]=v;},removeAttribute(k){delete this.attrs[k];}};
+const status={value:'pending'};
+const form={action:'/status',dataset:{subjectTitle:'Nursing'},querySelector:s=>s.startsWith('button')?button:status,addEventListener(name,fn){submit=fn;}};
+const notifications=[];
+const context={document:{querySelectorAll:()=>[form]},FormData:class{constructor(f){this.form=f;}},showAdminToast:(...args)=>notifications.push(args),fetch:async(url,options)=>{calls++;request=options;if(fail)throw Error('Network unavailable');return await new Promise(resolve=>{reply=resolve;});}};
+vm.createContext(context);vm.runInContext(fs.readFileSync('public/subject-status.js','utf8'),context);
+(async()=>{
+ let prevented=false;
+ const pending=submit({preventDefault(){prevented=true;}});
+ assert(prevented);assert(button.disabled);assert.equal(button.attrs['aria-busy'],'true');
+ await submit({preventDefault(){}});assert.equal(calls,1);
+ assert.equal(request.headers.Accept,'application/json');assert.equal(request.credentials,'same-origin');
+ reply({ok:true,json:async()=>({success:true,status:'pending',message:'Hidden from learners'})});await pending;
+ assert.equal(button.textContent,'Pending');assert.equal(status.value,'approved');assert(classes.has('warning'));assert(!classes.has('success'));assert(!button.disabled);assert.equal(notifications[0][1],'success');
+ const approved=submit({preventDefault(){}});reply({ok:true,json:async()=>({success:true,status:'approved',message:'Visible'})});await approved;
+ assert.equal(button.textContent,'Approved');assert.equal(status.value,'pending');assert(classes.has('success'));
+ fail=true;await submit({preventDefault(){}});assert.equal(button.textContent,'Approved');assert.equal(status.value,'pending');assert(!button.disabled);assert.equal(notifications.at(-1)[1],'error');
+ fail=false;const denied=submit({preventDefault(){}});reply({ok:false,json:async()=>({message:'Forbidden'})});await denied;
+ assert.equal(button.textContent,'Approved');assert.equal(notifications.at(-1)[0],'Forbidden');
+ console.log('AJAX status updates preserve notifications, prevent double submits, and retain status on errors.');
+})().catch(error=>{console.error(error);process.exitCode=1;});

@@ -1018,9 +1018,13 @@ class AdminController extends Controller
             'description' => 'Set subject ' . $subject->title . ' to ' . $data['status'],
             'ip_address' => $request->ip(),
         ]);
-        return back()->with('success', $data['status'] === 'approved'
+        $message = $data['status'] === 'approved'
             ? 'Subject approved and visible to eligible learners.'
-            : 'Subject set to pending and hidden from learners.');
+            : 'Subject set to pending and hidden from learners.';
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'status' => $subject->status, 'message' => $message]);
+        }
+        return back()->with('success', $message);
     }
 
     public function approveSubject(Request $request, $course_id, $subject_id)

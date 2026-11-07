@@ -44,7 +44,7 @@ body .subjects-catalog-table thead th,body.light-mode .subjects-catalog-table th
                     <td><strong>{{ $subject->title }}</strong>@if($subject->is_intensive_final_coaching)<span class="status warning" style="margin-left:.45rem">Intensive Final Coaching</span>@endif<small style="display:block;color:var(--text-muted);margin-top:.3rem">{{ $subject->description ?: 'No description' }}</small></td>
                     <td>
                         @if($isAdmin)
-                        <form method="POST" action="{{ route('admin.content.subjects.status', ['course'=>$course->id,'subject'=>$subject->id]) }}" style="margin:0">
+                        <form data-subject-status data-subject-title="{{ $subject->title }}" method="POST" action="{{ route('admin.content.subjects.status', ['course'=>$course->id,'subject'=>$subject->id]) }}" style="margin:0">
                             @csrf
                             <input type="hidden" name="status" value="{{ $subject->status === 'approved' ? 'pending' : 'approved' }}">
                             <button type="submit" class="status subject-status-toggle {{ $subject->status === 'approved' ? 'success' : 'warning' }}" title="{{ $subject->status === 'approved' ? 'Set to Pending — hide from learners' : 'Approve — show to eligible learners' }}" aria-label="{{ $subject->title }}: {{ $subject->status === 'approved' ? 'set to pending and hide from learners' : 'approve and show to eligible learners' }}">{{ ucfirst($subject->status) }}</button>
@@ -147,4 +147,5 @@ document.querySelectorAll('.edit-subject-btn').forEach(button => button.addEvent
 }));
 subjectModal.addEventListener('click', event => { if (event.target === subjectModal) closeSubjectModal(); });
 </script>
+<script src="{{ asset('subject-status.js') }}?v=1"></script>
 @endsection
