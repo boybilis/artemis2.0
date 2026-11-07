@@ -56,6 +56,7 @@ body:not(.light-mode) #landing-screen #hero-login-btn:hover { border-color:var(-
     --course-card-accent:#184b7a;--family-pale:#eaf1fa;--family-night:#182e46;
     --course-card-soft:var(--family-pale);--course-card-accent-soft:var(--family-pale);
     --course-card-border:var(--course-card-color);
+    --course-footer-text:#fff;
     --available-course-color:var(--course-card-color);--available-course-dark:var(--course-card-color-dark);
     --available-course-soft:var(--family-pale);--available-course-border:var(--course-card-color);
     border-top:5px solid var(--course-card-color);
@@ -65,11 +66,14 @@ body:not(.light-mode) #landing-screen #hero-login-btn:hover { border-color:var(-
 #courses-container [data-course-family="pnle"] { --course-card-color:#e6b628;--course-card-color-dark:#806015;--course-card-accent:#795700;--family-pale:#fff7dc;--family-night:#3d3521; }
 #courses-container [data-course-family="prometric"] { --course-card-color:#28945f;--course-card-color-dark:#125337;--course-card-accent:#17633e;--family-pale:#eaf6ed;--family-night:#183c30; }
 #courses-container [data-course-family="cse"] { --course-card-color:#19344f;--course-card-color-dark:#102338;--course-card-accent:#19344f;--family-pale:#eaf0f5;--family-night:#243c52; }
+#courses-container [data-course-family="nclex"],#courses-container [data-course-family="pnle"] { --course-footer-text:#102338; }
+#courses-container [data-course-family="prometric"] { --course-footer-text:#081d13; }
 body.light-mode #courses-container .learner-course-card[data-course-family] { background:linear-gradient(145deg,#ffffff,var(--family-pale)); }
 #courses-container .learner-course-card[data-course-family] .course-card-open-label {
-    background:var(--course-card-color-dark);color:#fff;
+    background:var(--course-card-color);color:var(--course-footer-text);
 }
-#courses-container .learner-course-card[data-course-family] .course-card-open-label svg { color:#fff; }
+#courses-container .learner-course-card[data-course-family] .course-card-open-label span,
+#courses-container .learner-course-card[data-course-family] .course-card-open-label svg { color:var(--course-footer-text); }
 #courses-container .learner-course-card[data-course-family] .available-course-head { background:var(--course-card-color-dark);color:#fff; }
 #courses-container .learner-course-card[data-course-family] .available-course-head span { color:#fff; }
 #courses-container .learner-course-card[data-course-family] .course-subscribe-btn { background:var(--course-card-color-dark);color:#fff; }
