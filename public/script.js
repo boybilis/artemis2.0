@@ -1615,10 +1615,10 @@ function renderCourseOverview() {
     const sessions = Array.isArray(course.zoom_sessions) ? [...course.zoom_sessions] : [];
     sessions.sort((left, right) => new Date(left.starts_at) - new Date(right.starts_at));
     const upcoming = sessions.filter(item => item.status === 'scheduled' && new Date(item.ends_at || item.starts_at) >= new Date());
-    const next = upcoming[0];
-    if ($('course-next-live-class')) $('course-next-live-class').textContent = next
-        ? new Date(next.starts_at).toLocaleString(undefined, {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})
-        : 'No upcoming class';
+    const expiresAt = course.enrollment_expires_at || course.batch_ends_at;
+    if ($('course-subscription-ends')) $('course-subscription-ends').textContent = expiresAt
+        ? new Date(expiresAt).toLocaleDateString(undefined, {month:'short',day:'numeric',year:'numeric'})
+        : 'No expiration set';
 
     const container = $('course-zoom-sessions');
     if (!container) return;

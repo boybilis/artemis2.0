@@ -11,7 +11,9 @@ assert(hero.includes('course-overview-enrolled'));
 assert(hero.includes('class="course-overview-titlebar"'));
 assert(hero.includes('<div class="course-overview-body"><h2 id="course-details-title">'));
 assert(hero.includes('<hr class="course-overview-divider">'));
-for(const id of ['course-next-live-class','course-topics-completed','course-overview-progress'])assert(hero.includes(`id="${id}"`));
+for(const id of ['course-subscription-ends','course-topics-completed','course-overview-progress'])assert(hero.includes(`id="${id}"`));
+assert(hero.includes('SUBSCRIPTION ENDS'));
+assert(js.includes('const expiresAt = course.enrollment_expires_at || course.batch_ends_at;'));
 const helper=js.slice(js.indexOf('function courseCardFamily('),js.indexOf('function renderDashboard()'));
 const family=vm.runInNewContext(helper+';courseCardFamily');
 for(const [title,expected] of [['NCLEX review','nclex'],['PNLE course','pnle'],['Prometric Complete','prometric'],['CSE review','cse'],['DOH HAAD','default']]) {
