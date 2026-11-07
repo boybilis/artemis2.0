@@ -1,6 +1,7 @@
 const fs=require('fs'),assert=require('assert');
 const {transform,readableFills}=require('../scripts/apply-brand-palette.cjs');
 const css=fs.readFileSync('public/brand-palette.css','utf8');
+assert(css.includes('.course-overview-metrics small { color:var(--brand-orange); }'));
 for(const hex of ['#11a7c0','#f47721','#eff8fc','#19344f','#ffffff'])assert(css.includes(hex));
 for(const file of ['public/index.html','resources/views/admin/layouts/app.blade.php','resources/views/admin/auth/login.blade.php','resources/views/admin/auth/password.blade.php','resources/views/admin/content/simulation-preview.blade.php'])assert(/href="[^"]*brand-palette\.css[^"]*\?v=\d+"/.test(fs.readFileSync(file,'utf8')),file+' must load the shared palette');
 assert(css.includes('#dashboard-hero .dashboard-hero-panel'));
