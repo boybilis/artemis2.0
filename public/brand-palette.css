@@ -84,9 +84,8 @@ body:not(.light-mode) #courses-container .learner-course-card[data-course-family
 body:not(.light-mode) #courses-container .learner-course-card[data-course-family] .course-ranking-badge { color:#eff8fc; }
 /* Profile summary beside the learner welcome hero; no decorative background shapes. */
 #course-details-area[data-course-family] .course-overview-hero {
-    padding:1.3rem;border-radius:16px;border:1px solid var(--course-card-color);border-top-width:4px;
-    box-shadow:inset 0 0 0 1px var(--course-card-color);
-    background:linear-gradient(125deg,#fff,var(--family-pale));
+    padding:1.3rem;border-radius:16px;border:1px solid #d5e1e9;
+    background:#fff;
     color:var(--brand-slate);
 }
 #course-details-area[data-course-family] .course-overview-hero :is(h2,.section-subtitle,.section-eyebrow) { color:var(--brand-slate); }
@@ -110,9 +109,13 @@ body:not(.light-mode) #courses-container .learner-course-card[data-course-family
 }
 body.light-mode #course-details-area[data-course-family] :is(.course-overview-metrics>div,.course-live-schedule,.learner-subject-row) { background:linear-gradient(135deg,#fff,var(--family-pale)); }
 #course-details-area[data-course-family] :is(.course-overview-metric-icon,.course-panel-icon) {
-    background:transparent;color:var(--course-card-accent);border:1px solid currentColor;
+    background:var(--course-card-color-dark);color:#fff;border:0;
 }
-body:not(.light-mode) #course-details-area[data-course-family] :is(.course-overview-metric-icon,.course-panel-icon) { color:var(--family-pale); }
+#course-details-area[data-course-family] :is(.course-overview-hero,.course-overview-metrics>div,.course-live-schedule) {
+    --text:#19344f;--text-muted:#526b7a;--border:#d5e1e9;
+    background:#fff;border:1px solid #d5e1e9;color:var(--text);
+}
+body.light-mode #course-details-area[data-course-family] :is(.course-overview-metrics>div,.course-live-schedule) { background:#fff; }
 #course-details-area[data-course-family] .learner-subject-progress-track span { background:var(--course-card-color); }
 #course-details-area[data-course-family] .learner-subject-action .btn-primary:not(:hover) { background:var(--course-card-color);color:var(--course-footer-text); }
 #course-details-area[data-course-family] .learner-subject-row:hover { border-color:var(--course-card-color); }
