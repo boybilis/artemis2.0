@@ -15,6 +15,11 @@
     .course-info { flex: 1 1 auto; min-width: 0; padding-right: 1rem; }
     .course-info h3 { margin: 0 0 0.5rem 0; }
     .course-info p { color: var(--text-muted); margin: 0; font-size: 0.9rem; }
+    .course-card--compact { padding: .85rem 1.25rem; gap: .75rem; }
+    .course-card--compact .course-info h3 { margin: 0; overflow-wrap: anywhere; }
+    .course-card--compact .course-info p { margin-top: .3rem; }
+    .course-card--compact .course-actions .status { white-space: nowrap; }
+    @media(max-width:700px){.course-card--compact{align-items:flex-start;flex-direction:column}}
     .course-actions { display:flex; align-items:center; justify-content:flex-end; flex:0 0 auto; flex-wrap:nowrap; gap:.4rem; }
     .course-actions form { display:flex !important; margin:0; flex:0 0 auto; }
     .course-actions .btn-primary,
@@ -36,19 +41,22 @@
 
         <div id="coursesList">
             @forelse ($courses as $course)
-                <div class="course-card">
+                <div class="course-card {{ ($classManagement ?? false) ? '' : 'course-card--compact' }}">
                     <div class="course-info">
                         <h3>{{ $course->title }}</h3>
-                        <p>{{ $course->description }}</p>
+                        @if(filled($course->description))<p>{{ $course->description }}</p>@endif
+                        @if($classManagement ?? false)
                         <p>
                             <span class="status {{ $course->approval_status === 'approved' ? 'success' : ($course->approval_status === 'rejected' ? 'danger' : 'warning') }}">{{ ucfirst($course->approval_status) }}</span>
                         </p>
+                        @endif
                     </div>
                     <div class="course-actions">
                         @if($classManagement ?? false)
                         @if($isAdmin)<button class="btn-primary" type="button" onclick="openAddBatchModal({{ $course->id }})">Create Batch</button>@endif
                         <button class="btn-ghost" type="button" onclick="openBatchListModal({{ $course->id }})">Manage Batches</button>
                         @else
+                        <span class="status {{ $course->approval_status === 'approved' ? 'success' : ($course->approval_status === 'rejected' ? 'danger' : 'warning') }}">{{ ucfirst($course->approval_status) }}</span>
                         <a href="{{ route('admin.content.subjects', $course->id) }}" class="btn-primary" style="text-decoration:none;">Manage Content</a>
                         <button class="btn-ghost" type="button" onclick='openEditCourseModal(@json($course->id), @json($course->title), @json($course->description), @json($course->approval_status))'>Edit</button>
                         <form action="{{ route('admin.content.courses.destroy', $course->id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Delete this course?');">
