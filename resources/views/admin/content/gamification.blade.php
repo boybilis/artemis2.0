@@ -60,9 +60,10 @@
             </div>
             <p class="gamification-help">Set a value to 0 to turn off that reward. Badge thresholds are the number of qualifying completions.</p>
             <div class="gamification-grid">
-                @foreach($activities as $key => [$label, $points, $badge])
+                @foreach($activities as $key => [$label, $points, $badge, $description])
                     <section class="gamification-reward" aria-labelledby="reward-{{ $key }}">
                         <h4 id="reward-{{ $key }}">{{ $label }}</h4>
+                        <p class="gamification-help" style="margin:0;font-size:.85rem">{{ $description }}</p>
                         <div class="gamification-field">
                         <label for="points-{{ $key }}">Points</label>
                         <input id="points-{{ $key }}" type="number" name="points[{{ $key }}]" min="0" max="10000" required value="{{ old('points.'.$key, $settings['points'][$key] ?? $points) }}">

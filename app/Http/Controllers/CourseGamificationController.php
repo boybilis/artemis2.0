@@ -9,10 +9,10 @@ use Illuminate\Support\Facades\Storage;
 class CourseGamificationController extends Controller
 {
     private const ACTIVITIES = [
-        'content' => ['Complete a learning item', 50, 5],
-        'assessment' => ['Pass a course assessment', 100, 2],
-        'course' => ['Complete the review course', 1000, 1],
-        'certificate' => ['Earn a course certificate', 150, 1],
+        'content' => ['Complete a learning item', 50, 5, 'Points for each lesson video, reading, or handout marked complete in the learning workspace. Assessments have their own reward below.'],
+        'assessment' => ['Pass a course assessment', 100, 2, 'Points for passing an assessment in the review course. Starting or failing a test does not count.'],
+        'course' => ['Complete the review course', 1000, 1, 'Points when the learner meets the course completion requirements, not for finishing a single subject.'],
+        'certificate' => ['Earn a course certificate', 150, 1, 'Points when a course certificate is earned, not each time it is downloaded.'],
     ];
 
     public function index(Request $request)
