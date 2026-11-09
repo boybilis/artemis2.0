@@ -12,6 +12,16 @@
     white-space:normal;overflow-wrap:anywhere;word-break:normal;
     text-overflow:clip;line-height:1.45;flex-shrink:0;
 }
+#course-opening-status:not(.hidden) {
+    position:fixed;inset:0;z-index:2000;display:flex;align-items:center;justify-content:center;
+    flex-direction:column;gap:1rem;background:var(--bg);color:var(--text);font-weight:700;
+}
+.course-opening-spinner {
+    width:2.5rem;height:2.5rem;border:3px solid var(--border);border-top-color:var(--brand-aqua);
+    border-radius:50%;animation:course-opening-spin .8s linear infinite;
+}
+@keyframes course-opening-spin { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { .course-opening-spinner { animation:none; } }
 body {
     --bg:var(--brand-dark-surface);
     --bg2:var(--brand-slate);

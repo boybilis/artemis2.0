@@ -756,10 +756,12 @@ async function loadTopicsIfNeeded(courseId) {
             courseMockExamTimeLimitMinutes = topicData.mockExamTimeLimitMinutes === null ? null : Number(topicData.mockExamTimeLimitMinutes);
             courseMockExamPassed = Boolean(topicData.mockExamPassed);
             courseMockExamCertificateAvailable = Boolean(topicData.mockExamCertificateAvailable);
+            return true;
         }
     } catch (e) {
         console.error("Topics catalog loading failed.", e);
     }
+    return false;
 }
 
 async function boot() {
@@ -1283,6 +1285,12 @@ function renderDashboard() {
                     openBuyVoucherModal(course.batch_id);
                     return;
                 }
+                const loading = $('course-opening-status');
+                const details = $('course-details-area');
+                if (!loading.classList.contains('hidden')) return;
+                details.style.display = 'none';
+                loading.classList.remove('hidden');
+                try {
                 currentCourseId = course.id;
                 currentBatchId = course.batch_id;
                 localStorage.setItem('last_course_id', course.id);
@@ -1300,17 +1308,14 @@ function renderDashboard() {
                         : 'Not set';
                     contextDates.textContent = `Start date: ${formatContextDate(course.batch_starts_at)} · Access expiration: ${formatContextDate(course.enrollment_expires_at || course.batch_ends_at)}`;
                 }
-                if (contextNav) contextNav.classList.remove('hidden');
-                setCourseSidebarMode(true, 'subjects');
-                fadeTransition(
-                    [$('dashboard-hero'), $('dashboard-overview-cards'), $('dashboard-courses-head'), cContainer],
-                    [$('course-details-area')],
-                    ['block']
-                );
-                
-                await loadTopicsIfNeeded(course.id);
-                // Also fetch progress for this specific course
-                const pData = await apiRequest('/api/progress?course_id=' + course.id);
+                const [topicsLoaded, pData] = await Promise.all([
+                    loadTopicsIfNeeded(course.id),
+                    apiRequest('/api/progress?course_id=' + course.id),
+                ]);
+                if (!topicsLoaded) return;
+                state.completedTopics = [];
+                state.topicProgressMap = {};
+                state.hasPassedMidterm = false;
                 if (pData && pData.success) {
                     state.completedTopics = pData.completedTopics || [];
                     state.topicProgressMap = pData.topicProgressMap || {};
@@ -1318,6 +1323,15 @@ function renderDashboard() {
                 }
                 
                 renderSubjects();
+                if (contextNav) contextNav.classList.remove('hidden');
+                setCourseSidebarMode(true, 'subjects');
+                [$('dashboard-hero'), $('dashboard-overview-cards'), $('dashboard-courses-head'), cContainer].forEach(element => {
+                    if (element) element.style.display = 'none';
+                });
+                Object.assign(details.style, {display:'block',opacity:'1',transform:'none'});
+                } finally {
+                    loading.classList.add('hidden');
+                }
             });
             cContainer.appendChild(card);
         });
