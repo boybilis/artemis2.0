@@ -683,10 +683,6 @@
 
                     <div id="test-bank-workspace-area" class="test-bank-workspace hidden" aria-live="polite"></div>
 
-                    <div id="course-opening-status" class="hidden" role="status" aria-live="polite">
-                        <span class="course-opening-spinner" aria-hidden="true"></span>
-                        <span>Loading Course</span>
-                    </div>
                     <div id="course-details-area" style="display: none">
                         <button type="button" id="back-to-subjects-btn" class="btn-ghost hidden">Back to Subjects</button>
                         <div id="subjects-list-area">
@@ -1416,7 +1412,11 @@
             <div class="subject-policy-dialog-actions"><button type="button" id="subject-policy-decline" class="btn-ghost">Decline</button><button type="button" id="subject-policy-accept" class="btn-primary" disabled>Agree and Continue</button></div>
         </dialog>
         <link rel="stylesheet" href="subject-policy.css?v=3">
-        <script src="script.js?v=217"></script>
+        <div id="course-opening-status" class="hidden" role="status" aria-live="polite">
+            <span class="course-opening-spinner" aria-hidden="true"></span>
+            <span>Loading Course</span>
+        </div>
+        <script src="script.js?v=218"></script>
         <script src="subject-policy.js?v=2"></script>
         <script src="video-watermark.js?v=3"></script>
         <script src="learner-course-zoom.js?v=1"></script>

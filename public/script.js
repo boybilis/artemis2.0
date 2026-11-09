@@ -1291,6 +1291,7 @@ function renderDashboard() {
                 details.style.display = 'none';
                 loading.classList.remove('hidden');
                 try {
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
                 currentCourseId = course.id;
                 currentBatchId = course.batch_id;
                 localStorage.setItem('last_course_id', course.id);
@@ -1311,6 +1312,7 @@ function renderDashboard() {
                 const [topicsLoaded, pData] = await Promise.all([
                     loadTopicsIfNeeded(course.id),
                     apiRequest('/api/progress?course_id=' + course.id),
+                    new Promise(resolve => setTimeout(resolve, 300)),
                 ]);
                 if (!topicsLoaded) return;
                 state.completedTopics = [];
@@ -1329,6 +1331,10 @@ function renderDashboard() {
                     if (element) element.style.display = 'none';
                 });
                 Object.assign(details.style, {display:'block',opacity:'1',transform:'none'});
+                for (let parent = details.parentElement; parent; parent = parent.parentElement) {
+                    if (parent.scrollTop) parent.scrollTo({top:0,behavior:'instant'});
+                }
+                window.scrollTo({top:0,behavior:'instant'});
                 } finally {
                     loading.classList.add('hidden');
                 }
