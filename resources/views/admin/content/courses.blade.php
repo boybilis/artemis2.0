@@ -4,13 +4,10 @@
 @section('kicker', ($classManagement ?? false) ? 'Batch Delivery' : 'Content Management')
 @section('toast_notifications', 'true')
 
-@section('header_actions')
-    @if(!($classManagement ?? false))<button class="btn btn-primary" type="button" onclick="openAddCourseModal()">Add Course</button>@endif
-@endsection
-
 @section('content')
 @php($isAdmin = Auth::user()->hasAdminAccess())
 <style>
+    .course-library-toolbar { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem; }
     .course-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
     .course-info { flex: 1 1 auto; min-width: 0; padding-right: 1rem; }
     .course-info h3 { margin: 0 0 0.5rem 0; }
@@ -32,11 +29,14 @@
 
 <div class="split-grid">
     <section class="panel">
-        <div class="toolbar">
+        <div class="toolbar course-library-toolbar">
             <div>
                 <p class="panel-label">{{ ($classManagement ?? false) ? 'Classes and batches' : 'Master courses' }}</p>
                 <h2 class="panel-title">{{ ($classManagement ?? false) ? 'Class Management' : 'Course Content Library' }}</h2>
             </div>
+            @if(!($classManagement ?? false))
+                <button class="btn btn-primary" type="button" onclick="openAddCourseModal()">Add Course</button>
+            @endif
         </div>
 
         <div id="coursesList">
