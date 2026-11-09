@@ -18,6 +18,7 @@
         $navItems[] = ['label' => 'Course Management', 'route' => 'admin.content.index', 'active' => 'admin.content.*', 'icon' => 'book-open', 'badge' => $pendingContentCount > 0 ? $pendingContentCount : null];
     }
     if ($isAdmin || $role === 'encoder') {
+        if ($isAdmin) $navItems[] = ['label' => 'Course Gamification', 'route' => 'admin.gamification.index', 'active' => 'admin.gamification.*', 'icon' => 'trophy'];
         $navItems[] = ['label' => 'Test Banks', 'route' => 'admin.test-banks.index', 'active' => ['admin.test-banks.*', 'admin.content.test-banks.*'], 'icon' => 'notebook-tabs'];
     }
     if ($isAdmin || $role === 'instructor') {

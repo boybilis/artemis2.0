@@ -158,6 +158,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::redirect('/', '/admin/dashboard');
         
         Route::get('/dashboard', [\App\Http\Controllers\ManagementDashboardController::class, 'index'])->name('dashboard');
+        Route::middleware(RoleMiddleware::class.':admin')->group(function () {
+            Route::get('/course-gamification', [\App\Http\Controllers\CourseGamificationController::class, 'index'])->name('gamification.index');
+            Route::put('/course-gamification/{course}', [\App\Http\Controllers\CourseGamificationController::class, 'update'])->name('gamification.update');
+        });
         Route::middleware(RoleMiddleware::class.':admin,instructor')->group(function () {
             Route::get('/question-flags', [\App\Http\Controllers\QuestionFlagController::class, 'manage'])->name('question-flags.index');
             Route::get('/question-flags/unread', [\App\Http\Controllers\QuestionFlagController::class, 'staffUnread'])->name('question-flags.unread');
