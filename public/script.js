@@ -677,13 +677,23 @@ dialog.setAttribute('aria-label', 'Select your Licensure');
     }
 }
 
+function showOpeningLoader(label) {
+    const loading = $('course-opening-status');
+    if (!loading.classList.contains('hidden')) return null;
+    $('opening-status-label').textContent = label;
+    loading.classList.remove('hidden');
+    return loading;
+}
+
 async function openTestBankWorkspace(testBankId) {
     const workspaceArea = $('test-bank-workspace-area');
     if (!workspaceArea) return;
+    const loading = showOpeningLoader('Loading Test Bank');
+    if (!loading) return;
     workspaceArea.testBankWorkspace = null;
     workspaceArea.classList.add('test-bank-v2');
     workspaceArea.classList.remove('hidden');
-    workspaceArea.innerHTML = '<div class="test-bank-workspace-loading">Loading your Test Bank…</div>';
+    workspaceArea.innerHTML = '';
     [$('dashboard-hero'), $('dashboard-overview-cards'), $('dashboard-courses-head'), $('courses-container'), $('course-details-area')].forEach(element => {
         if (element) element.style.display = 'none';
     });
@@ -692,12 +702,19 @@ async function openTestBankWorkspace(testBankId) {
     $('sidebar-enrolled-test-banks-btn')?.classList.add('active');
 
     try {
-        const data = await apiRequest(`/api/test-banks/${testBankId}/workspace`);
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const [data] = await Promise.all([
+            apiRequest(`/api/test-banks/${testBankId}/workspace`),
+            new Promise(resolve => setTimeout(resolve, 300)),
+        ]);
+        if (!data?.workspace) throw new Error(data?.message || 'Your subscription may have expired.');
         workspaceArea.testBankWorkspace = data.workspace;
         renderTestBankWorkspaceV2(data.workspace);
     } catch (error) {
         workspaceArea.innerHTML = `<div class="empty-course-filter"><i data-lucide="shield-alert"></i><p>Test Bank access unavailable.</p><span>${escapeHtml(error.message || 'Your subscription may have expired.')}</span></div>`;
         if (window.lucide) lucide.createIcons();
+    } finally {
+        loading.classList.add('hidden');
     }
 }
 
@@ -1285,11 +1302,10 @@ function renderDashboard() {
                     openBuyVoucherModal(course.batch_id);
                     return;
                 }
-                const loading = $('course-opening-status');
+                const loading = showOpeningLoader('Loading Course');
                 const details = $('course-details-area');
-                if (!loading.classList.contains('hidden')) return;
+                if (!loading) return;
                 details.style.display = 'none';
-                loading.classList.remove('hidden');
                 try {
                 await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
                 currentCourseId = course.id;
