@@ -21,10 +21,6 @@ body .subjects-catalog-table thead th,body.light-mode .subjects-catalog-table th
     <h2 style="margin:0;font-family:'Outfit',sans-serif;">{{ $course->title }}</h2>
 </div>
 
-<div class="tabs">
-    <a class="tab active" href="{{ route('admin.content.subjects', $course->id) }}">Subjects</a>
-</div>
-
 <section class="panel">
     <div class="toolbar">
         <div><p class="panel-label">Course subjects</p><h2 class="panel-title">Subject Catalog</h2></div>
