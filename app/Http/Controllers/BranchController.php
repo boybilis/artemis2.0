@@ -63,6 +63,15 @@ class BranchController extends Controller
         return $this->landing($slug);
     }
 
+    public function hero(string $slug)
+    {
+        $path = Branch::where('slug', $slug)->firstOrFail()->hero_path;
+        $disk = Storage::disk('public');
+        abort_unless($disk->exists($path), 404);
+
+        return $disk->response($path, null, ['X-Content-Type-Options' => 'nosniff']);
+    }
+
     private function landing(string $slug)
     {
         $branch = Branch::where('slug', $slug)->firstOrFail();

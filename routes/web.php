@@ -15,6 +15,7 @@ use App\Http\Middleware\RoleMiddleware;
 // ─── CUSTOMER FRONTEND LANDING ───────────────────────────────
 Route::get('/', [\App\Http\Controllers\BranchController::class, 'home']);
 Route::get('/branches/{slug}', [\App\Http\Controllers\BranchController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('branches.show');
+Route::get('/branches/{slug}/hero', [\App\Http\Controllers\BranchController::class, 'hero'])->where('slug', '[a-z0-9-]+')->name('branches.hero');
 
 // ─── PUBLIC API ROUTES ─────────────────────────────────────────
 Route::prefix('api')->group(function () {
