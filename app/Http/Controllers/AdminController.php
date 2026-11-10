@@ -1329,9 +1329,31 @@ class AdminController extends Controller
 
 
     // ─── SUBTOPIC CRUD ───────────────────────────────────────────
+    private function normalizeSubtopicFormat(Request $request, ?Subtopic $existing = null): ?string
+    {
+        $format = $request->input('content_type');
+        if (!in_array($format, ['text', 'video', 'reading'], true)) return null;
+        $hasVideo = $existing && (filled($existing->video_url) || filled($existing->video_path));
+        $hasDocument = $existing && filled($existing->documentation_path);
+        $request->validate(match ($format) {
+            'text' => ['text_body' => 'required|string|max:15000', 'video_url' => 'prohibited', 'video_file' => 'prohibited', 'documentation' => 'prohibited'],
+            'video' => ['documentation' => 'prohibited'],
+            'reading' => ['documentation' => 'nullable|file|mimes:pdf|max:51200', 'video_url' => 'prohibited', 'video_file' => 'prohibited'],
+        });
+        $error = match ($format) {
+            'text' => $hasVideo || $hasDocument ? 'Create a new Text Content item to keep the existing media intact.' : null,
+            'video' => $hasDocument ? 'Create a new video item to keep the existing handout intact.' : ((!$request->filled('video_url') && !$request->hasFile('video_file') && (!$existing?->video_path || $request->boolean('remove_video_file'))) ? 'Provide a video link or upload a video file.' : null),
+            'reading' => $hasVideo ? 'Create a new reading item to keep the existing video intact.' : ((!$request->hasFile('documentation') && (!$hasDocument || $request->boolean('remove_documentation') || !preg_match('/\.pdf(?:$|[?#])/i', $existing->documentation_filename ?: $existing->documentation_path))) ? 'Upload a PDF handout.' : null),
+        };
+        if ($error) throw \Illuminate\Validation\ValidationException::withMessages(['content_type' => $error]);
+        $request->merge(['content_type' => 'subtopic']);
+        return $format;
+    }
+
     public function storeSubtopic(Request $request, $course_id)
     {
         $course = Course::findOrFail($course_id);
+        $format = $this->normalizeSubtopicFormat($request);
         $request->validate([
             'topic_id'    => ['required', \Illuminate\Validation\Rule::exists('topics', 'id')->where('course_id', $course->id)],
             'content_type' => 'required|in:subtopic,pre_test,post_test,practice_test,mock_exam',
@@ -1357,7 +1379,7 @@ class AdminController extends Controller
             'topic_id'   => $request->input('topic_id'),
             'content_type' => $contentType,
             'title'      => in_array($contentType, ['subtopic', 'zoom_link'], true) ? $request->input('title') : $assessmentTitles[$contentType],
-            'instructions' => $contentType === 'subtopic' ? null : $request->input('instructions'),
+            'instructions' => $format === 'text' ? $request->input('text_body') : ($contentType === 'subtopic' ? null : $request->input('instructions')),
             'maximum_attempts' => $contentType === 'pre_test' ? 1 : (in_array($contentType, ['post_test', 'practice_test', 'mock_exam'], true) ? $request->input('maximum_attempts') : null),
             'video_url'  => $contentType === 'subtopic' ? $request->input('video_url') : null,
             'sort_order' => $request->filled('sort_order') ? $request->integer('sort_order') : $maxOrder + 1,
@@ -1396,6 +1418,7 @@ class AdminController extends Controller
     {
         $course = Course::findOrFail($course_id);
         $sub = Subtopic::whereHas('topic', fn ($query) => $query->where('course_id', $course->id))->findOrFail($id);
+        $format = $this->normalizeSubtopicFormat($request, $sub);
         $request->validate([
             'content_type' => 'required|in:subtopic,zoom_link,pre_test,post_test,practice_test,mock_exam',
             'title'      => 'required_if:content_type,subtopic,zoom_link|nullable|string|max:255',
@@ -1417,7 +1440,7 @@ class AdminController extends Controller
         $data = [
             'content_type' => $contentType,
             'title'      => in_array($contentType, ['subtopic', 'zoom_link'], true) ? $request->input('title') : $assessmentTitles[$contentType],
-            'instructions' => $contentType === 'subtopic' ? null : $request->input('instructions'),
+            'instructions' => $format === 'text' ? $request->input('text_body') : ($contentType === 'subtopic' ? null : $request->input('instructions')),
             'maximum_attempts' => $contentType === 'pre_test' ? 1 : (in_array($contentType, ['post_test', 'practice_test', 'mock_exam'], true) ? $request->input('maximum_attempts') : null),
             'video_url'  => $contentType === 'subtopic' ? $request->input('video_url') : null,
             'sort_order' => $request->filled('sort_order') ? $request->integer('sort_order') : $sub->sort_order,

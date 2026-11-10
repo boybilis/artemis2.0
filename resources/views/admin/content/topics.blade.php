@@ -458,7 +458,7 @@
                 <div class="field">
                     <label for="add_sub_type">Content type</label>
                     <select id="add_sub_type" name="content_type" required onchange="syncSubtopicFields('add')">
-                        <option value="subtopic">Subtopic</option>
+                        <option value="text">Text Content</option><option value="video">Videos</option><option value="reading">Readings/Handouts</option>
                         <option value="pre_test">Pre-test</option>
                         <option value="post_test">Post-test</option>
                         <option value="practice_test">Practice Test</option>
@@ -479,6 +479,7 @@
                     </div>
                 </div>
                 <div id="add_sub_lesson_fields">
+                    <div class="field"><label for="add_sub_text">Text Content</label><textarea id="add_sub_text" name="text_body" rows="12" maxlength="15000" placeholder="Type or paste your paragraphs here"></textarea></div>
                     <div class="field">
                         <label for="add_sub_title">Subtopic Title</label>
                         <input type="text" id="add_sub_title" name="title" required placeholder="e.g. Introduction to the Box Model">
@@ -495,9 +496,9 @@
                         <div id="add_sub_upload_progress" class="upload-progress"><div class="upload-progress-track"><div class="upload-progress-bar"></div></div><div class="upload-progress-text"><span>Uploading video…</span><strong>0%</strong></div></div>
                     </div>
                     <div class="field" style="border:1px dashed var(--border);padding:1rem;border-radius:8px;margin-top:1rem">
-                        <label for="add_sub_doc">PDF / Slides (Optional)</label>
-                        <p class="muted" style="margin-top:0;font-size:.8rem;margin-bottom:.5rem">Upload a PDF or presentation file for this subtopic.</p>
-                        <input type="file" id="add_sub_doc" name="documentation" accept=".pdf,.ppt,.pptx,.doc,.docx,image/*" style="background:rgba(255,255,255,.02);color:var(--text);padding:.3rem;border-radius:8px;width:100%;border:1.5px solid var(--border);cursor:pointer;font-family:inherit;font-size:.85rem;height:2.8rem;box-sizing:border-box">
+                        <label for="add_sub_doc">PDF handout</label>
+                        <p class="muted" style="margin-top:0;font-size:.8rem;margin-bottom:.5rem">Upload a PDF for this reading or handout.</p>
+                        <input type="file" id="add_sub_doc" name="documentation" accept=".pdf,application/pdf" style="background:rgba(255,255,255,.02);color:var(--text);padding:.3rem;border-radius:8px;width:100%;border:1.5px solid var(--border);cursor:pointer;font-family:inherit;font-size:.85rem;height:2.8rem;box-sizing:border-box">
                     </div>
                 </div>
                 <div id="add_sub_zoom_fields" style="display:none">
@@ -529,12 +530,13 @@
         </div>
         <div class="admin-modal-body">
             <div class="form-grid" style="grid-template-columns: 1fr;">
-                <div class="field"><label for="edit_sub_type">Content type</label><select id="edit_sub_type" name="content_type" required onchange="syncSubtopicFields('edit')"><option value="subtopic">Subtopic</option><option value="zoom_link">Zoom Link</option><option value="pre_test">Pre-test</option><option value="post_test">Post-test</option><option value="practice_test">Practice Test</option><option value="mock_exam">Mock Exam</option></select></div>
+                <div class="field"><label for="edit_sub_type">Content type</label><select id="edit_sub_type" name="content_type" required onchange="syncSubtopicFields('edit')"><option value="text">Text Content</option><option value="video">Videos</option><option value="reading">Readings/Handouts</option><option value="subtopic" hidden>Legacy Subtopic</option><option value="zoom_link">Zoom Link</option><option value="pre_test">Pre-test</option><option value="post_test">Post-test</option><option value="practice_test">Practice Test</option><option value="mock_exam">Mock Exam</option></select></div>
                 <div id="edit_sub_assessment_fields" style="display:none">
                     <div class="field"><label for="edit_sub_instructions">Assessment instructions</label><textarea id="edit_sub_instructions" name="instructions" rows="5"></textarea></div>
                     <div class="field" id="edit_sub_attempts_field" style="display:none;margin-top:1rem"><label id="edit_sub_attempts_label" for="edit_sub_max_attempts">Maximum allowed tries</label><select id="edit_sub_max_attempts" name="maximum_attempts"><option value="">Unlimited</option>@foreach([1,2,3,4,5] as $attempt)<option value="{{ $attempt }}">{{ $attempt }}</option>@endforeach</select></div>
                 </div>
                 <div id="edit_sub_lesson_fields">
+                <div class="field"><label for="edit_sub_text">Text Content</label><textarea id="edit_sub_text" name="text_body" rows="12" maxlength="15000"></textarea></div>
                 <div class="field">
                     <label for="edit_sub_title">Subtopic Title</label>
                     <input type="text" id="edit_sub_title" name="title" required>
@@ -558,9 +560,9 @@
                     <div id="edit_sub_upload_progress" class="upload-progress"><div class="upload-progress-track"><div class="upload-progress-bar"></div></div><div class="upload-progress-text"><span>Uploading video…</span><strong>0%</strong></div></div>
                 </div>
                 <div class="field" style="border: 1px dashed var(--border); padding: 1rem; border-radius: 8px;">
-                    <label for="edit_sub_doc">Replace PDF / Slides (Optional)</label>
+                    <label for="edit_sub_doc">Replace PDF handout</label>
                     <p class="muted" style="margin-top: 0; font-size: 0.8rem; margin-bottom: 0.5rem;">Upload a new file to replace the current one.</p>
-                    <input type="file" id="edit_sub_doc" name="documentation" accept=".pdf,.ppt,.pptx,.doc,.docx,image/*" style="background: rgba(255,255,255,0.02); color: var(--text); padding: 0.3rem; border-radius: 8px; width: 100%; border: 1.5px solid var(--border); cursor: pointer; font-family: inherit; font-size: 0.85rem; height: 2.8rem; box-sizing: border-box;">
+                    <input type="file" id="edit_sub_doc" name="documentation" accept=".pdf,application/pdf" style="background: rgba(255,255,255,0.02); color: var(--text); padding: 0.3rem; border-radius: 8px; width: 100%; border: 1.5px solid var(--border); cursor: pointer; font-family: inherit; font-size: 0.85rem; height: 2.8rem; box-sizing: border-box;">
                     <div id="current_sub_doc_info" style="display: none; margin-top: 0.5rem; font-size: 0.85rem; padding: 0.5rem; background: rgba(16,185,129,0.1); border-radius: 6px; border: 1px solid rgba(16,185,129,0.2); align-items: center; justify-content: space-between;">
                         <span><strong style="color: var(--correct);">Current File:</strong> <span id="current_sub_doc_name"></span></span>
                         <label style="display: inline-flex; align-items: center; gap: 0.3rem; margin: 0; font-size: 0.8rem; color: var(--wrong); cursor: pointer;">
@@ -624,7 +626,8 @@
         document.getElementById('add_sub_title').value       = '';
         document.getElementById('add_sub_video').value       = '';
         document.getElementById('add_sub_sort').value        = '';
-        document.getElementById('add_sub_type').value        = 'subtopic';
+        document.getElementById('add_sub_type').value        = 'text';
+        document.getElementById('add_sub_text').value        = '';
         document.getElementById('add_sub_instructions').value = '';
         document.getElementById('add_sub_max_attempts').value = '';
         ['zoom_title','zoom_url','zoom_description','zoom_starts_at','zoom_ends_at'].forEach(field => { const element=document.getElementById('add_sub_'+field); if(element) element.value=''; });
@@ -641,7 +644,11 @@
             const videoFile = btn.dataset.videoFile;
             const doc   = btn.dataset.doc;
             const sort  = btn.dataset.sort;
-            const type = btn.dataset.contentType || 'subtopic';
+            const storedType = btn.dataset.contentType || 'subtopic';
+            const type = storedType !== 'subtopic' ? storedType
+                : btn.dataset.instructions ? 'text'
+                : (video || videoFile) && !doc ? 'video'
+                : !video && !videoFile && /\.pdf$/i.test(doc || '') ? 'reading' : 'subtopic';
 
             document.getElementById('edit_sub_title').value  = title;
             document.getElementById('edit_sub_video').value  = video || '';
@@ -651,6 +658,7 @@
             document.getElementById('edit_sub_sort').value   = sort || '';
             document.getElementById('edit_sub_type').value = type;
             document.getElementById('edit_sub_instructions').value = btn.dataset.instructions || '';
+            document.getElementById('edit_sub_text').value = type === 'text' ? btn.dataset.instructions : '';
             document.getElementById('edit_sub_max_attempts').value = btn.dataset.maximumAttempts || '';
             document.getElementById('edit_sub_zoom_title').value = title || '';
             document.getElementById('edit_sub_zoom_url').value = btn.dataset.zoomUrl || '';
@@ -673,7 +681,7 @@
 
     function syncSubtopicFields(prefix) {
         const type = document.getElementById(prefix + '_sub_type').value;
-        const isLesson = type === 'subtopic';
+        const isLesson = ['subtopic', 'text', 'video', 'reading'].includes(type);
         const isZoom = type === 'zoom_link';
         const lessonFields = document.getElementById(prefix + '_sub_lesson_fields');
         const assessmentFields = document.getElementById(prefix + '_sub_assessment_fields');
@@ -692,6 +700,17 @@
         if (attemptsLabel) attemptsLabel.textContent = type === 'post_test' ? 'Maximum allowed Post-test tries' : 'Maximum allowed tries';
         title.required = isLesson || isZoom;
         instructions.required = !isLesson && !isZoom;
+        instructions.disabled = isLesson || isZoom;
+        const toggleField = (suffix, visible) => {
+            const field = document.getElementById(prefix + '_sub_' + suffix).closest('.field');
+            field.style.display = visible ? '' : 'none';
+            field.querySelectorAll('input,textarea').forEach(input => input.disabled = !visible);
+        };
+        toggleField('text', type === 'text');
+        toggleField('video', type === 'video' || type === 'subtopic');
+        toggleField('video_file', type === 'video' || type === 'subtopic');
+        toggleField('doc', type === 'reading' || type === 'subtopic');
+        document.getElementById(prefix + '_sub_text').required = type === 'text';
         ['zoom_url','zoom_description','zoom_starts_at'].forEach(field => {
             const element = document.getElementById(prefix + '_sub_' + field);
             if (element) { element.required = isZoom; element.disabled = !isZoom; }

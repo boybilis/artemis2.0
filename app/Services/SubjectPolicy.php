@@ -49,7 +49,7 @@ class SubjectPolicy
             if ($sub->content_type === 'mock_exam') continue;
             if ($sub->content_type === 'pre_test') { $index++; continue; }
             $count = $sub->content_type === 'subtopic'
-                ? (int) filled($sub->documentation_path) + (int) (filled($sub->video_url) || filled($sub->video_path)) : 1;
+                ? (int) filled($sub->instructions) + (int) filled($sub->documentation_path) + (int) (filled($sub->video_url) || filled($sub->video_path)) : 1;
             if (!$count) { $index++; continue; }
             for ($i = 0; $i < $count; $i++) $required[] = $index++;
         }

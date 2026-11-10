@@ -804,7 +804,7 @@ class CourseController extends Controller
         $request->validate([
             'topic_id' => 'required|integer|exists:topics,id',
             'subtopic_id' => 'required|integer|exists:subtopics,id',
-            'item_type' => 'required|in:doc,video,zoom,assessment,none',
+            'item_type' => 'required|in:doc,video,text,zoom,assessment,none',
         ]);
 
         $topic = Topic::where('status', 'approved')->findOrFail($request->integer('topic_id'));
@@ -884,6 +884,7 @@ class CourseController extends Controller
                 }
 
                 $items = [];
+                if (filled($subtopic->instructions)) $items[] = ['subtopic' => $subtopic, 'type' => 'text'];
                 if (filled($subtopic->documentation_path)) $items[] = ['subtopic' => $subtopic, 'type' => 'doc'];
                 if (filled($subtopic->video_url) || filled($subtopic->video_path)) $items[] = ['subtopic' => $subtopic, 'type' => 'video'];
                 if ($items === []) $items[] = ['subtopic' => $subtopic, 'type' => 'none'];

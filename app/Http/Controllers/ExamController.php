@@ -108,6 +108,12 @@ class ExamController extends Controller
 
                 $hasDocument = filled($subtopic->documentation_path);
                 $hasVideo = filled($subtopic->video_url) || filled($subtopic->video_path);
+                $hasText = filled($subtopic->instructions);
+                if ($hasText) {
+                    $hasRequiredContent = true;
+                    if ($flatIndex >= $unlockedIndex) return false;
+                    $flatIndex++;
+                }
                 if ($hasDocument) {
                     $hasRequiredContent = true;
                     if ($flatIndex >= $unlockedIndex) return false;
@@ -118,7 +124,7 @@ class ExamController extends Controller
                     if ($flatIndex >= $unlockedIndex) return false;
                     $flatIndex++;
                 }
-                if (! $hasDocument && ! $hasVideo) $flatIndex++;
+                if (! $hasDocument && ! $hasVideo && ! $hasText) $flatIndex++;
             }
         }
 

@@ -1476,9 +1476,10 @@ function getTopicFlatLearningItems(topic) {
             items.push({sub, subIndex, type: 'assessment'});
             return;
         }
+        if (sub.instructions?.trim()) items.push({sub, subIndex, type: 'text'});
         if (sub.documentationPath) items.push({sub, subIndex, type: 'doc'});
         if (sub.videoUrl || sub.videoUploadUrl) items.push({sub, subIndex, type: 'video'});
-        if (!sub.documentationPath && !sub.videoUrl && !sub.videoUploadUrl) items.push({sub, subIndex, type: 'none'});
+        if (!sub.instructions?.trim() && !sub.documentationPath && !sub.videoUrl && !sub.videoUploadUrl) items.push({sub, subIndex, type: 'none'});
     });
     return items;
 }
@@ -1613,7 +1614,7 @@ function openSubjectLearningWorkspace(subjectId) {
     state.currentTopicIndex=null;
     window.currentFlattenedItems=[];
     window.currentLearningItemIndex=-1;
-    for(const id of ['no-subtopics-msg','video-container','docs-container','subtopic-assessment-container','zoom-session-container','mark-complete-bar']) {
+    for(const id of ['no-subtopics-msg','video-container','docs-container','subtopic-text-container','subtopic-assessment-container','zoom-session-container','mark-complete-bar']) {
         const element=$(id);if(element)element.style.display='none';
     }
     if($('subtopic-header'))$('subtopic-header').style.display='flex';
@@ -2066,7 +2067,7 @@ function renderLesson(openIdx = 0) {
     if (!topic) return;
     if($('subject-workspace-welcome'))$('subject-workspace-welcome').style.display='none';
     // Never leave the previous document/video onscreen when the new topic is locked.
-    for(const id of ['video-container','docs-container','subtopic-assessment-container','zoom-session-container','mark-complete-bar']) {
+    for(const id of ['video-container','docs-container','subtopic-text-container','subtopic-assessment-container','zoom-session-container','mark-complete-bar']) {
         if($(id))$(id).style.display='none';
     }
     if($('subtopic-header-num'))$('subtopic-header-num').textContent='Topic';
@@ -2095,6 +2096,7 @@ function renderLesson(openIdx = 0) {
     const subHeader = $('subtopic-header');
     const videoWrap = $('video-container');
     const docsWrap  = $('docs-container');
+    if ($('subtopic-text-container')) $('subtopic-text-container').style.display = 'none';
     const assessmentWrap = $('subtopic-assessment-container');
     if (assessmentWrap) assessmentWrap.style.display = 'none';
 
@@ -2140,13 +2142,14 @@ function renderLesson(openIdx = 0) {
             window.currentFlattenedItems.push({ sub, type: 'assessment', subIndex });
             return;
         }
+        if (sub.instructions?.trim()) window.currentFlattenedItems.push({sub, subIndex, type:'text'});
         if (sub.documentationPath) {
             window.currentFlattenedItems.push({ sub, type: 'doc',   subIndex });
         }
         if (sub.videoUrl || sub.videoUploadUrl) {
             window.currentFlattenedItems.push({ sub, type: 'video', subIndex });
         }
-        if (!sub.videoUrl && !sub.videoUploadUrl && !sub.documentationPath) {
+        if (!sub.instructions?.trim() && !sub.videoUrl && !sub.videoUploadUrl && !sub.documentationPath) {
             window.currentFlattenedItems.push({ sub, type: 'none',  subIndex });
         }
     });
@@ -2185,6 +2188,9 @@ function renderLesson(openIdx = 0) {
         } else if (sub.contentType && sub.contentType !== 'subtopic') {
             const flatIdx = window.currentFlattenedItems.findIndex(f => f.subIndex === subIndex && f.type === 'assessment');
             childItems.push({ label: sub.title, icon: 'assessment', flatIdx });
+        }
+        if ((!sub.contentType || sub.contentType === 'subtopic') && sub.instructions?.trim()) {
+            childItems.push({label:'Text Content', icon:'📄', flatIdx:window.currentFlattenedItems.findIndex(f => f.subIndex === subIndex && f.type === 'text')});
         }
         if (sub.documentationPath) {
             const flatIdx = window.currentFlattenedItems.findIndex(
@@ -2295,7 +2301,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
             const accessible = topicUnlocked && outlineItemAccessible(topic, item, itemIndex);
             const hasScore = item.type !== 'assessment' || Number(item.sub.attemptsUsed || 0) > 0;
             const completed = !awaitingAgreement && itemIndex < progressIndex && hasScore;
-            const label = item.type === 'doc' ? 'Reading' : (item.type === 'video' ? 'Video' : (item.type === 'zoom' ? 'Live Zoom Session' : (item.sub.title || 'Assessment')));
+            const label = item.type === 'text' ? 'Text Content' : item.type === 'doc' ? 'Reading' : (item.type === 'video' ? 'Video' : (item.type === 'zoom' ? 'Live Zoom Session' : (item.sub.title || 'Assessment')));
             const button = document.createElement('button');
             button.type = 'button';
             button.className = `learning-outline-item ${topic.id === activeTopic.id && itemIndex === Number(window.currentLearningItemIndex) ? 'active' : ''} ${completed ? 'completed' : ''} ${accessible ? '' : 'locked'}`;
@@ -2345,6 +2351,12 @@ function openFlattenedItem(index) {
 
     const videoContainer = $('video-container');
     const docsContainer  = $('docs-container');
+    const textContainer = $('subtopic-text-container');
+    if (textContainer) {
+        textContainer.style.display = item.type === 'text' ? 'block' : 'none';
+        textContainer.textContent = item.type === 'text' ? item.sub.instructions : '';
+        textContainer.scrollTop = 0;
+    }
     const assessmentContainer = $('subtopic-assessment-container');
     const zoomContainer = $('zoom-session-container');
     if (assessmentContainer) assessmentContainer.style.display = item.type === 'assessment' ? 'flex' : 'none';
