@@ -1,0 +1,9 @@
+<section class="branch-hero">
+    <img class="branch-hero-image" data-branch-preview-image @if(isset($branch)) src="{{ asset('storage/'.$branch->hero_path) }}" @else hidden @endif alt="">
+    <div class="branch-hero-copy">
+        <img class="branch-hero-logo" src="{{ asset('images/gra-test-prep-white.svg') }}" width="220" height="115" alt="GRA Test Prep">
+        @if(isset($branch))<h1>{{ $branch->name }}</h1>@else<h2 data-branch-preview-name>Branch name</h2>@endif
+        <p class="branch-hero-description" data-branch-preview-description>{{ $branch->description ?? '' }}</p>
+        @if(isset($loginUrl))<a class="branch-hero-login" href="{{ $loginUrl }}">Login</a>@else<span class="branch-hero-login">Login</span>@endif
+    </div>
+</section>

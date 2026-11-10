@@ -19,6 +19,7 @@
     }
     if ($isAdmin || $role === 'encoder') {
         if ($isAdmin) $navItems[] = ['label' => 'Course Gamification', 'route' => 'admin.gamification.index', 'active' => 'admin.gamification.*', 'icon' => 'trophy'];
+        if ($isAdmin) $navItems[] = ['label' => 'Branch', 'route' => 'admin.branches.index', 'active' => 'admin.branches.*', 'icon' => 'building-2'];
         $navItems[] = ['label' => 'Test Banks', 'route' => 'admin.test-banks.index', 'active' => ['admin.test-banks.*', 'admin.content.test-banks.*'], 'icon' => 'notebook-tabs'];
     }
     if ($isAdmin || $role === 'instructor') {

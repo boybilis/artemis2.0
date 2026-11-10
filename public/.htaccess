@@ -3,6 +3,7 @@
 </IfModule>
 
 <IfModule mod_rewrite.c>
+    DirectoryIndex index.php index.html
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>

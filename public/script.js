@@ -801,6 +801,9 @@ async function boot() {
 
 // Start boot pipeline
 boot().then(() => {
+    if (new URLSearchParams(location.search).get('login') === '1' && !state.user) {
+        $('nav-login-btn')?.click();
+    }
     checkPaymongoReturn();
 });
 
