@@ -3,9 +3,8 @@
 @php($isAdmin = Auth::user()->hasAdminAccess() || strtolower((string) Auth::user()->role) === 'staff')
 
 @section('content')
-<style>.class-page-actions{display:flex;justify-content:flex-end;margin-bottom:1rem}.class-page-actions .btn-primary{display:inline-flex;align-items:center;gap:.45rem}.class-page-actions svg{width:17px;height:17px}@media(max-width:640px){.class-page-actions{justify-content:stretch}.class-page-actions .btn-primary{width:100%;justify-content:center}}</style>
+<style>.class-batches-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}.class-batches-heading #showClassBatchForm{white-space:nowrap}</style>
 @if($isAdmin)
-<div class="class-page-actions"><button id="showClassBatchForm" type="button" class="btn-primary" onclick="openClassBatchForm()"><i data-lucide="plus"></i>Add Class Batch</button></div>
 <section id="classBatchFormPanel" class="panel {{ $errors->any() ? '' : 'hidden' }}" style="margin-bottom:1.25rem">
     <div class="panel-label">Batch setup</div><h2 id="class-batch-form-title" class="panel-title">Create Batch</h2>
     <p class="panel-subtitle">Create the class first, then assign one or more reusable master courses.</p>
@@ -43,7 +42,13 @@
 @endif
 
 <section class="panel">
-    <div class="panel-label">Classes</div><h2 class="panel-title">Manage Batches</h2><p class="panel-subtitle">Each batch unlocks every master course assigned to it.</p>
+    <div class="class-batches-heading">
+        <div><div class="panel-label">Classes</div><h2 class="panel-title">Manage Batches</h2></div>
+        @if($isAdmin)
+            <button id="showClassBatchForm" type="button" class="btn-primary" onclick="openClassBatchForm()">+ Add Batch Class</button>
+        @endif
+    </div>
+    <p class="panel-subtitle">Each batch unlocks every master course assigned to it.</p>
     <div data-ajax-table="class-batches">
     <div class="class-batch-grid">
     @forelse($batches as $batch)
