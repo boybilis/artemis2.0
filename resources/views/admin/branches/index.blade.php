@@ -3,7 +3,7 @@
 @section('kicker', 'Content Management')
 
 @section('content')
-<link rel="stylesheet" href="{{ asset('branch-landing.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('branch-landing.css') }}?v=2">
 <style>
     .branch-admin-toolbar,.branch-admin-actions { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem; }
     .branch-admin-list { margin-top:1rem; }

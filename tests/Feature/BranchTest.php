@@ -23,9 +23,12 @@ class BranchTest extends TestCase
         $this->postJson('/admin/branches', ['name'=>'Cebu Review Center', 'slug'=>'Cebu', 'description'=>'Welcome to Cebu.', 'hero'=>$hero])
             ->assertCreated()->assertJsonPath('url', '/branches/cebu');
         Storage::disk('public')->assertExists(Branch::firstOrFail()->hero_path);
-        $this->get('/branches/cebu')->assertOk()->assertSee('Cebu Review Center')->assertSee('/?login=1');
+        $this->get('/branches/cebu')->assertOk()->assertSee('Cebu Review Center')
+            ->assertSee('id="nav-login-btn"', false)->assertSee('id="hero-login-btn"', false)
+            ->assertSee('id="modal-login"', false)->assertSee('<base href="/">', false)
+            ->assertSee('class="jumbotron branch-hero"', false)->assertDontSee('/?login=1');
         $this->putJson('/admin/branches/domain', ['base_domain'=>'example.test'])->assertOk();
-        $this->get('https://cebu.example.test/')->assertOk()->assertSee('Cebu Review Center')->assertSee('https://example.test/?login=1');
+        $this->get('https://cebu.example.test/')->assertOk()->assertSee('Cebu Review Center')->assertSee('id="modal-login"', false)->assertDontSee('https://example.test/?login=1');
         $this->get('https://unknown.example.test/')->assertNotFound();
         $this->get('/branches/cebu')->assertOk();
     }

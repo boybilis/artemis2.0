@@ -52,7 +52,7 @@ class BranchController extends Controller
             $slug = substr($host, 0, -strlen('.'.$base));
             if ($slug !== 'www') {
                 abort_if(str_contains($slug, '.'), 404);
-                return $this->landing($slug, 'https://'.$base.'/?login=1');
+                return $this->landing($slug);
             }
         }
         return file_get_contents(public_path('index.html'));
@@ -60,12 +60,22 @@ class BranchController extends Controller
 
     public function show(string $slug)
     {
-        return $this->landing($slug, '/?login=1');
+        return $this->landing($slug);
     }
 
-    private function landing(string $slug, string $loginUrl)
+    private function landing(string $slug)
     {
         $branch = Branch::where('slug', $slug)->firstOrFail();
-        return view('branches.landing', compact('branch', 'loginUrl'));
+        $shell = file_get_contents(public_path('index.html'));
+        $startMarker = '<!-- campus-content:start -->';
+        $endMarker = '<!-- campus-content:end -->';
+        $start = strpos($shell, $startMarker);
+        $end = strpos($shell, $endMarker);
+        abort_if($start === false || $end === false || $end <= $start, 500, 'The branch landing template is unavailable.');
+
+        $hero = view('branches.hero', compact('branch'))->render();
+        $html = substr_replace($shell, $hero, $start, $end + strlen($endMarker) - $start);
+        $html = str_replace('<head>', '<head><base href="/"><link rel="stylesheet" href="/branch-landing.css?v=2">', $html);
+        return response(str_replace('<title>GRA Test Prep — Powered by Artemis360</title>', '<title>'.e($branch->name).' | GRA Test Prep</title>', $html));
     }
 }
