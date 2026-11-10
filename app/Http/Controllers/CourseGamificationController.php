@@ -34,7 +34,12 @@ class CourseGamificationController extends Controller
         $settings = $request->validate($rules);
         abort_unless(Storage::disk('local')->put($this->path($course), json_encode($settings, JSON_THROW_ON_ERROR)), 500, 'Settings could not be saved.');
 
-        return redirect()->route('admin.gamification.index', ['course' => $course->id])->with('success', 'Course gamification settings saved.');
+        $message = 'Course gamification settings saved.';
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => $message]);
+        }
+
+        return redirect()->route('admin.gamification.index', ['course' => $course->id])->with('success', $message);
     }
 
     private function path(Course $course): string

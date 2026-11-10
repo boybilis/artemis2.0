@@ -2,6 +2,7 @@
 
 @section('title', 'Course Gamification')
 @section('kicker', 'Content Management')
+@section('toast_notifications', 'true')
 
 @section('content')
 <style>
@@ -29,7 +30,6 @@
 <section class="panel gamification-settings">
     <h2 class="panel-title">Review goals and rewards</h2>
     <p class="gamification-help">Configure points and badge milestones for each master course. These settings are saved for setup; learner rewards are not awarded or displayed yet.</p>
-    @if(session('success'))<p role="status">{{ session('success') }}</p>@endif
     @if($errors->any())
         <ul role="alert">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
     @endif
@@ -79,4 +79,40 @@
         </form>
     @endif
 </section>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        @if(session('success')) showAdminToast(@json(session('success')), 'success'); @endif
+        const form = document.querySelector('.gamification-form');
+        if (!form) return;
+        const button = form.querySelector('button[type="submit"]');
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            if (button.disabled) return;
+            const payload = new FormData(form);
+            button.disabled = true;
+            button.textContent = 'Saving…';
+            form.setAttribute('aria-busy', 'true');
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST', body: payload,
+                    headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+                });
+                const result = await response.json().catch(() => null);
+                if (!response.ok || !result?.success) {
+                    const validationMessage = Object.values(result?.errors || {}).flat()[0];
+                    throw new Error(validationMessage || (response.status === 419
+                        ? 'Your session expired. Reload the page and try again.'
+                        : 'Could not save course gamification settings. Please try again.'));
+                }
+                showAdminToast(result.message, 'success');
+            } catch (error) {
+                showAdminToast(error.message || 'Could not save settings. Please try again.', 'error', 6500);
+            } finally {
+                form.removeAttribute('aria-busy');
+                button.disabled = false;
+                button.textContent = 'Save settings';
+            }
+        });
+    });
+</script>
 @endsection
