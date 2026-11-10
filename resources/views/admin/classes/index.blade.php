@@ -45,15 +45,11 @@
 <section class="panel">
     <div class="panel-label">Classes</div><h2 class="panel-title">Manage Batches</h2><p class="panel-subtitle">Each batch unlocks every master course assigned to it.</p>
     <div data-ajax-table="class-batches">
-    <div class="table-wrap">
-    <table class="data-table class-batch-table" aria-label="Manage Batches">
-    <thead><tr><th scope="col">Code</th><th scope="col">Batch</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
-    <tbody>
+    <div class="class-batch-grid">
     @forelse($batches as $batch)
         @php($editor = ['id'=>$batch->id,'name'=>$batch->name,'code'=>$batch->code,'description'=>$batch->description,'course_type'=>$batch->course_type,'starts_at'=>$batch->starts_at?->format('Y-m-d\TH:i'),'ends_at'=>$batch->ends_at?->format('Y-m-d\TH:i'),'schedule_day'=>$batch->schedule_day,'start_time'=>substr((string)$batch->start_time,0,5),'end_time'=>substr((string)$batch->end_time,0,5),'modality'=>$batch->modality,'price'=>$batch->price,'usd_price'=>$batch->usd_price,'capacity'=>$batch->capacity,'status'=>$batch->status,'course_ids'=>$batch->courses->pluck('id')->values()])
-        <tr>
-            <td>{{ $batch->code }}</td>
-            <td><strong>{{ $batch->name }}</strong>
+        <article class="class-batch-card">
+            <div class="class-batch-card-head"><div><small>{{ $batch->code }}</small><h3>{{ $batch->name }}</h3></div><button type="button" class="btn-ghost class-batch-details-button" aria-haspopup="dialog" aria-controls="batch-details-{{ $batch->id }}" onclick="document.getElementById(this.getAttribute('aria-controls')).showModal()">View Details</button></div>
             <dialog id="batch-details-{{ $batch->id }}" class="class-batch-details" aria-labelledby="batch-details-title-{{ $batch->id }}">
             <header><div><small>{{ $batch->code }}</small><h2 id="batch-details-title-{{ $batch->id }}">{{ $batch->name }}</h2></div><form method="dialog"><button class="btn-ghost" type="submit" aria-label="Close batch details" autofocus>Close</button></form></header>
             <div class="class-batch-details-body">
@@ -70,25 +66,32 @@
             </dl>
             </div>
             </dialog>
-            </td>
-            <td><span class="status {{ $batch->status==='open'?'success':'warning' }}">{{ ucfirst($batch->status) }}</span></td>
-            <td><div class="class-batch-actions"><button type="button" class="btn-primary class-batch-details-button" aria-haspopup="dialog" aria-controls="batch-details-{{ $batch->id }}" onclick="document.getElementById(this.getAttribute('aria-controls')).showModal()">View Details</button><button class="btn-ghost" type="button" onclick="openClassZoom({{ $batch->id }}, @js($batch->name))">Zoom Calendar ({{ $batch->zoom_sessions_count }})</button>@if($isAdmin)<button class="btn-ghost" type="button" data-batch="{{ json_encode($editor) }}" onclick="editClassBatch(JSON.parse(this.dataset.batch))">Edit</button><form method="POST" action="{{ route('admin.classes.batches.destroy',$batch) }}" onsubmit="return confirmDelete(event,'Delete this batch? Only batches without enrollment history can be deleted.')">@csrf @method('DELETE')<button class="btn-ghost" style="color:var(--wrong)">Delete</button></form>@endif</div></td>
-        </tr>
-    @empty <tr><td colspan="4">No batches have been created.</td></tr> @endforelse
-    </tbody>
-    </table>
+            <div class="class-batch-actions"><button class="btn-ghost" type="button" onclick="openClassZoom({{ $batch->id }}, @js($batch->name))">Zoom Calendar ({{ $batch->zoom_sessions_count }})</button>@if($isAdmin)<button class="btn-ghost" type="button" data-batch="{{ json_encode($editor) }}" onclick="editClassBatch(JSON.parse(this.dataset.batch))">Edit</button><form method="POST" action="{{ route('admin.classes.batches.destroy',$batch) }}" onsubmit="return confirmDelete(event,'Delete this batch? Only batches without enrollment history can be deleted.')">@csrf @method('DELETE')<button class="btn-ghost" style="color:var(--wrong)">Delete</button></form>@endif</div>
+        </article>
+    @empty <p class="muted class-batch-empty">No batches have been created.</p> @endforelse
     </div>
-    {{ $batches->links('pagination::bootstrap-4') }}
+    @if($batches->hasPages())
+        <nav class="pagination class-batch-carousel-controls" aria-label="Batch carousel pages">
+            @if($batches->onFirstPage())<button class="btn-ghost" type="button" disabled>‹ Previous</button>
+            @else<a class="btn-ghost" href="{{ $batches->previousPageUrl() }}" rel="prev">‹ Previous</a>@endif
+            <span aria-live="polite">Page {{ $batches->currentPage() }} of {{ $batches->lastPage() }}</span>
+            @if($batches->hasMorePages())<a class="btn-ghost" href="{{ $batches->nextPageUrl() }}" rel="next">Next ›</a>
+            @else<button class="btn-ghost" type="button" disabled>Next ›</button>@endif
+        </nav>
+    @endif
     </div>
 </section>
 <style>
-    .class-batch-table { --border:#cbd5e1; }
-    body .class-batch-table thead th,body.light-mode .class-batch-table thead th { background:#19344f;color:#fff; }
-    .class-batch-table tbody tr:nth-child(odd) td { background:#fff;color:#19344f; }
-    .class-batch-table tbody tr:nth-child(even) td { background:#f1f3f5;color:#19344f; }
-    .class-batch-table td { vertical-align:middle;overflow-wrap:anywhere; }
-    .class-batch-table .class-batch-actions :is(.btn-primary,.btn-ghost) { margin:0;padding:.55rem .7rem;font-size:.75rem;white-space:nowrap; }
-    .class-batch-actions .class-batch-details-button { border-radius:999px; }
+    [data-ajax-table="class-batches"]>.class-batch-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .class-batch-grid .class-batch-card { display:flex;flex-direction:column;gap:.85rem;min-width:0;padding:.9rem; }
+    .class-batch-grid .class-batch-card-head { align-items:flex-start;gap:.5rem;flex-wrap:wrap; }
+    .class-batch-card-head>div { flex:1;min-width:min(100%,8rem);overflow-wrap:anywhere; }
+    .class-batch-card-head .class-batch-details-button { border-radius:999px;padding:.45rem .7rem;font-size:.72rem;white-space:nowrap; }
+    .class-batch-grid .class-batch-actions { margin-top:auto; }
+    .class-batch-grid .class-batch-actions .btn-ghost { padding:.55rem .65rem;font-size:.75rem; }
+    .class-batch-empty { grid-column:1/-1; }
+    .class-batch-carousel-controls { display:flex;justify-content:center;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:1rem; }
+    .class-batch-carousel-controls a { text-decoration:none; }
     .class-batch-details { position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(36rem,calc(100% - 2rem));max-height:calc(100dvh - 2rem);overflow:auto;padding:0;border:1px solid var(--border);border-radius:16px;background:var(--surface-solid);color:var(--text); }
     .class-batch-details::backdrop { background:rgba(13,29,43,.65); }
     .class-batch-details header { display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;padding:1rem;border-bottom:1px solid var(--border); }
@@ -102,7 +105,8 @@
     .class-batch-detail-grid>div { border:1px solid var(--border);border-radius:10px;padding:.65rem; }
     .class-batch-detail-grid dt { color:var(--text-muted);font-size:.75rem; }
     .class-batch-detail-grid dd { margin:.25rem 0 0;overflow-wrap:anywhere; }
-    @media(max-width:680px){.class-batch-detail-grid{grid-template-columns:1fr}}
+    @media(max-width:1100px){[data-ajax-table="class-batches"]>.class-batch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:680px){[data-ajax-table="class-batches"]>.class-batch-grid,.class-batch-detail-grid{grid-template-columns:1fr}}
 </style>
 
 <div id="classZoomModal" class="admin-modal"><div class="admin-modal-content" style="max-width:900px"><div class="admin-modal-header"><div><h3 class="admin-modal-title">Batch Zoom Calendar</h3><p id="class_zoom_batch" class="muted"></p></div><button class="admin-modal-close" onclick="closeClassZoom()">&times;</button></div><div class="admin-modal-body"><form id="classZoomForm" class="panel" style="padding:1rem"><input id="class_zoom_id" type="hidden"><div class="form-grid"><div class="field full"><label for="class_zoom_course">Master course</label><select id="class_zoom_course" required></select></div><div class="field"><label for="class_zoom_subject">Subject</label><select id="class_zoom_subject" required></select></div><div class="field"><label for="class_zoom_topic">Post under topic</label><select id="class_zoom_topic"></select><small class="muted">Zoom Links is added for this batch only if needed. The master course stays unchanged.</small></div><div class="field"><label>Session title</label><input id="class_zoom_title" required></div><div class="field"><label>Live Zoom link</label><input id="class_zoom_url" type="url" required></div><div class="field full"><label>Zoom recording link</label><input id="class_zoom_recording_url" type="url" placeholder="Add the recording link after the live class"><small class="muted">Only learners enrolled in this class batch will see this recording.</small></div><div class="field"><label>Starts</label><input id="class_zoom_start" type="datetime-local" required></div><div class="field"><label>Ends</label><input id="class_zoom_end" type="datetime-local"></div><div class="field"><label>Status</label><select id="class_zoom_status"><option value="scheduled">Scheduled</option><option value="cancelled">Cancelled</option></select></div><div class="field full"><label>Description</label><textarea id="class_zoom_description" rows="2"></textarea></div></div><div style="display:flex;justify-content:flex-end;gap:.5rem"><button type="button" class="btn-ghost" onclick="resetClassZoomForm()">Clear</button><button class="btn-primary">Save Session</button></div></form><div id="class_zoom_list" class="list-stack" style="margin-top:1rem"></div></div></div></div>

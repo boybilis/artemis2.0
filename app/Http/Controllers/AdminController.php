@@ -395,7 +395,7 @@ class AdminController extends Controller
         $courses = Course::available()->orderBy('title')->get();
         $batches = CourseBatch::with(['courses:id,title', 'courses.subjects:id,course_id,is_intensive_final_coaching'])
             ->withCount(['zoomSessions', 'enrollments as active_enrollments_count' => fn ($query) => $query->where('status', 'active')])
-            ->orderByDesc('starts_at')->orderByDesc('id')->paginate(12)->withQueryString();
+            ->orderByDesc('starts_at')->orderByDesc('id')->paginate(9)->withQueryString();
         return view('admin.classes.index', compact('courses', 'batches'));
     }
 
