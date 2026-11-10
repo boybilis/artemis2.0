@@ -1,5 +1,5 @@
-.branch-hero.jumbotron { position:relative;isolation:isolate;display:grid;align-items:center;overflow:hidden;box-sizing:border-box;min-height:min(32rem,75svh);margin:clamp(.75rem,3vw,2rem);padding:clamp(1.5rem,6vw,4rem);border-radius:1rem;background:#19344f;color:#fff; }
-#branch-dialog .branch-hero.jumbotron { margin:0 0 1rem; }
+.branch-hero.jumbotron { position:relative;isolation:isolate;display:grid;align-items:center;overflow:hidden;box-sizing:border-box;width:min(1000px,calc(100% - 1.5rem));min-height:min(32rem,75svh);margin:clamp(.75rem,3vw,2rem) auto;padding:clamp(1.5rem,6vw,4rem);border-radius:1rem;background:#19344f;color:#fff; }
+#branch-dialog .branch-hero.jumbotron { width:100%;margin:0 auto 1rem; }
 .branch-hero-image,.branch-hero::after { position:absolute;inset:0;width:100%;height:100%; }
 .branch-hero-image { z-index:-2;object-fit:cover; }
 .branch-hero::after { content:"";z-index:-1;background:linear-gradient(110deg,rgba(12,29,46,.95),rgba(12,29,46,.65)); }
