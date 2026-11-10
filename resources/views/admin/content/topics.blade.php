@@ -16,6 +16,9 @@
     $isInstructor = trim(strtolower(Auth::user()->role)) === 'instructor' && !Auth::user()->is_admin;
 @endphp
 <style>
+    .subtopic-type-select { display:block;position:relative;min-width:0; }
+    .subtopic-type-select select { appearance:none;width:100%;padding-inline-end:2.75rem; }
+    .subtopic-type-select::after { content:"";position:absolute;inset-inline-end:1rem;top:50%;width:.5rem;height:.5rem;border:solid var(--text);border-width:0 2px 2px 0;transform:translateY(-70%) rotate(45deg);pointer-events:none; }
     input[type="file"] { display: flex; align-items: center; }
     input[type="file"]::file-selector-button {
         background: var(--surface-solid); border: 1px solid var(--border); color: var(--text);
@@ -457,13 +460,13 @@
             <div class="form-grid" style="grid-template-columns: 1fr;">
                 <div class="field">
                     <label for="add_sub_type">Content type</label>
-                    <select id="add_sub_type" name="content_type" required onchange="syncSubtopicFields('add')">
+                    <span class="subtopic-type-select"><select id="add_sub_type" name="content_type" required onchange="syncSubtopicFields('add')">
                         <option value="text">Text Content</option><option value="video">Videos</option><option value="reading">Readings/Handouts</option>
                         <option value="pre_test">Pre-test</option>
                         <option value="post_test">Post-test</option>
                         <option value="practice_test">Practice Test</option>
                         <option value="mock_exam">Mock Exam</option>
-                    </select>
+                    </select></span>
                 </div>
                 <div id="add_sub_assessment_fields" style="display:none">
                     <div class="field">
@@ -530,7 +533,7 @@
         </div>
         <div class="admin-modal-body">
             <div class="form-grid" style="grid-template-columns: 1fr;">
-                <div class="field"><label for="edit_sub_type">Content type</label><select id="edit_sub_type" name="content_type" required onchange="syncSubtopicFields('edit')"><option value="text">Text Content</option><option value="video">Videos</option><option value="reading">Readings/Handouts</option><option value="subtopic" hidden>Legacy Subtopic</option><option value="zoom_link">Zoom Link</option><option value="pre_test">Pre-test</option><option value="post_test">Post-test</option><option value="practice_test">Practice Test</option><option value="mock_exam">Mock Exam</option></select></div>
+                <div class="field"><label for="edit_sub_type">Content type</label><span class="subtopic-type-select"><select id="edit_sub_type" name="content_type" required onchange="syncSubtopicFields('edit')"><option value="text">Text Content</option><option value="video">Videos</option><option value="reading">Readings/Handouts</option><option value="subtopic" hidden>Legacy Subtopic</option><option value="zoom_link">Zoom Link</option><option value="pre_test">Pre-test</option><option value="post_test">Post-test</option><option value="practice_test">Practice Test</option><option value="mock_exam">Mock Exam</option></select></span></div>
                 <div id="edit_sub_assessment_fields" style="display:none">
                     <div class="field"><label for="edit_sub_instructions">Assessment instructions</label><textarea id="edit_sub_instructions" name="instructions" rows="5"></textarea></div>
                     <div class="field" id="edit_sub_attempts_field" style="display:none;margin-top:1rem"><label id="edit_sub_attempts_label" for="edit_sub_max_attempts">Maximum allowed tries</label><select id="edit_sub_max_attempts" name="maximum_attempts"><option value="">Unlimited</option>@foreach([1,2,3,4,5] as $attempt)<option value="{{ $attempt }}">{{ $attempt }}</option>@endforeach</select></div>
