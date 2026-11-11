@@ -285,7 +285,7 @@ class CourseController extends Controller
                     return [
                         'id'       => $q->id,
                         'question' => $q->question,
-                        'imageUrl' => $q->image_path ? asset('storage/' . $q->image_path) : null,
+                        'imageUrl' => $q->imageUrl(),
                         'options'  => $q->options,
                         'responseType' => $q->response_type,
                         'responseConfig' => $q->learnerResponseConfig(),
@@ -987,7 +987,7 @@ class CourseController extends Controller
             $grade = $question->gradeAnswer($submitted);
             $pointsEarned += $grade['earned'];
             $pointsPossible += $grade['possible'];
-            $reviewItem = ['question'=>$question->question,'imageUrl'=>$question->image_path ? asset('storage/'.$question->image_path) : null,'learnerAnswer'=>$question->formatAnswerForReview($submitted),'correctAnswer'=>$question->correctAnswerForReview(),'rationale'=>$question->rationale ?: 'No rationale was provided.','correct'=>(bool)$grade['correct']];
+            $reviewItem = ['question'=>$question->question,'imageUrl'=>$question->imageUrl(),'learnerAnswer'=>$question->formatAnswerForReview($submitted),'correctAnswer'=>$question->correctAnswerForReview(),'rationale'=>$question->rationale ?: 'No rationale was provided.','correct'=>(bool)$grade['correct']];
             $reviewQuestions[] = $reviewItem;
             if ($grade['correct']) $score++; else $incorrectQuestions[] = $reviewItem;
         }

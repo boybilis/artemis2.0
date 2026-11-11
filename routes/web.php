@@ -16,6 +16,8 @@ use App\Http\Middleware\RoleMiddleware;
 Route::get('/', [\App\Http\Controllers\BranchController::class, 'home']);
 Route::get('/branches/{slug}', [\App\Http\Controllers\BranchController::class, 'show'])->where('slug', '[a-z0-9-]+')->name('branches.show');
 Route::get('/branches/{slug}/hero', [\App\Http\Controllers\BranchController::class, 'hero'])->where('slug', '[a-z0-9-]+')->name('branches.hero');
+Route::get('/media/assessment-questions/{question}/image', [ExamController::class, 'questionImage'])
+    ->whereNumber('question')->middleware('signed:relative')->name('assessment.question-image');
 
 // ─── PUBLIC API ROUTES ─────────────────────────────────────────
 Route::prefix('api')->group(function () {

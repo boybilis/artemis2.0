@@ -16,6 +16,22 @@ class SubtopicPreviewTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_uploaded_assessment_image_is_served_without_a_storage_link(): void
+    {
+        Storage::fake('public');
+        $course = Course::create(['title'=>'Image assessment']);
+        $path = 'question-images/fixture.png';
+        Storage::disk('public')->put($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII='));
+        $question = QuizQuestion::create(['course_id'=>$course->id, 'question'=>'Image question', 'options'=>['A','B'],
+            'answer'=>0, 'question_type'=>'post_test', 'status'=>'approved', 'image_path'=>$path]);
+        $url = $question->imageUrl();
+        $this->assertStringStartsWith('/media/assessment-questions/', $url);
+        $this->get($url)->assertOk()->assertHeader('Content-Type', 'image/png');
+        $this->get(strtok($url, '?'))->assertForbidden();
+        $question->update(['image_path'=>'documentation/fixture.png']);
+        $this->get($url)->assertNotFound();
+    }
+
     public function test_workspace_preview_scores_a_test_without_creating_an_attempt(): void
     {
         $course = Course::create(['title'=>'Preview course']);

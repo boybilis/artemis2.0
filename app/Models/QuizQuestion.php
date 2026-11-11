@@ -30,6 +30,11 @@ class QuizQuestion extends Model
         return $this->belongsTo(Topic::class);
     }
 
+    public function imageUrl(): ?string
+    {
+        return $this->image_path ? \Illuminate\Support\Facades\URL::signedRoute('assessment.question-image', ['question'=>$this->id], absolute:false) : null;
+    }
+
     public function subtopic()
     {
         return $this->belongsTo(Subtopic::class);

@@ -162,7 +162,7 @@
                                     data-response-type="{{ $question->response_type }}"
                                     data-options="{{ base64_encode(json_encode($question->options)) }}"
                                     data-response-config="{{ base64_encode(json_encode($question->response_config)) }}"
-                                    data-image-url="{{ $question->image_path ? asset('storage/' . $question->image_path) : '' }}"
+                                    data-image-url="{{ $question->imageUrl() }}"
                                     data-rationale="{{ base64_encode($question->rationale ?? '') }}"
                                     style="padding:0.35rem 0.6rem;font-size:0.75rem">Preview</button>
                         </td>
@@ -223,7 +223,7 @@
                                             data-subject-id="{{ $question->topic?->subject_id ?: $question->subtopic?->topic?->subject_id ?: $managedSubject->id }}"
                                             data-options="{{ json_encode($question->options) }}"
                                             data-answers="{{ json_encode($question->correct_answers ?: [$question->answer]) }}"
-                                            data-image-url="{{ $question->image_path ? asset('storage/' . $question->image_path) : '' }}"
+                                            data-image-url="{{ $question->imageUrl() }}"
                                             style="padding: 0.35rem 0.6rem; font-size: 0.75rem;">
                                         Edit
                                     </button>

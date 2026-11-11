@@ -162,6 +162,18 @@ class ExamController extends Controller
         return app(\App\Services\SubjectPolicy::class)->accepted($userId, $preTest->topic->subject_id);
     }
 
+    public function questionImage(QuizQuestion $question)
+    {
+        $path = $question->image_path;
+        abort_unless(is_string($path) && preg_match('#\Aquestion-images/(?:imported/)?[a-zA-Z0-9_.-]+\z#', $path) && !str_contains($path, '..'), 404);
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        abort_unless($disk->exists($path), 404);
+        $mime = $disk->mimeType($path);
+        abort_unless(in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'image/gif'], true), 404);
+
+        return $disk->response($path, null, ['Content-Type'=>$mime, 'Cache-Control'=>'private, no-cache', 'X-Content-Type-Options'=>'nosniff']);
+    }
+
     private function previewAssessment(int $course, \App\Models\Subtopic $subtopic)
     {
         abort_unless((int) $subtopic->topic?->course_id === $course && in_array($subtopic->content_type, ['pre_test', 'post_test', 'practice_test', 'mock_exam'], true), 404);
@@ -172,7 +184,7 @@ class ExamController extends Controller
     {
         $questions = app(AssessmentQuestionSelector::class)->select($this->previewAssessment($course, $subtopic), min(200, $subtopic->assessment_question_count ?: 200));
         return response()->json(['questions'=>$questions->map(fn ($q) => [
-            'id'=>$q->id, 'question'=>$q->question, 'imageUrl'=>$q->image_path ? asset('storage/'.$q->image_path) : null,
+            'id'=>$q->id, 'question'=>$q->question, 'imageUrl'=>$q->imageUrl(),
             'options'=>$q->options, 'responseType'=>$q->response_type, 'responseConfig'=>$q->learnerResponseConfig(), 'maximumPoints'=>(float) $q->maximum_points,
         ]), 'timeLimitMinutes'=>$subtopic->assessment_time_limit_minutes])->header('Cache-Control', 'private, no-store');
     }
@@ -191,7 +203,7 @@ class ExamController extends Controller
             $grade = $question->gradeAnswer($answer);
             $earned += $grade['earned'];
             $possible += $grade['possible'];
-            $review[] = ['question'=>$question->question, 'imageUrl'=>$question->image_path ? asset('storage/'.$question->image_path) : null,
+            $review[] = ['question'=>$question->question, 'imageUrl'=>$question->imageUrl(),
                 'learnerAnswer'=>$question->formatAnswerForReview($answer), 'correctAnswer'=>$question->correctAnswerForReview(), 'rationale'=>$question->rationale, 'correct'=>$grade['correct']];
         }
         return response()->json(['score'=>$earned, 'total'=>$possible, 'questions'=>$review,
@@ -219,7 +231,7 @@ class ExamController extends Controller
         session()->put("subtopic_exam_{$user->id}_{$batch->id}_{$item->id}", $questions->pluck('id')->all());
         session()->put("subtopic_exam_deadline_{$user->id}_{$batch->id}_{$item->id}", $item->assessment_time_limit_minutes ? now()->addMinutes((int) $item->assessment_time_limit_minutes)->timestamp : null);
         return response()->json(['success' => true, 'title' => $item->title, 'questions' => $questions->map(fn ($q) => [
-            'id' => $q->id, 'question' => $q->question, 'imageUrl' => $q->image_path ? asset('storage/'.$q->image_path) : null,
+            'id' => $q->id, 'question' => $q->question, 'imageUrl' => $q->imageUrl(),
             'options' => $q->options, 'responseType' => $q->response_type, 'responseConfig' => $q->learnerResponseConfig(), 'maximumPoints' => (float) $q->maximum_points,
         ]), 'attemptsUsed' => $used, 'maximumAttempts' => $limit, 'timeLimitMinutes' => $item->assessment_time_limit_minutes ? (int) $item->assessment_time_limit_minutes : null]);
     }
@@ -247,7 +259,7 @@ class ExamController extends Controller
                 $submitted = $request->input("answers.$index");
                 $grade = $question->gradeAnswer($submitted);
                 $earned += $grade['earned']; $possible += $grade['possible'];
-                $reviewItem = ['question'=>$question->question,'imageUrl'=>$question->image_path ? asset('storage/'.$question->image_path) : null,'learnerAnswer'=>$question->formatAnswerForReview($submitted),'correctAnswer'=>$question->correctAnswerForReview(),'rationale'=>$question->rationale ?: 'No rationale was provided.','correct'=>(bool)$grade['correct']];
+                $reviewItem = ['question'=>$question->question,'imageUrl'=>$question->imageUrl(),'learnerAnswer'=>$question->formatAnswerForReview($submitted),'correctAnswer'=>$question->correctAnswerForReview(),'rationale'=>$question->rationale ?: 'No rationale was provided.','correct'=>(bool)$grade['correct']];
                 $reviewQuestions[] = $reviewItem;
                 if ($grade['correct']) $score++; else $incorrectQuestions[] = $reviewItem;
             }
@@ -304,7 +316,7 @@ class ExamController extends Controller
             return [
                 'id' => $q->id,
                 'question' => $q->question,
-                'imageUrl' => $q->image_path ? asset('storage/' . $q->image_path) : null,
+                'imageUrl' => $q->imageUrl(),
                 'options' => $q->options,
                 'responseType' => $q->response_type,
                 'responseConfig' => $q->learnerResponseConfig(),
@@ -378,7 +390,7 @@ class ExamController extends Controller
                 $grade = $q->gradeAnswer($submitted);
                 $pointsEarned += $grade['earned'];
                 $pointsPossible += $grade['possible'];
-                $reviewItem = ['question'=>$q->question,'imageUrl'=>$q->image_path ? asset('storage/'.$q->image_path) : null,'learnerAnswer'=>$q->formatAnswerForReview($submitted),'correctAnswer'=>$q->correctAnswerForReview(),'rationale'=>$q->rationale ?: 'No rationale was provided.','correct'=>(bool)$grade['correct']];
+                $reviewItem = ['question'=>$q->question,'imageUrl'=>$q->imageUrl(),'learnerAnswer'=>$q->formatAnswerForReview($submitted),'correctAnswer'=>$q->correctAnswerForReview(),'rationale'=>$q->rationale ?: 'No rationale was provided.','correct'=>(bool)$grade['correct']];
                 $reviewQuestions[] = $reviewItem;
                 if ($grade['correct']) $score++; else $incorrectQuestions[] = $reviewItem;
             }
