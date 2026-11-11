@@ -134,6 +134,10 @@
 .class-days-checklist input:focus-visible{outline:2px solid #11a7c0;outline-offset:3px}
 </style>
 <style>
+    #classBatchForm .field :is(input:not([type=checkbox]):not([type=hidden]),select,textarea):not(:disabled):not([readonly]) { background-color:var(--surface-solid); }
+    body.light-mode #classBatchForm .field :is(input:not([type=checkbox]):not([type=hidden]),select,textarea):not(:disabled):not([readonly]) { background-color:#fff; }
+    #classBatchForm .field select { appearance:auto;background-image:none;padding-inline-end:1rem; }
+    body:not(.light-mode) #classBatchForm :is(input[type=date],input[type=time],select) { color-scheme:dark; }
     .batch-session-fieldset { min-width:0;border:1px solid var(--border);border-radius:12px;padding:1rem; }
     .batch-session-row { display:grid;grid-template-columns:minmax(0,1.2fr) repeat(2,minmax(0,1fr)) auto;gap:.65rem;align-items:end;margin:.75rem 0; }
     .batch-session-row label { display:grid;gap:.35rem;min-width:0; }
