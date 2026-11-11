@@ -119,6 +119,13 @@ body.light-mode #courses-container .learner-course-card[data-course-family] { ba
 #courses-container .course-locked .available-course-content h3 { color:var(--text);font-size:1.28rem;font-weight:600; }
 #courses-container .course-locked .enrolled-card-eyebrow small { white-space:normal;overflow-wrap:anywhere; }
 #courses-container .course-locked .course-card-actions { padding:0 1.55rem 1.35rem; }
+#courses-container .batch-card-schedule {
+    display:grid;grid-template-columns:fit-content(48%) minmax(0,1fr);
+    gap:.62rem .8rem;align-items:baseline;margin:0;
+    color:var(--text-muted);font-size:.77rem;
+}
+#courses-container .batch-card-schedule dt { display:flex;align-items:center;gap:.52rem;overflow-wrap:anywhere; }
+#courses-container .batch-card-schedule dd { margin:0;font-variant-numeric:tabular-nums; }
 @media(max-width:600px) {
     #courses-container .course-locked .available-course-content { padding:1.25rem 1.15rem 1.1rem; }
     #courses-container .course-locked .course-card-actions { padding:0 1.15rem 1.1rem; }

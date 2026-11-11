@@ -4,8 +4,8 @@ const schedule=vm.runInNewContext(js.slice(js.indexOf('function batchCardSchedul
 assert.deepStrictEqual(Array.from(schedule({batch_class_sessions:[
     {day:'Monday',start_time:'19:00',end_time:'21:00'},
     {day:'Saturday',start_time:'08:00',end_time:'12:00'},
-]})),['Monday · 7:00 PM – 9:00 PM','Saturday · 8:00 AM – 12:00 PM']);
-assert.deepStrictEqual(Array.from(schedule({batch_schedule_day:'MWF',batch_start_time:'08:00:00'})),['MWF · 8:00 AM']);
+]}), ({day,time}) => [day,time]),[['Monday','7:00 PM – 9:00 PM'],['Saturday','8:00 AM – 12:00 PM']]);
+assert.deepStrictEqual(Array.from(schedule({batch_schedule_day:'MWF',batch_start_time:'08:00:00'}), ({day,time}) => [day,time]),[['MWF','8:00 AM']]);
 assert.equal(schedule({}).length,0);
 assert(!js.includes('course.mock_exam_ranked_count'), 'Learner batch cards must not display the ranked learner count');
 assert(js.includes("$('modal-course-profile').dataset.courseFamily = courseCardFamily(profile)"));
@@ -39,6 +39,7 @@ const availableCard=js.split('<div class="available-course-content">')[1].split(
 assert(availableCard.includes('class="enrolled-card-eyebrow"'));
 assert(availableCard.includes('class="enrolled-card-facts"'));
 assert(availableCard.includes('schedule.map'));
+assert(availableCard.includes('<dl class="batch-card-schedule"'));
 assert(!availableCard.includes('available-course-head'));
 assert(css.includes('#learner-sidebar-course-name'));
 assert(css.includes('white-space:normal;overflow-wrap:anywhere;word-break:normal;'));

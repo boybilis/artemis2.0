@@ -1148,13 +1148,14 @@ function batchCardSchedule(course) {
         const hour = Number(time[1]);
         return `${hour % 12 || 12}:${time[2]} ${hour < 12 ? 'AM' : 'PM'}`;
     };
-    const label = (day, start, end) => [
-        day, [timeLabel(start), timeLabel(end)].filter(Boolean).join(' – '),
-    ].filter(Boolean).join(' · ');
+    const label = (day, start, end) => ({
+        day: day || '',
+        time: [timeLabel(start), timeLabel(end)].filter(Boolean).join(' – '),
+    });
     const sessions = course.batch_class_sessions || [];
     return sessions.length
-        ? sessions.map(({day, start_time, end_time}) => label(day, start_time, end_time)).filter(Boolean)
-        : [label(course.batch_schedule_day, course.batch_start_time, course.batch_end_time)].filter(Boolean);
+        ? sessions.map(({day, start_time, end_time}) => label(day, start_time, end_time)).filter(row => row.day || row.time)
+        : [label(course.batch_schedule_day, course.batch_start_time, course.batch_end_time)].filter(row => row.day || row.time);
 }
 
 function courseCardFamily(course) {
@@ -1341,7 +1342,9 @@ function renderDashboard() {
                     <p class="enrolled-card-until">Access until ${formatCourseDate(course.batch_ends_at) || 'further notice'}</p>
                     <div class="enrolled-card-facts">
                         <p><i data-lucide="calendar-days"></i><span>Starts ${formatCourseDate(course.batch_starts_at) || 'to be announced'}</span></p>
-                        ${schedule.map(session => `<p><i data-lucide="clock-3"></i><span>${escapeHtml(session)}</span></p>`).join('')}
+                        ${schedule.length ? `<dl class="batch-card-schedule" aria-label="Weekly class schedule">
+                            ${schedule.map(({day, time}) => `<dt><i data-lucide="clock-3" aria-hidden="true"></i><span>${escapeHtml(day || 'Class time')}</span></dt><dd>${escapeHtml(time || 'To be announced')}</dd>`).join('')}
+                        </dl>` : ''}
                         ${course.batch_includes_intensive_final_coaching ? '<p class="course-coaching-phase"><i data-lucide="badge-check"></i><span>With Intensive Final Coaching Phase</span></p>' : ''}
                     </div>
                 </div>
