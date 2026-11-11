@@ -1141,6 +1141,22 @@ function filterCatalogueCourses(items, search, category) {
     });
 }
 
+function batchCardSchedule(course) {
+    const timeLabel = value => {
+        const time = /^(\d{1,2}):(\d{2})/.exec(value || '');
+        if (!time) return '';
+        const hour = Number(time[1]);
+        return `${hour % 12 || 12}:${time[2]} ${hour < 12 ? 'AM' : 'PM'}`;
+    };
+    const label = (day, start, end) => [
+        day, [timeLabel(start), timeLabel(end)].filter(Boolean).join(' – '),
+    ].filter(Boolean).join(' · ');
+    const sessions = course.batch_class_sessions || [];
+    return sessions.length
+        ? sessions.map(({day, start_time, end_time}) => label(day, start_time, end_time)).filter(Boolean)
+        : [label(course.batch_schedule_day, course.batch_start_time, course.batch_end_time)].filter(Boolean);
+}
+
 function courseCardFamily(course) {
     // Prefer the reusable course title so all of its batches retain the same family.
     const title = String(course.title || '').toUpperCase();
@@ -1314,6 +1330,7 @@ function renderDashboard() {
                     <div class="course-card-open-label"><span>${escapeHtml(course.title)}</span><i data-lucide="arrow-right"></i></div>`;
             } else {
                 const availabilityLabel = course.batch_modality || 'Review Course';
+                const schedule = batchCardSchedule(course);
                 card.innerHTML = `
                 <div class="available-course-content">
                     <div class="available-course-head">
@@ -1324,6 +1341,7 @@ function renderDashboard() {
                     <p class="available-course-program">Batch: ${escapeHtml(course.batch_name || 'To be announced')}</p>
                     <p class="available-course-detail"><i data-lucide="clock-3"></i><span>${escapeHtml(course.batch_modality || 'Online learning')}${course.batch_includes_intensive_final_coaching ? ' + Final Coaching' : ''}</span></p>
                     <div class="available-course-dates">
+                        ${schedule.map(session => `<span>${escapeHtml(session)}</span>`).join('')}
                         <span>Starts ${formatCourseDate(course.batch_starts_at) || 'to be announced'}</span>
                         <span>Access until ${formatCourseDate(course.batch_ends_at) || 'further notice'}</span>
                     </div>

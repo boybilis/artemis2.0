@@ -1,5 +1,12 @@
 const fs=require('fs'),assert=require('assert'),vm=require('vm');
 const js=fs.readFileSync('public/script.js','utf8');
+const schedule=vm.runInNewContext(js.slice(js.indexOf('function batchCardSchedule('),js.indexOf('function courseCardFamily('))+';batchCardSchedule');
+assert.deepStrictEqual(Array.from(schedule({batch_class_sessions:[
+    {day:'Monday',start_time:'19:00',end_time:'21:00'},
+    {day:'Saturday',start_time:'08:00',end_time:'12:00'},
+]})),['Monday · 7:00 PM – 9:00 PM','Saturday · 8:00 AM – 12:00 PM']);
+assert.deepStrictEqual(Array.from(schedule({batch_schedule_day:'MWF',batch_start_time:'08:00:00'})),['MWF · 8:00 AM']);
+assert.equal(schedule({}).length,0);
 assert(!js.includes('course.mock_exam_ranked_count'), 'Learner batch cards must not display the ranked learner count');
 assert(js.includes("$('modal-course-profile').dataset.courseFamily = courseCardFamily(profile)"));
 const html=fs.readFileSync('public/index.html','utf8');
