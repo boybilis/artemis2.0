@@ -28,6 +28,8 @@ assert(js.includes("$('course-details-area').dataset.courseFamily = courseCardFa
 assert(js.includes('<div class="course-card-open-label"><span>${escapeHtml(course.title)}</span>'));
 assert(!js.includes('<span>Open ${escapeHtml(course.title)}</span>'));
 const css=fs.readFileSync('public/brand-palette.css','utf8');
+assert.match(css,/\.available-course-head\s*\{\s*background:transparent;\s*\}/);
+assert.match(css,/\.available-course-head :is\(\.available-course-icon,\.available-course-badge\)\s*\{\s*color:var\(--course-card-color-dark\);/);
 assert(css.includes('#learner-sidebar-course-name'));
 assert(css.includes('white-space:normal;overflow-wrap:anywhere;word-break:normal;'));
 for(const name of ['nclex','pnle','prometric','cse'])assert(css.includes(`[data-course-family="${name}"]`));
