@@ -92,7 +92,7 @@
                         <label for="su-country">Country / Pricing Region</label>
                         <select id="su-country" autocomplete="country" required>
                             <option value="PH" selected>Philippines (PHP)</option>
-                            <option value="INTL">Outside the Philippines (USD)</option>
+                            <option value="INTL">Outside the Philippines</option>
                         </select>
                     </div>
                     <div class="field">
@@ -283,7 +283,7 @@
                         <p class="promo-price" id="purchase-price-summary">Price: —</p>
                         <p id="purchase-billing-notice" class="auth-sub hidden" style="margin-top: 0.75rem">
                             Your payment provider will bill <strong id="purchase-billing-price">—</strong>.
-                            The USD amount is for regional price display only.
+                            The international amount is for display only.<span id="purchase-rate-date"></span>
                         </p>
                     </div>
                     <button
@@ -1422,7 +1422,7 @@
             </span>
             <span id="opening-status-label">Loading Course</span>
         </div>
-        <script src="script.js?v=224"></script>
+        <script src="script.js?v=225"></script>
         <script src="subject-policy.js?v=2"></script>
         <script src="video-watermark.js?v=3"></script>
         <script src="learner-course-zoom.js?v=1"></script>

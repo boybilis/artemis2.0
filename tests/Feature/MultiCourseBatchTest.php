@@ -13,6 +13,31 @@ class MultiCourseBatchTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_batch_saves_an_international_conversion_but_bills_php(): void
+    {
+        \Illuminate\Support\Facades\Cache::forget('batch-fx:php:EUR');
+        \Illuminate\Support\Facades\Http::fake(['api.frankfurter.dev/v2/rate/PHP/EUR'=>\Illuminate\Support\Facades\Http::response([
+            'base'=>'PHP', 'quote'=>'EUR', 'rate'=>0.015, 'date'=>now()->toDateString(),
+        ])]);
+        $admin = User::factory()->create(['role'=>'assistant_admin', 'is_admin'=>false]);
+        $course = Course::create(['title'=>'International review', 'is_published'=>true, 'approval_status'=>'approved']);
+        $payload = ['name'=>'International batch', 'price'=>2500, 'status'=>'open', 'course_ids'=>[$course->id], 'international_currency'=>'EUR'];
+        $this->actingAs($admin)->getJson('/admin/classes/batch-price-quote?currency=EUR&price=2500')->assertOk()->assertJsonPath('amount', 37.5);
+        $this->postJson('/admin/classes/batches', $payload)->assertCreated();
+        $batch = CourseBatch::where('name', 'International batch')->firstOrFail();
+        $this->assertSame('EUR', $batch->internationalPrice()['currency']);
+        $this->assertSame(37.5, $batch->internationalPrice()['amount']);
+        $learner = User::factory()->create(['role'=>'student', 'country_code'=>'INTL']);
+        $this->actingAs($learner)->getJson('/api/courses')->assertOk()
+            ->assertJsonPath('courses.0.currency_code', 'EUR')->assertJsonPath('courses.0.billing_currency_code', 'PHP')
+            ->assertJsonPath('courses.0.display_price', 37.5);
+        $payload['international_currency'] = null;
+        $this->actingAs($admin)->putJson('/admin/classes/batches/'.$batch->id, $payload)->assertOk();
+        $this->assertNull($batch->fresh()->internationalPrice());
+        $this->get('/admin/classes')->assertOk()->assertSee('Not Available');
+        $this->actingAs($learner)->getJson('/api/courses')->assertJsonPath('courses.0.currency_code', 'PHP');
+    }
+
     public function test_batch_class_days_support_multiple_selections_and_clearing(): void
     {
         $admin = User::factory()->create(['role'=>'assistant_admin', 'is_admin'=>false]);

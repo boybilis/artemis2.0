@@ -191,6 +191,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/packages/{package}', [AdminController::class, 'destroyPackage'])->name('packages.destroy');
         });
         Route::middleware(RoleMiddleware::class.':admin,staff')->group(function () {
+            Route::get('/classes/batch-price-quote', [AdminController::class, 'quoteClassBatchPrice'])->middleware('throttle:30,1')->name('classes.batches.price-quote');
             Route::post('/classes/batches', [AdminController::class, 'storeClassBatch'])->name('classes.batches.store');
             Route::put('/classes/batches/{batch}', [AdminController::class, 'updateClassBatch'])->name('classes.batches.update');
             Route::delete('/classes/batches/{batch}', [AdminController::class, 'destroyClassBatch'])->name('classes.batches.destroy');

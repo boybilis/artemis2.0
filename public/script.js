@@ -216,7 +216,7 @@ function showCourseProfile() {
             <div><span>Schedule Day</span><strong>${escapeHtml(profile.batch_schedule_day || 'Not specified')}</strong></div>
             <div><span>Class Time</span><strong>${escapeHtml(sessionTimes)}</strong></div>
             <div><span>Price (PHP)</span><strong>₱${Number(profile.batch_price || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>
-            <div><span>Price (USD)</span><strong>${profile.batch_usd_price !== null && profile.batch_usd_price !== undefined ? '$'+Number(profile.batch_usd_price).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : 'Not specified'}</strong></div>
+            <div><span>International Price</span><strong>${profile.batch_international_price ? escapeHtml(new Intl.NumberFormat(undefined,{style:'currency',currency:profile.batch_international_price.currency,currencyDisplay:'code'}).format(profile.batch_international_price.amount)) : 'Not Available'}</strong></div>
             <div><span>Capacity</span><strong>${profile.batch_capacity ? Number(profile.batch_capacity).toLocaleString()+' learners' : 'Unlimited'}</strong></div>
             <div><span>Enrollment Date</span><strong>${dateTimeLabel(profile.enrolled_at)}</strong></div>
             <div><span>Access Expires</span><strong>${profile.enrollment_expires_at ? dateTimeLabel(profile.enrollment_expires_at) : 'No expiration set'}</strong></div>
@@ -977,7 +977,8 @@ async function openBuyVoucherModal(batchId = null) {
     if ($('purchase-price-summary')) $('purchase-price-summary').textContent = `Price: ${price}`;
     if ($('purchase-billing-price')) $('purchase-billing-price').textContent = billingPrice;
     if ($('purchase-billing-notice')) {
-        $('purchase-billing-notice').classList.toggle('hidden', course.currency_code !== 'USD');
+        $('purchase-billing-notice').classList.toggle('hidden', !course.currency_code || course.currency_code === 'PHP');
+        $('purchase-rate-date').textContent = course.display_rate_date ? ` Reference rate as of ${course.display_rate_date}.` : '';
     }
     if ($('purchase-access-until')) {
         const endDate = course.batch_ends_at ? new Date(course.batch_ends_at).toLocaleString() : 'the batch access period ends';

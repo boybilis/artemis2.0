@@ -29,8 +29,12 @@
                 </template>
             </fieldset>
             <div class="field"><label>Modality</label><select id="class_batch_modality" name="modality"><option value="">Select modality</option><option>Online</option><option>Blended</option><option>Live via Zoom</option></select></div>
-            <div class="field"><label>Batch price (PHP)</label><input id="class_batch_price" name="price" type="number" min="0" step=".01" required></div>
-            <div class="field"><label>Display price (USD)</label><input id="class_batch_usd_price" name="usd_price" type="number" min="0" step=".01"></div>
+            <div class="field"><label for="class_batch_price">Batch Price (PHP)</label><input id="class_batch_price" name="price" type="number" min="0" max="99999999.99" step=".01" required></div>
+            <div class="field"><label for="class_batch_international_currency">International Price</label>
+                <select id="class_batch_international_currency" name="international_currency"><option value="">Select a currency (optional)</option>@foreach(\App\Services\BatchExchangeRates::CURRENCIES as $currency)<option value="{{ $currency }}">{{ $currency }}</option>@endforeach</select>
+                <output id="batch-international-quote" aria-live="polite">Not Available</output>
+                <small class="muted">Calculated using the latest published reference rate. Checkout remains in PHP.</small>
+            </div>
             <div class="field"><label>Capacity</label><input id="class_batch_capacity" name="capacity" type="number" min="1"></div>
             <div class="field"><label>Status</label><select id="class_batch_status" name="status"><option value="open">Open</option><option value="draft">Draft</option><option value="closed">Closed</option><option value="completed">Completed</option></select></div>
             <div class="field full"><label for="class_batch_description">Description</label><textarea id="class_batch_description" name="description" rows="3" class="form-control" placeholder="Describe this batch offering, delivery setup, or important learner information."></textarea></div>
@@ -53,7 +57,7 @@
     <div data-ajax-table="class-batches">
     <div class="class-batch-grid">
     @forelse($batches as $batch)
-        @php($editor = ['id'=>$batch->id,'name'=>$batch->name,'code'=>$batch->code,'description'=>$batch->description,'course_type'=>$batch->course_type,'starts_at'=>$batch->starts_at?->format('Y-m-d'),'ends_at'=>$batch->ends_at?->format('Y-m-d'),'class_sessions'=>$batch->weeklySessions(),'legacy_schedule'=>$batch->class_sessions === null,'schedule_day'=>$batch->schedule_day,'start_time'=>substr((string)$batch->start_time,0,5),'end_time'=>substr((string)$batch->end_time,0,5),'modality'=>$batch->modality,'price'=>$batch->price,'usd_price'=>$batch->usd_price,'capacity'=>$batch->capacity,'status'=>$batch->status,'course_ids'=>$batch->courses->pluck('id')->values()])
+        @php($editor = ['id'=>$batch->id,'name'=>$batch->name,'code'=>$batch->code,'description'=>$batch->description,'course_type'=>$batch->course_type,'starts_at'=>$batch->starts_at?->format('Y-m-d'),'ends_at'=>$batch->ends_at?->format('Y-m-d'),'class_sessions'=>$batch->weeklySessions(),'legacy_schedule'=>$batch->class_sessions === null,'schedule_day'=>$batch->schedule_day,'start_time'=>substr((string)$batch->start_time,0,5),'end_time'=>substr((string)$batch->end_time,0,5),'modality'=>$batch->modality,'price'=>$batch->price,'international_currency'=>$batch->internationalPrice()['currency'] ?? '','capacity'=>$batch->capacity,'status'=>$batch->status,'course_ids'=>$batch->courses->pluck('id')->values()])
         <article class="class-batch-card">
             <div class="class-batch-card-head"><div><small>{{ $batch->code }}</small><h3>{{ $batch->name }}</h3></div><button type="button" class="btn-ghost class-batch-details-button" aria-haspopup="dialog" aria-controls="batch-details-{{ $batch->id }}" onclick="document.getElementById(this.getAttribute('aria-controls')).showModal()">View Details</button></div>
             <dialog id="batch-details-{{ $batch->id }}" class="class-batch-details" aria-labelledby="batch-details-title-{{ $batch->id }}">
@@ -74,7 +78,8 @@
                 <div><dt>Class sessions</dt><dd>@forelse($editor['class_sessions'] as $session)<div>{{ $session['day'] }} · {{ $formatTime($session['start_time']) }}{{ $session['end_time'] ? ' – '.$formatTime($session['end_time']) : '' }}</div>@empty{{ $formatTime($editor['start_time']) }}{{ $editor['end_time'] ? ' – '.$formatTime($editor['end_time']) : '' }}@endforelse</dd></div>
                 <div><dt>Capacity</dt><dd>{{ $batch->capacity ?: 'Unlimited' }}</dd></div>
                 <div><dt>Price (PHP)</dt><dd>{{ $batch->price === null ? 'Not set' : '₱'.number_format($batch->price, 2) }}</dd></div>
-                <div><dt>Price (USD)</dt><dd>{{ $batch->usd_price === null ? 'Not set' : '$'.number_format($batch->usd_price, 2) }}</dd></div>
+                @php($internationalPrice = $batch->internationalPrice())
+                <div><dt>International Price</dt><dd>@if($internationalPrice){{ $internationalPrice['currency'] }} {{ number_format($internationalPrice['amount'], $internationalPrice['currency'] === 'JPY' ? 0 : 2) }}@if(isset($internationalPrice['date']))<br><small class="muted">Rate as of {{ $internationalPrice['date'] }}</small>@endif @else Not Available @endif</dd></div>
             </dl>
             </div>
             </dialog>
@@ -161,6 +166,29 @@
 <script>
 const classCsrf=@json(csrf_token());let activeClassBatch=null;let classZoomSessions=[];
 let batchSessionIndex = 0, legacyBatchSessions = null;
+let batchQuoteRequest, batchQuoteTimer;
+function refreshBatchQuote() {
+    clearTimeout(batchQuoteTimer);
+    batchQuoteRequest?.abort();
+    const currency = document.getElementById('class_batch_international_currency').value;
+    const price = document.getElementById('class_batch_price').value;
+    const output = document.getElementById('batch-international-quote');
+    output.textContent = 'Not Available';
+    if (!currency || !price || !document.getElementById('class_batch_price').validity.valid) return;
+    output.textContent = 'Checking exchange rate…';
+    batchQuoteTimer = setTimeout(async () => {
+        const request = batchQuoteRequest = new AbortController();
+        try {
+            const query = new URLSearchParams({currency, price});
+            const response = await fetch(@json(route('admin.classes.batches.price-quote', [], false)) + '?' + query, {headers:{Accept:'application/json'},signal:request.signal});
+            if (!response.ok) throw new Error();
+            const quote = await response.json();
+            if (!request.signal.aborted) output.textContent = `${new Intl.NumberFormat(undefined,{style:'currency',currency,currencyDisplay:'code'}).format(quote.amount)} · Rate as of ${quote.date}`;
+        } catch { if (!request.signal.aborted) output.textContent = 'Not Available — exchange rate could not be loaded'; }
+    }, 350);
+}
+document.getElementById('class_batch_price')?.addEventListener('input', refreshBatchQuote);
+document.getElementById('class_batch_international_currency')?.addEventListener('change', refreshBatchQuote);
 const batchSessionRows = document.getElementById('batch-session-rows');
 function readBatchSessions() {
     return Array.from(batchSessionRows.children, row => Object.fromEntries(Array.from(row.querySelectorAll('[data-session-field]'), input => [input.dataset.sessionField, input.value])));
@@ -219,8 +247,8 @@ if (batchSessionRows) {
 }
 function openClassBatchForm(){resetClassBatchForm();document.getElementById('classBatchFormPanel').classList.remove('hidden');document.getElementById('showClassBatchForm').classList.add('hidden');document.getElementById('classBatchFormPanel').scrollIntoView({behavior:'smooth',block:'start'});}
 function closeClassBatchForm(){resetClassBatchForm();document.getElementById('classBatchFormPanel').classList.add('hidden');document.getElementById('showClassBatchForm').classList.remove('hidden');}
-function editClassBatch(item){const form=document.getElementById('classBatchForm');document.getElementById('classBatchFormPanel').classList.remove('hidden');document.getElementById('showClassBatchForm').classList.add('hidden');form.action=`/admin/classes/batches/${item.id}`;document.getElementById('class_batch_method').value='PUT';document.getElementById('class-batch-form-title').textContent='Edit Batch';['name','code','description','starts_at','ends_at','modality','price','usd_price','capacity','status'].forEach(key=>document.getElementById(`class_batch_${key}`).value=item[key]??'');renderBatchSessions(item.class_sessions); legacyBatchSessions = item.legacy_schedule ? JSON.stringify(readBatchSessions()) : null;document.getElementById('class_batch_course_type').value=item.course_type||'comprehensive';document.querySelectorAll('input[name="course_ids[]"]').forEach(input=>input.checked=item.course_ids.includes(Number(input.value)));document.getElementById('classBatchFormPanel').scrollIntoView({behavior:'smooth',block:'start'});}
-function resetClassBatchForm(){const form=document.getElementById('classBatchForm');form.reset();legacyBatchSessions=null;renderBatchSessions();form.action='{{ route('admin.classes.batches.store') }}';document.getElementById('class_batch_method').value='POST';document.getElementById('class-batch-form-title').textContent='Create Batch';}
+function editClassBatch(item){const form=document.getElementById('classBatchForm');document.getElementById('classBatchFormPanel').classList.remove('hidden');document.getElementById('showClassBatchForm').classList.add('hidden');form.action=`/admin/classes/batches/${item.id}`;document.getElementById('class_batch_method').value='PUT';document.getElementById('class-batch-form-title').textContent='Edit Batch';['name','code','description','starts_at','ends_at','modality','price','international_currency','capacity','status'].forEach(key=>document.getElementById(`class_batch_${key}`).value=item[key]??'');refreshBatchQuote();renderBatchSessions(item.class_sessions); legacyBatchSessions = item.legacy_schedule ? JSON.stringify(readBatchSessions()) : null;document.getElementById('class_batch_course_type').value=item.course_type||'comprehensive';document.querySelectorAll('input[name="course_ids[]"]').forEach(input=>input.checked=item.course_ids.includes(Number(input.value)));document.getElementById('classBatchFormPanel').scrollIntoView({behavior:'smooth',block:'start'});}
+function resetClassBatchForm(){const form=document.getElementById('classBatchForm');form.reset();refreshBatchQuote();legacyBatchSessions=null;renderBatchSessions();form.action='{{ route('admin.classes.batches.store') }}';document.getElementById('class_batch_method').value='POST';document.getElementById('class-batch-form-title').textContent='Create Batch';}
 @if($errors->any()) document.getElementById('showClassBatchForm').classList.add('hidden'); @endif
 document.getElementById('class_batch_name')?.addEventListener('input',event=>{if(document.getElementById('class_batch_method').value!=='POST')return;document.getElementById('class_batch_code').value=(event.target.value||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,70);});
 function resetClassZoomForm(){['class_zoom_id','class_zoom_title','class_zoom_url','class_zoom_recording_url','class_zoom_start','class_zoom_end','class_zoom_description'].forEach(id=>document.getElementById(id).value='');document.getElementById('class_zoom_status').value='scheduled';selectClassZoomPlacement({});}

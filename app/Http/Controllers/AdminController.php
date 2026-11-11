@@ -412,6 +412,12 @@ class AdminController extends Controller
         return redirect()->route('admin.classes.index')->with('success', "{$batch->name} created.");
     }
 
+    public function quoteClassBatchPrice(Request $request, \App\Services\BatchExchangeRates $rates)
+    {
+        $data = $request->validate(['price'=>'required|numeric|min:0|max:99999999.99', 'currency'=>'required|in:'.implode(',', \App\Services\BatchExchangeRates::CURRENCIES)]);
+        return response()->json($rates->quote($data['currency'], (float) $data['price']))->header('Cache-Control', 'no-store');
+    }
+
     public function updateClassBatch(Request $request, CourseBatch $batch)
     {
         $data = $this->validateClassBatch($request, $batch->id);
@@ -448,7 +454,8 @@ class AdminController extends Controller
             'class_sessions.*.day'=>'required|in:'.implode(',', CourseBatch::CLASS_DAYS),
             'class_sessions.*.start_time'=>'required|date_format:H:i',
             'class_sessions.*.end_time'=>'required|date_format:H:i|after:class_sessions.*.start_time',
-            'modality'=>'nullable|in:Online,Blended,Live via Zoom', 'price'=>'required|numeric|min:0', 'usd_price'=>'nullable|numeric|min:0',
+            'international_currency'=>'sometimes|nullable|in:'.implode(',', \App\Services\BatchExchangeRates::CURRENCIES),
+            'modality'=>'nullable|in:Online,Blended,Live via Zoom', 'price'=>'required|numeric|min:0|max:99999999.99', 'usd_price'=>'nullable|numeric|min:0',
             'capacity'=>'nullable|integer|min:1|max:100000', 'status'=>'required|in:draft,open,closed,completed',
             'includes_intensive_final_coaching'=>'nullable|boolean',
             'course_type'=>'sometimes|required|in:complete,comprehensive,final_coaching,mentoring',
@@ -459,6 +466,12 @@ class AdminController extends Controller
             $data['schedule_day'] = $this->legacyBatchDaySummary($days);
         }
         unset($data['schedule_days'], $data['schedule_days_present']);
+        if (array_key_exists('international_currency', $data)) {
+            $data['international_pricing'] = $data['international_currency']
+                ? app(\App\Services\BatchExchangeRates::class)->quote($data['international_currency'], (float) $data['price']) : null;
+            $data['usd_price'] = null;
+            unset($data['international_currency']);
+        }
         foreach (['starts_at'=>'00:00:00', 'ends_at'=>'23:59:59'] as $field => $time) {
             if (preg_match('/^\d{4}-\d{2}-\d{2}$/D', $data[$field] ?? '')) {
                 $data[$field] .= ' '.$time;

@@ -100,6 +100,8 @@ class CourseController extends Controller
                 $topicCompleted = $isEnrolled
                     ? UserProgress::where('user_id', $user->id)->where('course_id', $course->id)->whereIn('topic_id', $visibleTopicIds)->whereNotIn('topic_id', $unacceptedPolicyTopicIds)->distinct('topic_id')->count('topic_id')
                     : 0;
+                $internationalPrice = $batch->internationalPrice();
+                $displayQuote = $international ? $internationalPrice : null;
                 return array_merge($base, [
                     'batch_id'=>$batch->id, 'batch_name'=>$batch->name, 'batch_code'=>$batch->code,
                     'batch_description'=>$batch->description, 'batch_starts_at'=>$batch->starts_at?->toIso8601String(),
@@ -109,6 +111,7 @@ class CourseController extends Controller
                     'batch_includes_intensive_final_coaching'=>(bool) $batch->includes_intensive_final_coaching,
                     'batch_status'=>$batch->status, 'batch_price'=>(float) $batch->price,
                     'batch_usd_price'=>$batch->usd_price !== null ? (float) $batch->usd_price : null,
+                    'batch_international_price'=>$internationalPrice,
                     'is_enrolled'=>$isEnrolled, 'enrolled_at'=>$isEnrolled ? $enrollment?->enrolled_at?->toIso8601String() : null,
                     'enrollment_expires_at'=>$isEnrolled ? $enrollment?->expires_at?->toIso8601String() : null,
                     'mock_exam_rank'=>$isEnrolled ? ($courseRanking['positions'][$user->id] ?? null) : null,
@@ -125,8 +128,9 @@ class CourseController extends Controller
                         'status'=>$session->status, 'zoom_url'=>$session->status === 'scheduled' ? $session->zoom_url : null,
                         'recording_url'=>$session->recording_url,
                     ])->values() : [],
-                    'display_price'=>(float) ($international ? ($batch->usd_price ?? $batch->price) : $batch->price),
-                    'currency_symbol'=>$international ? '$' : '₱', 'currency_code'=>$international ? 'USD' : 'PHP',
+                    'display_price'=>(float) ($displayQuote['amount'] ?? $batch->price),
+                    'currency_symbol'=>isset($displayQuote['currency']) ? ($displayQuote['currency'] === 'USD' ? '$' : $displayQuote['currency'].' ') : '₱',
+                    'currency_code'=>$displayQuote['currency'] ?? 'PHP', 'display_rate_date'=>$displayQuote['date'] ?? null,
                     'billing_price'=>(float) $batch->price, 'billing_currency_symbol'=>'₱', 'billing_currency_code'=>'PHP',
                 ]);
             });

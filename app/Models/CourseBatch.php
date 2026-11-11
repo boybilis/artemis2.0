@@ -31,9 +31,14 @@ class CourseBatch extends Model
     {
         return !in_array($this->course_type, ['final_coaching', 'mentoring'], true);
     }
-    protected $fillable = ['course_id', 'name', 'code', 'description', 'course_type', 'includes_intensive_final_coaching', 'starts_at', 'ends_at', 'schedule_day', 'start_time', 'end_time', 'class_sessions', 'modality', 'price', 'usd_price', 'capacity', 'status', 'created_by'];
+    protected $fillable = ['course_id', 'name', 'code', 'description', 'course_type', 'includes_intensive_final_coaching', 'starts_at', 'ends_at', 'schedule_day', 'start_time', 'end_time', 'class_sessions', 'modality', 'price', 'usd_price', 'international_pricing', 'capacity', 'status', 'created_by'];
 
-    protected $casts = ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'price' => 'decimal:2', 'usd_price' => 'decimal:2', 'includes_intensive_final_coaching' => 'boolean', 'class_sessions' => 'array'];
+    protected $casts = ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'price' => 'decimal:2', 'usd_price' => 'decimal:2', 'includes_intensive_final_coaching' => 'boolean', 'class_sessions' => 'array', 'international_pricing' => 'array'];
+
+    public function internationalPrice(): ?array
+    {
+        return $this->international_pricing ?? ($this->usd_price === null ? null : ['currency'=>'USD', 'amount'=>(float) $this->usd_price]);
+    }
 
     public function weeklySessions(): array
     {
