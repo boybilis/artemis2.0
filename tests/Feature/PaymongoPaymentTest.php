@@ -18,6 +18,16 @@ class PaymongoPaymentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_admin_payment_table_defaults_to_five_and_filters_across_pages(): void
+    {
+        foreach (range(1, 6) as $index) Voucher::create(['code'=>'TEST-CODE-'.$index]);
+        $this->actingAs(User::factory()->create(['role'=>'admin', 'is_admin'=>true]));
+        $this->get('/admin/vouchers')->assertOk()->assertViewHas('vouchers', fn ($page) => $page->count() === 5 && $page->total() === 6)
+            ->assertSee('TEST-CODE-6')->assertDontSee('TEST-CODE-1');
+        $this->get('/admin/vouchers?vouchers_page=2', ['X-Requested-With'=>'XMLHttpRequest'])->assertOk()->assertSee('TEST-CODE-1')->assertDontSee('TEST-CODE-6');
+        $this->get('/admin/vouchers?voucher_search=TEST-CODE-2')->assertOk()->assertViewHas('vouchers', fn ($page) => $page->total() === 1)->assertSee('TEST-CODE-2');
+    }
+
     public function test_maintenance_blocks_checkout_but_assigned_learner_can_redeem_the_emailed_code(): void
     {
         Storage::fake('local');

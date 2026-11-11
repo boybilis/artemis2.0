@@ -1875,7 +1875,7 @@ class AdminController extends Controller
     }
 
     // ─── VOUCHER MANAGEMENT ──────────────────────────────────────
-    public function vouchers()
+    public function vouchers(Request $request)
     {
         $user = Auth::user();
         if ($user) {
@@ -1883,9 +1883,22 @@ class AdminController extends Controller
             $user->save();
         }
         
+        $searchInput = $request->query('voucher_search', '');
+        $voucherSearch = is_string($searchInput) ? mb_substr(trim($searchInput), 0, 120) : '';
+        $voucherPageSize = $request->integer('voucher_size', 5);
+        if (!in_array($voucherPageSize, [5, 10, 25, 50], true)) $voucherPageSize = 5;
         $vouchers = Voucher::with(['user', 'assignedLearner', 'batch.courses'])
+            ->when($voucherSearch !== '', function ($query) use ($voucherSearch) {
+                $term = '%'.$voucherSearch.'%';
+                $query->where(function ($query) use ($term) {
+                    $learner = fn ($user) => $user->where('name', 'like', $term)->orWhere('email', 'like', $term);
+                    $query->where('code', 'like', $term)->orWhereHas('assignedLearner', $learner)->orWhereHas('user', $learner)
+                        ->orWhereHas('batch', fn ($batch) => $batch->where('name', 'like', $term)->orWhere('code', 'like', $term))
+                        ->orWhereHas('batch.courses', fn ($course) => $course->where('title', 'like', $term));
+                });
+            })
             ->orderBy('created_at', 'desc')
-            ->paginate(15, ['*'], 'vouchers_page')
+            ->orderByDesc('id')->paginate($voucherPageSize, ['*'], 'vouchers_page')
             ->withQueryString();
         $redeemedVouchers = Voucher::with(['user', 'batch.courses'])
             ->where('used', true)
@@ -1894,7 +1907,7 @@ class AdminController extends Controller
             ->withQueryString();
         $paymentBatches = $user->hasAdminAccess() ? CourseBatch::available()->has('courses')->orderBy('name')->get(['id', 'name', 'code']) : collect();
         $automaticPayments = $user->hasAdminAccess() && app(\App\Services\AutomaticPayments::class)->enabled();
-        return view('admin.vouchers.index', compact('vouchers', 'redeemedVouchers', 'paymentBatches', 'automaticPayments'));
+        return view('admin.vouchers.index', compact('vouchers', 'redeemedVouchers', 'paymentBatches', 'automaticPayments', 'voucherSearch', 'voucherPageSize'));
     }
 
     public function generateVouchers(Request $request)

@@ -32,6 +32,12 @@
     <section class="panel" data-ajax-table="vouchers-table">
         <p class="panel-label">Payments and access</p>
         <h2 class="panel-title">Batch Enrollment Payments &amp; Codes</h2>
+        <form class="toolbar form-grid" id="voucher-table-filters" method="get" action="{{ route('admin.vouchers.index') }}">
+            @if(request()->filled('redeemed_page'))<input type="hidden" name="redeemed_page" value="{{ request()->integer('redeemed_page') }}">@endif
+            <div class="field"><label for="voucher-search">Search payments and codes</label><input id="voucher-search" type="search" name="voucher_search" value="{{ $voucherSearch }}" maxlength="120" placeholder="Reference, learner, course, or batch"></div>
+            <div class="field"><label for="voucher-size">Rows per page</label><select id="voucher-size" name="voucher_size">@foreach([5,10,25,50] as $size)<option value="{{ $size }}" @selected($voucherPageSize === $size)>{{ $size }}</option>@endforeach</select></div>
+            <div><button class="btn-ghost" type="submit">Search</button></div>
+        </form>
         <div class="table-wrap">
             <table class="data-table">
                 <thead><tr><th>Reference</th><th>Course / Batch</th><th>Status</th><th>Learner</th><th>Method</th><th>Amount</th><th>Date created</th></tr></thead>
@@ -67,6 +73,7 @@
             </table>
         </div>
         <div style="padding-top:1.25rem; border-top:1px solid var(--border);">
+            <p class="muted" role="status">@if($vouchers->count()) Showing {{ $vouchers->firstItem() }}–{{ $vouchers->lastItem() }} of {{ $vouchers->total() }} records @else No matching records @endif</p>
             {{ $vouchers->links('pagination::bootstrap-4') }}
         </div>
     </section>
@@ -106,6 +113,23 @@
         {{ $redeemedVouchers->links('pagination::bootstrap-4') }}
     </div>
 </section>
+<script>
+(() => {
+    const reload = form => {
+        const url = new URL(form.action);
+        url.search = new URLSearchParams(new FormData(form));
+        loadAdminTable('vouchers-table', url.href);
+    };
+    document.addEventListener('submit', event => {
+        if (event.target.id !== 'voucher-table-filters') return;
+        event.preventDefault();
+        reload(event.target);
+    });
+    document.addEventListener('change', event => {
+        if (event.target.id === 'voucher-size') reload(event.target.form);
+    });
+})();
+</script>
 @if(Auth::user()->hasAdminAccess())
 <script>
 document.addEventListener('DOMContentLoaded', () => {
