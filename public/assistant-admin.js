@@ -2,6 +2,7 @@
 (() => {
     function restrictControls() {
         document.querySelectorAll('form').forEach(form => {
+            if (form.hasAttribute('data-assistant-content-delete')) return;
             const method = form.querySelector('input[name="_method"]')?.value?.toUpperCase();
             const action = form.getAttribute('action') || '';
             if (method === 'DELETE' || /\/users\/[^/]+\/role(?:\?|$)|\/assessment-attempts\/reset|\/unenroll(?:\?|$)/.test(action)) {
@@ -10,6 +11,7 @@
             }
         });
         document.querySelectorAll('button,a').forEach(control => {
+            if (control.closest('form[data-assistant-content-delete]')) return;
             const label = control.textContent.trim();
             if (/^(?:Delete(?:\s|$)|Reset Attempts?$|Unenroll$)/i.test(label) || /\/audit-logs(?:\?|$)/.test(control.getAttribute('href') || '')) {
                 control.hidden = true;

@@ -249,7 +249,7 @@
                                         Edit
                                     </button>
                                 @endif
-                                <form action="{{ route('admin.content.topics.destroy', ['course' => $course->id, 'topic' => $topic->id]) }}" method="POST" onsubmit="return confirmDelete(event, 'Delete this topic and all its subtopics/quizzes?');" style="margin:0;">
+                                <form data-assistant-content-delete action="{{ route('admin.content.topics.destroy', ['course' => $course->id, 'topic' => $topic->id]) }}" method="POST" onsubmit="return confirmDelete(event, 'Delete this topic and all its subtopics/quizzes?');" style="margin:0;">
                                     @csrf
                                     @method('DELETE')
                                     <button class="btn-ghost" type="submit" style="padding: 0.3rem 0.6rem; font-size: 0.8rem; color: var(--wrong);">Delete</button>
@@ -319,7 +319,7 @@
                                         data-sort="{{ $sub->sort_order }}">
                                         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5L8 21H3v-5zM13 6l5 5"/></svg>
                                     </button>
-                                    <form action="{{ route('admin.content.subtopics.destroy', ['course' => $course->id, 'subtopic' => $sub->id]) }}" method="POST" onsubmit="return confirmDelete(event, 'Delete this subtopic?');" style="margin:0;">
+                                    <form data-assistant-content-delete action="{{ route('admin.content.subtopics.destroy', ['course' => $course->id, 'subtopic' => $sub->id]) }}" method="POST" onsubmit="return confirmDelete(event, 'Delete this subtopic?');" style="margin:0;">
                                         @csrf
                                         @method('DELETE')
                                         <button class="subtopic-action-icon subtopic-action-delete" type="submit" aria-label="Delete subtopic" title="Delete subtopic"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V3h8v3m3 0-1 15H6L5 6m5 4v7m4-7v7"/></svg></button>

@@ -56,7 +56,7 @@ body .subjects-catalog-table thead th,body.light-mode .subjects-catalog-table th
                         <button type="button" class="btn-ghost edit-subject-btn" aria-label="Edit subject" title="Edit subject"
                             data-id="{{ $subject->id }}" data-code="{{ $subject->subject_code }}" data-title="{{ $subject->title }}"
                             data-description="{{ $subject->description }}" data-order="{{ $subject->sort_order }}" data-intensive="{{ $subject->is_intensive_final_coaching ? '1' : '0' }}" data-mentoring="{{ $subject->is_mentoring ? '1' : '0' }}"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="m16 3 5 5L8 21H3v-5zM13 6l5 5"/></svg></button>
-                        <form method="POST" action="{{ route('admin.content.subjects.destroy', ['course' => $course->id, 'subject' => $subject->id]) }}" onsubmit="return confirm('Delete this subject?');">
+                        <form data-assistant-content-delete method="POST" action="{{ route('admin.content.subjects.destroy', ['course' => $course->id, 'subject' => $subject->id]) }}" onsubmit="return confirm('Delete this subject?');">
                             @csrf @method('DELETE')
                             <button type="submit" class="btn-ghost" style="color:var(--wrong)" aria-label="Delete subject" title="Delete subject"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M3 6h18M8 6V3h8v3m3 0-1 15H6L5 6m5 4v7m4-7v7"/></svg></button>
                         </form>
