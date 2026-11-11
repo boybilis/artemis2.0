@@ -3,6 +3,5 @@
     <div class="branch-hero-copy">
         @if(isset($branch))<h1>{{ $branch->name }}</h1>@else<h2 data-branch-preview-name>Branch name</h2>@endif
         <p class="branch-hero-description" data-branch-preview-description>{{ $branch->description ?? '' }}</p>
-        @if(isset($branch))<button class="branch-hero-login" id="hero-login-btn" type="button">Login</button>@else<span class="branch-hero-login">Login</span>@endif
     </div>
 </section>

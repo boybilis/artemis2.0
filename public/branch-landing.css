@@ -4,5 +4,3 @@
 .branch-hero-copy { padding:clamp(1.25rem,3vw,2rem);overflow-wrap:anywhere; }
 .branch-hero h1,.branch-hero h2,#landing-screen .branch-hero h1 { margin:0 0 .75rem;color:var(--text);font-size:clamp(1.5rem,3vw,2.25rem);line-height:1.2; }
 .branch-hero-description { margin:0;line-height:1.65;white-space:pre-wrap;color:var(--text); }
-.branch-hero-login,#landing-screen .branch-hero #hero-login-btn.branch-hero-login { display:inline-flex;align-items:center;min-height:44px;margin-top:.75rem;padding:0 1.4rem;border:0;border-radius:999px;background:#f47721;color:#19344f;font:inherit;font-weight:800;text-decoration:none;cursor:pointer; }
-.branch-hero-login:focus-visible { outline:3px solid var(--text);outline-offset:4px; }

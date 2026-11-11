@@ -24,7 +24,7 @@ class BranchTest extends TestCase
             ->assertCreated()->assertJsonPath('url', '/branches/cebu');
         Storage::disk('public')->assertExists(Branch::firstOrFail()->hero_path);
         $this->get('/branches/cebu')->assertOk()->assertSee('Cebu Review Center')
-            ->assertSee('id="nav-login-btn"', false)->assertSee('id="hero-login-btn"', false)
+            ->assertSee('id="nav-login-btn"', false)->assertDontSee('id="hero-login-btn"', false)
             ->assertSee('id="modal-login"', false)->assertSee('<base href="/">', false)
             ->assertSee('class="jumbotron branch-hero"', false)
             ->assertSeeInOrder(['src="/branches/cebu/hero"', '<h1>Cebu Review Center</h1>', 'Welcome to Cebu.'], false)
