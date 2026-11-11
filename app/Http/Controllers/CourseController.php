@@ -515,6 +515,25 @@ class CourseController extends Controller
         abort_unless($subtopic->status === 'approved' && $subtopic->topic?->status === 'approved', 404);
         abort_unless(Auth::user()->hasActiveEnrollment((int) $subtopic->topic->course_id), 403, 'An active enrollment is required to view this video.');
         app(\App\Services\SubjectPolicy::class)->authorizeTopic(Auth::id(), $subtopic->topic);
+        return $this->subtopicVideoResponse($request, $subtopic, $drive);
+    }
+
+    public function previewSubtopicVideo(Request $request, int $course, Subtopic $subtopic, GoogleDriveVideoService $drive)
+    {
+        abort_unless((int) $subtopic->topic?->course_id === $course, 404);
+        return $this->subtopicVideoResponse($request, $subtopic, $drive);
+    }
+
+    public function previewSubtopicPdf(int $course, Subtopic $subtopic)
+    {
+        abort_unless((int) $subtopic->topic?->course_id === $course, 404);
+        $response = $this->privateDocumentResponse($subtopic->documentation_path, $subtopic->documentation_filename);
+        abort_unless($response->headers->get('Content-Type') === 'application/pdf', 404);
+        return $response;
+    }
+
+    private function subtopicVideoResponse(Request $request, Subtopic $subtopic, GoogleDriveVideoService $drive)
+    {
         if (! $subtopic->video_path) {
             $fileId = $drive->fileIdFromUrl($subtopic->video_url);
             abort_unless($fileId, 404);
@@ -601,7 +620,7 @@ class CourseController extends Controller
     private function resolveDocumentFile(string $relativePath, ?string $originalFilename): ?string
     {
         $roots = array_values(array_unique([
-            rtrim((string) config('filesystems.disks.public.root'), '/\\'),
+            rtrim(Storage::disk('public')->path(''), '/\\'),
             rtrim(storage_path('app/public'), '/\\'),
         ]));
         $relativeNativePath = str_replace('/', DIRECTORY_SEPARATOR, $relativePath);

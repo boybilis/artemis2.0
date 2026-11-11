@@ -159,6 +159,11 @@
     .badge-pdf   { background: rgba(17,167,192,0.12); color: var(--accent); padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
     .badge-pending { background: rgba(245,158,11,0.12); color: #f59e0b; padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
     .subtopic-actions { display: flex; gap: 0.35rem; }
+    #subtopic-preview-dialog { position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(900px,calc(100% - 1rem));max-height:calc(100dvh - 1rem);padding:1rem;border:1px solid var(--border);border-radius:14px;background:var(--surface-solid);color:var(--text);overflow:auto; }
+    #subtopic-preview-dialog::backdrop { background:rgba(12,29,46,.7); }
+    #subtopic-preview-dialog header { display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem; }
+    #subtopic-preview-dialog h2 { margin:0;overflow-wrap:anywhere; }
+    #subtopic-preview-player :is(video,iframe) { display:block;width:100%;height:min(60dvh,520px);border:0;background:#132b42; }
 </style>
 
 <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
@@ -279,6 +284,13 @@
                                     </div>
                                 </div>
                                 <div class="subtopic-actions">
+                                    @if($sub->video_path || $sub->video_url)
+                                        @php($drive = app(\App\Services\GoogleDriveVideoService::class))
+                                        <button type="button" class="btn-ghost btn-sm" aria-haspopup="dialog" data-preview-type="video" data-preview-title="{{ $sub->title }}" data-preview-source="{{ ($sub->video_path || ($drive->enabled() && $drive->fileIdFromUrl($sub->video_url))) ? route('admin.content.subtopics.preview.video', [$course->id, $sub->id], false) : $sub->video_url }}">Preview Video</button>
+                                    @endif
+                                    @if($sub->documentation_path && preg_match('/\.pdf(?:$|[?#])/i', $sub->documentation_filename ?: $sub->documentation_path))
+                                        <button type="button" class="btn-ghost btn-sm" aria-haspopup="dialog" data-preview-type="pdf" data-preview-title="{{ $sub->title }}" data-preview-source="{{ route('admin.content.subtopics.preview.pdf', [$course->id, $sub->id], false) }}">Preview PDF</button>
+                                    @endif
                                     @if($sub->status === 'pending' && $isAdmin)
                                         <form action="{{ route('admin.content.subtopics.approve', ['course' => $course->id, 'subtopic' => $sub->id]) }}" method="POST" style="margin:0;">
                                             @csrf
@@ -797,4 +809,78 @@
     });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<dialog id="subtopic-preview-dialog" aria-labelledby="subtopic-preview-title">
+    <header><h2 id="subtopic-preview-title">Content Preview</h2><form method="dialog"><button class="btn-ghost" type="submit" autofocus>Close</button></form></header>
+    <p id="subtopic-preview-status" role="status"></p>
+    <div id="subtopic-preview-player"></div>
+</dialog>
+<script>
+(() => {
+    const dialog = document.getElementById('subtopic-preview-dialog');
+    const player = document.getElementById('subtopic-preview-player');
+    const status = document.getElementById('subtopic-preview-status');
+    let request;
+    dialog.addEventListener('close', () => { request?.abort(); player.replaceChildren(); });
+
+    const embedUrl = url => {
+        const host = url.hostname.toLowerCase();
+        const parts = url.pathname.split('/').filter(Boolean);
+        if (['youtu.be','youtube.com','www.youtube.com','m.youtube.com','www.youtube-nocookie.com'].includes(host)) {
+            const id = host === 'youtu.be' ? parts[0] : (url.searchParams.get('v') || parts[1]);
+            if (!/^[A-Za-z0-9_-]{11}$/.test(id || '')) throw new Error('This YouTube link does not contain a valid video ID.');
+            return `https://www.youtube.com/embed/${id}`;
+        }
+        if (host === 'drive.google.com') {
+            const id = url.pathname.match(/\/file\/d\/([A-Za-z0-9_-]+)/)?.[1] || url.searchParams.get('id');
+            if (!/^[A-Za-z0-9_-]+$/.test(id || '')) throw new Error('This Google Drive link does not contain a file ID.');
+            const embed = new URL(`https://drive.google.com/file/d/${id}/preview`);
+            if (url.searchParams.has('resourcekey')) embed.searchParams.set('resourcekey', url.searchParams.get('resourcekey'));
+            return embed.href;
+        }
+        return null;
+    };
+
+    document.addEventListener('click', async event => {
+        const button = event.target.closest('[data-preview-type]');
+        if (!button || dialog.open) return;
+        const {previewType, previewTitle, previewSource} = button.dataset;
+        document.getElementById('subtopic-preview-title').textContent = previewTitle;
+        status.textContent = '';
+        dialog.showModal();
+        const controller = request = new AbortController();
+        try {
+            const url = new URL(previewSource, location.origin);
+            if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) throw new Error('This preview link is not supported.');
+            if (previewType === 'pdf') {
+                status.textContent = 'Checking PDF…';
+                const response = await fetch(url, {method:'HEAD', cache:'no-store', signal:controller.signal});
+                if (!response.ok || !response.headers.get('Content-Type')?.startsWith('application/pdf')) throw new Error('The saved PDF could not be opened. Check the file or upload it again.');
+                if (controller.signal.aborted || !dialog.open) return;
+            }
+            const frameSource = previewType === 'pdf' ? url.href : embedUrl(url);
+            if (frameSource) {
+                const frame = document.createElement('iframe');
+                frame.title = `${previewType === 'pdf' ? 'PDF' : 'Video'} preview: ${previewTitle}`;
+                frame.src = frameSource;
+                frame.allowFullscreen = true;
+                player.replaceChildren(frame);
+                status.textContent = previewType === 'pdf' ? '' : 'Press Play to verify the video. The provider may show its own access or playback errors.';
+            } else {
+                const video = document.createElement('video');
+                video.controls = true;
+                video.playsInline = true;
+                video.preload = 'metadata';
+                video.addEventListener('error', () => {
+                    if (player.contains(video)) status.textContent = 'The video could not be loaded. Check the link, file, or sharing permissions.';
+                });
+                video.src = url.href;
+                player.replaceChildren(video);
+                status.textContent = 'Press Play to verify the video.';
+            }
+        } catch (error) {
+            if (!controller.signal.aborted && dialog.open) status.textContent = error.message || 'Unable to preview this content.';
+        }
+    });
+})();
+</script>
 @endsection

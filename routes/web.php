@@ -259,6 +259,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/topics/{topic}', [AdminController::class, 'destroyTopic'])->name('content.topics.destroy');
 
             // Subtopics CRUD
+            Route::get('/subtopics/{subtopic}/preview/video', [CourseController::class, 'previewSubtopicVideo'])->name('content.subtopics.preview.video');
+            Route::get('/subtopics/{subtopic}/preview/pdf', [CourseController::class, 'previewSubtopicPdf'])->name('content.subtopics.preview.pdf');
             Route::post('/subtopics', [AdminController::class, 'storeSubtopic'])->name('content.subtopics.store');
             Route::post('/subtopics/{subtopic}/approve', [AdminController::class, 'approveSubtopic'])->name('content.subtopics.approve');
             Route::post('/subtopics/{subtopic}', [AdminController::class, 'updateSubtopic'])->name('content.subtopics.update');
