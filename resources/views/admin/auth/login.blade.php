@@ -120,9 +120,9 @@
             font-size: 14px;
         }
     </style>
-<link rel="stylesheet" href="{{ asset('branding.css') }}?v=6"><link rel="stylesheet" href="{{ asset('brand-palette.css') }}?v=1">
+<link rel="stylesheet" href="{{ asset('branding.css') }}?v=6"><link rel="stylesheet" href="{{ asset('brand-palette.css') }}?v=1"><link rel="stylesheet" href="{{ asset('admin-form-controls.css') }}?v=1">
 </head>
-<body class="light-mode">
+<body class="light-mode admin-form-controls">
     <main class="login-card">
         <div class="brand">
             @include('components.gra-brand')

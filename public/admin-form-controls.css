@@ -1,0 +1,17 @@
+/* Override page-specific fills while preserving control sizing and focus rings. */
+body.admin-form-controls :is(input:not([type=hidden],[type=checkbox],[type=radio],[type=range],[type=color],[type=button],[type=submit],[type=reset],[type=image]),select,textarea) {
+    color-scheme: light;
+    background-color: #fff !important;
+    color: #19344f !important;
+    border-color: #9aafbf;
+}
+
+body.admin-form-controls :is(input:not([type=hidden],[type=checkbox],[type=radio],[type=range],[type=color],[type=button],[type=submit],[type=reset],[type=image]),select,textarea):is(:disabled,[readonly],[aria-disabled=true]) {
+    background-color: #e2e7eb !important;
+    color: #465a6b !important;
+    border-color: #b6c2cc;
+    opacity: 1;
+}
+
+body.admin-form-controls :is(input,textarea)::placeholder { color:#526b7a;opacity:1; }
+body.admin-form-controls select :is(option,optgroup) { background-color:#fff;color:#19344f; }
