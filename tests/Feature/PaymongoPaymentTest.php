@@ -41,6 +41,7 @@ class PaymongoPaymentTest extends TestCase
         $this->postJson('/admin/vouchers/assign', ['email'=>$learner->email, 'batch_id'=>$batch->id])
             ->assertCreated()->assertJsonPath('emailed', true);
         $voucher = Voucher::firstOrFail();
+        $this->assertMatchesRegularExpression('/^ART2-[0-9A-F]{4}-[0-9A-F]{4}$/', $voucher->code);
         Mail::assertSent(\App\Mail\AssignedEnrollmentVoucher::class, fn ($mail) => $mail->hasTo($learner->email));
         $this->assertSame($learner->id, (int) $voucher->assigned_to);
         $this->get('/admin/vouchers')->assertOk()->assertSee($learner->email)->assertSee('Email sent');

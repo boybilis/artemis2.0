@@ -32,8 +32,13 @@ class PaymentSettingsController extends Controller
         $batch = CourseBatch::available()->has('courses')->find($data['batch_id']);
         if (!$batch) throw ValidationException::withMessages(['batch_id'=>'Select an available batch with an assigned course.']);
 
+        do {
+            $hex = strtoupper(bin2hex(random_bytes(4)));
+            $code = 'ART2-'.substr($hex, 0, 4).'-'.substr($hex, 4);
+        } while (Voucher::where('code', $code)->exists());
+
         $voucher = Voucher::create([
-            'code'=>'GRA-'.strtoupper(bin2hex(random_bytes(12))), 'assigned_to'=>$learner->id,
+            'code'=>$code, 'assigned_to'=>$learner->id,
             'batch_id'=>$batch->id, 'price'=>0, 'used'=>false, 'status'=>'active', 'payment_provider'=>'manual',
         ]);
         $this->audit($request, 'Enrollment Voucher Issued', "Voucher {$voucher->id} assigned to learner {$learner->id} for batch {$batch->id}.");
