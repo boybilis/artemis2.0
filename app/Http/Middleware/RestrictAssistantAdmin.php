@@ -14,8 +14,12 @@ class RestrictAssistantAdmin
             $route = $request->route();
             $name = (string) $route?->getName();
             $action = (string) $route?->getActionMethod();
-            $subjectDeletion = $name === 'admin.content.subjects.destroy' && $request->isMethod('DELETE');
-            $restricted = (!$subjectDeletion && ($request->isMethod('DELETE') || str_starts_with($action, 'destroy')))
+            $allowedContentDeletion = $request->isMethod('DELETE') && in_array($name, [
+                'admin.content.subjects.destroy',
+                'admin.content.topics.destroy',
+                'admin.content.subtopics.destroy',
+            ], true);
+            $restricted = (!$allowedContentDeletion && ($request->isMethod('DELETE') || str_starts_with($action, 'destroy')))
                 || str_contains($name, 'audit-logs')
                 || $name === 'admin.users.role'
                 || in_array($action, ['deleteAllQuestions', 'resetCourseAssessmentAttempt', 'unenrollCourseStudent'], true);
