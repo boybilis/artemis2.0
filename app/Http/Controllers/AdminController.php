@@ -890,6 +890,7 @@ class AdminController extends Controller
 
     public function destroyCourse(Request $request, $id)
     {
+        abort_if($request->user()->isAssistantAdmin(), 403);
         $course = Course::findOrFail($id);
         $title = $course->title;
         $course->delete();

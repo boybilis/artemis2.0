@@ -12,6 +12,17 @@ use Tests\TestCase;
 
 class AssistantAdminAccessTest extends TestCase
 {
+    public function test_assistant_can_delete_subjects_but_not_courses(): void
+    {
+        $course = \App\Models\Course::create(['title'=>'Keep this course']);
+        $subject = \App\Models\Subject::create(['course_id'=>$course->id, 'title'=>'Remove this subject', 'subject_code'=>'TEST']);
+        $this->actingAs(User::factory()->create(['role'=>'assistant_admin', 'is_admin'=>true]));
+        $this->get('/admin/content')->assertOk()->assertDontSee('aria-label="Delete course"', false);
+        $this->delete('/admin/content/courses/'.$course->id)->assertForbidden();
+        $this->assertDatabaseHas('courses', ['id'=>$course->id]);
+        $this->delete('/admin/content/courses/'.$course->id.'/subjects/'.$subject->id)->assertRedirect();
+        $this->assertDatabaseMissing('subjects', ['id'=>$subject->id]);
+    }
     use RefreshDatabase;
     protected function setUp(): void
     {

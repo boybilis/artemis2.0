@@ -75,10 +75,12 @@
                         <td><div class="course-table-actions">
                             <a href="{{ route('admin.content.subjects', $course->id) }}" class="btn-primary">Manage Content</a>
                             <button class="btn-ghost" type="button" aria-label="Edit course" title="Edit course" onclick='openEditCourseModal(@json($course->id), @json($course->title), @json($course->description), @json($course->approval_status))'><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5L8 21H3v-5zM13 6l5 5"/></svg></button>
+                            @unless(Auth::user()->isAssistantAdmin())
                             <form action="{{ route('admin.content.courses.destroy', $course->id) }}" method="POST" onsubmit="return confirm('Delete this course?');">
                                 @csrf @method('DELETE')
                                 <button class="btn-ghost" type="submit" style="color:var(--wrong)" aria-label="Delete course" title="Delete course"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V3h8v3m3 0-1 15H6L5 6m5 4v7m4-7v7"/></svg></button>
                             </form>
+                            @endunless
                         </div></td>
                     </tr>
                 @empty
