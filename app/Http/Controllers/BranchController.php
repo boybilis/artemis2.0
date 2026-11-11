@@ -85,7 +85,7 @@ class BranchController extends Controller
         $hero = view('branches.hero', compact('branch'))->render();
         $html = substr_replace($shell, $hero, $start, $end + strlen($endMarker) - $start);
         $html = str_replace('<head>', '<head><base href="/">', $html);
-        $html = str_replace('</head>', '<link rel="stylesheet" href="/branch-landing.css?v=5"></head>', $html);
+        $html = str_replace('</head>', '<link rel="stylesheet" href="/branch-landing.css?v=6"></head>', $html);
         return response(str_replace('<title>GRA Test Prep — Powered by Artemis360</title>', '<title>'.e($branch->name).' | GRA Test Prep</title>', $html));
     }
 }

@@ -1,6 +1,6 @@
-.branch-hero.jumbotron,#landing-screen>.branch-hero.jumbotron { display:block;overflow:hidden;box-sizing:border-box;width:calc(100% - 2rem);max-width:1000px;margin:clamp(.75rem,3vw,2rem) auto;padding:0;border:1px solid var(--border);border-radius:1rem;background:var(--surface-solid);color:var(--text);box-shadow:0 8px 28px rgba(25,52,79,.08); }
+.branch-hero.jumbotron,#landing-screen>.branch-hero.jumbotron { display:block;overflow:hidden;box-sizing:border-box;width:min(calc(100% - 2rem),calc(100vw - 2rem));min-width:0;max-width:1000px;margin:clamp(.75rem,3vw,2rem) auto;padding:0;border:1px solid var(--border);border-radius:1rem;background:var(--surface-solid);color:var(--text);box-shadow:0 8px 28px rgba(25,52,79,.08); }
 #branch-dialog .branch-hero.jumbotron { width:100%;margin:0 auto 1rem; }
-.branch-hero-image:not([hidden]) { display:block;width:100%;height:auto; }
+.branch-hero-image:not([hidden]) { display:block;box-sizing:border-box;width:100%;max-width:100%;height:auto;max-height:none;object-fit:contain; }
 .branch-hero-copy { padding:clamp(1.25rem,3vw,2rem);overflow-wrap:anywhere; }
 .branch-hero h1,.branch-hero h2,#landing-screen .branch-hero h1 { margin:0 0 .75rem;color:var(--text);font-size:clamp(1.5rem,3vw,2.25rem);line-height:1.2; }
 .branch-hero-description { margin:0;line-height:1.65;white-space:pre-wrap;color:var(--text); }
