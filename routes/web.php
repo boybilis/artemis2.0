@@ -162,6 +162,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/branches', [\App\Http\Controllers\BranchController::class, 'index'])->name('branches.index');
             Route::post('/branches', [\App\Http\Controllers\BranchController::class, 'store'])->name('branches.store');
             Route::put('/branches/domain', [\App\Http\Controllers\BranchController::class, 'updateDomain'])->name('branches.domain');
+            Route::put('/branches/{branch}', [\App\Http\Controllers\BranchController::class, 'update'])->whereNumber('branch')->name('branches.update');
+            Route::delete('/branches/{branch}', [\App\Http\Controllers\BranchController::class, 'destroy'])->whereNumber('branch')->middleware(AdministratorMiddleware::class)->name('branches.destroy');
             Route::get('/course-gamification', [\App\Http\Controllers\CourseGamificationController::class, 'index'])->name('gamification.index');
             Route::put('/course-gamification/{course}', [\App\Http\Controllers\CourseGamificationController::class, 'update'])->name('gamification.update');
         });

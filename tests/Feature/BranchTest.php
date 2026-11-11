@@ -43,4 +43,20 @@ class BranchTest extends TestCase
         $this->postJson('/admin/branches', [])->assertNotFound();
         $this->putJson('/admin/branches/domain', [])->assertNotFound();
     }
+
+    public function test_assistant_can_edit_without_reuploading_hero_but_only_admin_can_delete(): void
+    {
+        $branch = Branch::create(['name'=>'Cebu', 'slug'=>'cebu', 'description'=>'Original', 'hero_path'=>'branch-heroes/saved.png']);
+        $url = '/admin/branches/'.$branch->id;
+        $this->actingAs(User::factory()->create(['role'=>'assistant_admin', 'is_admin'=>false]));
+        $this->get('/admin/branches')->assertOk()->assertSee('data-edit-branch=', false)->assertDontSee('data-delete-branch=', false);
+        $this->postJson($url, ['_method'=>'PUT', 'name'=>'Cebu Review', 'slug'=>'cebu', 'description'=>'Updated'])
+            ->assertOk()->assertJsonPath('success', true);
+        $this->assertSame('branch-heroes/saved.png', $branch->refresh()->hero_path);
+        $this->get('/branches/cebu')->assertOk()->assertSee('Updated');
+        $this->deleteJson($url)->assertForbidden();
+        $this->actingAs(User::factory()->create(['role'=>'admin', 'is_admin'=>true]));
+        $this->deleteJson($url)->assertOk()->assertJsonPath('success', true);
+        $this->get('/branches/cebu')->assertNotFound();
+    }
 }
