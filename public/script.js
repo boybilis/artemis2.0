@@ -1333,17 +1333,16 @@ function renderDashboard() {
                 const schedule = batchCardSchedule(course);
                 card.innerHTML = `
                 <div class="available-course-content">
-                    <div class="available-course-head">
-                        <span class="available-course-icon"><i data-lucide="book-open"></i></span>
-                        <span class="available-course-badge">${escapeHtml(availabilityLabel)}</span>
+                    <div class="enrolled-card-eyebrow">
+                        <span class="enrolled-card-icon"><i data-lucide="book-open"></i></span>
+                        <span><strong>${escapeHtml(availabilityLabel)}</strong><small>${escapeHtml(course.batch_name || 'Batch to be announced')}</small></span>
                     </div>
                     <h3>${escapeHtml(course.title)}</h3>
-                    <p class="available-course-program">Batch: ${escapeHtml(course.batch_name || 'To be announced')}</p>
-                    <p class="available-course-detail"><i data-lucide="clock-3"></i><span>${escapeHtml(course.batch_modality || 'Online learning')}${course.batch_includes_intensive_final_coaching ? ' + Final Coaching' : ''}</span></p>
-                    <div class="available-course-dates">
-                        ${schedule.map(session => `<span>${escapeHtml(session)}</span>`).join('')}
-                        <span>Starts ${formatCourseDate(course.batch_starts_at) || 'to be announced'}</span>
-                        <span>Access until ${formatCourseDate(course.batch_ends_at) || 'further notice'}</span>
+                    <p class="enrolled-card-until">Access until ${formatCourseDate(course.batch_ends_at) || 'further notice'}</p>
+                    <div class="enrolled-card-facts">
+                        <p><i data-lucide="calendar-days"></i><span>Starts ${formatCourseDate(course.batch_starts_at) || 'to be announced'}</span></p>
+                        ${schedule.map(session => `<p><i data-lucide="clock-3"></i><span>${escapeHtml(session)}</span></p>`).join('')}
+                        ${course.batch_includes_intensive_final_coaching ? '<p class="course-coaching-phase"><i data-lucide="badge-check"></i><span>With Intensive Final Coaching Phase</span></p>' : ''}
                     </div>
                 </div>
                 ${lockMsg}
