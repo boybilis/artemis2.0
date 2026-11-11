@@ -1275,7 +1275,7 @@ function renderDashboard() {
             }
             const rankingLabel = course.is_enrolled
                 ? (course.mock_exam_rank
-                    ? `<div class="course-ranking-badge">Rank: <strong>${course.mock_exam_rank} out of ${course.mock_exam_ranked_count}</strong></div>`
+                    ? `<div class="course-ranking-badge">Rank: <strong>${Number(course.mock_exam_rank)}</strong></div>`
                     : '<div class="course-ranking-badge unranked">Rank: <strong>--</strong></div>')
                 : '';
             const certificateLabel = course.has_certificate

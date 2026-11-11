@@ -1,5 +1,6 @@
 const fs=require('fs'),assert=require('assert'),vm=require('vm');
 const js=fs.readFileSync('public/script.js','utf8');
+assert(!js.includes('course.mock_exam_ranked_count'), 'Learner batch cards must not display the ranked learner count');
 assert(js.includes("$('modal-course-profile').dataset.courseFamily = courseCardFamily(profile)"));
 const html=fs.readFileSync('public/index.html','utf8');
 const hero=html.match(/<section class="course-overview-hero">([\s\S]*?)<\/section>/)[1];
