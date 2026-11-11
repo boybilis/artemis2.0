@@ -46,7 +46,8 @@ class MultiCourseBatchTest extends TestCase
         $this->assertNull($batch->start_time);
         $this->assertSame('2030-01-16 00:00:00', $batch->starts_at->format('Y-m-d H:i:s'));
         $this->assertSame('2030-03-04 23:59:59', $batch->ends_at->format('Y-m-d H:i:s'));
-        $this->get('/admin/classes')->assertOk()->assertSee('name="starts_at" type="date"', false)->assertSee('name="ends_at" type="date"', false);
+        $this->get('/admin/classes')->assertOk()->assertSee('name="starts_at" type="date"', false)->assertSee('name="ends_at" type="date"', false)
+            ->assertSee('Monday · 7:00 PM – 9:00 PM');
         $payload['class_sessions'][0]['end_time'] = '17:00';
         $this->putJson('/admin/classes/batches/'.$batch->id, $payload)->assertUnprocessable()->assertJsonValidationErrors('class_sessions.0.end_time');
         $payload['class_sessions'] = [];
