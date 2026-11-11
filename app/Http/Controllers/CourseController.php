@@ -524,6 +524,38 @@ class CourseController extends Controller
         return $this->subtopicVideoResponse($request, $subtopic, $drive);
     }
 
+    public function previewSubject(int $course, Subject $subject, GoogleDriveVideoService $drive)
+    {
+        abort_unless((int) $subject->course_id === $course, 404);
+        $topics = $subject->topics()->where('course_id', $course)->with('subtopics')->get();
+        $data = [
+            'courseId' => $course,
+            'subject' => ['id'=>$subject->id, 'title'=>$subject->title],
+            'backUrl' => route('admin.content.subjects', $course, false),
+            'topics' => $topics->map(fn ($topic) => [
+                'id'=>$topic->id, 'title'=>$topic->title, 'subjectId'=>$subject->id,
+                'subtopics'=>$topic->subtopics->reject(fn ($sub) => $sub->content_type === 'zoom_link')->values()->map(function ($sub) use ($course, $drive) {
+                    $uploaded = $sub->video_path || ($drive->enabled() && $drive->fileIdFromUrl($sub->video_url));
+                    $videoUrl = filter_var($sub->video_url, FILTER_VALIDATE_URL) && in_array(parse_url($sub->video_url, PHP_URL_SCHEME), ['http', 'https'], true) ? $sub->video_url : null;
+                    $pdf = $this->documentType($sub->documentation_path, $sub->documentation_filename) === 'pdf';
+                    return [
+                        'id'=>$sub->id, 'title'=>$sub->title, 'contentType'=>$sub->content_type, 'instructions'=>$sub->instructions,
+                        'videoUrl'=>$uploaded ? null : $videoUrl,
+                        'videoUploadUrl'=>$uploaded ? route('admin.content.subtopics.preview.video', [$course, $sub->id], false) : null,
+                        'documentationPath'=>$pdf ? route('admin.content.subtopics.preview.pdf', [$course, $sub->id], false) : null,
+                        'documentationType'=>$pdf ? 'pdf' : null, 'documentationFilename'=>$sub->documentation_filename,
+                        'timeLimitMinutes'=>$sub->assessment_time_limit_minutes,
+                    ];
+                }),
+            ]),
+        ];
+        $html = file_get_contents(public_path('index.html'));
+        $json = json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_THROW_ON_ERROR);
+        $head = '<head><base href="/"><script id="subject-preview-data" type="application/json">'.$json.'</script>';
+
+        return response(str_replace('<head>', $head, $html))->header('Cache-Control', 'private, no-store');
+    }
+
     public function previewSubtopicPdf(int $course, Subtopic $subtopic)
     {
         abort_unless((int) $subtopic->topic?->course_id === $course, 404);

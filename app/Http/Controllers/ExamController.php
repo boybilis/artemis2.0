@@ -162,6 +162,42 @@ class ExamController extends Controller
         return app(\App\Services\SubjectPolicy::class)->accepted($userId, $preTest->topic->subject_id);
     }
 
+    private function previewAssessment(int $course, \App\Models\Subtopic $subtopic)
+    {
+        abort_unless((int) $subtopic->topic?->course_id === $course && in_array($subtopic->content_type, ['pre_test', 'post_test', 'practice_test', 'mock_exam'], true), 404);
+        return $subtopic->questions()->whereIn('question_type', ['subtopic_assessment', $subtopic->content_type])->where('status', 'approved');
+    }
+
+    public function previewSubtopicQuestions(int $course, \App\Models\Subtopic $subtopic)
+    {
+        $questions = app(AssessmentQuestionSelector::class)->select($this->previewAssessment($course, $subtopic), min(200, $subtopic->assessment_question_count ?: 200));
+        return response()->json(['questions'=>$questions->map(fn ($q) => [
+            'id'=>$q->id, 'question'=>$q->question, 'imageUrl'=>$q->image_path ? asset('storage/'.$q->image_path) : null,
+            'options'=>$q->options, 'responseType'=>$q->response_type, 'responseConfig'=>$q->learnerResponseConfig(), 'maximumPoints'=>(float) $q->maximum_points,
+        ]), 'timeLimitMinutes'=>$subtopic->assessment_time_limit_minutes])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function scoreSubtopicPreview(Request $request, int $course, \App\Models\Subtopic $subtopic)
+    {
+        $query = $this->previewAssessment($course, $subtopic);
+        $data = $request->validate(['ids'=>'required|array|min:1|max:200', 'ids.*'=>'required|integer|distinct', 'answers'=>'present|array|max:200']);
+        $questions = $query->whereIn('id', $data['ids'])->get()->keyBy('id');
+        abort_unless($questions->count() === count($data['ids']), 422, 'The preview questions have changed. Start the preview again.');
+        $earned = $possible = 0;
+        $review = [];
+        foreach ($data['ids'] as $index => $id) {
+            $question = $questions[$id];
+            $answer = $data['answers'][$index] ?? null;
+            $grade = $question->gradeAnswer($answer);
+            $earned += $grade['earned'];
+            $possible += $grade['possible'];
+            $review[] = ['question'=>$question->question, 'imageUrl'=>$question->image_path ? asset('storage/'.$question->image_path) : null,
+                'learnerAnswer'=>$question->formatAnswerForReview($answer), 'correctAnswer'=>$question->correctAnswerForReview(), 'rationale'=>$question->rationale, 'correct'=>$grade['correct']];
+        }
+        return response()->json(['score'=>$earned, 'total'=>$possible, 'questions'=>$review,
+            'passed'=>$possible > 0 && ($earned / $possible) * 100 >= ($subtopic->passing_percentage ?? 80)])->header('Cache-Control', 'private, no-store');
+    }
+
     public function getSubtopicQuestions(Request $request, $courseId, $subtopicId)
     {
         $user = Auth::user();

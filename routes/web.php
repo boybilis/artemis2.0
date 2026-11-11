@@ -243,6 +243,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
             Route::middleware(RoleMiddleware::class.':admin,instructor,encoder')->group(function () {
             // Subjects CRUD
+            Route::get('/subjects/{subject}/preview', [CourseController::class, 'previewSubject'])->name('content.subjects.preview');
             Route::post('/subjects/reorder', [AdminController::class, 'reorderSubjects'])->name('content.subjects.reorder');
             Route::post('/subjects', [AdminController::class, 'storeSubject'])->name('content.subjects.store');
             Route::post('/subjects/{subject}', [AdminController::class, 'updateSubject'])->name('content.subjects.update');
@@ -261,6 +262,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // Subtopics CRUD
             Route::get('/subtopics/{subtopic}/preview/video', [CourseController::class, 'previewSubtopicVideo'])->name('content.subtopics.preview.video');
             Route::get('/subtopics/{subtopic}/preview/pdf', [CourseController::class, 'previewSubtopicPdf'])->name('content.subtopics.preview.pdf');
+            Route::get('/subtopics/{subtopic}/preview/assessment', [ExamController::class, 'previewSubtopicQuestions'])->name('content.subtopics.preview.questions');
+            Route::post('/subtopics/{subtopic}/preview/assessment', [ExamController::class, 'scoreSubtopicPreview'])->name('content.subtopics.preview.score');
             Route::post('/subtopics', [AdminController::class, 'storeSubtopic'])->name('content.subtopics.store');
             Route::post('/subtopics/{subtopic}/approve', [AdminController::class, 'approveSubtopic'])->name('content.subtopics.approve');
             Route::post('/subtopics/{subtopic}', [AdminController::class, 'updateSubtopic'])->name('content.subtopics.update');

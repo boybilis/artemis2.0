@@ -83,7 +83,11 @@ function getCsrfToken() {
     return null;
 }
 
+const subjectPreview = JSON.parse(document.getElementById('subject-preview-data')?.textContent || 'null');
 async function apiRequest(url, method = 'GET', data = null, {silent = false} = {}) {
+    if (subjectPreview && !/^\/admin\/content\/courses\/\d+\/subtopics\/\d+\/preview\/assessment$/.test(url)) {
+        throw new Error('This action is unavailable in subject preview.');
+    }
     const options = {
         method: method,
         headers: {
@@ -786,6 +790,18 @@ async function loadTopicsIfNeeded(courseId) {
 }
 
 async function boot() {
+    if (subjectPreview) {
+        await Promise.resolve();
+        subjects = [subjectPreview.subject];
+        topics = subjectPreview.topics;
+        currentCourseId = subjectPreview.courseId;
+        const note = document.createElement('p');
+        note.textContent = 'Staff preview · Sections unlocked · Progress and test scores are not saved';
+        note.style.cssText = 'margin:0;padding:.65rem 1rem;background:#19344f;color:#fff;font-size:.8rem';
+        $('subtopic-header').after(note);
+        openSubjectLearningWorkspace(subjectPreview.subject.id);
+        return;
+    }
     // Fetch public curriculum for the landing page right away
     loadPublicCurriculum();
 
@@ -805,6 +821,7 @@ async function boot() {
 
 // Start boot pipeline
 boot().then(() => {
+    if (subjectPreview) return;
     if (new URLSearchParams(location.search).get('login') === '1' && !state.user) {
         $('nav-login-btn')?.click();
     }
@@ -1484,7 +1501,7 @@ function getSubtopicLearningItemCount(subtopic) {
 function getTopicFlatLearningItems(topic) {
     const items = [];
     (topic.subtopics || []).forEach((sub, subIndex) => {
-        if (sub.contentType === 'mock_exam') return;
+        if (sub.contentType === 'mock_exam' && !subjectPreview) return;
         if (sub.contentType === 'zoom_link') {
             items.push({sub, subIndex, type: 'zoom'});
             return;
@@ -1575,6 +1592,7 @@ function isTopicContentComplete(topic) {
 }
 
 function isLearningItemAccessible(topic, item, flatIndex) {
+    if (subjectPreview) return Boolean(item);
     const preTestCompleted = hasCompletedSubjectPreTest(topic.subjectId);
     const isPolicyTopic = isPolicyLearningTopic(topic);
     const isPreTestTopic = isPreTestLearningTopic(topic);
@@ -1646,7 +1664,7 @@ function openSubjectLearningWorkspace(subjectId) {
     renderCompleteSubjectSidebar({subjectId:currentSubjectId,id:null});
     showScreen('lesson-screen');
     if(window.lucide)lucide.createIcons({root:$('lesson-screen')});
-    window.refreshLearnerCourseZoom?.();
+    if (!subjectPreview) window.refreshLearnerCourseZoom?.();
 }
 
 function renderCourseOverview() {
@@ -2150,7 +2168,7 @@ function renderLesson(openIdx = 0) {
     // Build flattened items list for openFlattenedItem()
     window.currentFlattenedItems = [];
     subtopics.forEach((sub, subIndex) => {
-        if (sub.contentType === 'mock_exam') return;
+        if (sub.contentType === 'mock_exam' && !subjectPreview) return;
         if (sub.contentType === 'zoom_link') {
             window.currentFlattenedItems.push({ sub, type: 'zoom', subIndex });
             return;
@@ -2173,7 +2191,7 @@ function renderLesson(openIdx = 0) {
 
     // Build GROUPED sidebar: subtopic title as header, items nested under it
     subtopics.forEach((sub, subIndex) => {
-        if (sub.contentType === 'mock_exam') return;
+        if (sub.contentType === 'mock_exam' && !subjectPreview) return;
         // ── Group header (non-clickable) ──
         const group = document.createElement('div');
         group.className = 'sub-group';
@@ -2192,7 +2210,7 @@ function renderLesson(openIdx = 0) {
             });
         groupHeader.innerHTML = `
             <span class="sub-group-num">${subIndex + 1}</span>
-            <span class="sub-group-title">${sub.title}</span>
+            <span class="sub-group-title">${escapeHtml(sub.title)}</span>
             ${subtopicCompleted ? '<span class="subtopic-complete-check" title="Completed"><i data-lucide="check"></i></span>' : ''}
         `;
         group.appendChild(groupHeader);
@@ -2239,9 +2257,9 @@ function renderLesson(openIdx = 0) {
             if (!itemAccessible) {
                 btn.classList.add('locked');
                 const lockReason = flatItem?.sub?.contentType === 'mock_exam' ? 'Complete all required content first' : 'Locked';
-                btn.innerHTML = `<span class="sub-child-icon" style="opacity: 0.5; margin-right: 0.3rem;"><i data-lucide="lock" style="width: 14px; height: 14px;"></i></span><span class="sub-child-label">${label}</span><span class="sub-child-lock-reason">${lockReason}</span>`;
+                btn.innerHTML = `<span class="sub-child-icon" style="opacity: 0.5; margin-right: 0.3rem;"><i data-lucide="lock" style="width: 14px; height: 14px;"></i></span><span class="sub-child-label">${escapeHtml(label)}</span><span class="sub-child-lock-reason">${lockReason}</span>`;
             } else {
-                btn.innerHTML = `<span class="sub-child-label">${label}</span>`;
+                btn.innerHTML = `<span class="sub-child-label">${escapeHtml(label)}</span>`;
             }
 
             btn.addEventListener('click', () => {
@@ -2288,7 +2306,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
         const isPolicy = isPolicyLearningTopic(topic);
         const awaitingAgreement = isPolicy && needsSubjectPolicyAcceptance(topic.subjectId);
         const isPreTestTopic = isPreTestLearningTopic(topic);
-        const topicUnlocked = isPolicy || preTestCompleted || (isPreTestTopic && policyCompleted);
+        const topicUnlocked = subjectPreview || isPolicy || preTestCompleted || (isPreTestTopic && policyCompleted);
         const requiredItems = items.filter(item => item.type !== 'none' && !item.sub.isBatchZoom);
         const topicCompleted = !awaitingAgreement && requiredItems.length > 0 && requiredItems.every((item, index) => {
             const actualIndex = items.indexOf(item);
@@ -2339,6 +2357,7 @@ function renderCompleteSubjectSidebar(activeTopic) {
 }
 
 function outlineItemAccessible(topic, item, itemIndex) {
+    if (subjectPreview) return true;
     if (item.sub.contentType === 'mock_exam') return false;
     if (item.sub.isBatchZoom) return hasCompletedSubjectPreTest(topic.subjectId);
     const progressIndex = Number(state.topicProgressMap[topic.id] || 0);
@@ -2403,7 +2422,7 @@ function openFlattenedItem(index) {
     // Keep one sequential Continue control visible across every learning item.
     const completeBar = $('mark-complete-bar');
     const completeBtn = $('mark-complete-btn');
-    if (completeBar && completeBtn) {
+    if (!subjectPreview && completeBar && completeBtn) {
         const isLastItem = index === window.currentFlattenedItems.length - 1;
         const currentTopic = topics[state.currentTopicIndex];
         const currentIsPolicy = isPolicyLearningTopic(currentTopic);
@@ -2503,6 +2522,7 @@ function renderZoomSession(sub) {
 }
 
 async function markCurrentLearningItemComplete(index) {
+    if (subjectPreview) return false;
     if (window.currentLearningItemIndex !== index) return false;
     const topic=topics[state.currentTopicIndex];
     if(!topic || !window.currentFlattenedItems[index])return false;
@@ -2576,6 +2596,22 @@ function renderSubtopicAssessment(sub) {
             : '';
     }
     const button = $('start-subtopic-assessment');
+    if (subjectPreview) {
+        attempts.textContent = 'Preview only · No attempts or scores are saved';
+        button.textContent = `Start ${label} Preview`;
+        button.disabled = false;
+        $('view-subtopic-assessment-summary').style.display = 'none';
+        button.onclick = async () => {
+            button.disabled = true;
+            try {
+                const result = await apiRequest(`/admin/content/courses/${currentCourseId}/subtopics/${sub.id}/preview/assessment`);
+                activeSubtopicAssessmentId = sub.id;
+                state.examType = 'subtopic_assessment';
+                startQuiz(result.questions, {title: sub.title, timeLimitMinutes: result.timeLimitMinutes});
+            } catch {} finally { button.disabled = false; }
+        };
+        return;
+    }
     const exhausted = limit && (sub.attemptsUsed || 0) >= limit;
     button.textContent = `Start ${label}`;
     button.disabled = Boolean(exhausted || !sub.questionCount);
@@ -2977,6 +3013,7 @@ const backBtn = $('lesson-back-btn');
 if (backBtn) backBtn.addEventListener('click', () => {
     setLessonSidebarOpen(false);
     pauseActiveLessonVideo();
+    if (subjectPreview) { location.assign(subjectPreview.backUrl); return; }
     if (currentSubjectId !== null) renderSubjects();
     showScreen('dashboard-screen');
 });
@@ -3674,6 +3711,14 @@ function showAssessmentResultModal(data) {
 
 async function finishQuiz() {
     if(state.examType!=='test_bank')clearInterval(quizTimerInterval);
+    if (subjectPreview) {
+        try {
+            const result = await apiRequest(`/admin/content/courses/${currentCourseId}/subtopics/${activeSubtopicAssessmentId}/preview/assessment`, 'POST', {ids:quizData.map(q => q.id), answers:answersList});
+            showAssessmentSummary(result, () => { renderLesson(window.currentLearningItemIndex || 0); showScreen('lesson-screen'); });
+            $('assessment-summary-title').textContent = 'Preview completed — score not saved';
+        } catch {}
+        return;
+    }
     if (state.examType === 'test_bank' && activeTestBankId && activeTestBankQuizId) {
         if(window.testBankSubmissionInFlight)return;
         window.testBankSubmissionInFlight=true;
