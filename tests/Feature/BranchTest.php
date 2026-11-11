@@ -26,7 +26,9 @@ class BranchTest extends TestCase
         $this->get('/branches/cebu')->assertOk()->assertSee('Cebu Review Center')
             ->assertSee('id="nav-login-btn"', false)->assertSee('id="hero-login-btn"', false)
             ->assertSee('id="modal-login"', false)->assertSee('<base href="/">', false)
-            ->assertSee('class="jumbotron branch-hero"', false)->assertSee('src="/branches/cebu/hero"', false)->assertDontSee('/?login=1');
+            ->assertSee('class="jumbotron branch-hero"', false)
+            ->assertSeeInOrder(['src="/branches/cebu/hero"', '<h1>Cebu Review Center</h1>', 'Welcome to Cebu.'], false)
+            ->assertDontSee('/?login=1');
         $this->get('/branches/cebu/hero')->assertOk()->assertHeader('Content-Type', 'image/png');
         $this->putJson('/admin/branches/domain', ['base_domain'=>'example.test'])->assertOk();
         $this->get('https://cebu.example.test/')->assertOk()->assertSee('Cebu Review Center')->assertSee('id="modal-login"', false)->assertDontSee('https://example.test/?login=1');

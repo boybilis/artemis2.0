@@ -3,7 +3,7 @@
 @section('kicker', 'Content Management')
 
 @section('content')
-<link rel="stylesheet" href="{{ asset('branch-landing.css') }}?v=4">
+<link rel="stylesheet" href="{{ asset('branch-landing.css') }}?v=5">
 <style>
     .branch-admin-toolbar,.branch-admin-actions { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem; }
     .branch-admin-list { margin-top:1rem; }
@@ -12,7 +12,6 @@
     #branch-dialog { position:fixed;inset:0;margin:auto;width:min(48rem,calc(100% - 1.5rem));max-height:calc(100dvh - 1.5rem);box-sizing:border-box;overflow:auto;border:1px solid var(--border);border-radius:16px;background:var(--surface-solid);color:var(--text);padding:clamp(.9rem,3vw,1.5rem); }
     #branch-dialog::backdrop { background:rgba(12,29,46,.7); }
     #branch-dialog .field { margin-bottom:.9rem; }
-    #branch-dialog .branch-hero { border-radius:12px;min-height:24rem; }
     #branch-save-error { color:var(--wrong); }
 </style>
 <section class="panel branch-admin-domain">
