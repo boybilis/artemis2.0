@@ -35,7 +35,7 @@
                     <select id="class_batch_international_currency" name="international_currency"><option value="">Select a currency (optional)</option>@foreach(\App\Services\BatchExchangeRates::CURRENCIES as $currency)<option value="{{ $currency }}">{{ $currency }}</option>@endforeach</select>
                     <output id="batch-international-quote" aria-live="polite">Not Available</output>
                 </div>
-                <small class="muted"><span id="batch-international-rate-date"></span>Checkout remains in PHP.</small>
+                <small class="muted">Checkout remains in PHP.</small>
             </div>
             <div class="field"><label>Capacity</label><input id="class_batch_capacity" name="capacity" type="number" min="1"></div>
             <div class="field"><label>Status</label><select id="class_batch_status" name="status"><option value="open">Open</option><option value="draft">Draft</option><option value="closed">Closed</option><option value="completed">Completed</option></select></div>
@@ -81,7 +81,7 @@
                 <div><dt>Capacity</dt><dd>{{ $batch->capacity ?: 'Unlimited' }}</dd></div>
                 <div><dt>Price (PHP)</dt><dd>{{ $batch->price === null ? 'Not set' : '₱'.number_format($batch->price, 2) }}</dd></div>
                 @php($internationalPrice = $batch->internationalPrice())
-                <div><dt>International Price</dt><dd>@if($internationalPrice){{ $internationalPrice['currency'] }} {{ number_format($internationalPrice['amount'], 0) }}@if(isset($internationalPrice['date']))<br><small class="muted">Rate as of {{ $internationalPrice['date'] }}</small>@endif @else Not Available @endif</dd></div>
+                <div><dt>International Price</dt><dd>@if($internationalPrice){{ $internationalPrice['currency'] }} {{ number_format($internationalPrice['amount'], 0) }}@else Not Available @endif</dd></div>
             </dl>
             </div>
             </dialog>
@@ -177,9 +177,7 @@ function refreshBatchQuote() {
     const currency = document.getElementById('class_batch_international_currency').value;
     const price = document.getElementById('class_batch_price').value;
     const output = document.getElementById('batch-international-quote');
-    const rateDate = document.getElementById('batch-international-rate-date');
     output.textContent = 'Not Available';
-    rateDate.textContent = '';
     if (!currency || !price || !document.getElementById('class_batch_price').validity.valid) return;
     output.textContent = 'Checking exchange rate…';
     batchQuoteTimer = setTimeout(async () => {
@@ -191,12 +189,10 @@ function refreshBatchQuote() {
             const quote = await response.json();
             if (!request.signal.aborted) {
                 output.textContent = new Intl.NumberFormat(undefined,{style:'currency',currency,currencyDisplay:'code',maximumFractionDigits:0,minimumFractionDigits:0}).format(quote.amount);
-                rateDate.textContent = `Reference rate as of ${quote.date}. `;
             }
         } catch {
             if (!request.signal.aborted) {
-                output.textContent = 'Not Available';
-                rateDate.textContent = 'Exchange rate could not be loaded. ';
+                output.textContent = 'Not Available — exchange rate could not be loaded';
             }
         }
     }, 350);

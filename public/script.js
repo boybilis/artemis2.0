@@ -983,7 +983,6 @@ async function openBuyVoucherModal(batchId = null) {
     if ($('purchase-billing-price')) $('purchase-billing-price').textContent = billingPrice;
     if ($('purchase-billing-notice')) {
         $('purchase-billing-notice').classList.toggle('hidden', !course.currency_code || course.currency_code === 'PHP');
-        $('purchase-rate-date').textContent = course.display_rate_date ? ` Reference rate as of ${course.display_rate_date}.` : '';
     }
     if ($('purchase-access-until')) {
         const endDate = course.batch_ends_at ? new Date(course.batch_ends_at).toLocaleString() : 'the batch access period ends';
