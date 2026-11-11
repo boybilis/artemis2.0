@@ -18,13 +18,13 @@
                 <legend>Weekly class sessions</legend>
                 <small class="muted">Give each session its own hours. Leave the row blank for a flexible schedule.</small>
                 <div id="batch-session-rows"></div>
-                <button type="button" id="batch-add-session" class="btn-ghost">+ Add Session</button>
+                <button type="button" id="batch-add-session" class="btn-primary">+ Add Session</button>
                 <template id="batch-session-template">
                     <div class="batch-session-row">
                         <label>Day<select data-session-field="day"><option value="">Select day</option>@foreach(\App\Models\CourseBatch::CLASS_DAYS as $day)<option>{{ $day }}</option>@endforeach</select></label>
                         <label>Start time<input type="time" data-session-field="start_time"></label>
                         <label>End time<input type="time" data-session-field="end_time"></label>
-                        <button type="button" class="btn-ghost batch-remove-session">Remove</button>
+                        <button type="button" class="batch-remove-session" aria-label="Remove session" title="Remove session"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V3h8v3m3 0-1 15H6L5 6m5 4v7m4-7v7"/></svg></button>
                     </div>
                 </template>
             </fieldset>
@@ -150,6 +150,11 @@
     .batch-session-row { display:grid;grid-template-columns:minmax(0,1.2fr) repeat(2,minmax(0,1fr)) auto;gap:.65rem;align-items:end;margin:.75rem 0; }
     .batch-session-row label { display:grid;gap:.35rem;min-width:0; }
     .batch-session-row :is(input,select) { width:100%;min-width:0; }
+    #classBatchForm #batch-add-session { display:inline-flex;align-self:start;justify-self:start;width:auto;min-height:44px;background:#184b7a;color:#fff; }
+    #classBatchForm #batch-add-session:hover:not(:disabled) { background:#102f50; }
+    .batch-session-row .batch-remove-session { display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--wrong);cursor:pointer; }
+    .batch-session-row .batch-remove-session:hover { background:rgba(239,68,68,.1); }
+    .batch-session-row .batch-remove-session:focus-visible { outline:2px solid currentColor;outline-offset:2px; }
     @media(max-width:650px){.batch-session-row{grid-template-columns:repeat(2,minmax(0,1fr))}.batch-session-row label:first-child{grid-column:1/-1}}
 </style>
 <script src="{{ asset('class-zoom-placement.js') }}?v=1"></script>
