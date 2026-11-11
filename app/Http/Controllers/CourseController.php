@@ -104,7 +104,7 @@ class CourseController extends Controller
                     'batch_id'=>$batch->id, 'batch_name'=>$batch->name, 'batch_code'=>$batch->code,
                     'batch_description'=>$batch->description, 'batch_starts_at'=>$batch->starts_at?->toIso8601String(),
                     'batch_ends_at'=>$batch->ends_at?->toIso8601String(), 'batch_capacity'=>$batch->capacity,
-                    'batch_schedule_day'=>$batch->schedule_day, 'batch_start_time'=>$batch->start_time,
+                    'batch_schedule_day'=>$batch->schedule_day, 'batch_start_time'=>$batch->start_time, 'batch_class_sessions'=>$batch->weeklySessions(),
                     'batch_end_time'=>$batch->end_time, 'batch_modality'=>$batch->modality,
                     'batch_includes_intensive_final_coaching'=>(bool) $batch->includes_intensive_final_coaching,
                     'batch_status'=>$batch->status, 'batch_price'=>(float) $batch->price,

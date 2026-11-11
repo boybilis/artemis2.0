@@ -12,21 +12,22 @@
         <div class="form-grid">
             <div class="field"><label>Batch name</label><input id="class_batch_name" name="name" required placeholder="OCTOBER 2026 (MWF) FULL"></div>
             <div class="field"><label>Batch code</label><input id="class_batch_code" name="code" readonly placeholder="Generated from the batch name"><small class="muted">Automatically generated and checked for uniqueness when saved.</small></div>
-            <div class="field"><label>Starts</label><input id="class_batch_starts_at" name="starts_at" type="datetime-local"></div>
-            <div class="field"><label>Ends</label><input id="class_batch_ends_at" name="ends_at" type="datetime-local"></div>
-            <div class="field">
-                <fieldset class="class-days-fieldset"><legend>Class days</legend>
-                    <input id="class_batch_schedule_day" name="schedule_day" type="hidden">
-                    <input type="hidden" name="schedule_days_present" value="1">
-                    <div class="class-days-checklist">
-                    @foreach(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'] as $day)
-                        <label><input class="form-check-input" type="checkbox" name="schedule_days[]" value="{{ $day }}" @checked(in_array($day, old('schedule_days', [])))><span>{{ $day }}</span></label>
-                    @endforeach
-                    </div><small class="muted">Select one or more class days. Leave unchecked for a flexible schedule.</small>
-                </fieldset>
-            </div>
-            <div class="field"><label>Start time</label><input id="class_batch_start_time" name="start_time" type="time"></div>
-            <div class="field"><label>End time</label><input id="class_batch_end_time" name="end_time" type="time"></div>
+            <div class="field"><label for="class_batch_starts_at">Start date</label><input id="class_batch_starts_at" name="starts_at" type="date"></div>
+            <div class="field"><label for="class_batch_ends_at">End date</label><input id="class_batch_ends_at" name="ends_at" type="date"></div>
+            <fieldset class="field full batch-session-fieldset">
+                <legend>Weekly class sessions</legend>
+                <small class="muted">Give each session its own hours. Leave the row blank for a flexible schedule.</small>
+                <div id="batch-session-rows"></div>
+                <button type="button" id="batch-add-session" class="btn-ghost">+ Add Session</button>
+                <template id="batch-session-template">
+                    <div class="batch-session-row">
+                        <label>Day<select data-session-field="day"><option value="">Select day</option>@foreach(\App\Models\CourseBatch::CLASS_DAYS as $day)<option>{{ $day }}</option>@endforeach</select></label>
+                        <label>Start time<input type="time" data-session-field="start_time"></label>
+                        <label>End time<input type="time" data-session-field="end_time"></label>
+                        <button type="button" class="btn-ghost batch-remove-session">Remove</button>
+                    </div>
+                </template>
+            </fieldset>
             <div class="field"><label>Modality</label><select id="class_batch_modality" name="modality"><option value="">Select modality</option><option>Online</option><option>Blended</option><option>Live via Zoom</option></select></div>
             <div class="field"><label>Batch price (PHP)</label><input id="class_batch_price" name="price" type="number" min="0" step=".01" required></div>
             <div class="field"><label>Display price (USD)</label><input id="class_batch_usd_price" name="usd_price" type="number" min="0" step=".01"></div>
@@ -52,7 +53,7 @@
     <div data-ajax-table="class-batches">
     <div class="class-batch-grid">
     @forelse($batches as $batch)
-        @php($editor = ['id'=>$batch->id,'name'=>$batch->name,'code'=>$batch->code,'description'=>$batch->description,'course_type'=>$batch->course_type,'starts_at'=>$batch->starts_at?->format('Y-m-d\TH:i'),'ends_at'=>$batch->ends_at?->format('Y-m-d\TH:i'),'schedule_day'=>$batch->schedule_day,'start_time'=>substr((string)$batch->start_time,0,5),'end_time'=>substr((string)$batch->end_time,0,5),'modality'=>$batch->modality,'price'=>$batch->price,'usd_price'=>$batch->usd_price,'capacity'=>$batch->capacity,'status'=>$batch->status,'course_ids'=>$batch->courses->pluck('id')->values()])
+        @php($editor = ['id'=>$batch->id,'name'=>$batch->name,'code'=>$batch->code,'description'=>$batch->description,'course_type'=>$batch->course_type,'starts_at'=>$batch->starts_at?->format('Y-m-d'),'ends_at'=>$batch->ends_at?->format('Y-m-d'),'class_sessions'=>$batch->weeklySessions(),'legacy_schedule'=>$batch->class_sessions === null,'schedule_day'=>$batch->schedule_day,'start_time'=>substr((string)$batch->start_time,0,5),'end_time'=>substr((string)$batch->end_time,0,5),'modality'=>$batch->modality,'price'=>$batch->price,'usd_price'=>$batch->usd_price,'capacity'=>$batch->capacity,'status'=>$batch->status,'course_ids'=>$batch->courses->pluck('id')->values()])
         <article class="class-batch-card">
             <div class="class-batch-card-head"><div><small>{{ $batch->code }}</small><h3>{{ $batch->name }}</h3></div><button type="button" class="btn-ghost class-batch-details-button" aria-haspopup="dialog" aria-controls="batch-details-{{ $batch->id }}" onclick="document.getElementById(this.getAttribute('aria-controls')).showModal()">View Details</button></div>
             <dialog id="batch-details-{{ $batch->id }}" class="class-batch-details" aria-labelledby="batch-details-title-{{ $batch->id }}">
@@ -64,7 +65,7 @@
             <div class="class-batch-meta"><span><i data-lucide="calendar-days"></i>{{ $batch->starts_at?->format('M d, Y') ?? 'Open schedule' }} – {{ $batch->ends_at?->format('M d, Y') ?? 'No end date' }}</span><span><i data-lucide="clock-3"></i>{{ $batch->schedule_day ?: 'Flexible schedule' }} · {{ $batch->modality ?: 'Online' }}</span><span><i data-lucide="users"></i>{{ $batch->active_enrollments_count }} enrolled</span></div>
             <div class="class-batch-courses"><strong>Included courses</strong>@foreach($batch->courses as $course)<span class="class-course-capsule">{{ $course->title }}@if($batch->includes_intensive_final_coaching && $course->subjects->contains('is_intensive_final_coaching', true))<em class="class-course-phase"><i data-lucide="badge-check"></i>Intensive Final Coaching Phase</em>@endif</span>@endforeach</div>
             <dl class="class-batch-detail-grid">
-                <div><dt>Class time</dt><dd>{{ $editor['start_time'] ?: 'Not set' }}{{ $editor['end_time'] ? ' – '.$editor['end_time'] : '' }}</dd></div>
+                <div><dt>Class sessions</dt><dd>@forelse($editor['class_sessions'] as $session)<div>{{ $session['day'] }} · {{ $session['start_time'] ?: 'Not set' }}{{ $session['end_time'] ? ' – '.$session['end_time'] : '' }}</div>@empty{{ $editor['start_time'] ?: 'Not set' }}{{ $editor['end_time'] ? ' – '.$editor['end_time'] : '' }}@endforelse</dd></div>
                 <div><dt>Capacity</dt><dd>{{ $batch->capacity ?: 'Unlimited' }}</dd></div>
                 <div><dt>Price (PHP)</dt><dd>{{ $batch->price === null ? 'Not set' : '₱'.number_format($batch->price, 2) }}</dd></div>
                 <div><dt>Price (USD)</dt><dd>{{ $batch->usd_price === null ? 'Not set' : '$'.number_format($batch->usd_price, 2) }}</dd></div>
@@ -131,14 +132,72 @@
 .class-days-checklist input[type="checkbox"]{appearance:auto;-webkit-appearance:checkbox;width:16px!important;height:16px!important;min-width:16px;margin:0;padding:0;accent-color:#11a7c0}
 .class-days-checklist input:focus-visible{outline:2px solid #11a7c0;outline-offset:3px}
 </style>
-<script src="{{ asset('class-batch-days.js') }}?v=1"></script>
+<style>
+    .batch-session-fieldset { min-width:0;border:1px solid var(--border);border-radius:12px;padding:1rem; }
+    .batch-session-row { display:grid;grid-template-columns:minmax(0,1.2fr) repeat(2,minmax(0,1fr)) auto;gap:.65rem;align-items:end;margin:.75rem 0; }
+    .batch-session-row label { display:grid;gap:.35rem;min-width:0; }
+    .batch-session-row :is(input,select) { width:100%;min-width:0; }
+    @media(max-width:650px){.batch-session-row{grid-template-columns:repeat(2,minmax(0,1fr))}.batch-session-row label:first-child{grid-column:1/-1}}
+</style>
 <script src="{{ asset('class-zoom-placement.js') }}?v=1"></script>
 <script>
 const classCsrf=@json(csrf_token());let activeClassBatch=null;let classZoomSessions=[];
+let batchSessionIndex = 0, legacyBatchSessions = null;
+const batchSessionRows = document.getElementById('batch-session-rows');
+function readBatchSessions() {
+    return Array.from(batchSessionRows.children, row => Object.fromEntries(Array.from(row.querySelectorAll('[data-session-field]'), input => [input.dataset.sessionField, input.value])));
+}
+function appendBatchSession(values = {}) {
+    if (!batchSessionRows || batchSessionRows.children.length >= 28) return;
+    const row = document.getElementById('batch-session-template').content.firstElementChild.cloneNode(true);
+    row.querySelectorAll('[data-session-field]').forEach(input => {
+        const key = input.dataset.sessionField;
+        input.name = `class_sessions[${batchSessionIndex}][${key}]`;
+        input.value = values[key] ?? '';
+    });
+    batchSessionIndex++;
+    row.querySelector('.batch-remove-session').onclick = () => {
+        row.remove();
+        if (!batchSessionRows.children.length) appendBatchSession();
+        document.getElementById('batch-add-session').disabled = false;
+    };
+    batchSessionRows.append(row);
+    document.getElementById('batch-add-session').disabled = batchSessionRows.children.length >= 28;
+    return row;
+}
+function renderBatchSessions(sessions = []) {
+    if (!batchSessionRows) return;
+    batchSessionIndex = 0;
+    batchSessionRows.replaceChildren();
+    for (const session of sessions.length ? sessions : [{}]) appendBatchSession(session);
+}
+if (batchSessionRows) {
+    renderBatchSessions();
+    document.getElementById('batch-add-session').onclick = () => appendBatchSession()?.querySelector('select').focus();
+    document.getElementById('classBatchForm').addEventListener('submit', async event => {
+        event.preventDefault();
+        const form = event.currentTarget, button = form.querySelector('[type=submit]');
+        if (button.disabled) return;
+        const payload = new FormData(form);
+        if (legacyBatchSessions === JSON.stringify(readBatchSessions())) {
+            for (const key of [...payload.keys()]) if (key.startsWith('class_sessions[')) payload.delete(key);
+        }
+        button.disabled = true;
+        try {
+            const response = await fetch(form.action, {method:'POST', body:payload, headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});
+            const data = await response.json().catch(() => null);
+            if (!response.ok || !data?.success) throw new Error(Object.values(data?.errors || {}).flat()[0] || 'Could not save the batch.');
+            closeClassBatchForm();
+            showAdminToast(data.message, 'success');
+            await loadAdminTable('class-batches', @json(route('admin.classes.index')), false);
+        } catch (error) { showAdminToast(error.message, 'error'); }
+        finally { button.disabled = false; }
+    });
+}
 function openClassBatchForm(){resetClassBatchForm();document.getElementById('classBatchFormPanel').classList.remove('hidden');document.getElementById('showClassBatchForm').classList.add('hidden');document.getElementById('classBatchFormPanel').scrollIntoView({behavior:'smooth',block:'start'});}
 function closeClassBatchForm(){resetClassBatchForm();document.getElementById('classBatchFormPanel').classList.add('hidden');document.getElementById('showClassBatchForm').classList.remove('hidden');}
-function editClassBatch(item){const form=document.getElementById('classBatchForm');document.getElementById('classBatchFormPanel').classList.remove('hidden');document.getElementById('showClassBatchForm').classList.add('hidden');form.action=`/admin/classes/batches/${item.id}`;document.getElementById('class_batch_method').value='PUT';document.getElementById('class-batch-form-title').textContent='Edit Batch';['name','code','description','starts_at','ends_at','schedule_day','start_time','end_time','modality','price','usd_price','capacity','status'].forEach(key=>document.getElementById(`class_batch_${key}`).value=item[key]??'');setClassBatchDays(item.schedule_day);document.getElementById('class_batch_course_type').value=item.course_type||'comprehensive';document.querySelectorAll('input[name="course_ids[]"]').forEach(input=>input.checked=item.course_ids.includes(Number(input.value)));document.getElementById('classBatchFormPanel').scrollIntoView({behavior:'smooth',block:'start'});}
-function resetClassBatchForm(){const form=document.getElementById('classBatchForm');form.reset();form.action='{{ route('admin.classes.batches.store') }}';document.getElementById('class_batch_method').value='POST';document.getElementById('class-batch-form-title').textContent='Create Batch';}
+function editClassBatch(item){const form=document.getElementById('classBatchForm');document.getElementById('classBatchFormPanel').classList.remove('hidden');document.getElementById('showClassBatchForm').classList.add('hidden');form.action=`/admin/classes/batches/${item.id}`;document.getElementById('class_batch_method').value='PUT';document.getElementById('class-batch-form-title').textContent='Edit Batch';['name','code','description','starts_at','ends_at','modality','price','usd_price','capacity','status'].forEach(key=>document.getElementById(`class_batch_${key}`).value=item[key]??'');renderBatchSessions(item.class_sessions); legacyBatchSessions = item.legacy_schedule ? JSON.stringify(readBatchSessions()) : null;document.getElementById('class_batch_course_type').value=item.course_type||'comprehensive';document.querySelectorAll('input[name="course_ids[]"]').forEach(input=>input.checked=item.course_ids.includes(Number(input.value)));document.getElementById('classBatchFormPanel').scrollIntoView({behavior:'smooth',block:'start'});}
+function resetClassBatchForm(){const form=document.getElementById('classBatchForm');form.reset();legacyBatchSessions=null;renderBatchSessions();form.action='{{ route('admin.classes.batches.store') }}';document.getElementById('class_batch_method').value='POST';document.getElementById('class-batch-form-title').textContent='Create Batch';}
 @if($errors->any()) document.getElementById('showClassBatchForm').classList.add('hidden'); @endif
 document.getElementById('class_batch_name')?.addEventListener('input',event=>{if(document.getElementById('class_batch_method').value!=='POST')return;document.getElementById('class_batch_code').value=(event.target.value||'').trim().toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,70);});
 function resetClassZoomForm(){['class_zoom_id','class_zoom_title','class_zoom_url','class_zoom_recording_url','class_zoom_start','class_zoom_end','class_zoom_description'].forEach(id=>document.getElementById(id).value='');document.getElementById('class_zoom_status').value='scheduled';selectClassZoomPlacement({});}

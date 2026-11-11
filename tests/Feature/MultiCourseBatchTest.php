@@ -21,13 +21,37 @@ class MultiCourseBatchTest extends TestCase
         $this->actingAs($admin)->post('/admin/classes/batches', $payload)->assertRedirect('/admin/classes');
         $batch = CourseBatch::where('name','Weekday Batch')->firstOrFail();
         $this->assertSame('Monday, Wednesday, Friday', $batch->schedule_day);
-        $this->actingAs($admin)->get('/admin/classes')->assertOk()->assertSee('schedule_days[]', false);
+        $this->actingAs($admin)->get('/admin/classes')->assertOk()->assertSee('Weekly class sessions');
         $payload['schedule_days'] = ['Funday'];
         $this->actingAs($admin)->putJson('/admin/classes/batches/'.$batch->id, $payload)->assertUnprocessable();
         $this->assertSame('Monday, Wednesday, Friday', $batch->fresh()->schedule_day);
         unset($payload['schedule_days']);
         $this->actingAs($admin)->put('/admin/classes/batches/'.$batch->id, $payload)->assertRedirect('/admin/classes');
         $this->assertNull($batch->fresh()->schedule_day);
+    }
+
+    public function test_batch_sessions_can_have_different_times_and_can_be_cleared(): void
+    {
+        $admin = User::factory()->create(['role'=>'assistant_admin', 'is_admin'=>false]);
+        $course = Course::create(['title'=>'Nursing', 'is_published'=>true, 'approval_status'=>'approved']);
+        $payload = ['name'=>'Variable hours', 'price'=>100, 'status'=>'open', 'starts_at'=>'2030-01-16', 'ends_at'=>'2030-03-04', 'course_ids'=>[$course->id], 'class_sessions'=>[
+            ['day'=>'Friday', 'start_time'=>'18:00', 'end_time'=>'20:00'],
+            ['day'=>'Monday', 'start_time'=>'19:00', 'end_time'=>'21:00'],
+            ['day'=>null, 'start_time'=>null, 'end_time'=>null],
+        ]];
+        $this->actingAs($admin)->postJson('/admin/classes/batches', $payload)->assertCreated();
+        $batch = CourseBatch::where('name', 'Variable hours')->firstOrFail();
+        $this->assertSame([$payload['class_sessions'][1], $payload['class_sessions'][0]], $batch->weeklySessions());
+        $this->assertSame('Monday, Friday', $batch->schedule_day);
+        $this->assertNull($batch->start_time);
+        $this->assertSame('2030-01-16 00:00:00', $batch->starts_at->format('Y-m-d H:i:s'));
+        $this->assertSame('2030-03-04 23:59:59', $batch->ends_at->format('Y-m-d H:i:s'));
+        $this->get('/admin/classes')->assertOk()->assertSee('name="starts_at" type="date"', false)->assertSee('name="ends_at" type="date"', false);
+        $payload['class_sessions'][0]['end_time'] = '17:00';
+        $this->putJson('/admin/classes/batches/'.$batch->id, $payload)->assertUnprocessable()->assertJsonValidationErrors('class_sessions.0.end_time');
+        $payload['class_sessions'] = [];
+        $this->putJson('/admin/classes/batches/'.$batch->id, $payload)->assertOk();
+        $this->assertSame([], $batch->fresh()->weeklySessions());
     }
 
     public function test_administrator_can_create_one_batch_with_multiple_master_courses(): void

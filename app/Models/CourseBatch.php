@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class CourseBatch extends Model
 {
+    public const CLASS_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     public const COURSE_TYPES = [
         'complete' => 'Complete Review Course',
         'comprehensive' => 'Comprehensive Review Course',
@@ -29,9 +30,22 @@ class CourseBatch extends Model
     {
         return !in_array($this->course_type, ['final_coaching', 'mentoring'], true);
     }
-    protected $fillable = ['course_id', 'name', 'code', 'description', 'course_type', 'includes_intensive_final_coaching', 'starts_at', 'ends_at', 'schedule_day', 'start_time', 'end_time', 'modality', 'price', 'usd_price', 'capacity', 'status', 'created_by'];
+    protected $fillable = ['course_id', 'name', 'code', 'description', 'course_type', 'includes_intensive_final_coaching', 'starts_at', 'ends_at', 'schedule_day', 'start_time', 'end_time', 'class_sessions', 'modality', 'price', 'usd_price', 'capacity', 'status', 'created_by'];
 
-    protected $casts = ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'price' => 'decimal:2', 'usd_price' => 'decimal:2', 'includes_intensive_final_coaching' => 'boolean'];
+    protected $casts = ['starts_at' => 'datetime', 'ends_at' => 'datetime', 'price' => 'decimal:2', 'usd_price' => 'decimal:2', 'includes_intensive_final_coaching' => 'boolean', 'class_sessions' => 'array'];
+
+    public function weeklySessions(): array
+    {
+        if ($this->class_sessions !== null) return $this->class_sessions;
+        $schedule = strtolower(trim((string) $this->schedule_day));
+        $tokens = match ($schedule) {
+            'mwf' => ['mon', 'wed', 'fri'],
+            'tth', 'tts' => $schedule === 'tth' ? ['tue', 'thu'] : ['tue', 'thu', 'sat'],
+            default => preg_split('/[^a-z]+/', $schedule, -1, PREG_SPLIT_NO_EMPTY),
+        };
+        return array_values(array_map(fn ($day) => ['day'=>$day, 'start_time'=>substr((string) $this->start_time, 0, 5), 'end_time'=>substr((string) $this->end_time, 0, 5)],
+            array_filter(self::CLASS_DAYS, fn ($day) => in_array(strtolower($day), $tokens, true) || in_array(strtolower(substr($day, 0, 3)), $tokens, true))));
+    }
 
     public function course() { return $this->belongsTo(Course::class); }
     public function courses() { return $this->belongsToMany(Course::class, 'course_batch_courses', 'batch_id', 'course_id')->withTimestamps(); }

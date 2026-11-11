@@ -199,6 +199,10 @@ function showCourseProfile() {
         const date = new Date(2000,0,1,Number(parts[0] || 0),Number(parts[1] || 0));
         return date.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'});
     };
+    const weeklySessions = profile.batch_class_sessions || [];
+    const sessionTimes = weeklySessions.length
+        ? weeklySessions.map(item => `${item.day}: ${timeLabel(item.start_time)} – ${timeLabel(item.end_time)}`).join(' · ')
+        : `${timeLabel(profile.batch_start_time)} – ${timeLabel(profile.batch_end_time)}`;
     $('course-profile-title').textContent = profile.batch_name || 'Course Profile';
     $('course-profile-subtitle').textContent = `${profile.batch_code || 'Batch'} · ${profile.title || 'Assigned course'}`;
     $('course-profile-content').innerHTML = `
@@ -210,7 +214,7 @@ function showCourseProfile() {
             <div><span>Start Date</span><strong>${dateLabel(profile.batch_starts_at)}</strong></div>
             <div><span>End Date</span><strong>${dateLabel(profile.batch_ends_at)}</strong></div>
             <div><span>Schedule Day</span><strong>${escapeHtml(profile.batch_schedule_day || 'Not specified')}</strong></div>
-            <div><span>Class Time</span><strong>${timeLabel(profile.batch_start_time)} – ${timeLabel(profile.batch_end_time)}</strong></div>
+            <div><span>Class Time</span><strong>${escapeHtml(sessionTimes)}</strong></div>
             <div><span>Price (PHP)</span><strong>₱${Number(profile.batch_price || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>
             <div><span>Price (USD)</span><strong>${profile.batch_usd_price !== null && profile.batch_usd_price !== undefined ? '$'+Number(profile.batch_usd_price).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}) : 'Not specified'}</strong></div>
             <div><span>Capacity</span><strong>${profile.batch_capacity ? Number(profile.batch_capacity).toLocaleString()+' learners' : 'Unlimited'}</strong></div>
@@ -1278,7 +1282,10 @@ function renderDashboard() {
 
             if (!isLocked) {
                 const progress = Math.max(0, Math.min(100, Number(course.course_progress || 0)));
-                const schedule = [course.batch_schedule_day, course.batch_start_time ? String(course.batch_start_time).slice(0, 5) : null].filter(Boolean).join(' · ');
+                const sessions = course.batch_class_sessions || [];
+                const schedule = sessions.length && !course.batch_start_time && sessions.some(item => item.start_time)
+                    ? sessions.map(item => `${item.day} ${item.start_time || ''}${item.end_time ? '–'+item.end_time : ''}`.trim()).join(' · ')
+                    : [course.batch_schedule_day, course.batch_start_time ? String(course.batch_start_time).slice(0, 5) : null].filter(Boolean).join(' · ');
                 card.innerHTML = `
                     <div class="enrolled-card-content">
                         <div class="enrolled-card-eyebrow">

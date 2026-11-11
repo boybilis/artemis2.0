@@ -408,6 +408,7 @@ class AdminController extends Controller
             $batch->courses()->sync($courseIds);
             return $batch;
         });
+        if ($request->expectsJson()) return response()->json(['success'=>true, 'message'=>"{$batch->name} created."], 201);
         return redirect()->route('admin.classes.index')->with('success', "{$batch->name} created.");
     }
 
@@ -419,6 +420,7 @@ class AdminController extends Controller
             $batch->update($data + ['course_id'=>$courseIds[0]]);
             $batch->courses()->sync($courseIds);
         });
+        if ($request->expectsJson()) return response()->json(['success'=>true, 'message'=>'Batch updated.']);
         return redirect()->route('admin.classes.index')->with('success', 'Batch updated.');
     }
 
@@ -431,6 +433,9 @@ class AdminController extends Controller
 
     private function validateClassBatch(Request $request, ?int $batchId = null): array
     {
+        if (is_array($request->input('class_sessions'))) {
+            $request->merge(['class_sessions'=>array_values(array_filter($request->input('class_sessions'), fn ($row) => !is_array($row) || array_filter($row, fn ($value) => filled($value))))]);
+        }
         $data = $request->validate([
             'name'=>'required|string|max:255', 'code'=>'nullable|string|max:80',
             'description'=>'nullable|string|max:2000', 'starts_at'=>'nullable|date', 'ends_at'=>'nullable|date|after_or_equal:starts_at',
@@ -438,6 +443,11 @@ class AdminController extends Controller
             'schedule_days_present'=>'sometimes|in:1',
             'schedule_days'=>'nullable|array|max:7',
             'schedule_days.*'=>'required|distinct|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            'class_sessions'=>'sometimes|array|max:28',
+            'class_sessions.*'=>'required|array:day,start_time,end_time',
+            'class_sessions.*.day'=>'required|in:'.implode(',', CourseBatch::CLASS_DAYS),
+            'class_sessions.*.start_time'=>'required|date_format:H:i',
+            'class_sessions.*.end_time'=>'required|date_format:H:i|after:class_sessions.*.start_time',
             'modality'=>'nullable|in:Online,Blended,Live via Zoom', 'price'=>'required|numeric|min:0', 'usd_price'=>'nullable|numeric|min:0',
             'capacity'=>'nullable|integer|min:1|max:100000', 'status'=>'required|in:draft,open,closed,completed',
             'includes_intensive_final_coaching'=>'nullable|boolean',
@@ -449,6 +459,19 @@ class AdminController extends Controller
             $data['schedule_day'] = $days ? implode(', ', $days) : null;
         }
         unset($data['schedule_days'], $data['schedule_days_present']);
+        foreach (['starts_at'=>'00:00:00', 'ends_at'=>'23:59:59'] as $field => $time) {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/D', $data[$field] ?? '')) {
+                $data[$field] .= ' '.$time;
+            }
+        }
+        if (array_key_exists('class_sessions', $data)) {
+            $sessions = collect($data['class_sessions'])->sortBy(fn ($row) => [array_search($row['day'], CourseBatch::CLASS_DAYS, true), $row['start_time']])->values();
+            $data['class_sessions'] = $sessions->all();
+            $data['schedule_day'] = $sessions->isEmpty() ? null : $sessions->pluck('day')->unique()->implode(', ');
+            $uniform = $sessions->map(fn ($row) => [$row['start_time'], $row['end_time']])->unique()->count() === 1;
+            $data['start_time'] = $uniform ? $sessions->first()['start_time'] : null;
+            $data['end_time'] = $uniform ? $sessions->first()['end_time'] : null;
+        }
         $data['course_type'] = $data['course_type'] ?? ($request->boolean('includes_intensive_final_coaching') ? 'complete' : 'comprehensive');
         $data['includes_intensive_final_coaching'] = in_array($data['course_type'], ['complete', 'final_coaching'], true);
 
