@@ -188,7 +188,12 @@ if (batchSessionRows) {
         try {
             const response = await fetch(form.action, {method:'POST', body:payload, headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});
             const data = await response.json().catch(() => null);
-            if (!response.ok || !data?.success) throw new Error(Object.values(data?.errors || {}).flat()[0] || 'Could not save the batch.');
+            if (!response.ok || !data?.success) {
+                const fallback = response.redirected ? 'Batch save returned an unexpected redirect. Reload the page and try again.'
+                    : response.status === 419 ? 'Your session expired. Reload the page and try again.'
+                    : `Could not save the batch (HTTP ${response.status}).`;
+                throw new Error(Object.values(data?.errors || {}).flat()[0] || fallback);
+            }
             closeClassBatchForm();
             showAdminToast(data.message, 'success');
             await loadAdminTable('class-batches', @json(route('admin.classes.index')), false);

@@ -439,7 +439,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'name'=>'required|string|max:255', 'code'=>'nullable|string|max:80',
             'description'=>'nullable|string|max:2000', 'starts_at'=>'nullable|date', 'ends_at'=>'nullable|date|after_or_equal:starts_at',
-            'schedule_day'=>'nullable|string|max:100', 'start_time'=>'nullable|date_format:H:i', 'end_time'=>'nullable|date_format:H:i|after:start_time',
+            'schedule_day'=>'nullable|string|max:30', 'start_time'=>'nullable|date_format:H:i', 'end_time'=>'nullable|date_format:H:i|after:start_time',
             'schedule_days_present'=>'sometimes|in:1',
             'schedule_days'=>'nullable|array|max:7',
             'schedule_days.*'=>'required|distinct|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
@@ -456,7 +456,7 @@ class AdminController extends Controller
         ]);
         if ($request->has('schedule_days_present') || $request->has('schedule_days')) {
             $days = array_values(array_intersect(['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'], $data['schedule_days'] ?? []));
-            $data['schedule_day'] = $days ? implode(', ', $days) : null;
+            $data['schedule_day'] = $this->legacyBatchDaySummary($days);
         }
         unset($data['schedule_days'], $data['schedule_days_present']);
         foreach (['starts_at'=>'00:00:00', 'ends_at'=>'23:59:59'] as $field => $time) {
@@ -467,7 +467,7 @@ class AdminController extends Controller
         if (array_key_exists('class_sessions', $data)) {
             $sessions = collect($data['class_sessions'])->sortBy(fn ($row) => [array_search($row['day'], CourseBatch::CLASS_DAYS, true), $row['start_time']])->values();
             $data['class_sessions'] = $sessions->all();
-            $data['schedule_day'] = $sessions->isEmpty() ? null : $sessions->pluck('day')->unique()->implode(', ');
+            $data['schedule_day'] = $this->legacyBatchDaySummary($sessions->pluck('day')->unique()->all());
             $uniform = $sessions->map(fn ($row) => [$row['start_time'], $row['end_time']])->unique()->count() === 1;
             $data['start_time'] = $uniform ? $sessions->first()['start_time'] : null;
             $data['end_time'] = $uniform ? $sessions->first()['end_time'] : null;
@@ -487,6 +487,13 @@ class AdminController extends Controller
         }
 
         return $data;
+    }
+
+    private function legacyBatchDaySummary(array $days): ?string
+    {
+        if (!$days) return null;
+        $summary = implode(', ', $days);
+        return strlen($summary) <= 30 ? $summary : implode(',', array_map(fn ($day) => substr($day, 0, 3), $days));
     }
 
     public function classBatchZoomSessions(CourseBatch $batch)

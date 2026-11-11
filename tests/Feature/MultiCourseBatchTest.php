@@ -55,6 +55,21 @@ class MultiCourseBatchTest extends TestCase
         $this->assertSame([], $batch->fresh()->weeklySessions());
     }
 
+    public function test_adding_sessions_keeps_the_legacy_day_summary_within_the_database_limit(): void
+    {
+        $admin = User::factory()->create(['role'=>'assistant_admin', 'is_admin'=>false]);
+        $course = Course::create(['title'=>'Review', 'is_published'=>true, 'approval_status'=>'approved']);
+        $batch = CourseBatch::create(['course_id'=>$course->id, 'name'=>'Review batch', 'code'=>'REVIEW', 'price'=>100,
+            'status'=>'open', 'schedule_day'=>'MWF', 'start_time'=>'19:00', 'end_time'=>'21:00']);
+        $sessions = array_map(fn ($day) => ['day'=>$day, 'start_time'=>'19:00', 'end_time'=>'21:00'], CourseBatch::CLASS_DAYS);
+        $this->actingAs($admin)->post('/admin/classes/batches/'.$batch->id, ['_method'=>'PUT', 'name'=>$batch->name,
+            'code'=>$batch->code, 'price'=>100, 'status'=>'open', 'course_ids'=>[$course->id], 'class_sessions'=>$sessions],
+            ['Accept'=>'application/json', 'X-Requested-With'=>'XMLHttpRequest'])->assertOk()->assertJsonPath('success', true);
+        $this->assertSame($sessions, $batch->refresh()->weeklySessions());
+        $this->assertSame('Mon,Tue,Wed,Thu,Fri,Sat,Sun', $batch->schedule_day);
+        $this->assertLessThanOrEqual(30, strlen($batch->schedule_day));
+    }
+
     public function test_administrator_can_create_one_batch_with_multiple_master_courses(): void
     {
         $admin = User::factory()->create(['role'=>'admin', 'is_admin'=>true]);
