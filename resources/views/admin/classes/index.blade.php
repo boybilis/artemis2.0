@@ -61,7 +61,7 @@
     @forelse($batches as $batch)
         @php($editor = ['id'=>$batch->id,'name'=>$batch->name,'code'=>$batch->code,'description'=>$batch->description,'course_type'=>$batch->course_type,'starts_at'=>$batch->starts_at?->format('Y-m-d'),'ends_at'=>$batch->ends_at?->format('Y-m-d'),'class_sessions'=>$batch->weeklySessions(),'legacy_schedule'=>$batch->class_sessions === null,'schedule_day'=>$batch->schedule_day,'start_time'=>substr((string)$batch->start_time,0,5),'end_time'=>substr((string)$batch->end_time,0,5),'modality'=>$batch->modality,'price'=>$batch->price,'international_currency'=>$batch->internationalPrice()['currency'] ?? '','capacity'=>$batch->capacity,'status'=>$batch->status,'course_ids'=>$batch->courses->pluck('id')->values()])
         <article class="class-batch-card">
-            <div class="class-batch-card-head"><div><small>{{ $batch->code }}</small><h3>{{ $batch->name }}</h3></div><button type="button" class="btn-ghost class-batch-details-button" aria-haspopup="dialog" aria-controls="batch-details-{{ $batch->id }}" onclick="document.getElementById(this.getAttribute('aria-controls')).showModal()">View Details</button></div>
+            <div class="class-batch-card-head"><small>{{ $batch->code }}</small><button type="button" class="btn-ghost class-batch-details-button" aria-haspopup="dialog" aria-controls="batch-details-{{ $batch->id }}" onclick="document.getElementById(this.getAttribute('aria-controls')).showModal()">View Details</button><h3>{{ $batch->name }}</h3></div>
             <dialog id="batch-details-{{ $batch->id }}" class="class-batch-details" aria-labelledby="batch-details-title-{{ $batch->id }}">
             <header>
                 <div><small>{{ $batch->code }}</small><h2 id="batch-details-title-{{ $batch->id }}">{{ $batch->name }}</h2></div>
@@ -103,8 +103,9 @@
 <style>
     [data-ajax-table="class-batches"]>.class-batch-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
     .class-batch-grid .class-batch-card { display:flex;flex-direction:column;gap:.85rem;min-width:0;padding:.9rem; }
-    .class-batch-grid .class-batch-card-head { align-items:flex-start;gap:.5rem;flex-wrap:wrap; }
-    .class-batch-card-head>div { flex:1;min-width:min(100%,8rem);overflow-wrap:anywhere; }
+    .class-batch-grid .class-batch-card-head { display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:.25rem .5rem; }
+    .class-batch-grid .class-batch-card-head small { font-size:.68rem;line-height:1.25;overflow-wrap:anywhere; }
+    .class-batch-grid .class-batch-card-head h3 { grid-column:1 / -1;margin:0;font-size:1.04rem;line-height:1.3;overflow-wrap:anywhere; }
     .class-batch-card-head .class-batch-details-button { border-radius:999px;padding:.45rem .7rem;font-size:.72rem;white-space:nowrap; }
     .class-batch-grid .class-batch-actions { margin-top:auto; }
     .class-batch-grid .class-batch-actions { align-items:center; }
