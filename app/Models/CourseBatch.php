@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class CourseBatch extends Model
 {
     public const CLASS_DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    public const CLASS_DAY_CODES = ['Monday'=>'M', 'Tuesday'=>'T', 'Wednesday'=>'W', 'Thursday'=>'TH', 'Friday'=>'F', 'Saturday'=>'Sa', 'Sunday'=>'Su'];
     public const COURSE_TYPES = [
         'complete' => 'Complete Review Course',
         'comprehensive' => 'Comprehensive Review Course',
@@ -36,7 +37,10 @@ class CourseBatch extends Model
 
     public function weeklySessions(): array
     {
-        if ($this->class_sessions !== null) return $this->class_sessions;
+        if ($this->class_sessions !== null) {
+            $names = array_flip(self::CLASS_DAY_CODES);
+            return array_map(fn ($row) => ['day'=>$names[$row['day']] ?? $row['day']] + $row, $this->class_sessions);
+        }
         $schedule = strtolower(trim((string) $this->schedule_day));
         $tokens = match ($schedule) {
             'mwf' => ['mon', 'wed', 'fri'],
@@ -44,7 +48,7 @@ class CourseBatch extends Model
             default => preg_split('/[^a-z]+/', $schedule, -1, PREG_SPLIT_NO_EMPTY),
         };
         return array_values(array_map(fn ($day) => ['day'=>$day, 'start_time'=>substr((string) $this->start_time, 0, 5), 'end_time'=>substr((string) $this->end_time, 0, 5)],
-            array_filter(self::CLASS_DAYS, fn ($day) => in_array(strtolower($day), $tokens, true) || in_array(strtolower(substr($day, 0, 3)), $tokens, true))));
+            array_filter(self::CLASS_DAYS, fn ($day) => (bool) array_intersect($tokens, [strtolower($day), strtolower(substr($day, 0, 3)), strtolower(self::CLASS_DAY_CODES[$day])]))));
     }
 
     public function course() { return $this->belongsTo(Course::class); }

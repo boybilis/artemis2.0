@@ -466,7 +466,7 @@ class AdminController extends Controller
         }
         if (array_key_exists('class_sessions', $data)) {
             $sessions = collect($data['class_sessions'])->sortBy(fn ($row) => [array_search($row['day'], CourseBatch::CLASS_DAYS, true), $row['start_time']])->values();
-            $data['class_sessions'] = $sessions->all();
+            $data['class_sessions'] = $sessions->map(fn ($row) => ['day'=>CourseBatch::CLASS_DAY_CODES[$row['day']]] + $row)->all();
             $data['schedule_day'] = $this->legacyBatchDaySummary($sessions->pluck('day')->unique()->all());
             $uniform = $sessions->map(fn ($row) => [$row['start_time'], $row['end_time']])->unique()->count() === 1;
             $data['start_time'] = $uniform ? $sessions->first()['start_time'] : null;
@@ -492,8 +492,7 @@ class AdminController extends Controller
     private function legacyBatchDaySummary(array $days): ?string
     {
         if (!$days) return null;
-        $summary = implode(', ', $days);
-        return strlen($summary) <= 30 ? $summary : implode(',', array_map(fn ($day) => substr($day, 0, 3), $days));
+        return implode(',', array_map(fn ($day) => CourseBatch::CLASS_DAY_CODES[$day], $days));
     }
 
     public function classBatchZoomSessions(CourseBatch $batch)

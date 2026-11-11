@@ -20,11 +20,11 @@ class MultiCourseBatchTest extends TestCase
         $payload = ['name'=>'Weekday Batch','price'=>100,'status'=>'open','course_ids'=>[$course->id],'schedule_days_present'=>1,'schedule_days'=>['Friday','Monday','Wednesday']];
         $this->actingAs($admin)->post('/admin/classes/batches', $payload)->assertRedirect('/admin/classes');
         $batch = CourseBatch::where('name','Weekday Batch')->firstOrFail();
-        $this->assertSame('Monday, Wednesday, Friday', $batch->schedule_day);
+        $this->assertSame('M,W,F', $batch->schedule_day);
         $this->actingAs($admin)->get('/admin/classes')->assertOk()->assertSee('Weekly class sessions');
         $payload['schedule_days'] = ['Funday'];
         $this->actingAs($admin)->putJson('/admin/classes/batches/'.$batch->id, $payload)->assertUnprocessable();
-        $this->assertSame('Monday, Wednesday, Friday', $batch->fresh()->schedule_day);
+        $this->assertSame('M,W,F', $batch->fresh()->schedule_day);
         unset($payload['schedule_days']);
         $this->actingAs($admin)->put('/admin/classes/batches/'.$batch->id, $payload)->assertRedirect('/admin/classes');
         $this->assertNull($batch->fresh()->schedule_day);
@@ -42,7 +42,8 @@ class MultiCourseBatchTest extends TestCase
         $this->actingAs($admin)->postJson('/admin/classes/batches', $payload)->assertCreated();
         $batch = CourseBatch::where('name', 'Variable hours')->firstOrFail();
         $this->assertSame([$payload['class_sessions'][1], $payload['class_sessions'][0]], $batch->weeklySessions());
-        $this->assertSame('Monday, Friday', $batch->schedule_day);
+        $this->assertSame('M,F', $batch->schedule_day);
+        $this->assertSame(['M', 'F'], array_column($batch->class_sessions, 'day'));
         $this->assertNull($batch->start_time);
         $this->assertSame('2030-01-16 00:00:00', $batch->starts_at->format('Y-m-d H:i:s'));
         $this->assertSame('2030-03-04 23:59:59', $batch->ends_at->format('Y-m-d H:i:s'));
@@ -66,7 +67,8 @@ class MultiCourseBatchTest extends TestCase
             'code'=>$batch->code, 'price'=>100, 'status'=>'open', 'course_ids'=>[$course->id], 'class_sessions'=>$sessions],
             ['Accept'=>'application/json', 'X-Requested-With'=>'XMLHttpRequest'])->assertOk()->assertJsonPath('success', true);
         $this->assertSame($sessions, $batch->refresh()->weeklySessions());
-        $this->assertSame('Mon,Tue,Wed,Thu,Fri,Sat,Sun', $batch->schedule_day);
+        $this->assertSame('M,T,W,TH,F,Sa,Su', $batch->schedule_day);
+        $this->assertSame(['M','T','W','TH','F','Sa','Su'], array_column($batch->class_sessions, 'day'));
         $this->assertLessThanOrEqual(30, strlen($batch->schedule_day));
     }
 
