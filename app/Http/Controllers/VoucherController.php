@@ -463,6 +463,7 @@ class VoucherController extends Controller
             ], 400);
         }
 
+        if ($error = $this->voucherAccessError($voucher, $request)) return $error;
         $requestedBatch = CourseBatch::findOrFail($request->integer('batch_id'));
         if ($voucher->batch_id && (int) $voucher->batch_id !== (int) $requestedBatch->id) return response()->json(['success'=>false,'message'=>'This code belongs to a different batch.'], 422);
 
@@ -491,8 +492,28 @@ class VoucherController extends Controller
             'batch_id' => 'required|integer|exists:course_batches,id',
         ]);
 
+        return DB::transaction(fn () => $this->redeemLocked($request, $user));
+    }
+
+    private function voucherAccessError(Voucher $voucher, Request $request)
+    {
+        if (($voucher->assigned_to || $voucher->payment_provider === 'manual')
+            && (!$voucher->assigned_to || (int) $voucher->assigned_to !== (int) $request->user()->id)) {
+            return response()->json(['success'=>false, 'message'=>'This code is not assigned to your account.'], 403);
+        }
+        if (($voucher->batch_id || $voucher->payment_provider === 'manual') && (int) $voucher->batch_id !== $request->integer('batch_id')) {
+            return response()->json(['success'=>false, 'message'=>'This code belongs to a different batch.'], 422);
+        }
+        if (!in_array($voucher->status, [null, 'active'], true)) {
+            return response()->json(['success'=>false, 'message'=>'This code is not active.'], 422);
+        }
+        return null;
+    }
+
+    private function redeemLocked(Request $request, $user)
+    {
         $code = strtoupper(trim($request->input('code')));
-        $voucher = Voucher::where('code', $code)->first();
+        $voucher = Voucher::where('code', $code)->lockForUpdate()->first();
 
         if (!$voucher) {
             return response()->json([
@@ -508,6 +529,7 @@ class VoucherController extends Controller
             ], 400);
         }
 
+        if ($error = $this->voucherAccessError($voucher, $request)) return $error;
         $batchId = $voucher->batch_id ?: $request->integer('batch_id');
         $batch = CourseBatch::available()->findOrFail($batchId);
         $courseIds = $batch->courses()->pluck('courses.id');

@@ -61,13 +61,14 @@ Route::prefix('api')->group(function () {
         Route::post('/quiz/attempt', [CourseController::class, 'submitQuiz']);
 
         // Vouchers
-        Route::post('/voucher/buy', [VoucherController::class, 'buy']);
+        Route::get('/payments/status', fn () => response()->json(['enabled'=>app(\App\Services\AutomaticPayments::class)->enabled(), 'message'=>\App\Services\AutomaticPayments::MESSAGE])->header('Cache-Control', 'no-store'));
+        Route::post('/voucher/buy', [VoucherController::class, 'buy'])->middleware(\App\Http\Middleware\AutomaticPaymentMiddleware::class);
         Route::post('/voucher/verify', [VoucherController::class, 'verify']);
         Route::post('/voucher/redeem', [VoucherController::class, 'redeem']);
         Route::get('/packages', [PackageController::class, 'index']);
-        Route::post('/packages/{package}/buy', [PackageController::class, 'buy']);
+        Route::post('/packages/{package}/buy', [PackageController::class, 'buy'])->middleware(\App\Http\Middleware\AutomaticPaymentMiddleware::class);
         Route::get('/test-banks', [TestBankController::class, 'catalog']);
-        Route::post('/test-banks/{testBank}/buy', [TestBankController::class, 'buy']);
+        Route::post('/test-banks/{testBank}/buy', [TestBankController::class, 'buy'])->middleware(\App\Http\Middleware\AutomaticPaymentMiddleware::class);
         Route::get('/test-banks/{testBank}/workspace', [TestBankController::class, 'workspace']);
         Route::post('/test-banks/{testBank}/quizzes', [TestBankController::class, 'storeLearnerQuiz']);
         Route::post('/test-banks/{testBank}/subjects/{subject}/quizzes', [TestBankController::class, 'storeSubjectQuiz']);
@@ -281,6 +282,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Activity Logs
         Route::get('/progress', [AdminController::class, 'progress'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('progress.index');
         Route::get('/vouchers', [AdminController::class, 'vouchers'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('vouchers.index');
+        Route::middleware(RoleMiddleware::class.':admin')->group(function () {
+            Route::put('/vouchers/payment-mode', [\App\Http\Controllers\PaymentSettingsController::class, 'update'])->name('vouchers.payment-mode');
+            Route::post('/vouchers/assign', [\App\Http\Controllers\PaymentSettingsController::class, 'issue'])->name('vouchers.assign');
+        });
         Route::post('/vouchers/generate', [AdminController::class, 'generateVouchers'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('vouchers.generate');
         
         Route::get('/certificates', [AdminController::class, 'certificates'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('certificates.index');

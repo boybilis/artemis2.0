@@ -1882,7 +1882,7 @@ class AdminController extends Controller
             $user->save();
         }
         
-        $vouchers = Voucher::with(['user', 'batch.courses'])
+        $vouchers = Voucher::with(['user', 'assignedLearner', 'batch.courses'])
             ->orderBy('created_at', 'desc')
             ->paginate(15, ['*'], 'vouchers_page')
             ->withQueryString();
@@ -1891,7 +1891,9 @@ class AdminController extends Controller
             ->orderBy('used_at', 'desc')
             ->paginate(15, ['*'], 'redeemed_page')
             ->withQueryString();
-        return view('admin.vouchers.index', compact('vouchers', 'redeemedVouchers'));
+        $paymentBatches = $user->hasAdminAccess() ? CourseBatch::available()->has('courses')->orderBy('name')->get(['id', 'name', 'code']) : collect();
+        $automaticPayments = $user->hasAdminAccess() && app(\App\Services\AutomaticPayments::class)->enabled();
+        return view('admin.vouchers.index', compact('vouchers', 'redeemedVouchers', 'paymentBatches', 'automaticPayments'));
     }
 
     public function generateVouchers(Request $request)

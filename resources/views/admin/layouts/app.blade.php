@@ -42,7 +42,7 @@
         $newVouchersCount = \App\Models\Voucher::where('created_at', '>', $lastVouchersViewed)->count();
         $newCertificatesCount = \App\Models\Certificate::where('created_at', '>', $lastCertificatesViewed)->count();
         
-        $navItems[] = ['label' => 'Vouchers', 'route' => 'admin.vouchers.index', 'active' => 'admin.vouchers.*', 'icon' => 'ticket', 'badge' => $newVouchersCount > 0 ? $newVouchersCount : null];
+        $navItems[] = ['label' => $isAdmin ? 'Payment and Vouchers' : 'Vouchers', 'route' => 'admin.vouchers.index', 'active' => 'admin.vouchers.*', 'icon' => 'ticket', 'badge' => $newVouchersCount > 0 ? $newVouchersCount : null];
         $navItems[] = ['label' => 'Certificates', 'route' => 'admin.certificates.index', 'active' => 'admin.certificates.*', 'icon' => 'award', 'badge' => $newCertificatesCount > 0 ? $newCertificatesCount : null];
     }
     if ($isAdmin || $role === 'staff') {

@@ -101,6 +101,10 @@ async function apiRequest(url, method = 'GET', data = null, {silent = false} = {
         const response = await fetch(url, options);
         const result = await response.json();
         if(result.code==='session_replaced')window.handleLearnerSessionReplaced?.();
+        if (result.code === 'automatic_payment_disabled') {
+            showSystemAlert(result.message, 'Payment Maintenance');
+            throw Object.assign(new Error(result.message), {code: result.code});
+        }
 
         if (!response.ok) {
             throw new Error(result.message || 'Something went wrong with the request.');
@@ -108,7 +112,7 @@ async function apiRequest(url, method = 'GET', data = null, {silent = false} = {
 
         return result;
     } catch (error) {
-        if (!silent) showToast(error.message);
+        if (!silent && error.code !== 'automatic_payment_disabled') showToast(error.message);
         throw error;
     }
 }
@@ -673,7 +677,7 @@ dialog.setAttribute('aria-label', 'Select your Licensure');
             button.disabled = false;
             button.textContent = originalText;
         }
-        showToast(error.message || 'Unable to start the Test Bank subscription.', 'error');
+        if (error.code !== 'automatic_payment_disabled') showToast(error.message || 'Unable to start the Test Bank subscription.', 'error');
     }
 }
 
@@ -926,13 +930,23 @@ if (voucherCourseSelect) voucherCourseSelect.addEventListener('change', () => po
 const purchaseBatchSelect = $('purchase-batch-select');
 if (purchaseBatchSelect) purchaseBatchSelect.addEventListener('change', () => { selectedPurchaseBatchId = Number(purchaseBatchSelect.value) || null; });
 
-function openBuyVoucherModal(batchId = null) {
+let paymentModalRequest = 0;
+async function openBuyVoucherModal(batchId = null) {
+    const requestId = ++paymentModalRequest;
     const course = courses.find(item => Number(item.batch_id) === Number(batchId));
     if (!course) {
         showToast('Choose a locked course to subscribe.', 'info');
         closeModal();
         return;
     }
+    try {
+        const status = await apiRequest('/api/payments/status');
+        if (requestId !== paymentModalRequest) return;
+        if (!status.enabled) {
+            showSystemAlert(status.message, 'Payment Maintenance');
+            return;
+        }
+    } catch { return; }
     selectedPurchaseCourseId = course.id;
     populateBatchSelector(course.batch_id, 'purchase');
     if ($('purchase-course-name')) $('purchase-course-name').textContent = `${course.batch_name} — ${course.title}`;

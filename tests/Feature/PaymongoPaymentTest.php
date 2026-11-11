@@ -11,11 +11,45 @@ use App\Models\PaymentTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PaymongoPaymentTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_maintenance_blocks_checkout_but_assigned_learner_can_redeem_the_emailed_code(): void
+    {
+        Storage::fake('local');
+        Mail::fake();
+        Http::fake();
+        [$learner, $batch] = $this->learnerAndBatch();
+        $admin = User::factory()->create(['role'=>'admin', 'is_admin'=>true]);
+        $other = User::factory()->create(['role'=>'student', 'is_admin'=>false]);
+        $this->actingAs($other)->putJson('/admin/vouchers/payment-mode', ['enabled'=>false])->assertNotFound();
+        $this->actingAs($admin)->putJson('/admin/vouchers/payment-mode', ['enabled'=>false])->assertOk();
+        $this->postJson('/admin/vouchers/assign', ['email'=>$learner->email, 'batch_id'=>$batch->id])
+            ->assertCreated()->assertJsonPath('emailed', true);
+        $voucher = Voucher::firstOrFail();
+        Mail::assertSent(\App\Mail\AssignedEnrollmentVoucher::class, fn ($mail) => $mail->hasTo($learner->email));
+        $this->assertSame($learner->id, (int) $voucher->assigned_to);
+        $this->get('/admin/vouchers')->assertOk()->assertSee($learner->email)->assertSee('Email sent');
+
+        $payload = ['code'=>$voucher->code, 'batch_id'=>$batch->id];
+        $this->actingAs($other)->postJson('/api/voucher/verify', $payload)->assertForbidden();
+        $this->postJson('/api/voucher/redeem', $payload)->assertForbidden();
+        $this->actingAs($learner)->getJson('/api/payments/status')->assertJsonPath('enabled', false);
+        $this->postJson('/api/voucher/buy', ['batch_id'=>$batch->id])->assertStatus(503)
+            ->assertJsonPath('code', 'automatic_payment_disabled');
+        Http::assertNothingSent();
+        $this->postJson('/api/voucher/verify', $payload)->assertOk();
+        $this->postJson('/api/voucher/redeem', $payload)->assertOk();
+        $this->postJson('/api/voucher/redeem', $payload)->assertStatus(400);
+        $this->assertDatabaseHas('course_enrollments', ['user_id'=>$learner->id, 'batch_id'=>$batch->id, 'voucher_id'=>$voucher->id]);
+        $this->assertTrue($voucher->refresh()->used);
+        $this->actingAs($admin)->putJson('/admin/vouchers/payment-mode', ['enabled'=>true])->assertOk();
+        $this->actingAs($learner)->getJson('/api/payments/status')->assertJsonPath('enabled', true);
+    }
 
     public function test_checkout_requests_qrph_for_the_selected_batch_price(): void
     {
