@@ -22,15 +22,16 @@ class MultiCourseBatchTest extends TestCase
         $admin = User::factory()->create(['role'=>'assistant_admin', 'is_admin'=>false]);
         $course = Course::create(['title'=>'International review', 'is_published'=>true, 'approval_status'=>'approved']);
         $payload = ['name'=>'International batch', 'price'=>2500, 'status'=>'open', 'course_ids'=>[$course->id], 'international_currency'=>'EUR'];
-        $this->actingAs($admin)->getJson('/admin/classes/batch-price-quote?currency=EUR&price=2500')->assertOk()->assertJsonPath('amount', 37.5);
+        $this->actingAs($admin)->getJson('/admin/classes/batch-price-quote?currency=EUR&price=2500')->assertOk()->assertJsonPath('amount', 38);
+        $this->getJson('/admin/classes/batch-price-quote?currency=EUR&price=3600')->assertOk()->assertJsonPath('amount', 54);
         $this->postJson('/admin/classes/batches', $payload)->assertCreated();
         $batch = CourseBatch::where('name', 'International batch')->firstOrFail();
         $this->assertSame('EUR', $batch->internationalPrice()['currency']);
-        $this->assertSame(37.5, $batch->internationalPrice()['amount']);
+        $this->assertSame(38, $batch->international_pricing['amount']);
         $learner = User::factory()->create(['role'=>'student', 'country_code'=>'INTL']);
         $this->actingAs($learner)->getJson('/api/courses')->assertOk()
             ->assertJsonPath('courses.0.currency_code', 'EUR')->assertJsonPath('courses.0.billing_currency_code', 'PHP')
-            ->assertJsonPath('courses.0.display_price', 37.5);
+            ->assertJsonPath('courses.0.display_price', 38);
         $payload['international_currency'] = null;
         $this->actingAs($admin)->putJson('/admin/classes/batches/'.$batch->id, $payload)->assertOk();
         $this->assertNull($batch->fresh()->internationalPrice());

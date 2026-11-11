@@ -37,7 +37,9 @@ class CourseBatch extends Model
 
     public function internationalPrice(): ?array
     {
-        return $this->international_pricing ?? ($this->usd_price === null ? null : ['currency'=>'USD', 'amount'=>(float) $this->usd_price]);
+        $price = $this->international_pricing ?? ($this->usd_price === null ? null : ['currency'=>'USD', 'amount'=>(float) $this->usd_price]);
+        if ($price !== null) $price['amount'] = ceil($price['amount']);
+        return $price;
     }
 
     public function weeklySessions(): array

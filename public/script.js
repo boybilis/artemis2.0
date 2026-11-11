@@ -216,7 +216,7 @@ function showCourseProfile() {
             <div><span>Schedule Day</span><strong>${escapeHtml(profile.batch_schedule_day || 'Not specified')}</strong></div>
             <div><span>Class Time</span><strong>${escapeHtml(sessionTimes)}</strong></div>
             <div><span>Price (PHP)</span><strong>₱${Number(profile.batch_price || 0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong></div>
-            <div><span>International Price</span><strong>${profile.batch_international_price ? escapeHtml(new Intl.NumberFormat(undefined,{style:'currency',currency:profile.batch_international_price.currency,currencyDisplay:'code'}).format(profile.batch_international_price.amount)) : 'Not Available'}</strong></div>
+            <div><span>International Price</span><strong>${profile.batch_international_price ? escapeHtml(new Intl.NumberFormat(undefined,{style:'currency',currency:profile.batch_international_price.currency,currencyDisplay:'code',maximumFractionDigits:0,minimumFractionDigits:0}).format(profile.batch_international_price.amount)) : 'Not Available'}</strong></div>
             <div><span>Capacity</span><strong>${profile.batch_capacity ? Number(profile.batch_capacity).toLocaleString()+' learners' : 'Unlimited'}</strong></div>
             <div><span>Enrollment Date</span><strong>${dateTimeLabel(profile.enrolled_at)}</strong></div>
             <div><span>Access Expires</span><strong>${profile.enrollment_expires_at ? dateTimeLabel(profile.enrollment_expires_at) : 'No expiration set'}</strong></div>
@@ -952,6 +952,11 @@ const purchaseBatchSelect = $('purchase-batch-select');
 if (purchaseBatchSelect) purchaseBatchSelect.addEventListener('change', () => { selectedPurchaseBatchId = Number(purchaseBatchSelect.value) || null; });
 
 let paymentModalRequest = 0;
+function formatCourseDisplayPrice(course) {
+    const currency = course.currency_code || 'PHP';
+    const amount = Number(course.display_price ?? 0);
+    return currency === 'PHP' ? `₱${amount.toFixed(2)}` : `${currency} ${amount.toFixed(0)}`;
+}
 async function openBuyVoucherModal(batchId = null) {
     const requestId = ++paymentModalRequest;
     const course = courses.find(item => Number(item.batch_id) === Number(batchId));
@@ -971,7 +976,7 @@ async function openBuyVoucherModal(batchId = null) {
     selectedPurchaseCourseId = course.id;
     populateBatchSelector(course.batch_id, 'purchase');
     if ($('purchase-course-name')) $('purchase-course-name').textContent = `${course.batch_name} — ${course.title}`;
-    const price = `${course.currency_symbol || '₱'}${Number(course.display_price ?? 0).toFixed(2)}${course.currency_code === 'USD' ? ' USD' : ''}`;
+    const price = formatCourseDisplayPrice(course);
     const billingPrice = `${course.billing_currency_symbol || '₱'}${Number(course.billing_price ?? 0).toFixed(2)} ${course.billing_currency_code || 'PHP'}`;
     if ($('purchase-course-price')) $('purchase-course-price').textContent = price;
     if ($('purchase-price-summary')) $('purchase-price-summary').textContent = `Price: ${price}`;
@@ -1265,7 +1270,7 @@ function renderDashboard() {
             if (isLocked) {
                 lockMsg = `
                     <div class="course-card-actions">
-                        <button type="button" class="btn-primary course-subscribe-btn">Enroll — ${course.currency_symbol || '₱'}${Number(course.display_price ?? 0).toFixed(2)}${course.currency_code === 'USD' ? ' USD' : ''}</button>
+                        <button type="button" class="btn-primary course-subscribe-btn">Enroll — ${escapeHtml(formatCourseDisplayPrice(course))}</button>
                         <button type="button" class="btn-ghost course-code-btn">Use Code</button>
                     </div>`;
             }
@@ -4150,7 +4155,7 @@ function checkPaymongoReturn() {
         const code = params.get('voucher_success');
         const enrolledBatch = courses.find(course => course.is_enrolled);
         if (enrolledBatch) {
-            const displayPrice = `${enrolledBatch.currency_symbol || '₱'}${Number(enrolledBatch.display_price ?? 0).toFixed(2)}${enrolledBatch.currency_code === 'USD' ? ' USD' : ''}`;
+            const displayPrice = formatCourseDisplayPrice(enrolledBatch);
             const billingPrice = `${enrolledBatch.billing_currency_symbol || '₱'}${Number(enrolledBatch.billing_price ?? 0).toFixed(2)} ${enrolledBatch.billing_currency_code || 'PHP'}`;
             if ($('purchase-course-name')) $('purchase-course-name').textContent = `${enrolledBatch.batch_name} — ${enrolledBatch.title}`;
             if ($('purchase-course-price')) $('purchase-course-price').textContent = displayPrice;

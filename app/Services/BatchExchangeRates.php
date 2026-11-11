@@ -32,6 +32,6 @@ class BatchExchangeRates
         }
         if (!$quote) throw ValidationException::withMessages(['international_currency'=>'An up-to-date exchange rate is unavailable. Please try again.']);
 
-        return ['currency'=>$currency, 'amount'=>round($amount * $quote['rate'], $currency === 'JPY' ? 0 : 2)] + $quote;
+        return ['currency'=>$currency, 'amount'=>ceil(round($amount * $quote['rate'], 8))] + $quote;
     }
 }

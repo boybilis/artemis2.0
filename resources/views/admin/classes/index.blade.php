@@ -81,7 +81,7 @@
                 <div><dt>Capacity</dt><dd>{{ $batch->capacity ?: 'Unlimited' }}</dd></div>
                 <div><dt>Price (PHP)</dt><dd>{{ $batch->price === null ? 'Not set' : '₱'.number_format($batch->price, 2) }}</dd></div>
                 @php($internationalPrice = $batch->internationalPrice())
-                <div><dt>International Price</dt><dd>@if($internationalPrice){{ $internationalPrice['currency'] }} {{ number_format($internationalPrice['amount'], $internationalPrice['currency'] === 'JPY' ? 0 : 2) }}@if(isset($internationalPrice['date']))<br><small class="muted">Rate as of {{ $internationalPrice['date'] }}</small>@endif @else Not Available @endif</dd></div>
+                <div><dt>International Price</dt><dd>@if($internationalPrice){{ $internationalPrice['currency'] }} {{ number_format($internationalPrice['amount'], 0) }}@if(isset($internationalPrice['date']))<br><small class="muted">Rate as of {{ $internationalPrice['date'] }}</small>@endif @else Not Available @endif</dd></div>
             </dl>
             </div>
             </dialog>
@@ -190,7 +190,7 @@ function refreshBatchQuote() {
             if (!response.ok) throw new Error();
             const quote = await response.json();
             if (!request.signal.aborted) {
-                output.textContent = new Intl.NumberFormat(undefined,{style:'currency',currency,currencyDisplay:'code'}).format(quote.amount);
+                output.textContent = new Intl.NumberFormat(undefined,{style:'currency',currency,currencyDisplay:'code',maximumFractionDigits:0,minimumFractionDigits:0}).format(quote.amount);
                 rateDate.textContent = `Reference rate as of ${quote.date}. `;
             }
         } catch {
