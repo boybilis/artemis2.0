@@ -57,9 +57,14 @@
         <article class="class-batch-card">
             <div class="class-batch-card-head"><div><small>{{ $batch->code }}</small><h3>{{ $batch->name }}</h3></div><button type="button" class="btn-ghost class-batch-details-button" aria-haspopup="dialog" aria-controls="batch-details-{{ $batch->id }}" onclick="document.getElementById(this.getAttribute('aria-controls')).showModal()">View Details</button></div>
             <dialog id="batch-details-{{ $batch->id }}" class="class-batch-details" aria-labelledby="batch-details-title-{{ $batch->id }}">
-            <header><div><small>{{ $batch->code }}</small><h2 id="batch-details-title-{{ $batch->id }}">{{ $batch->name }}</h2></div><form method="dialog"><button class="btn-ghost" type="submit" aria-label="Close batch details" autofocus>Close</button></form></header>
+            <header>
+                <div><small>{{ $batch->code }}</small><h2 id="batch-details-title-{{ $batch->id }}">{{ $batch->name }}</h2></div>
+                <div class="class-batch-details-actions">
+                    <span class="status {{ $batch->status==='open'?'success':'warning' }}">{{ ucfirst($batch->status) }}</span>
+                    <form method="dialog"><button class="class-batch-details-close" type="submit" aria-label="Close batch details" title="Close" autofocus><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button></form>
+                </div>
+            </header>
             <div class="class-batch-details-body">
-            <span class="status {{ $batch->status==='open'?'success':'warning' }}">{{ ucfirst($batch->status) }}</span>
             <p>{{ $batch->description ?: 'No batch description provided.' }}</p>
             @if($batch->includes_intensive_final_coaching)<div class="class-batch-phase"><i data-lucide="badge-check"></i><span>With Intensive Final Coaching Phase</span></div>@endif
             <div class="class-batch-meta"><span><i data-lucide="calendar-days"></i>{{ $batch->starts_at?->format('M d, Y') ?? 'Open schedule' }} – {{ $batch->ends_at?->format('M d, Y') ?? 'No end date' }}</span><span><i data-lucide="clock-3"></i>{{ $batch->schedule_day ?: 'Flexible schedule' }} · {{ $batch->modality ?: 'Online' }}</span><span><i data-lucide="users"></i>{{ $batch->active_enrollments_count }} enrolled</span></div>
@@ -108,16 +113,22 @@
     .class-batch-details { position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(36rem,calc(100% - 2rem));max-height:calc(100dvh - 2rem);overflow:auto;padding:0;border:1px solid var(--border);border-radius:16px;background:var(--surface-solid);color:var(--text); }
     .class-batch-details::backdrop { background:rgba(13,29,43,.65); }
     .class-batch-details header { display:flex;align-items:flex-start;justify-content:space-between;gap:.75rem;padding:1rem;border-bottom:1px solid var(--border); }
-    .class-batch-details header h2 { margin:.25rem 0 0;overflow-wrap:anywhere; }
-    .class-batch-details header small { color:var(--text-muted);overflow-wrap:anywhere; }
+    .class-batch-details header h2 { margin:.25rem 0 0;font-size:1.25rem;line-height:1.25;overflow-wrap:anywhere; }
+    .class-batch-details header small { color:var(--text-muted);font-size:.75rem;overflow-wrap:anywhere; }
     .class-batch-details header form { margin:0; }
-    .class-batch-details-body { padding:1rem; }
-    .class-batch-details-body>p { white-space:pre-wrap;overflow-wrap:anywhere; }
+    .class-batch-details-actions { display:flex;align-items:center;gap:.5rem;flex-shrink:0; }
+    .class-batch-details-close { display:grid;place-items:center;width:36px;height:36px;padding:0;border:0;border-radius:8px;background:var(--brand-slate);color:#fff;cursor:pointer; }
+    .class-batch-details-close:hover { background:var(--brand-aqua-strong); }
+    .class-batch-details-close:focus-visible { outline:2px solid var(--brand-aqua);outline-offset:2px; }
+    .class-batch-details-body { display:grid;gap:.85rem;padding:1rem;font-size:.875rem;line-height:1.5; }
+    .class-batch-details-body>p { margin:0;white-space:pre-wrap;overflow-wrap:anywhere; }
+    .class-batch-details-body>.class-batch-phase { justify-self:start;margin:0; }
+    .class-batch-details-body>.class-batch-courses { margin:0; }
     .class-batch-details .class-course-capsule { color:var(--text); }
     .class-batch-detail-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;margin:0; }
     .class-batch-detail-grid>div { border:1px solid var(--border);border-radius:10px;padding:.65rem; }
     .class-batch-detail-grid dt { color:var(--text-muted);font-size:.75rem; }
-    .class-batch-detail-grid dd { margin:.25rem 0 0;overflow-wrap:anywhere; }
+    .class-batch-detail-grid dd { margin:.25rem 0 0;font-size:.875rem;line-height:1.5;overflow-wrap:anywhere; }
     @media(max-width:1100px){[data-ajax-table="class-batches"]>.class-batch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:680px){[data-ajax-table="class-batches"]>.class-batch-grid,.class-batch-detail-grid{grid-template-columns:1fr}}
 </style>
