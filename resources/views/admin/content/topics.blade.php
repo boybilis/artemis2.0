@@ -158,7 +158,13 @@
     .badge-video { background: rgba(16,185,129,0.12); color: #10b981; padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
     .badge-pdf   { background: rgba(17,167,192,0.12); color: var(--accent); padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
     .badge-pending { background: rgba(245,158,11,0.12); color: #f59e0b; padding: 0.2rem 0.55rem; border-radius: 99px; font-size: 0.7rem; font-weight: 600; }
-    .subtopic-actions { display: flex; gap: 0.35rem; }
+    .subtopic-actions { display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:.35rem; }
+    .subtopic-actions form { display:flex; }
+    .subtopic-actions .btn-ghost,.subtopic-actions .subtopic-action-icon { box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;height:44px;margin:0;padding:0 .75rem;font-size:.78rem;white-space:nowrap; }
+    .subtopic-actions .subtopic-action-icon { width:44px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--text);cursor:pointer; }
+    .subtopic-actions .subtopic-action-icon:hover { background:var(--border); }
+    .subtopic-actions .subtopic-action-icon:focus-visible { outline:2px solid var(--brand-aqua);outline-offset:2px; }
+    .subtopic-actions .subtopic-action-delete { color:var(--wrong); }
     #subtopic-preview-dialog { position:fixed;inset:0;margin:auto;box-sizing:border-box;width:min(900px,calc(100% - 1rem));max-height:calc(100dvh - 1rem);padding:1rem;border:1px solid var(--border);border-radius:14px;background:var(--surface-solid);color:var(--text);overflow:auto; }
     #subtopic-preview-dialog::backdrop { background:rgba(12,29,46,.7); }
     #subtopic-preview-dialog header { display:flex;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:.75rem; }
@@ -294,10 +300,10 @@
                                     @if($sub->status === 'pending' && $isAdmin)
                                         <form action="{{ route('admin.content.subtopics.approve', ['course' => $course->id, 'subtopic' => $sub->id]) }}" method="POST" style="margin:0;">
                                             @csrf
-                                            <button class="btn-ghost" type="submit" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: rgba(16,185,129,0.1); color: #10b981; border-color: rgba(16,185,129,0.3);">Approve</button>
+                                            <button class="btn-ghost" type="submit" style="background: rgba(16,185,129,0.1); color: #10b981; border-color: rgba(16,185,129,0.3);">Approve</button>
                                         </form>
                                     @endif
-                                    <button type="button" class="btn-ghost edit-subtopic-btn" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;"
+                                    <button type="button" class="subtopic-action-icon edit-subtopic-btn" aria-label="Edit subtopic" title="Edit subtopic"
                                         data-id="{{ $sub->id }}"
                                         data-content-type="{{ $sub->content_type }}"
                                         data-title="{{ $sub->title }}"
@@ -311,12 +317,12 @@
                                         data-video-file="{{ $sub->video_filename }}"
                                         data-doc="{{ $sub->documentation_filename }}"
                                         data-sort="{{ $sub->sort_order }}">
-                                        Edit
+                                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5L8 21H3v-5zM13 6l5 5"/></svg>
                                     </button>
                                     <form action="{{ route('admin.content.subtopics.destroy', ['course' => $course->id, 'subtopic' => $sub->id]) }}" method="POST" onsubmit="return confirmDelete(event, 'Delete this subtopic?');" style="margin:0;">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="btn-ghost" type="submit" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; color: var(--wrong);">Delete</button>
+                                        <button class="subtopic-action-icon subtopic-action-delete" type="submit" aria-label="Delete subtopic" title="Delete subtopic"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V3h8v3m3 0-1 15H6L5 6m5 4v7m4-7v7"/></svg></button>
                                     </form>
                                 </div>
                             </div>
