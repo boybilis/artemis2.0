@@ -3,15 +3,13 @@
 @section('title', 'User Profile')
 @section('kicker', 'User Details')
 
-@section('header_actions')
-    <a class="btn-primary" style="text-decoration:none" href="{{ route('admin.users.index') }}">View Users List</a>
-@endsection
-
 @section('content')
 @php($canEditProfile = Auth::user()->hasAdminAccess())
 <style>
     .user-profile-heading { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem; }
     .user-profile-heading .panel-title { margin:0;overflow-wrap:anywhere; }
+    .user-profile-actions { display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;margin-inline-start:auto; }
+    .user-profile-actions a { text-decoration:none; }
     #user-profile-edit { display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--text);cursor:pointer; }
     #user-profile-edit:hover { background:var(--border); }
     #user-profile-edit:focus-visible { outline:2px solid var(--brand-aqua); }
@@ -22,12 +20,15 @@
         <p class="panel-label">Profile</p>
         <div class="user-profile-heading">
             <h2 class="panel-title" id="user-profile-name">{{ $userStats['name'] }}</h2>
+            <div class="user-profile-actions">
             @if($canEditProfile)
                 <button type="button" id="user-profile-edit" aria-label="Edit profile" title="Edit profile" aria-controls="user-profile-form">
                     <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5L8 21H3v-5zM13 6l5 5"/></svg>
                 </button>
                 <button class="btn btn-primary" type="submit" form="user-profile-form" id="user-profile-save" hidden>Save changes</button>
             @endif
+                <a class="btn-primary" href="{{ route('admin.users.index') }}">View Users List</a>
+            </div>
         </div>
         <p class="panel-subtitle">Learner account details and institutional affiliation.</p>
 
