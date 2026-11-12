@@ -7,13 +7,17 @@
 @section('content')
 <style>
     .admin-dashboard-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem; }
-    body .admin-dashboard-metrics .metric-card,
-    body.light-mode .admin-dashboard-metrics .metric-card {
-        --metric-ink:var(--brand-dark-surface);
+    body .admin-dashboard-metrics .metric-card {
+        --metric-ink:var(--brand-ice);
         min-width:0;min-height:8.5rem;display:flex;flex-direction:column;justify-content:center;gap:.45rem;
         border:1px solid rgba(255,255,255,.32);border-radius:16px;padding:1.3rem;
-        background:linear-gradient(145deg,rgba(255,255,255,.3),transparent 75%),var(--brand-aqua);
+        background:var(--brand-slate);
         box-shadow:0 8px 20px rgba(25,52,79,.13);
+    }
+    body.light-mode .admin-dashboard-metrics .metric-card {
+        --metric-ink:var(--brand-slate);
+        background:var(--brand-white);
+        border-color:var(--border);
     }
     .admin-dashboard-metrics .metric-card::before,.admin-dashboard-metrics .metric-card::after { content:none; }
     .admin-dashboard-metrics .metric-label { margin:0;color:var(--metric-ink);font-size:.78rem;letter-spacing:normal;text-transform:none; }
