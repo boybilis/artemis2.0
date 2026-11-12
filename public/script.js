@@ -98,7 +98,12 @@ async function apiRequest(url, method = 'GET', data = null, {silent = false} = {
     };
 
     if (data && (method === 'POST' || method === 'PUT')) {
-        options.body = JSON.stringify(data);
+        if (data instanceof FormData) {
+            delete options.headers['Content-Type'];
+            options.body = data;
+        } else {
+            options.body = JSON.stringify(data);
+        }
     }
 
     try {
@@ -295,7 +300,46 @@ if (sidebarProgressReportBtn) sidebarProgressReportBtn.addEventListener('click',
 window.alert = message => showSystemAlert(message);
 
 const learnerSettingsBtn = $('learner-settings-btn');
+const learnerPictureInput = $('settings-profile-picture-file');
+const saveLearnerPicture = $('save-learner-picture');
+let learnerPictureRevision = 0;
+function showLearnerProfilePicture(url) {
+    const image = $('settings-profile-picture');
+    if (url) image.src = url + '?v=' + Date.now();
+    else image.removeAttribute('src');
+    image.hidden = !url;
+    $('settings-profile-placeholder').hidden = !!url;
+}
+learnerPictureInput?.addEventListener('change', () => { saveLearnerPicture.disabled = !learnerPictureInput.files.length; });
+saveLearnerPicture?.addEventListener('click', async () => {
+    const file = learnerPictureInput.files[0];
+    if (!file || saveLearnerPicture.disabled) return;
+    if (file.size > 2 * 1024 * 1024) return showToast('Choose a profile picture under 2 MB.');
+    ++learnerPictureRevision;
+    const data = new FormData();
+    data.append('profile_picture', file);
+    learnerPictureInput.disabled = saveLearnerPicture.disabled = true;
+    try {
+        const result = await apiRequest('/api/profile/picture', 'POST', data);
+        showLearnerProfilePicture(result.url);
+        learnerPictureInput.value = '';
+        showToast(result.message, 'success');
+    } catch {
+        // The request helper already reports the error.
+    } finally {
+        learnerPictureInput.disabled = false;
+        saveLearnerPicture.disabled = !learnerPictureInput.files.length;
+    }
+});
 if (learnerSettingsBtn) learnerSettingsBtn.addEventListener('click', () => {
+    const [firstName, ...rest] = (state.user?.name || '').trim().split(/\s+/);
+    $('settings-first-name').value = state.user?.firstName || firstName;
+    $('settings-last-name').value = state.user?.lastName || (!state.user?.firstName ? rest.join(' ') : '');
+    showLearnerProfilePicture(null);
+    const revision = ++learnerPictureRevision;
+    apiRequest('/api/profile/picture', 'GET', null, {silent:true}).then(result => {
+        if (revision === learnerPictureRevision) showLearnerProfilePicture(result.url);
+    }).catch(() => {});
     $('settings-email').value = state.user?.email || '';
     $('settings-phone').value = state.user?.phone || '';
     $('settings-current-password').value = '';
@@ -313,6 +357,8 @@ if (saveLearnerSettings) saveLearnerSettings.addEventListener('click', async () 
     saveLearnerSettings.textContent = 'Saving…';
     try {
         const result = await apiRequest('/api/profile/settings', 'POST', {
+            first_name: $('settings-first-name').value.trim(),
+            last_name: $('settings-last-name').value.trim(),
             email: $('settings-email').value.trim(), phone: $('settings-phone').value.trim(),
             current_password: $('settings-current-password').value, password,
             password_confirmation: confirmation
@@ -320,6 +366,10 @@ if (saveLearnerSettings) saveLearnerSettings.addEventListener('click', async () 
         if (result?.success) {
             state.user.email = result.user.email;
             state.user.phone = result.user.phone;
+            Object.assign(state.user, {name:result.user.name, firstName:result.user.firstName, lastName:result.user.lastName});
+            if ($('panel-name')) $('panel-name').textContent = result.user.name;
+            if ($('dashboard-hero-name')) $('dashboard-hero-name').textContent = result.user.firstName || result.user.name;
+            if ($('learner-sidebar-user-name')) $('learner-sidebar-user-name').textContent = result.user.name;
             const panelEmail = $('panel-email');
             if (panelEmail) panelEmail.textContent = result.user.email;
             if (result.verification_required) {

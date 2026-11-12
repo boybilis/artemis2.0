@@ -17,6 +17,9 @@
     #user-profile-edit:hover { background:var(--border); }
     #user-profile-edit:focus-visible { outline:2px solid var(--brand-aqua); }
     .user-profile-heading [hidden] { display:none !important; }
+    .user-profile-picture { display:grid;place-items:center;width:104px;height:104px;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--surface-solid);color:var(--text-muted);font-size:.75rem; }
+    .user-profile-picture img { width:100%;height:100%;object-fit:cover; }
+    .user-profile-picture [hidden], #profile-picture-upload[hidden] { display:none !important; }
 </style>
 <div class="split-grid">
     <section class="panel">
@@ -34,9 +37,23 @@
         </div>
         <p class="panel-subtitle">Learner account details and institutional affiliation.</p>
 
-        <form id="user-profile-form" method="post" action="{{ route('admin.users.profile.update', $userStats['id']) }}">
+        <form id="user-profile-form" method="post" enctype="multipart/form-data" action="{{ route('admin.users.profile.update', $userStats['id']) }}">
         @csrf @method('PATCH')
         <div class="form-grid">
+            <div class="field full">
+                <label>Profile picture</label>
+                <div class="user-profile-picture">
+                    <img id="profile-picture-image" alt="Profile picture" @if($profile['profile_picture_url']) src="{{ $profile['profile_picture_url'] }}" @else hidden @endif>
+                    <span id="profile-picture-placeholder" @if($profile['profile_picture_url']) hidden @endif>No photo</span>
+                </div>
+                @if($canEditProfile)
+                    <div id="profile-picture-upload" hidden>
+                        <label for="profile-picture-file">Upload profile picture</label>
+                        <input id="profile-picture-file" name="profile_picture" type="file" accept="image/jpeg,image/png,image/webp" disabled>
+                        <small>JPG, PNG, or WebP. Up to 2 MB.</small>
+                    </div>
+                @endif
+            </div>
             <div class="field">
                 <label for="profile-first-name">First name</label>
                 <input id="profile-first-name" name="first_name" maxlength="255" required readonly value="{{ $profile['first_name'] }}">
@@ -181,9 +198,12 @@
 const form = document.getElementById('user-profile-form');
 const button = document.getElementById('user-profile-save');
 const edit = document.getElementById('user-profile-edit');
+const pictureInput = document.getElementById('profile-picture-file');
 const setEditing = enabled => {
-    form.querySelectorAll('input[name]:not([type="hidden"])').forEach(field => { field.readOnly = !enabled; });
+    form.querySelectorAll('input[name]:not([type="hidden"]):not([type="file"])').forEach(field => { field.readOnly = !enabled; });
     document.getElementById('profile-country').disabled = !enabled;
+    document.getElementById('profile-picture-upload').hidden = !enabled;
+    pictureInput.disabled = !enabled;
     edit.hidden = enabled;
     button.hidden = !enabled;
     (enabled ? document.getElementById('profile-first-name') : edit).focus({preventScroll:true});
@@ -193,21 +213,26 @@ form.addEventListener('submit', async event => {
     event.preventDefault();
     const error = document.getElementById('user-profile-error');
     if (button.hidden || button.disabled) return;
-    const data = Object.fromEntries(new FormData(form));
-    const token = data._token;
-    delete data._token;
-    delete data._method;
+    const data = new FormData(form);
+    if (!pictureInput.files.length) data.delete('profile_picture');
     button.disabled = true;
     error.hidden = true;
     try {
         const response = await fetch(form.action, {
-            method: 'PATCH',
-            headers: {Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':token},
-            body: JSON.stringify(data),
+            method: 'POST',
+            headers: {Accept:'application/json'},
+            body: data,
         });
         const result = await response.json();
         if (!response.ok) throw new Error(Object.values(result.errors || {}).flat().join(' ') || result.message);
         document.getElementById('user-profile-name').textContent = result.name;
+        if (pictureInput.files.length && result.profile_picture_url) {
+            const image = document.getElementById('profile-picture-image');
+            image.src = result.profile_picture_url + '?v=' + Date.now();
+            image.hidden = false;
+            document.getElementById('profile-picture-placeholder').hidden = true;
+        }
+        pictureInput.value = '';
         setEditing(false);
         showAdminToast(result.message, 'success');
     } catch (failure) {

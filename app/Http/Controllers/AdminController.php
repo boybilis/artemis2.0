@@ -225,6 +225,7 @@ class AdminController extends Controller
             'birthdate' => $user->birthdate ? substr((string) $user->birthdate, 0, 10) : null,
             'affiliation_type' => $user->affiliation_type,
             'affiliation_name' => $user->affiliation_name,
+            'profile_picture_url' => app(\App\Services\ProfilePictures::class)->url($user),
         ];
     }
 
@@ -249,12 +250,19 @@ class AdminController extends Controller
             'email' => 'missing',
             'password' => 'missing',
             'role' => 'missing',
+            'profile_picture' => ['sometimes', ...\App\Services\ProfilePictures::RULES],
         ]);
         $data['name'] = trim($data['first_name'].' '.($data['last_name'] ?? ''));
         if (mb_strlen($data['name']) > 255) {
             throw \Illuminate\Validation\ValidationException::withMessages(['first_name' => 'The full name may not exceed 255 characters.']);
         }
-        $user->update($data);
+        $pictures = app(\App\Services\ProfilePictures::class);
+        unset($data['profile_picture']);
+        if ($request->hasFile('profile_picture')) {
+            $pictures->save($user, $request->file('profile_picture'), $data);
+        } else {
+            $user->update($data);
+        }
 
         AuditLog::create([
             'user_id' => $request->user()->id,
@@ -263,7 +271,7 @@ class AdminController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
-        return response()->json(['message' => 'User profile updated.', 'name' => $user->name]);
+        return response()->json(['message' => 'User profile updated.', 'name' => $user->name, 'profile_picture_url' => $pictures->url($user)]);
     }
 
     public function users(Request $request)

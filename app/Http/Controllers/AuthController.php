@@ -31,6 +31,8 @@ class AuthController extends Controller
     {
         $user = Auth::user();
         $data = $request->validate([
+            'first_name' => ['sometimes', 'required', 'string', 'max:255'],
+            'last_name' => ['nullable', 'string', 'max:255'],
             'email' => [
                 'required', 'email', 'max:255',
                 Rule::unique('users', 'email')->ignore($user->id),
@@ -49,6 +51,16 @@ class AuthController extends Controller
         }
 
         $changed = [];
+        if (array_key_exists('first_name', $data)) {
+            $name = trim($data['first_name'].' '.($data['last_name'] ?? ''));
+            if (mb_strlen($name) > 255) {
+                throw ValidationException::withMessages(['first_name' => 'The full name may not exceed 255 characters.']);
+            }
+            if ($name !== $user->name) $changed[] = 'name';
+            $user->name = $name;
+            $user->first_name = $data['first_name'];
+            $user->last_name = $data['last_name'] ?? null;
+        }
         $requiresEmailVerification = $changesEmail && $user->role === 'student';
         if ($changesEmail) $changed[] = $requiresEmailVerification ? 'email change requested' : 'email';
         if ((string) $user->phone !== (string) $data['phone']) $changed[] = 'phone number';
@@ -87,7 +99,7 @@ class AuthController extends Controller
             'verification_required' => $requiresEmailVerification,
             'pending_email' => $requiresEmailVerification ? $newEmail : null,
             'message' => $requiresEmailVerification ? 'Your other settings were saved. Enter the six-digit code sent to your new email address.' : 'Your settings have been updated.',
-            'user' => ['email' => $user->email, 'phone' => $user->phone],
+            'user' => ['email' => $user->email, 'phone' => $user->phone, 'name' => $user->name, 'firstName' => $user->first_name, 'lastName' => $user->last_name],
         ]);
     }
 

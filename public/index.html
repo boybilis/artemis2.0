@@ -14,7 +14,7 @@
             href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap"
             rel="stylesheet"
         />
-    <link rel="stylesheet" href="style.css?v=204" />
+    <link rel="stylesheet" href="style.css?v=205" />
     <link rel="stylesheet" href="test-bank-v2.css?v=52" />
     <link rel="stylesheet" href="course-subject-cards.css?v=5" />
         <link rel="stylesheet" href="branding.css?v=6" />
@@ -376,7 +376,16 @@
                 <button class="modal-close" data-close><i data-lucide="x"></i></button>
                 <div class="auth-logo"><span class="gra-brand gra-brand--auth"><span class="gra-brand-image"><img src="/images/gra-test-prep-logo.png" alt="GRA Test Prep" width="1080" height="1080"></span><small class="gra-brand-powered" aria-label="Powered by Artemis360"><span>Powered by</span><strong>Artemis360</strong></small></span></div>
                 <h2>Account Settings</h2>
-                <p class="auth-sub">Update your contact information or account password.</p>
+                <p class="auth-sub">Update your profile, contact information, or account password.</p>
+                <div class="field">
+                    <div class="learner-profile-picture"><img id="settings-profile-picture" alt="Your profile picture" hidden><span id="settings-profile-placeholder">No photo</span></div>
+                    <label for="settings-profile-picture-file">Upload profile picture</label>
+                    <input id="settings-profile-picture-file" type="file" accept="image/jpeg,image/png,image/webp">
+                    <small>JPG, PNG, or WebP. Up to 2 MB.</small>
+                    <button type="button" id="save-learner-picture" class="btn-ghost" disabled>Save Profile Picture</button>
+                </div>
+                <div class="field"><label for="settings-first-name">First name</label><input id="settings-first-name" autocomplete="given-name" maxlength="255"></div>
+                <div class="field"><label for="settings-last-name">Last name</label><input id="settings-last-name" autocomplete="family-name" maxlength="255"></div>
                 <div class="field"><label for="settings-email">Email Address</label><input type="email" id="settings-email" autocomplete="email"></div>
                 <div class="field"><label for="settings-phone">Contact Number</label><input type="tel" id="settings-phone" autocomplete="tel"></div>
                 <div class="field"><label for="settings-current-password">Current Password</label><input type="password" id="settings-current-password" autocomplete="current-password"><small>Required when changing your email or password.</small></div>
@@ -1422,7 +1431,7 @@
             </span>
             <span id="opening-status-label">Loading Course</span>
         </div>
-        <script src="script.js?v=231"></script>
+        <script src="script.js?v=232"></script>
         <script src="subject-policy.js?v=2"></script>
         <script src="video-watermark.js?v=3"></script>
         <script src="learner-course-zoom.js?v=1"></script>

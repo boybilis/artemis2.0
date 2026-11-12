@@ -8,6 +8,7 @@ use App\Http\Controllers\ExamController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\PackageController;
 use App\Http\Controllers\TestBankController;
+use App\Http\Controllers\ProfilePictureController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\AdministratorMiddleware;
 use App\Http\Middleware\RoleMiddleware;
@@ -39,6 +40,9 @@ Route::prefix('api')->group(function () {
     // Authenticated API endpoints
     Route::middleware('auth')->group(function () {
         Route::post('/profile/settings', [AuthController::class, 'updateSettings']);
+        Route::get('/profile/picture', [ProfilePictureController::class, 'current']);
+        Route::post('/profile/picture', [ProfilePictureController::class, 'store'])->middleware('throttle:12,1');
+        Route::get('/profile/picture/{user}', [ProfilePictureController::class, 'show'])->whereNumber('user')->name('profile.picture.show');
         Route::get('/question-flags', [\App\Http\Controllers\QuestionFlagController::class, 'index']);
         Route::get('/question-flags/unread', [\App\Http\Controllers\QuestionFlagController::class, 'unread']);
         Route::post('/question-flags/{flag}/read', [\App\Http\Controllers\QuestionFlagController::class, 'read']);

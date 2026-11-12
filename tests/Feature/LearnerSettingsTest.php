@@ -13,16 +13,17 @@ class LearnerSettingsTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_learner_can_update_phone_without_changing_credentials(): void
+    public function test_learner_can_update_name_and_phone_without_changing_credentials(): void
     {
         $learner = User::factory()->create(['email'=>'learner@example.com','phone'=>'09170000000','password'=>Hash::make('old-password')]);
 
         $this->actingAs($learner)->postJson('/api/profile/settings', [
             'email'=>'learner@example.com', 'phone'=>'+63 917 123 4567',
+            'first_name'=>'Updated', 'last_name'=>'Learner',
             'current_password'=>'', 'password'=>'', 'password_confirmation'=>'',
-        ])->assertOk()->assertJsonPath('user.phone', '+63 917 123 4567');
+        ])->assertOk()->assertJsonPath('user.phone', '+63 917 123 4567')->assertJsonPath('user.name', 'Updated Learner');
 
-        $this->assertDatabaseHas('users', ['id'=>$learner->id,'phone'=>'+63 917 123 4567']);
+        $this->assertDatabaseHas('users', ['id'=>$learner->id,'phone'=>'+63 917 123 4567','name'=>'Updated Learner','email'=>'learner@example.com']);
     }
 
     public function test_email_or_password_change_requires_the_correct_current_password(): void
