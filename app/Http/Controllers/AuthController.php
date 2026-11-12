@@ -52,7 +52,7 @@ class AuthController extends Controller
 
         $changed = [];
         if (array_key_exists('first_name', $data)) {
-            $name = trim($data['first_name'].' '.($data['last_name'] ?? ''));
+            $name = implode(' ', array_filter([$data['first_name'], $user->middle_name, $data['last_name'] ?? null], fn ($part) => filled($part)));
             if (mb_strlen($name) > 255) {
                 throw ValidationException::withMessages(['first_name' => 'The full name may not exceed 255 characters.']);
             }

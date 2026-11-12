@@ -64,6 +64,10 @@
                 <input id="profile-first-name" name="first_name" maxlength="255" required readonly value="{{ $profile['first_name'] }}">
             </div>
             <div class="field">
+                <label for="profile-middle-name">Middle name</label>
+                <input id="profile-middle-name" name="middle_name" maxlength="255" readonly value="{{ $profile['middle_name'] }}">
+            </div>
+            <div class="field">
                 <label for="profile-last-name">Last name</label>
                 <input id="profile-last-name" name="last_name" maxlength="255" readonly value="{{ $profile['last_name'] }}">
             </div>

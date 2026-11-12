@@ -45,7 +45,7 @@ class AdminUserProfileTest extends TestCase
         $url = route('admin.users.profile', $user);
         $password = $user->password;
         $profile = [
-            'first_name' => 'Updated', 'last_name' => 'Name', 'phone' => '1234',
+            'first_name' => 'Updated', 'middle_name' => 'Middle', 'last_name' => 'Name', 'phone' => '1234',
             'country_code' => 'PH', 'birthdate' => '2000-01-01',
             'affiliation_type' => 'school', 'affiliation_name' => 'Example School',
         ];
@@ -67,7 +67,7 @@ class AdminUserProfileTest extends TestCase
         }
 
         $this->assertDatabaseHas('users', [
-            'id' => $user->id, 'name' => 'Updated Name', 'affiliation_name' => 'Example School',
+            'id' => $user->id, 'name' => 'Updated Middle Name', 'middle_name' => 'Middle', 'affiliation_name' => 'Example School',
             'email' => $user->email, 'password' => $password, 'role' => 'student',
         ]);
 

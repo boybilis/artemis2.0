@@ -216,6 +216,7 @@ class AdminController extends Controller
 
         return [
             'first_name' => $user->first_name ?: ($nameParts[0] ?? ''),
+            'middle_name' => $user->middle_name,
             'last_name' => $user->first_name ? $user->last_name : ($nameParts[1] ?? ''),
             'email' => $user->email,
             'role' => $user->isAssistantAdmin() ? 'Asst. Admin' : ($user->hasAdminAccess() ? 'Admin' : ucfirst($user->role ?: 'student')),
@@ -241,6 +242,7 @@ class AdminController extends Controller
         abort_unless($request->user()->hasAdminAccess(), 403);
         $data = $request->validate([
             'first_name' => 'required|string|max:255',
+            'middle_name' => 'sometimes|nullable|string|max:255',
             'last_name' => 'present|nullable|string|max:255',
             'phone' => 'present|nullable|string|max:50',
             'country_code' => 'required|in:PH,INTL',
@@ -252,7 +254,8 @@ class AdminController extends Controller
             'role' => 'missing',
             'profile_picture' => ['sometimes', ...\App\Services\ProfilePictures::RULES],
         ]);
-        $data['name'] = trim($data['first_name'].' '.($data['last_name'] ?? ''));
+        $middleName = array_key_exists('middle_name', $data) ? $data['middle_name'] : $user->middle_name;
+        $data['name'] = implode(' ', array_filter([$data['first_name'], $middleName, $data['last_name']], fn ($part) => filled($part)));
         if (mb_strlen($data['name']) > 255) {
             throw \Illuminate\Validation\ValidationException::withMessages(['first_name' => 'The full name may not exceed 255 characters.']);
         }
