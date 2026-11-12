@@ -4,7 +4,7 @@
 @section('kicker', 'User Details')
 
 @section('header_actions')
-    <a class="btn-ghost" href="{{ route('admin.users.index') }}">View Users List</a>
+    <a class="btn-primary" style="text-decoration:none" href="{{ route('admin.users.index') }}">View Users List</a>
 @endsection
 
 @section('content')
