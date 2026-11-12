@@ -3,13 +3,16 @@
 @section('title', 'User Profile')
 @section('kicker', 'User Details')
 
+@section('page_header_actions')
+    <a class="btn-primary" href="{{ route('admin.users.index') }}">View Users List</a>
+@endsection
+
 @section('content')
 @php($canEditProfile = Auth::user()->hasAdminAccess())
 <style>
     .user-profile-heading { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem; }
     .user-profile-heading .panel-title { margin:0;overflow-wrap:anywhere; }
     .user-profile-actions { display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;margin-inline-start:auto; }
-    .user-profile-actions a { text-decoration:none; }
     #user-profile-edit { display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--text);cursor:pointer; }
     #user-profile-edit:hover { background:var(--border); }
     #user-profile-edit:focus-visible { outline:2px solid var(--brand-aqua); }
@@ -27,7 +30,6 @@
                 </button>
                 <button class="btn btn-primary" type="submit" form="user-profile-form" id="user-profile-save" hidden>Save changes</button>
             @endif
-                <a class="btn-primary" href="{{ route('admin.users.index') }}">View Users List</a>
             </div>
         </div>
         <p class="panel-subtitle">Learner account details and institutional affiliation.</p>

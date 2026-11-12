@@ -74,6 +74,8 @@
         .admin-main { flex: 1; background: var(--bg); display: flex; flex-direction: column; min-width: 0; overflow-y: auto; }
         
         .page-header { margin-bottom: 2rem; }
+        .page-header-with-actions { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem; }
+        .page-header-actions a { text-decoration:none; }
         .page-header h1 { font-family: 'Outfit', sans-serif; font-size: 1.8rem; font-weight: 800; margin: 0; }
         .kicker { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin-bottom: 0.3rem; }
 
@@ -272,9 +274,14 @@
 
         <main class="admin-main">
             <section class="content">
-                <div class="page-header">
-                    <p class="kicker">@yield('kicker', $workspaceRole . ' Panel')</p>
-                    <h1>{{ $pageTitle }}</h1>
+                <div class="page-header{{ View::hasSection('page_header_actions') ? ' page-header-with-actions' : '' }}">
+                    <div>
+                        <p class="kicker">@yield('kicker', $workspaceRole . ' Panel')</p>
+                        <h1>{{ $pageTitle }}</h1>
+                    </div>
+                    @hasSection('page_header_actions')
+                        <div class="page-header-actions">@yield('page_header_actions')</div>
+                    @endif
                 </div>
                 @if (! View::hasSection('toast_notifications') && session('success'))
                     <div class="notice" style="border-color: #bbf7d0; background: #f0fdf4; color: #166534;">
