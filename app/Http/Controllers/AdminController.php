@@ -22,6 +22,7 @@ use App\Models\QuizQuestion;
 use App\Models\UserProgress;
 use App\Models\QuizAttempt;
 use App\Models\Voucher;
+use App\Models\PaymentTransaction;
 use App\Models\Certificate;
 use App\Models\Announcement;
 use App\Models\AuditLog;
@@ -143,31 +144,36 @@ class AdminController extends Controller
     // ─── DASHBOARD OVERVIEW ──────────────────────────────────────
     public function dashboard()
     {
-        // Include everyone in the user counts as requested
+        $now = now();
+        $monthStart = $now->copy()->startOfMonth();
         $totalUsers = User::count();
-        $activeUsers = User::where('is_active', true)->count();
-        $newThisMonth = User::where('created_at', '>=', Carbon::now()->startOfMonth())->count();
-        
-        $completedTopics = UserProgress::count();
-        $quizAttempts = QuizAttempt::whereNotNull('topic_id')->count();
-        $finalExamAttempts = QuizAttempt::whereNull('topic_id')->count();
-        $certificatesIssued = Certificate::count();
-        $vouchersSold = Voucher::count();
-        $revenue = Voucher::sum('price');
+        $activeUsers = User::whereIn('id', AuditLog::query()
+            ->select('user_id')
+            ->whereIn('action', ['Login', 'Admin Login'])
+            ->whereBetween('created_at', [$monthStart, $now]))->count();
+        $newThisMonth = User::whereBetween('created_at', [$monthStart, $now])->count();
 
         // Snapshot stats
         $stats = [
             ['label' => 'Total users', 'value' => number_format($totalUsers), 'note' => '+' . number_format($newThisMonth) . ' this month'],
-            ['label' => 'Active users', 'value' => number_format($activeUsers), 'note' => ($totalUsers > 0 ? round(($activeUsers / $totalUsers) * 100) : 0) . '% active rate'],
-            ['label' => 'Completed topics', 'value' => number_format($completedTopics), 'note' => 'Across all learners'],
-            ['label' => 'Quiz attempts', 'value' => number_format($quizAttempts), 'note' => 'Topic quiz submissions'],
-            ['label' => 'Final exam attempts', 'value' => number_format($finalExamAttempts), 'note' => QuizAttempt::whereNull('topic_id')->where('passed', false)->count() . ' pending retakes'],
-            ['label' => 'Certificates issued', 'value' => number_format($certificatesIssued), 'note' => 'Verified completions']
+            ['label' => 'Active users', 'value' => number_format($activeUsers), 'note' => 'Signed in this calendar month'],
+            ['label' => 'Total courses', 'value' => number_format(Course::count()), 'note' => 'Master courses'],
+            ['label' => 'Total class batches', 'value' => number_format(CourseBatch::count()), 'note' => 'All class batches'],
+            ['label' => 'Certificates issued', 'value' => number_format(Certificate::count()), 'note' => 'Verified completions'],
         ];
 
         if (Auth::user()->hasAdminAccess()) {
-            $stats[] = ['label' => 'Vouchers sold', 'value' => number_format($vouchersSold), 'note' => Voucher::where('used', true)->count() . ' already used'];
-            $stats[] = ['label' => 'Voucher revenue', 'value' => 'PHP ' . number_format($revenue, 2), 'note' => 'Lifetime earnings'];
+            $issuedVouchers = Voucher::where(fn ($query) => $query->where('used', true)
+                ->orWhere('status', 'active')->orWhereNull('status'));
+            $paidRevenue = PaymentTransaction::where('status', 'paid')->where('currency', 'PHP')->sum('amount');
+            // Older paid batch vouchers may not have a corresponding payment transaction.
+            $legacyRevenue = Voucher::where('payment_provider', 'paymongo')->where('used', true)
+                ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('payment_transactions')
+                    ->where(fn ($match) => $match->whereColumn('payment_transactions.provider_checkout_id', 'vouchers.provider_checkout_id')
+                        ->orWhereColumn('payment_transactions.provider_payment_id', 'vouchers.provider_payment_id')))
+                ->sum('price');
+            $stats[] = ['label' => 'Vouchers issued', 'value' => number_format($issuedVouchers->count()), 'note' => 'Available and redeemed codes'];
+            $stats[] = ['label' => 'Total revenue', 'value' => 'PHP ' . number_format($paidRevenue + $legacyRevenue, 2), 'note' => 'Lifetime confirmed payments'];
         }
 
         // Recent Users for Dashboard
