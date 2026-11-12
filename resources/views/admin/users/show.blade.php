@@ -41,7 +41,9 @@
     .subject-progress-expand span { display:inline-block; }
     .subject-progress-expand[aria-expanded="true"] span { transform:rotate(90deg); }
     .subject-progress-details[hidden] { display:none; }
-    .subject-progress-details dl { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.75rem;margin:.25rem; }
+    .subject-progress-toolbar { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.65rem; }
+    .subject-progress-toolbar h3 { margin:0; }
+    .subject-progress-details dl { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.75rem;margin:.25rem 0 .25rem clamp(1.25rem,4vw,2.5rem);padding:.25rem 0 .25rem .8rem;border-inline-start:2px solid var(--border); }
     .subject-progress-details dt { font-weight:700; }
     .subject-progress-details dd { margin:0; }
     @container (max-width:34rem) { .user-profile-fields { grid-template-columns:minmax(0,1fr); } }
@@ -218,14 +220,25 @@
         url.search = new URLSearchParams({batch_id:batchId,course_id:courseId});
         load(url.href);
     });
+    const setSubjectExpanded = (button, expanded) => {
+        const details = document.getElementById(button.getAttribute('aria-controls'));
+        if (!details) return;
+        details.hidden = !expanded;
+        button.setAttribute('aria-expanded', String(expanded));
+    };
     results.addEventListener('click', event => {
         const expand = event.target.closest('.subject-progress-expand');
-        if (expand) {
-            const details = document.getElementById(expand.getAttribute('aria-controls'));
-            if (details) {
-                details.hidden = !details.hidden;
-                expand.setAttribute('aria-expanded', String(!details.hidden));
+        const toggleAll = event.target.closest('[data-subject-progress-toggle-all]');
+        if (expand || toggleAll) {
+            const controls = [...results.querySelectorAll('.subject-progress-expand')];
+            const isExpanded = button => button.getAttribute('aria-expanded') === 'true';
+            if (expand) setSubjectExpanded(expand, !isExpanded(expand));
+            else {
+                const expandAll = !controls.every(isExpanded);
+                controls.forEach(button => setSubjectExpanded(button, expandAll));
             }
+            const allButton = results.querySelector('[data-subject-progress-toggle-all]');
+            if (allButton) allButton.textContent = controls.every(isExpanded) ? 'Collapse all' : 'Expand all';
             return;
         }
         const link = event.target.closest('.pagination a');

@@ -39,6 +39,7 @@ class AdminUserCourseProgressTest extends TestCase
         $this->get($url.$selection, $headers)->assertOk()
             ->assertViewHas('subjects', fn ($page) => $page->count() === 10 && $page->total() === 11)
             ->assertSee('8/10')->assertSee('67%')->assertSee('4/5')->assertSee('Not taken')->assertSee('Not enabled')
+            ->assertSee('Expand all')->assertSee('aria-expanded="false"', false)
             ->assertDontSee('Individual learning activity')->assertDontSee('Handout activity')->assertDontSee('Enrolled Subject 11');
         $this->get($url.$selection.'&subjects_page=2', $headers)->assertOk()->assertSee('Enrolled Subject 11');
         Storage::disk('local')->put("course-gamification/{$course->id}.json", json_encode(['enabled' => true, 'points_enabled' => true, 'points' => ['content' => 25, 'assessment' => 100]]));

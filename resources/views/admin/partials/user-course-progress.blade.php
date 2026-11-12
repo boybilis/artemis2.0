@@ -1,11 +1,16 @@
 <div data-user-progress-tables>
     <p class="muted">{{ $course->title }} · {{ $batch->name }}</p>
     <section class="user-progress-table" aria-labelledby="selected-subject-progress">
-        <h3 id="selected-subject-progress">Subject Progress</h3>
+        <div class="subject-progress-toolbar">
+            <h3 id="selected-subject-progress">Subject Progress</h3>
+            @if($subjects->count())
+                <button type="button" class="btn-ghost" data-subject-progress-toggle-all aria-controls="subject-progress-rows">Expand all</button>
+            @endif
+        </div>
         <div class="table-wrap">
             <table class="data-table admin-compact-table subject-progress-table">
                 <thead><tr><th scope="col">Subject</th><th scope="col">Progress</th></tr></thead>
-                <tbody>
+                <tbody id="subject-progress-rows">
                     @forelse($subjects as $subject)
                         <tr class="{{ $loop->even ? 'subject-progress-alt' : '' }}">
                             <td><div class="subject-progress-name">
