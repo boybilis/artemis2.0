@@ -17,9 +17,13 @@
     #user-profile-edit:hover { background:var(--border); }
     #user-profile-edit:focus-visible { outline:2px solid var(--brand-aqua); }
     .user-profile-heading [hidden] { display:none !important; }
-    .user-profile-picture { display:grid;place-items:center;width:104px;height:104px;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--surface-solid);color:var(--text-muted);font-size:.75rem; }
+    #user-profile-form { container-type:inline-size; }
+    .user-profile-fields { display:grid;grid-template-columns:minmax(0,15rem) minmax(0,1fr);gap:1.25rem 2rem;align-items:start; }
+    .user-profile-fields .field { min-width:0; }
+    .user-profile-picture { display:grid;place-items:center;width:min(100%,13rem);aspect-ratio:1;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--surface-solid);color:var(--text-muted);font-size:.75rem; }
     .user-profile-picture img { width:100%;height:100%;object-fit:cover; }
     .user-profile-picture [hidden], #profile-picture-upload[hidden] { display:none !important; }
+    @container (max-width:34rem) { .user-profile-fields { grid-template-columns:minmax(0,1fr); } }
 </style>
 <div class="split-grid">
     <section class="panel">
@@ -39,8 +43,9 @@
 
         <form id="user-profile-form" method="post" enctype="multipart/form-data" action="{{ route('admin.users.profile.update', $userStats['id']) }}">
         @csrf @method('PATCH')
-        <div class="form-grid">
-            <div class="field full">
+        <div class="user-profile-fields">
+          <div class="user-profile-identity-fields">
+            <div class="field">
                 <label>Profile picture</label>
                 <div class="user-profile-picture">
                     <img id="profile-picture-image" alt="Profile picture" @if($profile['profile_picture_url']) src="{{ $profile['profile_picture_url'] }}" @else hidden @endif>
@@ -62,6 +67,8 @@
                 <label for="profile-last-name">Last name</label>
                 <input id="profile-last-name" name="last_name" maxlength="255" readonly value="{{ $profile['last_name'] }}">
             </div>
+          </div>
+          <div class="user-profile-contact-fields">
             <div class="field">
                 <label for="profile-email">Email address (read only)</label>
                 <input id="profile-email" type="email" readonly value="{{ $profile['email'] }}">
@@ -85,10 +92,11 @@
                 <label for="profile-affiliation-type">Affiliation type</label>
                 <input id="profile-affiliation-type" name="affiliation_type" maxlength="255" readonly value="{{ $profile['affiliation_type'] }}">
             </div>
-            <div class="field full">
+            <div class="field">
                 <label for="profile-affiliation">School / Institution / Company Name</label>
                 <input id="profile-affiliation" name="affiliation_name" maxlength="255" readonly value="{{ $profile['affiliation_name'] }}">
             </div>
+          </div>
         </div>
         <p id="user-profile-error" role="alert" style="color:var(--wrong)" hidden></p>
         </form>
