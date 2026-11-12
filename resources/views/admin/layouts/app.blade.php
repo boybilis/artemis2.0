@@ -222,7 +222,11 @@
             <button type="button" id="admin-mobile-menu" class="admin-mobile-menu" aria-label="Open admin navigation" aria-controls="admin-sidebar" aria-expanded="false">
                 <i data-lucide="menu"></i>
             </button>
-            @include('components.gra-brand') <span aria-hidden="true">|</span> {{ $workspaceRole }}
+            @include('components.gra-brand')
+            <span aria-hidden="true">|</span>
+            <span class="admin-nav-identity" style="min-width:0;overflow-wrap:anywhere">
+                {{ $workspaceRole }}@if(filled(Auth::user()->name)) <span aria-hidden="true">|</span> {{ Auth::user()->name }}@endif
+            </span>
         </div>
         <div class="nav-actions">
             @yield('header_actions')
