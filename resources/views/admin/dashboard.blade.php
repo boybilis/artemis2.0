@@ -62,18 +62,17 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Email</th>
                         <th>Role</th>
-                        <th>Joined</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach ($recentUsers as $user)
                         <tr>
                             <td style="font-weight: 600;">{{ $user->name }}</td>
-                            <td style="color: var(--text-muted);">{{ $user->email }}</td>
                             <td>
-                                @if($user->role === 'admin' || $user->is_admin)
+                                @if($user->isAssistantAdmin())
+                                    <span class="status warning">Asst. Admin</span>
+                                @elseif($user->role === 'admin' || $user->is_admin)
                                     <span class="status warning">Admin</span>
                                 @elseif(strtolower($user->role) === 'instructor')
                                     <span class="status info">Instructor</span>
@@ -81,7 +80,6 @@
                                     <span class="status success">{{ ucfirst($user->role ?? 'student') }}</span>
                                 @endif
                             </td>
-                            <td style="color: var(--text-muted);">{{ $user->created_at->format('M d, Y') }}</td>
                         </tr>
                     @endforeach
                 </tbody>

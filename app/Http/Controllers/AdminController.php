@@ -200,7 +200,8 @@ class AdminController extends Controller
             $monthlyRegistrations[$i]['count'] = (int) $counts->{"month_{$i}"};
         }
         $registrationYear = $now->year;
-        $recentUsers = $recentUsersQuery->orderBy('created_at', 'desc')->paginate(10, ['*'], 'dashboard_page');
+        $recentUsers = $recentUsersQuery->latest()->orderByDesc('id')
+            ->paginate(5, ['id', 'name', 'role', 'is_admin'], 'dashboard_page');
 
         return view('admin.dashboard', compact('stats', 'recentUsers', 'monthlyRegistrations', 'registrationYear'));
     }
