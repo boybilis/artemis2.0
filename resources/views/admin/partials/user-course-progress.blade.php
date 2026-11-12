@@ -34,13 +34,20 @@
                                             <dt>{{ $label }}</dt>
                                             <dd>
                                                 @forelse($subject['results'][$type] as $result)
-                                                    @php($attempt = $result['attempt'])
-                                                    <div>{{ $result['title'] }}:
-                                                        @if($attempt)
-                                                            {{ $attempt->points_earned ?? $attempt->score }}/{{ $attempt->points_possible ?? $attempt->total }}
-                                                            · {{ $attempt->passed ? 'Passed' : 'Not passed' }}
+                                                    <div class="subject-assessment-result">
+                                                        <span>{{ $result['title'] }}</span>
+                                                        @if($result['attempts']->isEmpty())
+                                                            <span class="muted"> · Not taken</span>
                                                         @else
-                                                            Not taken
+                                                            <ol class="subject-assessment-attempts" reversed>
+                                                                @foreach($result['attempts'] as $attempt)
+                                                                    <li value="{{ $loop->remaining + 1 }}">
+                                                                        Attempt {{ $loop->remaining + 1 }}:
+                                                                        {{ $attempt->points_earned ?? $attempt->score }}/{{ $attempt->points_possible ?? $attempt->total }}
+                                                                        · {{ $attempt->passed ? 'Passed' : 'Not passed' }}
+                                                                    </li>
+                                                                @endforeach
+                                                            </ol>
                                                         @endif
                                                     </div>
                                                 @empty

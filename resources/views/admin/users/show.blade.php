@@ -52,6 +52,8 @@
     .subject-progress-details dl { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.75rem;margin:.25rem 0 .25rem clamp(1.25rem,4vw,2.5rem);padding:.25rem 0 .25rem .8rem;border-inline-start:2px solid var(--border); }
     .subject-progress-details dt { font-weight:700; }
     .subject-progress-details dd { margin:0; }
+    .subject-assessment-result + .subject-assessment-result { margin-top:.55rem; }
+    .subject-assessment-attempts { display:grid;gap:.25rem;list-style:none;margin:.25rem 0 0;padding-inline-start:.55rem; }
     @container (max-width:34rem) { .user-profile-fields { grid-template-columns:minmax(0,1fr); } }
 </style>
 <div class="split-grid">

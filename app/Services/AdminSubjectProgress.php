@@ -50,7 +50,7 @@ class AdminSubjectProgress
                     }
                     if (!$learning && $type !== 'zoom_link' && $itemAttempts->contains(fn ($attempt) => $attempt->passed)) $passedAssessments++;
                     if (array_key_exists($type, $results)) {
-                        $results[$type][] = ['title' => $item->title, 'attempt' => $itemAttempts->first()];
+                    $results[$type][] = ['title' => $item->title, 'attempts' => $itemAttempts];
                     }
                 }
             }
