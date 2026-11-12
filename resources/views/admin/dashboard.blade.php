@@ -7,25 +7,21 @@
 @section('content')
 <style>
     .admin-dashboard-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem; }
-    .admin-dashboard-metrics .metric-card {
-        --metric-start:var(--brand-ice);--metric-end:var(--brand-aqua);
+    body .admin-dashboard-metrics .metric-card,
+    body.light-mode .admin-dashboard-metrics .metric-card {
         --metric-ink:var(--brand-dark-surface);
-        min-width:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,max-content);align-items:center;gap:.65rem;
-        border:1px solid rgba(255,255,255,.32);border-radius:12px;padding:.95rem;
-        background:linear-gradient(120deg,rgba(255,255,255,.22),transparent 72%),linear-gradient(115deg,var(--metric-start),var(--metric-end));
-        box-shadow:0 6px 18px rgba(25,52,79,.15),inset 0 0 12px rgba(255,255,255,.14);
+        min-width:0;min-height:8.5rem;display:flex;flex-direction:column;justify-content:center;gap:.45rem;
+        border:1px solid rgba(255,255,255,.32);border-radius:16px;padding:1.3rem;
+        background:linear-gradient(145deg,rgba(255,255,255,.3),transparent 75%),var(--brand-aqua);
+        box-shadow:0 8px 20px rgba(25,52,79,.13);
     }
-    .admin-dashboard-metrics .metric-card:nth-child(4n+2) { --metric-start:#ffe5d3;--metric-end:var(--brand-orange); }
-    .admin-dashboard-metrics .metric-card:nth-child(4n+3) { --metric-start:var(--brand-white);--metric-end:#badfee; }
-    .admin-dashboard-metrics .metric-card:nth-child(4n) { --metric-start:var(--brand-dark-surface);--metric-end:#23536c;--metric-ink:var(--brand-white); }
     .admin-dashboard-metrics .metric-card::before,.admin-dashboard-metrics .metric-card::after { content:none; }
     .admin-dashboard-metrics .metric-label { margin:0;color:var(--metric-ink);font-size:.78rem;letter-spacing:normal;text-transform:none; }
     .admin-dashboard-metrics .metric-value {
         margin:0;background:none;color:var(--metric-ink);-webkit-text-fill-color:currentColor;
-        font-size:clamp(1.1rem,1.6vw,1.65rem);line-height:1.15;text-align:right;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;
+        font-size:clamp(1.35rem,2vw,1.95rem);line-height:1.15;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;
     }
-    .admin-dashboard-metrics .metric-note { margin:.18rem 0 0;color:var(--metric-ink);font-size:.68rem; }
-    .admin-dashboard-metrics .metric-unit { display:block;font-size:.62rem;letter-spacing:.08em; }
+    .admin-dashboard-metrics .metric-note { margin:0;color:var(--metric-ink);font-size:.78rem; }
     .admin-dashboard-recent { margin-top:1rem; }
     body .admin-dashboard-recent.panel { background:var(--surface-solid);border-radius:16px;box-shadow:0 6px 18px rgba(25,52,79,.08); }
     .admin-dashboard-recent::before,.admin-dashboard-recent::after { content:none; }
@@ -35,17 +31,9 @@
 <div class="admin-dashboard-metrics">
     @foreach ($stats as $stat)
         <article class="metric-card">
-            <div>
-                <p class="metric-label">{{ $stat['label'] }}</p>
-                <p class="metric-note">{{ $stat['note'] }}</p>
-            </div>
-            <p class="metric-value">
-                @if(str_starts_with((string) $stat['value'], 'PHP '))
-                    <small class="metric-unit">PHP</small>{{ substr($stat['value'], 4) }}
-                @else
-                    {{ $stat['value'] }}
-                @endif
-            </p>
+            <p class="metric-label">{{ $stat['label'] }}</p>
+            <p class="metric-value">{{ $stat['value'] }}</p>
+            <p class="metric-note">{{ $stat['note'] }}</p>
         </article>
     @endforeach
 </div>
