@@ -16,6 +16,24 @@
     $isInstructor = trim(strtolower(Auth::user()->role)) === 'instructor' && !Auth::user()->is_admin;
 @endphp
 <style>
+    .data-table.compact-question-bank { min-width:0; }
+    body .data-table.compact-question-bank thead th { background:#48515f;color:#fff; }
+    .compact-question-bank :is(th,td) { padding:.45rem .65rem;font-size:.75rem; }
+    .compact-question-bank tbody td { background:var(--surface-solid); }
+    .compact-question-bank .question-bank-alt td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
+    .question-bank-reference,.question-bank-actions { display:flex;align-items:center;gap:.35rem;flex-wrap:wrap; }
+    .question-bank-expand { display:grid;place-items:center;width:1.85rem;height:1.85rem;border:0;border-radius:6px;background:transparent;color:var(--text);cursor:pointer; }
+    .question-bank-expand:hover { background:var(--border); }
+    .question-bank-expand:focus-visible { outline:2px solid var(--brand-aqua); }
+    .question-bank-expand[aria-expanded="true"] span { transform:rotate(90deg); }
+    .question-bank-details[hidden] { display:none; }
+    .question-bank-details dl { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr));gap:.65rem 1rem;margin:0;padding:.55rem; }
+    .question-bank-details dt { font-weight:700;color:var(--text-muted); }
+    .question-bank-details dd { margin:0;white-space:pre-wrap;overflow-wrap:anywhere; }
+    .question-bank-full-detail { grid-column:1/-1; }
+    [data-question-bank-search] { min-width:0;flex-wrap:wrap; }
+    [data-question-bank-search] input[name="search"] { min-width:0;flex:1 1 10rem; }
+    @media(max-width:540px) { .compact-question-bank :is(th,td) { padding:.35rem; } }
 .matrix-builder-toolbar{display:flex;justify-content:space-between;gap:1rem;align-items:center;margin-bottom:1rem}.matrix-builder-toolbar small{display:block;color:var(--text-muted);margin-top:.25rem}.matrix-builder-toolbar>div:last-child{display:flex;gap:.5rem}.matrix-column-card{display:grid;grid-template-columns:1fr 180px auto;gap:.6rem;align-items:end;padding:.75rem;border:1px solid var(--border);border-radius:9px;margin-bottom:.6rem}.matrix-author-table{min-width:850px}.matrix-cell-options{display:grid;gap:.45rem;min-width:300px}.matrix-choice-row{display:grid;grid-template-columns:auto 1fr 85px auto;gap:.4rem;align-items:center}.matrix-preview-panel{margin-top:1rem;padding:1rem;border:1px solid var(--border);border-radius:10px}.matrix-preview-table{width:100%;min-width:650px;border-collapse:collapse}.matrix-preview-table th,.matrix-preview-table td{padding:.75rem;border:1px solid var(--border);text-align:left}.matrix-preview-table select{width:100%}.mock-settings-badge{display:block;margin-top:.45rem;border:1px solid rgba(17,167,192,.3);cursor:pointer;font:inherit}.mock-settings-badge:hover{border-color:var(--accent);filter:brightness(1.08)}@media(max-width:700px){.matrix-column-card{grid-template-columns:1fr}.matrix-builder-toolbar{align-items:flex-start;flex-direction:column}}
 .assessment-pass-rule-badge,.mock-exam-settings-badge{display:flex;align-items:center;width:max-content;margin-top:.35rem;padding:.25rem .52rem;border:1px solid rgba(96,165,250,.38);border-radius:6px;background:linear-gradient(135deg,#0f2747,#174a82);color:#fff;font-size:.64rem;font-weight:700;line-height:1.15;letter-spacing:.01em;box-shadow:0 2px 7px rgba(15,39,71,.2)}.assessment-pass-rule-badge:hover,.mock-exam-settings-badge:hover{border-color:#60a5fa;background:linear-gradient(135deg,#12345d,#1d5b9e);color:#fff;filter:none;transform:translateY(-1px)}
 .cloze-builder-toolbar{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:1rem}.cloze-builder-toolbar small{display:block;margin-top:.25rem;color:var(--text-muted)}.cloze-blank-card{margin-bottom:.75rem;padding:1rem;border:1px solid var(--border);border-radius:10px;background:var(--surface)}.cloze-blank-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:.75rem}.cloze-preview-text{font-size:1.05rem;line-height:2.25}.cloze-preview-text select,.cloze-answer-select{display:inline-block;width:auto;min-width:150px;margin:0 .25rem;padding:.4rem .65rem;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--text)}@media(max-width:700px){.cloze-builder-toolbar{align-items:flex-start;flex-direction:column}.cloze-blank-grid{grid-template-columns:1fr}.cloze-preview-text select{max-width:100%}}
@@ -134,28 +152,19 @@
             @endif
             <form action="{{ route('admin.content.quizzes', $course->id) }}" method="GET" data-question-bank-search style="display:flex;gap:.5rem;margin:0">
                 <input type="hidden" name="subject_id" value="{{ $managedSubject->id }}">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Search questions..." style="padding:.5rem 1rem;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);min-width:250px">
+                <input type="text" name="search" aria-label="Search questions" value="{{ request('search') }}" placeholder="Search questions..." style="padding:.5rem 1rem;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text)">
                 <button type="submit" class="btn-primary" style="padding:.5rem 1rem">Search</button>
             </form>
         </div>
     </div>
     <div class="table-wrap">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Question</th>
-                    <th>Type</th>
-                    <th>Response</th>
-                    <th>Correct Answer(s)</th>
-                    <th>Scope</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
+        <table class="data-table compact-question-bank">
+            <thead><tr><th scope="col">Question</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
             <tbody>
                 @forelse ($quizzes as $question)
-                    <tr>
-                        <td style="vertical-align: middle;">
+                    <tr class="{{ $loop->even ? 'question-bank-alt' : '' }}">
+                        <td><div class="question-bank-reference">
+                            <button type="button" class="question-bank-expand" aria-expanded="false" aria-controls="bank-question-details-{{ $question->id }}" aria-label="Toggle question details"><span aria-hidden="true">▸</span></button>
                             <button type="button" class="btn-ghost preview-question-btn"
                                     data-question="{{ $question->question }}"
                                     data-assessment-title="{{ in_array($question->question_type, ['subtopic_assessment','pre_test','post_test']) ? ($question->subtopic?->title ?? 'Assessment') : ($question->question_type === 'final' ? 'Mock Exam' : ($question->question_type === 'midterm' ? 'Practice Test' : 'Topic Quiz')) }}"
@@ -165,50 +174,25 @@
                                     data-image-url="{{ $question->imageUrl() }}"
                                     data-rationale="{{ base64_encode($question->rationale ?? '') }}"
                                     style="padding:0.35rem 0.6rem;font-size:0.75rem">Preview</button>
-                        </td>
-                        <td style="vertical-align: middle;">
-                            <span class="status info">{{ in_array($question->question_type, ['subtopic_assessment','pre_test','post_test']) ? ($question->subtopic?->title ?? str($question->question_type)->replace('_',' ')->title()) : ($question->question_type === 'midterm' ? 'Practice Test' : ($question->question_type === 'final' ? 'Mock Exam' : 'Topic Quiz')) }}</span>
-                        </td>
-                        <td style="vertical-align: middle;">
-                            <span class="status {{ in_array($question->response_type, ['sata', 'grid', 'cloze', 'highlight']) ? 'warning' : 'info' }}">
-                                {{ $question->response_type === 'sata' ? 'SATA' : ($question->response_type === 'grid' ? 'Grid / Matrix' : ($question->response_type === 'cloze' ? 'Cloze / Dropdown' : ($question->response_type === 'highlight' ? 'Highlighting' : 'Single choice'))) }}
-                            </span>
-                        </td>
-                        <td style="vertical-align: middle;">
-                            @php
-                                $opts = $question->options;
-                                $answerIndexes = $question->correct_answers ?: [$question->answer];
-                                $answerTexts = collect($answerIndexes)->map(fn ($index) => $opts[$index] ?? 'Option ' . ((int) $index + 1));
-                            @endphp
-                            <code>{{ $question->response_type === 'grid' ? 'Configured per matrix cell' : ($question->response_type === 'cloze' ? 'Configured per inline dropdown' : ($question->response_type === 'highlight' ? 'Configured highlightable text' : $answerTexts->join(', '))) }}</code>
-                        </td>
-                        <td style="vertical-align: middle;">
-                            @if (in_array($question->question_type, ['subtopic_assessment','pre_test','post_test']) && $question->subtopic)
-                                <span class="status info">{{ $question->topic?->title }} — {{ $question->subtopic->title }}</span>
-                            @elseif ($question->question_type === 'quiz' && $question->topic)
-                                <span class="status info">{{ $question->topic->title }}</span>
-                            @else
-                                <span class="status warning">Course-wide</span>
-                            @endif
-                        </td>
-                        <td style="vertical-align: middle;">
+                        </div></td>
+                        <td>
                             @if($question->status === 'approved')
                                 <span class="status success">Approved</span>
                             @else
                                 <span class="status warning">Pending</span>
                             @endif
                         </td>
-                        <td style="vertical-align: middle;">
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <td>
+                            <div class="question-bank-actions">
                                 @if($question->status === 'pending' && $isAdmin)
                                 <form action="{{ route('admin.content.quizzes.approve', ['course' => $course->id, 'quiz' => $question->id]) }}" method="POST" style="margin:0;">
                                     @csrf
                                     <button type="submit" class="btn-ghost" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; color: var(--correct); border-color: var(--correct);">Approve</button>
                                 </form>
                                 @endif
-                                
+
                                 @if(!($isAdmin && $question->status === 'pending'))
-                                    <button type="button" class="btn-ghost edit-question-btn" 
+                                    <button type="button" class="btn-ghost edit-question-btn"
                                             data-id="{{ $question->id }}"
                                             data-question="{{ $question->question }}"
                                             data-rationale="{{ base64_encode($question->rationale ?? '') }}"
@@ -236,10 +220,37 @@
                             </div>
                         </td>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="7" class="muted">No assessment questions configured.</td>
+                    <tr id="bank-question-details-{{ $question->id }}" class="question-bank-details {{ $loop->even ? 'question-bank-alt' : '' }}" hidden>
+                        <td colspan="3">
+                            @php
+                                $opts = $question->options;
+                                $answerIndexes = $question->correct_answers ?: [$question->answer];
+                                $answerTexts = collect($answerIndexes)->map(fn ($index) => $opts[$index] ?? 'Option ' . ((int) $index + 1));
+                                $isSubtopicAssessment = in_array($question->question_type, ['subtopic_assessment', 'pre_test', 'post_test']);
+                                $type = $isSubtopicAssessment ? ($question->subtopic?->title ?? str($question->question_type)->replace('_', ' ')->title()) : match ($question->question_type) {
+                                    'midterm' => 'Practice Test', 'final' => 'Mock Exam', default => 'Topic Quiz',
+                                };
+                                $responseType = match ($question->response_type) {
+                                    'sata' => 'SATA', 'grid' => 'Grid / Matrix', 'cloze' => 'Cloze / Dropdown', 'highlight' => 'Highlighting', default => 'Single choice',
+                                };
+                                $answer = match ($question->response_type) {
+                                    'grid' => 'Configured per matrix cell', 'cloze' => 'Configured per inline dropdown', 'highlight' => 'Configured highlightable text', default => $answerTexts->join(', '),
+                                };
+                                $scope = $isSubtopicAssessment && $question->subtopic
+                                    ? collect([$question->topic?->title, $question->subtopic->title])->filter()->join(' — ')
+                                    : ($question->question_type === 'quiz' ? ($question->topic?->title ?? 'Course-wide') : 'Course-wide');
+                            @endphp
+                            <dl>
+                                <div class="question-bank-full-detail"><dt>Question</dt><dd>{{ $question->question }}</dd></div>
+                                <div><dt>Type</dt><dd>{{ $type }}</dd></div>
+                                <div><dt>Response</dt><dd>{{ $responseType }}</dd></div>
+                                <div><dt>Scope</dt><dd>{{ $scope }}</dd></div>
+                                <div class="question-bank-full-detail"><dt>Correct answer(s)</dt><dd>{{ $answer }}</dd></div>
+                            </dl>
+                        </td>
                     </tr>
+                @empty
+                    <tr><td colspan="3" class="muted">No assessment questions configured.</td></tr>
                 @endforelse
             </tbody>
         </table>
@@ -252,9 +263,13 @@
                 No {{ request('search') ? 'matching ' : '' }}questions found
             @endif
         </p>
-        <div>
-            {{ $quizzes->links('pagination::bootstrap-4') }}
-        </div>
+        @if($quizzes->hasPages())
+            <nav class="question-bank-actions" aria-label="Question bank pagination">
+                <button type="button" class="btn-ghost" data-question-bank-page="{{ $quizzes->previousPageUrl() }}" @disabled($quizzes->onFirstPage())>Previous</button>
+                <span>Page {{ $quizzes->currentPage() }} of {{ $quizzes->lastPage() }}</span>
+                <button type="button" class="btn-ghost" data-question-bank-page="{{ $quizzes->nextPageUrl() }}" @disabled(!$quizzes->hasMorePages())>Next</button>
+            </nav>
+        @endif
     </div>
 </section>
 
@@ -818,6 +833,19 @@
             nextButton.textContent = 'Close Preview';
         };
         openModal('questionPreviewModal');
+    });
+
+    document.addEventListener('click', event => {
+        const toggle = event.target.closest('.question-bank-expand');
+        if (toggle) {
+            const details = document.getElementById(toggle.getAttribute('aria-controls'));
+            if (details) {
+                details.hidden = !details.hidden;
+                toggle.setAttribute('aria-expanded', String(!details.hidden));
+            }
+        }
+        const page = event.target.closest('[data-question-bank-page]');
+        if (page && !page.disabled) loadAdminTable('question-bank-table', page.dataset.questionBankPage);
     });
 
     document.addEventListener('submit', event => {
