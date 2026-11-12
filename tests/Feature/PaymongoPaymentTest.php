@@ -22,10 +22,13 @@ class PaymongoPaymentTest extends TestCase
     {
         foreach (range(1, 6) as $index) Voucher::create(['code'=>'TEST-CODE-'.$index]);
         $this->actingAs(User::factory()->create(['role'=>'admin', 'is_admin'=>true]));
-        $this->get('/admin/vouchers')->assertOk()->assertViewHas('vouchers', fn ($page) => $page->count() === 5 && $page->total() === 6)
+        $headers = ['X-Requested-With' => 'XMLHttpRequest', 'X-Admin-Table' => 'vouchers-table'];
+        $this->get('/admin/vouchers')->assertOk()->assertSee('data-payment-directory-lazy', false)->assertDontSee('TEST-CODE-6');
+        $this->get('/admin/vouchers', $headers)->assertOk()->assertViewIs('admin.partials.payment-directory')
+            ->assertViewHas('vouchers', fn ($page) => $page->count() === 5 && $page->total() === 6)
             ->assertSee('TEST-CODE-6')->assertDontSee('TEST-CODE-1');
-        $this->get('/admin/vouchers?vouchers_page=2', ['X-Requested-With'=>'XMLHttpRequest'])->assertOk()->assertSee('TEST-CODE-1')->assertDontSee('TEST-CODE-6');
-        $this->get('/admin/vouchers?voucher_search=TEST-CODE-2')->assertOk()->assertViewHas('vouchers', fn ($page) => $page->total() === 1)->assertSee('TEST-CODE-2');
+        $this->get('/admin/vouchers?vouchers_page=2', $headers)->assertOk()->assertSee('TEST-CODE-1')->assertDontSee('TEST-CODE-6');
+        $this->get('/admin/vouchers?voucher_search=TEST-CODE-2', $headers)->assertOk()->assertViewHas('vouchers', fn ($page) => $page->total() === 1)->assertSee('TEST-CODE-2');
     }
 
     public function test_maintenance_blocks_checkout_but_assigned_learner_can_redeem_the_emailed_code(): void
@@ -44,7 +47,8 @@ class PaymongoPaymentTest extends TestCase
         $this->assertMatchesRegularExpression('/^ART2-[0-9A-F]{4}-[0-9A-F]{4}$/', $voucher->code);
         Mail::assertSent(\App\Mail\AssignedEnrollmentVoucher::class, fn ($mail) => $mail->hasTo($learner->email));
         $this->assertSame($learner->id, (int) $voucher->assigned_to);
-        $this->get('/admin/vouchers')->assertOk()->assertSee($learner->email)->assertSee('Email sent');
+        $this->get('/admin/vouchers', ['X-Requested-With' => 'XMLHttpRequest', 'X-Admin-Table' => 'vouchers-table'])
+            ->assertOk()->assertSee($learner->email)->assertSee('Email sent');
 
         $payload = ['code'=>$voucher->code, 'batch_id'=>$batch->id];
         $this->actingAs($other)->postJson('/api/voucher/verify', $payload)->assertForbidden();

@@ -6,6 +6,12 @@
 
 
 @section('content')
+<style>
+    body .data-table.payments-directory-table thead th { background:#48515f;color:#fff; }
+    .payments-directory-table tbody tr:nth-child(odd) td { background:var(--surface-solid); }
+    .payments-directory-table tbody tr:nth-child(even) td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
+    .payment-pages { display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:.65rem; }
+</style>
 @if(Auth::user()->hasAdminAccess())
     <section class="panel" style="margin-bottom:1rem">
         <h2 class="panel-title">Automatic Payments</h2>
@@ -29,54 +35,7 @@
         </form>
     </section>
 @endif
-    <section class="panel" data-ajax-table="vouchers-table">
-        <p class="panel-label">Payments and access</p>
-        <h2 class="panel-title">Batch Enrollment Payments &amp; Codes</h2>
-        <form class="toolbar form-grid" id="voucher-table-filters" method="get" action="{{ route('admin.vouchers.index') }}">
-            @if(request()->filled('redeemed_page'))<input type="hidden" name="redeemed_page" value="{{ request()->integer('redeemed_page') }}">@endif
-            <div class="field"><label for="voucher-search">Search payments and codes</label><input id="voucher-search" type="search" name="voucher_search" value="{{ $voucherSearch }}" maxlength="120" placeholder="Reference, learner, course, or batch"></div>
-            <div class="field"><label for="voucher-size">Rows per page</label><select id="voucher-size" name="voucher_size">@foreach([5,10,25,50] as $size)<option value="{{ $size }}" @selected($voucherPageSize === $size)>{{ $size }}</option>@endforeach</select></div>
-            <div><button class="btn-ghost" type="submit">Search</button></div>
-        </form>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead><tr><th>Reference</th><th>Course / Batch</th><th>Status</th><th>Learner</th><th>Method</th><th>Amount</th><th>Date created</th></tr></thead>
-                <tbody>
-                    @forelse ($vouchers as $voucher)
-                        <tr>
-                            <td><strong>{{ $voucher->code }}</strong></td>
-                            <td><strong>{{ $voucher->batch?->courses?->pluck('title')->join(', ') ?: 'No assigned course' }}</strong>@if($voucher->batch)<br><span class="muted">{{ $voucher->batch->code }} — {{ $voucher->batch->name }}</span>@endif</td>
-                            <td>
-                                <span class="status {{ $voucher->statusCssClass() }}">
-                                    {{ $voucher->statusLabel() }}
-                                </span>
-                            </td>
-                            <td>
-                                @php($learner = $voucher->assignedLearner ?? $voucher->user)
-                                @if ($learner)
-                                    <strong>{{ $learner->name }}</strong><br>
-                                    <span class="muted">{{ $learner->email }}</span>
-                                @else
-                                    <span class="muted">Unassigned</span>
-                                @endif
-                            </td>
-                            <td><span class="status info">{{ $voucher->paymentMethodLabel() }}</span>@if($voucher->payment_provider === 'manual')<br><small>{{ $voucher->emailed_at ? 'Email sent' : 'Email not confirmed' }}</small>@endif</td>
-                            <td>₱{{ number_format($voucher->price, 2) }}</td>
-                            <td>{{ $voucher->created_at->format('M d, Y h:i A') }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="muted">No enrollment payments or access codes found.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-        <div style="padding-top:1.25rem; border-top:1px solid var(--border);">
-            <p class="muted" role="status">@if($vouchers->count()) Showing {{ $vouchers->firstItem() }}–{{ $vouchers->lastItem() }} of {{ $vouchers->total() }} records @else No matching records @endif</p>
-            {{ $vouchers->links('pagination::bootstrap-4') }}
-        </div>
-    </section>
+    @include('admin.partials.payment-directory')
 
 <section class="panel" style="margin-top: 18px;" data-ajax-table="redeemed-vouchers-table">
     <p class="panel-label">Redeemed Vouchers</p>
@@ -115,10 +74,43 @@
 </section>
 <script>
 (() => {
+    let pending;
+    const load = async url => {
+        const panel = document.querySelector('[data-ajax-table="vouchers-table"]');
+        const message = panel.querySelector('.payment-list-message');
+        pending?.abort();
+        const request = new AbortController();
+        pending = request;
+        panel.setAttribute('aria-busy', 'true');
+        message.textContent = 'Loading payments…';
+        message.hidden = false;
+        try {
+            const response = await fetch(url, {
+                headers:{Accept:'text/html','X-Requested-With':'XMLHttpRequest','X-Admin-Table':'vouchers-table'},
+                credentials:'same-origin',signal:request.signal,
+            });
+            if(!response.ok) throw new Error();
+            const html = new DOMParser().parseFromString(await response.text(), 'text/html');
+            const next = html.querySelector('[data-ajax-table="vouchers-table"]');
+            if(!next) throw new Error();
+            if(!request.signal.aborted) {
+                const focused = document.activeElement;
+                const focusId = panel.contains(focused) ? focused.id : '';
+                const wasPaging = focused?.hasAttribute('data-payment-page');
+                panel.replaceWith(next);
+                if(focusId) document.getElementById(focusId)?.focus({preventScroll:true});
+                else if(wasPaging) next.querySelector('[data-payment-page]:not(:disabled)')?.focus({preventScroll:true});
+            }
+        } catch {
+            if(!request.signal.aborted) message.textContent = 'Unable to load payments. Select Search to try again.';
+        } finally {
+            if(!request.signal.aborted) panel.removeAttribute('aria-busy');
+        }
+    };
     const reload = form => {
         const url = new URL(form.action);
         url.search = new URLSearchParams(new FormData(form));
-        loadAdminTable('vouchers-table', url.href);
+        load(url.href);
     };
     document.addEventListener('submit', event => {
         if (event.target.id !== 'voucher-table-filters') return;
@@ -128,6 +120,21 @@
     document.addEventListener('change', event => {
         if (event.target.id === 'voucher-size') reload(event.target.form);
     });
+    document.addEventListener('click', event => {
+        const button = event.target.closest('[data-payment-page]');
+        if (button && !button.disabled) load(button.dataset.paymentPage);
+    });
+    document.addEventListener('payment-directory:refresh', () => reload(document.getElementById('voucher-table-filters')));
+    const initial = document.querySelector('[data-payment-directory-lazy]');
+    if (initial && 'IntersectionObserver' in window) {
+        const observer = new IntersectionObserver(entries => {
+            if (entries.some(entry => entry.isIntersecting)) {
+                observer.disconnect();
+                if (initial.isConnected && !initial.hasAttribute('aria-busy')) reload(initial.querySelector('form'));
+            }
+        });
+        observer.observe(initial);
+    } else if (initial) reload(initial.querySelector('form'));
 })();
 </script>
 @if(Auth::user()->hasAdminAccess())
@@ -149,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showAdminToast(data.message, data.emailed === false ? 'info' : 'success');
             if (form === issue) {
                 form.reset();
-                await loadAdminTable('vouchers-table', @json(route('admin.vouchers.index')), false);
+                document.dispatchEvent(new Event('payment-directory:refresh'));
             }
         } catch (error) { showAdminToast(error.message, 'error'); }
         finally { button.disabled = false; }

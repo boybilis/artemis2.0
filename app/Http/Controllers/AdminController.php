@@ -2004,7 +2004,8 @@ class AdminController extends Controller
     public function vouchers(Request $request)
     {
         $user = Auth::user();
-        if ($user) {
+        $paymentTableOnly = $request->ajax() && $request->header('X-Admin-Table') === 'vouchers-table';
+        if ($user && !$paymentTableOnly) {
             $user->last_vouchers_viewed_at = now();
             $user->save();
         }
@@ -2013,7 +2014,9 @@ class AdminController extends Controller
         $voucherSearch = is_string($searchInput) ? mb_substr(trim($searchInput), 0, 120) : '';
         $voucherPageSize = $request->integer('voucher_size', 5);
         if (!in_array($voucherPageSize, [5, 10, 25, 50], true)) $voucherPageSize = 5;
-        $vouchers = Voucher::with(['user', 'assignedLearner', 'batch.courses'])
+        $vouchers = null;
+        if ($paymentTableOnly || $request->hasAny(['voucher_search', 'voucher_size', 'vouchers_page'])) {
+            $vouchers = Voucher::with(['user', 'assignedLearner', 'batch.courses'])
             ->when($voucherSearch !== '', function ($query) use ($voucherSearch) {
                 $term = '%'.$voucherSearch.'%';
                 $query->where(function ($query) use ($term) {
@@ -2026,6 +2029,10 @@ class AdminController extends Controller
             ->orderBy('created_at', 'desc')
             ->orderByDesc('id')->paginate($voucherPageSize, ['*'], 'vouchers_page')
             ->withQueryString();
+        }
+        if ($paymentTableOnly) {
+            return view('admin.partials.payment-directory', compact('vouchers', 'voucherSearch', 'voucherPageSize'));
+        }
         $redeemedVouchers = Voucher::with(['user', 'batch.courses'])
             ->where('used', true)
             ->orderBy('used_at', 'desc')

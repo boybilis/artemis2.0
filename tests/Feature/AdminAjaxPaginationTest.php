@@ -48,7 +48,10 @@ class AdminAjaxPaginationTest extends TestCase
         $vouchers = $this->get('/admin/vouchers')->assertOk()
             ->assertSee('data-ajax-table="vouchers-table"', false)
             ->assertSee('data-ajax-table="redeemed-vouchers-table"', false);
-        $this->assertPaginator($vouchers->viewData('vouchers'), 15, 'vouchers_page');
+        $this->assertNull($vouchers->viewData('vouchers'));
+        $paymentTable = $this->get('/admin/vouchers', ['X-Requested-With' => 'XMLHttpRequest', 'X-Admin-Table' => 'vouchers-table'])
+            ->assertOk()->assertViewIs('admin.partials.payment-directory');
+        $this->assertPaginator($paymentTable->viewData('vouchers'), 5, 'vouchers_page');
         $this->assertPaginator($vouchers->viewData('redeemedVouchers'), 15, 'redeemed_page');
 
         $certificates = $this->get('/admin/certificates')->assertOk()->assertSee('data-ajax-table="certificates-table"', false);
