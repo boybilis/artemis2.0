@@ -5,17 +5,30 @@
 
 @section('header_actions')
     <a class="btn btn-muted" href="{{ route('admin.users.index') }}">Back to users</a>
-    @if(Auth::user()->hasAdminAccess())
-        <button class="btn btn-primary" type="submit" form="user-profile-form" id="user-profile-save">Save changes</button>
-    @endif
 @endsection
 
 @section('content')
 @php($canEditProfile = Auth::user()->hasAdminAccess())
+<style>
+    .user-profile-heading { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem; }
+    .user-profile-heading .panel-title { margin:0;overflow-wrap:anywhere; }
+    #user-profile-edit { display:inline-grid;place-items:center;width:44px;height:44px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--text);cursor:pointer; }
+    #user-profile-edit:hover { background:var(--border); }
+    #user-profile-edit:focus-visible { outline:2px solid var(--brand-aqua); }
+    .user-profile-heading [hidden] { display:none !important; }
+</style>
 <div class="split-grid">
     <section class="panel">
         <p class="panel-label">Profile</p>
-        <h2 class="panel-title" id="user-profile-name">{{ $userStats['name'] }}</h2>
+        <div class="user-profile-heading">
+            <h2 class="panel-title" id="user-profile-name">{{ $userStats['name'] }}</h2>
+            @if($canEditProfile)
+                <button type="button" id="user-profile-edit" aria-label="Edit profile" title="Edit profile" aria-controls="user-profile-form">
+                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5L8 21H3v-5zM13 6l5 5"/></svg>
+                </button>
+                <button class="btn btn-primary" type="submit" form="user-profile-form" id="user-profile-save" hidden>Save changes</button>
+            @endif
+        </div>
         <p class="panel-subtitle">Learner account details and institutional affiliation.</p>
 
         <form id="user-profile-form" method="post" action="{{ route('admin.users.profile.update', $userStats['id']) }}">
@@ -23,11 +36,11 @@
         <div class="form-grid">
             <div class="field">
                 <label for="profile-first-name">First name</label>
-                <input id="profile-first-name" name="first_name" maxlength="255" required @readonly(!$canEditProfile) value="{{ $profile['first_name'] }}">
+                <input id="profile-first-name" name="first_name" maxlength="255" required readonly value="{{ $profile['first_name'] }}">
             </div>
             <div class="field">
                 <label for="profile-last-name">Last name</label>
-                <input id="profile-last-name" name="last_name" maxlength="255" @readonly(!$canEditProfile) value="{{ $profile['last_name'] }}">
+                <input id="profile-last-name" name="last_name" maxlength="255" readonly value="{{ $profile['last_name'] }}">
             </div>
             <div class="field">
                 <label for="profile-email">Email address (read only)</label>
@@ -35,26 +48,26 @@
             </div>
             <div class="field">
                 <label for="profile-phone">Phone number</label>
-                <input id="profile-phone" name="phone" type="tel" maxlength="50" @readonly(!$canEditProfile) value="{{ $profile['phone'] }}">
+                <input id="profile-phone" name="phone" type="tel" maxlength="50" readonly value="{{ $profile['phone'] }}">
             </div>
             <div class="field">
                 <label for="profile-birthdate">Birthdate</label>
-                <input id="profile-birthdate" name="birthdate" type="date" @readonly(!$canEditProfile) value="{{ $profile['birthdate'] }}">
+                <input id="profile-birthdate" name="birthdate" type="date" readonly value="{{ $profile['birthdate'] }}">
             </div>
             <div class="field">
                 <label for="profile-country">Country / Pricing Region</label>
-                <select id="profile-country" name="country_code" required @disabled(!$canEditProfile)>
+                <select id="profile-country" name="country_code" required disabled>
                     <option value="PH" @selected($profile['country_code'] === 'PH')>Philippines</option>
                     <option value="INTL" @selected($profile['country_code'] === 'INTL')>International</option>
                 </select>
             </div>
             <div class="field">
                 <label for="profile-affiliation-type">Affiliation type</label>
-                <input id="profile-affiliation-type" name="affiliation_type" maxlength="255" @readonly(!$canEditProfile) value="{{ $profile['affiliation_type'] }}">
+                <input id="profile-affiliation-type" name="affiliation_type" maxlength="255" readonly value="{{ $profile['affiliation_type'] }}">
             </div>
             <div class="field full">
                 <label for="profile-affiliation">School / Institution / Company Name</label>
-                <input id="profile-affiliation" name="affiliation_name" maxlength="255" @readonly(!$canEditProfile) value="{{ $profile['affiliation_name'] }}">
+                <input id="profile-affiliation" name="affiliation_name" maxlength="255" readonly value="{{ $profile['affiliation_name'] }}">
             </div>
         </div>
         <p id="user-profile-error" role="alert" style="color:var(--wrong)" hidden></p>
@@ -161,12 +174,22 @@
 </div>
 @if($canEditProfile)
 <script>
-document.getElementById('user-profile-form').addEventListener('submit', async event => {
+(() => {
+const form = document.getElementById('user-profile-form');
+const button = document.getElementById('user-profile-save');
+const edit = document.getElementById('user-profile-edit');
+const setEditing = enabled => {
+    form.querySelectorAll('input[name]:not([type="hidden"])').forEach(field => { field.readOnly = !enabled; });
+    document.getElementById('profile-country').disabled = !enabled;
+    edit.hidden = enabled;
+    button.hidden = !enabled;
+    (enabled ? document.getElementById('profile-first-name') : edit).focus({preventScroll:true});
+};
+edit.addEventListener('click', () => setEditing(true));
+form.addEventListener('submit', async event => {
     event.preventDefault();
-    const form = event.currentTarget;
-    const button = document.getElementById('user-profile-save');
     const error = document.getElementById('user-profile-error');
-    if (button.disabled) return;
+    if (button.hidden || button.disabled) return;
     const data = Object.fromEntries(new FormData(form));
     const token = data._token;
     delete data._token;
@@ -182,6 +205,7 @@ document.getElementById('user-profile-form').addEventListener('submit', async ev
         const result = await response.json();
         if (!response.ok) throw new Error(Object.values(result.errors || {}).flat().join(' ') || result.message);
         document.getElementById('user-profile-name').textContent = result.name;
+        setEditing(false);
         showAdminToast(result.message, 'success');
     } catch (failure) {
         error.textContent = failure.message || 'Unable to save the profile.';
@@ -190,6 +214,7 @@ document.getElementById('user-profile-form').addEventListener('submit', async ev
         button.disabled = false;
     }
 });
+})();
 </script>
 @endif
 @endsection
