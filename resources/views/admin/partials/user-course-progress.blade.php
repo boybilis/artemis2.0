@@ -1,26 +1,62 @@
 <div data-user-progress-tables>
     <p class="muted">{{ $course->title }} · {{ $batch->name }}</p>
-    <section class="user-progress-table" aria-labelledby="selected-topic-completion">
-        <h3 id="selected-topic-completion">Topic Completion</h3>
+    <section class="user-progress-table" aria-labelledby="selected-subject-progress">
+        <h3 id="selected-subject-progress">Subject Progress</h3>
         <div class="table-wrap">
-            <table class="data-table admin-compact-table">
-                <thead><tr><th scope="col">Subject</th><th scope="col">Topic</th><th scope="col">Status</th><th scope="col">Best quiz score</th></tr></thead>
+            <table class="data-table admin-compact-table subject-progress-table">
+                <thead><tr><th scope="col">Subject</th><th scope="col">Progress</th></tr></thead>
                 <tbody>
-                    @forelse($topics as $topic)
-                        @php($attempt = $bestAttempts->get($topic->id)?->first())
-                        <tr>
-                            <td>{{ $topic->subject?->title ?? 'Course-wide' }}</td>
-                            <td>{{ $topic->title }}</td>
-                            <td><span class="status {{ $completedIds->has($topic->id) ? 'success' : 'neutral' }}">{{ $completedIds->has($topic->id) ? 'Completed' : 'Locked/In progress' }}</span></td>
-                            <td>{{ $attempt ? $attempt->score.'/'.$attempt->total : 'No attempt' }}</td>
+                    @forelse($subjects as $subject)
+                        <tr class="{{ $loop->even ? 'subject-progress-alt' : '' }}">
+                            <td><div class="subject-progress-name">
+                                <button type="button" class="subject-progress-expand" aria-label="Toggle details for {{ $subject['title'] }}" aria-expanded="false" aria-controls="subject-progress-{{ $subject['id'] }}"><span aria-hidden="true">▸</span></button>
+                                <span>{{ $subject['title'] }}</span>
+                            </div></td>
+                            <td><div class="subject-progress-meter">
+                                <progress max="100" value="{{ $subject['percentage'] }}" aria-label="{{ $subject['title'] }} progress"></progress>
+                                <strong>{{ $subject['percentage'] }}%</strong>
+                            </div></td>
+                        </tr>
+                        <tr id="subject-progress-{{ $subject['id'] }}" class="subject-progress-details {{ $loop->even ? 'subject-progress-alt' : '' }}" hidden>
+                            <td colspan="2">
+                                <dl>
+                                    @foreach(['pre_test' => 'Pre-test', 'post_test' => 'Post-test'] as $type => $label)
+                                        <div>
+                                            <dt>{{ $label }}</dt>
+                                            <dd>
+                                                @forelse($subject['results'][$type] as $result)
+                                                    @php($attempt = $result['attempt'])
+                                                    <div>{{ $result['title'] }}:
+                                                        @if($attempt)
+                                                            {{ $attempt->points_earned ?? $attempt->score }}/{{ $attempt->points_possible ?? $attempt->total }}
+                                                            · {{ $attempt->passed ? 'Passed' : 'Not passed' }}
+                                                        @else
+                                                            Not taken
+                                                        @endif
+                                                    </div>
+                                                @empty
+                                                    Not configured
+                                                @endforelse
+                                            </dd>
+                                        </div>
+                                    @endforeach
+                                    <div><dt>EXP points</dt><dd>
+                                        @if($subject['exp'] === null)
+                                            Not enabled
+                                        @else
+                                            {{ number_format($subject['exp']) }} <small class="muted">· Based on current reward rules</small>
+                                        @endif
+                                    </dd></div>
+                                </dl>
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="muted">No topics are available for this course and batch.</td></tr>
+                        <tr><td colspan="2" class="muted">No subjects are available for this course and batch.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-        {{ $topics->links('pagination::bootstrap-4') }}
+        {{ $subjects->links('pagination::bootstrap-4') }}
     </section>
 
     <section class="user-progress-table" aria-labelledby="selected-final-exams">

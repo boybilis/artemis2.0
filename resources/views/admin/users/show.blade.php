@@ -31,6 +31,19 @@
     .user-subject-progress .data-table tbody tr:nth-child(even) td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
     .user-progress-table { margin-top:1rem; }
     .user-progress-table nav { margin-top:.65rem; }
+    .user-subject-progress .subject-progress-table tbody td { background:var(--surface-solid); }
+    .user-subject-progress .subject-progress-table .subject-progress-alt td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
+    .subject-progress-name,.subject-progress-meter { display:flex;align-items:center;gap:.55rem; }
+    .subject-progress-meter progress { width:clamp(2.5rem,12vw,9rem);height:.55rem;accent-color:var(--brand-aqua-strong); }
+    .subject-progress-expand { flex:none;width:2rem;height:2rem;border:0;border-radius:6px;background:transparent;color:var(--text);cursor:pointer; }
+    .subject-progress-expand:hover { background:var(--border); }
+    .subject-progress-expand:focus-visible { outline:2px solid var(--brand-aqua); }
+    .subject-progress-expand span { display:inline-block; }
+    .subject-progress-expand[aria-expanded="true"] span { transform:rotate(90deg); }
+    .subject-progress-details[hidden] { display:none; }
+    .subject-progress-details dl { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.75rem;margin:.25rem; }
+    .subject-progress-details dt { font-weight:700; }
+    .subject-progress-details dd { margin:0; }
     @container (max-width:34rem) { .user-profile-fields { grid-template-columns:minmax(0,1fr); } }
 </style>
 <div class="split-grid">
@@ -206,6 +219,15 @@
         load(url.href);
     });
     results.addEventListener('click', event => {
+        const expand = event.target.closest('.subject-progress-expand');
+        if (expand) {
+            const details = document.getElementById(expand.getAttribute('aria-controls'));
+            if (details) {
+                details.hidden = !details.hidden;
+                expand.setAttribute('aria-expanded', String(!details.hidden));
+            }
+            return;
+        }
         const link = event.target.closest('.pagination a');
         if (!link) return;
         event.preventDefault();
