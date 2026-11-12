@@ -1,40 +1,46 @@
 <section class="panel" data-ajax-table="vouchers-table" @if($vouchers === null) data-payment-directory-lazy @endif>
     <p class="panel-label">Payments and access</p>
     <h2 class="panel-title">Batch Enrollment Payments &amp; Codes</h2>
-    <form class="toolbar form-grid" id="voucher-table-filters" method="get" action="{{ route('admin.vouchers.index') }}">
+    <form class="payment-table-toolbar" id="voucher-table-filters" method="get" action="{{ route('admin.vouchers.index') }}">
         @if(request()->filled('redeemed_page'))<input type="hidden" name="redeemed_page" value="{{ request()->integer('redeemed_page') }}">@endif
         <div class="field"><label for="voucher-search">Search payments and codes</label><input id="voucher-search" type="search" name="voucher_search" value="{{ $voucherSearch }}" maxlength="120" placeholder="Reference, learner, course, or batch"></div>
         <div class="field"><label for="voucher-size">Rows per page</label><select id="voucher-size" name="voucher_size">@foreach([5,10,25,50] as $size)<option value="{{ $size }}" @selected($voucherPageSize === $size)>{{ $size }}</option>@endforeach</select></div>
         <div><button class="btn-ghost" type="submit">Search</button></div>
     </form>
-    <div class="table-wrap">
+    <div class="table-wrap payment-table-wrap">
         <table class="data-table payments-directory-table">
-            <thead><tr><th>Reference</th><th>Course / Batch</th><th>Status</th><th>Learner</th><th>Method</th><th>Amount</th><th>Date created</th></tr></thead>
+            <thead><tr><th scope="col">Reference</th><th scope="col" class="payment-secondary">Course / Batch</th><th scope="col">Status</th><th scope="col" class="payment-learner">Learner</th><th scope="col" class="payment-secondary">Method</th><th scope="col">Amount</th><th scope="col" class="payment-secondary">Date created</th></tr></thead>
             <tbody>
                 @if($vouchers === null)
                 <tr><td colspan="7" role="status">Payments will load when this table comes into view.</td></tr>
             @else
             @forelse ($vouchers as $voucher)
-                    <tr>
-                        <td><strong>{{ $voucher->code }}</strong></td>
-                        <td><strong>{{ $voucher->batch?->courses?->pluck('title')->join(', ') ?: 'No assigned course' }}</strong>@if($voucher->batch)<br><span class="muted">{{ $voucher->batch->code }} — {{ $voucher->batch->name }}</span>@endif</td>
-                        <td>
-                            <span class="status {{ $voucher->statusCssClass() }}">
-                                {{ $voucher->statusLabel() }}
-                            </span>
-                        </td>
-                        <td>
+                    <tr class="payment-record {{ $loop->even ? 'payment-record-alt' : '' }}">
                             @php($learner = $voucher->assignedLearner ?? $voucher->user)
-                            @if ($learner)
-                                <strong>{{ $learner->name }}</strong><br>
-                                <span class="muted">{{ $learner->email }}</span>
-                            @else
-                                <span class="muted">Unassigned</span>
-                            @endif
+                            @php($courseTitle = $voucher->batch?->courses?->pluck('title')->join(', ') ?: 'No assigned course')
+                        <td><div class="payment-reference">
+                            <button type="button" class="payment-expand" aria-expanded="false" aria-controls="payment-detail-{{ $voucher->id }}" aria-label="Toggle details for {{ $voucher->code }}"><span aria-hidden="true">▸</span></button>
+                            <strong class="payment-cell">{{ $voucher->code }}</strong>
+                        </div></td>
+                        <td class="payment-secondary"><span class="payment-cell">{{ $courseTitle }}</span></td>
+                        <td><span class="status payment-cell {{ $voucher->statusCssClass() }}">{{ $voucher->statusLabel() }}</span></td>
+                        <td class="payment-learner"><span class="payment-cell">{{ $learner?->name ?? 'Unassigned' }}</span></td>
+                        <td class="payment-secondary"><span class="payment-cell">{{ $voucher->paymentMethodLabel() }}</span></td>
+                        <td><span class="payment-cell">₱{{ number_format($voucher->price, 2) }}</span></td>
+                        <td class="payment-secondary"><span class="payment-cell">{{ $voucher->created_at->format('M d, Y h:i A') }}</span></td>
+                    </tr>
+                    <tr class="payment-details {{ $loop->even ? 'payment-record-alt' : '' }}" id="payment-detail-{{ $voucher->id }}" hidden>
+                        <td colspan="7">
+                            <dl>
+                                <div><dt>Reference</dt><dd>{{ $voucher->code }}</dd></div>
+                                <div><dt>Course / Batch</dt><dd>{{ $courseTitle }}@if($voucher->batch)<br>{{ $voucher->batch->code }} — {{ $voucher->batch->name }}@endif</dd></div>
+                                <div><dt>Learner</dt><dd>{{ $learner?->name ?? 'Unassigned' }}@if($learner)<br>{{ $learner->email }}@endif</dd></div>
+                                <div><dt>Status</dt><dd>{{ $voucher->statusLabel() }}</dd></div>
+                                <div><dt>Method</dt><dd>{{ $voucher->paymentMethodLabel() }}@if($voucher->payment_provider === 'manual')<br>{{ $voucher->emailed_at ? 'Email sent' : 'Email not confirmed' }}@endif</dd></div>
+                                <div><dt>Amount</dt><dd>₱{{ number_format($voucher->price, 2) }}</dd></div>
+                                <div><dt>Date created</dt><dd>{{ $voucher->created_at->format('M d, Y h:i A') }}</dd></div>
+                            </dl>
                         </td>
-                        <td><span class="status info">{{ $voucher->paymentMethodLabel() }}</span>@if($voucher->payment_provider === 'manual')<br><small>{{ $voucher->emailed_at ? 'Email sent' : 'Email not confirmed' }}</small>@endif</td>
-                        <td>₱{{ number_format($voucher->price, 2) }}</td>
-                        <td>{{ $voucher->created_at->format('M d, Y h:i A') }}</td>
                     </tr>
                 @empty
                     <tr>

@@ -8,8 +8,27 @@
 @section('content')
 <style>
     body .data-table.payments-directory-table thead th { background:#48515f;color:#fff; }
-    .payments-directory-table tbody tr:nth-child(odd) td { background:var(--surface-solid); }
-    .payments-directory-table tbody tr:nth-child(even) td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
+    .payment-table-wrap { container-type:inline-size; }
+    .data-table.payments-directory-table { min-width:0;table-layout:fixed; }
+    .payments-directory-table :is(th,td) { padding:.5rem .65rem;font-size:.75rem; }
+    .payments-directory-table tbody td { background:var(--surface-solid); }
+    .payments-directory-table .payment-record-alt td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
+    .payments-directory-table .payment-cell { display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+    .payments-directory-table .status.payment-cell { width:fit-content;padding:.22rem .45rem; }
+    .payment-reference { display:flex;align-items:center;gap:.25rem; }
+    .payment-expand { flex:none;display:grid;place-items:center;width:2rem;height:2rem;background:transparent;border:0;border-radius:6px;color:var(--text);cursor:pointer; }
+    .payment-expand:hover { background:var(--border); }
+    .payment-expand:focus-visible { outline:2px solid var(--brand-aqua); }
+    .payment-expand[aria-expanded="true"] span { transform:rotate(90deg); }
+    .payment-details[hidden] { display:none; }
+    .payment-details dl { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:.7rem 1rem;margin:.15rem 0;padding:.5rem .65rem; }
+    .payment-details dt { font-weight:700;color:var(--text-muted); }
+    .payment-details dd { margin:0;overflow-wrap:anywhere; }
+    .payment-table-toolbar { display:flex;align-items:flex-end;flex-wrap:wrap;gap:.6rem;margin-top:.7rem; }
+    .payment-table-toolbar .field { margin:0; }
+    .payment-table-toolbar .field:has(input[type="search"]) { flex:1 1 14rem; }
+    @container (max-width:800px) { .payments-directory-table .payment-secondary { display:none; } }
+    @container (max-width:460px) { .payments-directory-table .payment-learner { display:none; } }
     .payment-pages { display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:.65rem; }
 </style>
 @if(Auth::user()->hasAdminAccess())
@@ -121,6 +140,15 @@
         if (event.target.id === 'voucher-size') reload(event.target.form);
     });
     document.addEventListener('click', event => {
+        const expand = event.target.closest('.payment-expand');
+        if (expand) {
+            const details = document.getElementById(expand.getAttribute('aria-controls'));
+            if (details) {
+                details.hidden = !details.hidden;
+                expand.setAttribute('aria-expanded', String(!details.hidden));
+            }
+            return;
+        }
         const button = event.target.closest('[data-payment-page]');
         if (button && !button.disabled) load(button.dataset.paymentPage);
     });
