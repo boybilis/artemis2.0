@@ -249,11 +249,14 @@
                                     : ($question->question_type === 'quiz' ? ($question->topic?->title ?? 'Course-wide') : 'Course-wide');
                             @endphp
                             <dl>
-                                <div class="question-bank-full-detail"><dt>Question</dt><dd>{{ $question->question }}</dd></div>
                                 <div><dt>Type</dt><dd>{{ $type }}</dd></div>
                                 <div><dt>Response</dt><dd>{{ $responseType }}</dd></div>
                                 <div><dt>Scope</dt><dd>{{ $scope }}</dd></div>
+                                <div class="question-bank-full-detail"><dt>Question</dt><dd>{{ $question->question }}</dd></div>
                                 <div class="question-bank-full-detail"><dt>Correct answer(s)</dt><dd>{{ $answer }}</dd></div>
+                                @if(filled($question->rationale))
+                                    <div class="question-bank-full-detail"><dt>Rationale</dt><dd>{{ $question->rationale }}</dd></div>
+                                @endif
                             </dl>
                         </td>
                     </tr>
