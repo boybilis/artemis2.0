@@ -46,11 +46,12 @@
                                                                         $suffix = in_array($number % 100, [11, 12, 13], true) ? 'th' : ([
                                                                             1 => 'st', 2 => 'nd', 3 => 'rd',
                                                                         ][$number % 10] ?? 'th');
+                                                                        $earned = (float) ($attempt->points_earned ?? $attempt->score);
+                                                                        $possible = (float) ($attempt->points_possible ?? $attempt->total);
+                                                                        $percentage = $possible > 0 ? round($earned / $possible * 100, 2) : 0;
                                                                     @endphp
                                                                     <li>
-                                                                        {{ $number }}{{ $suffix }} attempt:
-                                                                        {{ $attempt->points_earned ?? $attempt->score }}/{{ $attempt->points_possible ?? $attempt->total }}
-                                                                        · {{ $attempt->passed ? 'Passed' : 'Not passed' }}
+                                                                        {{ $number }}{{ $suffix }} attempt: {{ $earned }}/{{ $possible }} | {{ $percentage }}% | {{ $attempt->passed ? 'Passed' : 'Not passed' }}
                                                                     </li>
                                                                 @endforeach
                                                             </ol>

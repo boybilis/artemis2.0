@@ -46,7 +46,7 @@ class AdminUserCourseProgressTest extends TestCase
             QuizAttempt::create(['user_id' => $learner->id, 'course_id' => $course->id, 'batch_id' => $batch->id, 'topic_id' => $topic->id, 'subtopic_id' => $post->id, 'assessment_type' => 'post_test', 'score' => $score, 'total' => 5, 'passed' => false]);
         }
         $this->get($url.$selection, $headers)->assertOk()
-            ->assertSeeInOrder(['Post assessment', '1st attempt:', '1/5', '2nd attempt:', '2/5']);
+            ->assertSeeInOrder(['Post assessment', '1st attempt: 1/5 | 20% | Not passed', '2nd attempt: 2/5 | 40% | Not passed']);
         Storage::disk('local')->put("course-gamification/{$course->id}.json", json_encode(['enabled' => true, 'points_enabled' => true, 'points' => ['content' => 25, 'assessment' => 100]]));
         $this->get($url.$selection, $headers)->assertOk()->assertViewHas('subjects', fn ($page) => $page->items()[0]['exp'] === 125);
         $this->get($url.'?batch_id='.$batch->id.'&course_id='.$other->id, $headers)->assertNotFound();
