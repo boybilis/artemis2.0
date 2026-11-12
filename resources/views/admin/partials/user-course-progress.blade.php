@@ -39,10 +39,16 @@
                                                         @if($result['attempts']->isEmpty())
                                                             <span class="muted"> · Not taken</span>
                                                         @else
-                                                            <ol class="subject-assessment-attempts" reversed>
+                                                            <ol class="subject-assessment-attempts" role="list">
                                                                 @foreach($result['attempts'] as $attempt)
-                                                                    <li value="{{ $loop->remaining + 1 }}">
-                                                                        Attempt {{ $loop->remaining + 1 }}:
+                                                                    @php
+                                                                        $number = $loop->iteration;
+                                                                        $suffix = in_array($number % 100, [11, 12, 13], true) ? 'th' : ([
+                                                                            1 => 'st', 2 => 'nd', 3 => 'rd',
+                                                                        ][$number % 10] ?? 'th');
+                                                                    @endphp
+                                                                    <li>
+                                                                        {{ $number }}{{ $suffix }} attempt:
                                                                         {{ $attempt->points_earned ?? $attempt->score }}/{{ $attempt->points_possible ?? $attempt->total }}
                                                                         · {{ $attempt->passed ? 'Passed' : 'Not passed' }}
                                                                     </li>

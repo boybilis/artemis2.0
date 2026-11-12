@@ -22,7 +22,7 @@ class AdminSubjectProgress
             ->whereIn('topic_id', $topics->pluck('id'))->pluck('max_unlocked_index', 'topic_id');
         $unaccepted = app(SubjectPolicy::class)->unacceptedTopicIds($user->id, $courseId)->flip();
         $attempts = QuizAttempt::where('user_id', $user->id)->where('course_id', $courseId)->where('batch_id', $batch->id)
-            ->whereIn('subtopic_id', $topics->flatMap->subtopics->pluck('id'))->latest('id')
+            ->whereIn('subtopic_id', $topics->flatMap->subtopics->pluck('id'))->orderBy('id')
             ->get(['id', 'subtopic_id', 'score', 'total', 'points_earned', 'points_possible', 'passed'])
             ->groupBy('subtopic_id');
         $topicsBySubject = $topics->groupBy('subject_id');
