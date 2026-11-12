@@ -362,41 +362,41 @@ class AdminController extends Controller
         $enrollments = CourseEnrollment::where('user_id', $user->id)->where('status', 'active')
             ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()));
 
-        if ($request->ajax() && $request->header('X-Admin-Table') === 'user-subject-progress') {
+        if ($request->ajax() && $request->header('X-Admin-Table') === 'user-course-progress') {
             $batch = (clone $enrollments)->where('batch_id', $request->integer('batch_id'))->firstOrFail()->batch;
             abort_unless($batch, 404);
-            $subject = Subject::whereKey($request->integer('subject_id'))->where('status', 'approved')
-                ->whereIn('course_id', $batch->courses()->pluck('courses.id'))
-                ->tap(fn ($query) => $batch->filterSubjects($query))->firstOrFail();
-            $topics = Topic::where('subject_id', $subject->id)->where('course_id', $subject->course_id)->where('status', 'approved')
-                ->orderBy('sort_order')->orderBy('id')->paginate(10, ['id', 'title'], 'topics_page')->withQueryString();
+            $course = $batch->courses()->where('courses.id', $request->integer('course_id'))->firstOrFail();
+            $visibleSubjects = Subject::where('course_id', $course->id)->where('status', 'approved')
+                ->tap(fn ($query) => $batch->filterSubjects($query))->select('id');
+            $topics = Topic::where('course_id', $course->id)->where('status', 'approved')
+                ->where(function ($query) use ($batch, $visibleSubjects) {
+                    $query->whereIn('subject_id', $visibleSubjects);
+                    if ($batch->includesUnassignedTopics()) $query->orWhereNull('subject_id');
+                })->with('subject:id,title')->orderBy('subject_id')->orderBy('sort_order')->orderBy('id')
+                ->paginate(10, ['id', 'title', 'subject_id'], 'topics_page')->withQueryString();
             $topicIds = $topics->getCollection()->pluck('id');
-            $attempts = QuizAttempt::where('user_id', $user->id)->where('course_id', $subject->course_id)->where('batch_id', $batch->id);
+            $attempts = QuizAttempt::where('user_id', $user->id)->where('course_id', $course->id)->where('batch_id', $batch->id);
             $bestAttempts = (clone $attempts)->whereIn('topic_id', $topicIds)
                 ->orderByDesc('score')->orderByDesc('id')->get(['id', 'topic_id', 'score', 'total'])->groupBy('topic_id');
-            $completedIds = UserProgress::where('user_id', $user->id)->where('course_id', $subject->course_id)
+            $completedIds = UserProgress::where('user_id', $user->id)->where('course_id', $course->id)
                 ->whereIn('topic_id', $topicIds)
-                ->whereNotIn('topic_id', app(\App\Services\SubjectPolicy::class)->unacceptedTopicIds($user->id, (int) $subject->course_id))
+                ->whereNotIn('topic_id', app(\App\Services\SubjectPolicy::class)->unacceptedTopicIds($user->id, (int) $course->id))
                 ->pluck('topic_id')->flip();
             $examAttempts = $attempts->whereNull('topic_id')->whereNull('subtopic_id')->latest()->orderByDesc('id')
                 ->paginate(10, ['*'], 'exams_page')->withQueryString();
             $vouchers = Voucher::where('used_by', $user->id)->where('batch_id', $batch->id)
                 ->latest()->orderByDesc('id')->paginate(10, ['*'], 'vouchers_page')->withQueryString();
 
-            return view('admin.partials.user-subject-progress', compact('subject', 'batch', 'topics', 'bestAttempts', 'completedIds', 'examAttempts', 'vouchers'));
+            return view('admin.partials.user-course-progress', compact('course', 'batch', 'topics', 'bestAttempts', 'completedIds', 'examAttempts', 'vouchers'));
         }
 
-        $subjectGroups = (clone $enrollments)->with('batch.courses')->get()->flatMap(function (CourseEnrollment $enrollment) {
+        $enrolledCourses = (clone $enrollments)->with('batch.courses')->get()->flatMap(function (CourseEnrollment $enrollment) {
             $batch = $enrollment->batch;
             if (!$batch) return [];
-            $subjects = Subject::whereIn('course_id', $batch->courses->modelKeys())->where('status', 'approved')
-                ->tap(fn ($query) => $batch->filterSubjects($query))->orderBy('sort_order')->orderBy('title')->get()->groupBy('course_id');
-
             return $batch->courses->map(fn ($course) => [
-                'batch_id' => $batch->id, 'label' => $course->title.' — '.$batch->name,
-                'subjects' => $subjects->get($course->id, collect()),
-            ])->filter(fn ($group) => $group['subjects']->isNotEmpty())->values();
-        });
+                'batch_id' => $batch->id, 'course_id' => $course->id, 'label' => $course->title.' — '.$batch->name,
+            ]);
+        })->sortBy('label')->values();
         $cert = Certificate::where('user_id', $user->id)->first();
         $userStats = [
             'id' => $user->id,
@@ -406,7 +406,7 @@ class AdminController extends Controller
         ];
         $profile = $this->userProfileData($user);
 
-        return view('admin.users.show', compact('userStats', 'profile', 'subjectGroups'));
+        return view('admin.users.show', compact('userStats', 'profile', 'enrolledCourses'));
     }
 
     public function toggleUserStatus($id, Request $request)

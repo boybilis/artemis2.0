@@ -143,25 +143,21 @@
     <p class="panel-label">Progress</p>
     <h2 class="panel-title" id="user-subject-progress-title">Student Progress</h2>
     <div class="field">
-        <label for="user-progress-subject">Enrolled subject</label>
-        <select id="user-progress-subject" data-progress-url="{{ route('admin.users.show', $userStats['id']) }}" @disabled($subjectGroups->isEmpty())>
-            <option value="">Select a subject</option>
-            @foreach($subjectGroups as $group)
-                <optgroup label="{{ $group['label'] }}">
-                    @foreach($group['subjects'] as $subject)
-                        <option value="{{ $group['batch_id'] }}:{{ $subject->id }}">{{ $subject->title }}</option>
-                    @endforeach
-                </optgroup>
+        <label for="user-progress-course">Enrolled course</label>
+        <select id="user-progress-course" data-progress-url="{{ route('admin.users.show', $userStats['id']) }}" @disabled($enrolledCourses->isEmpty())>
+            <option value="">Select a course</option>
+            @foreach($enrolledCourses as $enrollment)
+                <option value="{{ $enrollment['batch_id'] }}:{{ $enrollment['course_id'] }}">{{ $enrollment['label'] }}</option>
             @endforeach
         </select>
     </div>
-    <p id="user-progress-message" class="muted" role="status">{{ $subjectGroups->isEmpty() ? 'No subjects are available through this account’s active enrollments.' : 'Select an enrolled subject to load progress.' }}</p>
+    <p id="user-progress-message" class="muted" role="status">{{ $enrolledCourses->isEmpty() ? 'This learner has no active course enrollments.' : 'Select an enrolled course to load progress.' }}</p>
     <button type="button" class="btn-ghost" id="user-progress-retry" hidden>Retry</button>
     <div id="user-progress-results"></div>
 </section>
 <script>
 (() => {
-    const subject = document.getElementById('user-progress-subject');
+    const course = document.getElementById('user-progress-course');
     const results = document.getElementById('user-progress-results');
     const message = document.getElementById('user-progress-message');
     const retry = document.getElementById('user-progress-retry');
@@ -176,7 +172,7 @@
         results.setAttribute('aria-busy', 'true');
         try {
             const response = await fetch(url, {
-                headers: {Accept:'text/html','X-Requested-With':'XMLHttpRequest','X-Admin-Table':'user-subject-progress'},
+                headers: {Accept:'text/html','X-Requested-With':'XMLHttpRequest','X-Admin-Table':'user-course-progress'},
                 credentials: 'same-origin', signal: request.signal,
             });
             if (!response.ok) throw new Error();
@@ -195,18 +191,18 @@
             if (!request.signal.aborted) results.removeAttribute('aria-busy');
         }
     };
-    subject.addEventListener('change', () => {
+    course.addEventListener('change', () => {
         pending?.abort();
         results.replaceChildren();
         results.removeAttribute('aria-busy');
         retry.hidden = true;
-        if (!subject.value) {
-            message.textContent = 'Select an enrolled subject to load progress.';
+        if (!course.value) {
+            message.textContent = 'Select an enrolled course to load progress.';
             return;
         }
-        const [batchId, subjectId] = subject.value.split(':');
-        const url = new URL(subject.dataset.progressUrl);
-        url.search = new URLSearchParams({batch_id:batchId,subject_id:subjectId});
+        const [batchId, courseId] = course.value.split(':');
+        const url = new URL(course.dataset.progressUrl);
+        url.search = new URLSearchParams({batch_id:batchId,course_id:courseId});
         load(url.href);
     });
     results.addEventListener('click', event => {
