@@ -2,7 +2,6 @@
     <p class="panel-label">Payments and access</p>
     <h2 class="panel-title">Batch Enrollment Payments &amp; Codes</h2>
     <form class="payment-table-toolbar" id="voucher-table-filters" method="get" action="{{ route('admin.vouchers.index') }}">
-        @if(request()->filled('redeemed_page'))<input type="hidden" name="redeemed_page" value="{{ request()->integer('redeemed_page') }}">@endif
         <div class="field"><label for="voucher-search">Search payments and codes</label><input id="voucher-search" type="search" name="voucher_search" value="{{ $voucherSearch }}" maxlength="120" placeholder="Reference, learner, course, or batch"></div>
         <div class="field"><label for="voucher-size">Rows per page</label><select id="voucher-size" name="voucher_size">@foreach([5,10,25,50] as $size)<option value="{{ $size }}" @selected($voucherPageSize === $size)>{{ $size }}</option>@endforeach</select></div>
         <div><button class="btn-ghost" type="submit">Search</button></div>
@@ -17,13 +16,14 @@
             @forelse ($vouchers as $voucher)
                     <tr class="payment-record {{ $loop->even ? 'payment-record-alt' : '' }}">
                             @php($learner = $voucher->assignedLearner ?? $voucher->user)
+                            @php($statusLabel = $voucher->used && $voucher->payment_provider !== 'paymongo' ? 'Redeemed / Enrolled' : $voucher->statusLabel())
                             @php($courseTitle = $voucher->batch?->courses?->pluck('title')->join(', ') ?: 'No assigned course')
                         <td><div class="payment-reference">
                             <button type="button" class="payment-expand" aria-expanded="false" aria-controls="payment-detail-{{ $voucher->id }}" aria-label="Toggle details for {{ $voucher->code }}"><span aria-hidden="true">▸</span></button>
                             <strong class="payment-cell">{{ $voucher->code }}</strong>
                         </div></td>
                         <td class="payment-secondary"><span class="payment-cell">{{ $courseTitle }}</span></td>
-                        <td><span class="status payment-cell {{ $voucher->statusCssClass() }}">{{ $voucher->statusLabel() }}</span></td>
+                        <td><span class="status payment-cell {{ $voucher->statusCssClass() }}">{{ $statusLabel }}</span></td>
                         <td class="payment-learner"><span class="payment-cell">{{ $learner?->name ?? 'Unassigned' }}</span></td>
                         <td class="payment-secondary"><span class="payment-cell">{{ $voucher->paymentMethodLabel() }}</span></td>
                         <td><span class="payment-cell">₱{{ number_format($voucher->price, 2) }}</span></td>
@@ -35,10 +35,13 @@
                                 <div><dt>Reference</dt><dd>{{ $voucher->code }}</dd></div>
                                 <div><dt>Course / Batch</dt><dd>{{ $courseTitle }}@if($voucher->batch)<br>{{ $voucher->batch->code }} — {{ $voucher->batch->name }}@endif</dd></div>
                                 <div><dt>Learner</dt><dd>{{ $learner?->name ?? 'Unassigned' }}@if($learner)<br>{{ $learner->email }}@endif</dd></div>
-                                <div><dt>Status</dt><dd>{{ $voucher->statusLabel() }}</dd></div>
+                                <div><dt>Status</dt><dd>{{ $statusLabel }}</dd></div>
                                 <div><dt>Method</dt><dd>{{ $voucher->paymentMethodLabel() }}@if($voucher->payment_provider === 'manual')<br>{{ $voucher->emailed_at ? 'Email sent' : 'Email not confirmed' }}@endif</dd></div>
                                 <div><dt>Amount</dt><dd>₱{{ number_format($voucher->price, 2) }}</dd></div>
                                 <div><dt>Date created</dt><dd>{{ $voucher->created_at->format('M d, Y h:i A') }}</dd></div>
+                                @if($voucher->used && ($redeemedAt = $voucher->redeemed_at ?? $voucher->used_at))
+                                    <div><dt>Redeemed date</dt><dd>{{ $redeemedAt->format('M d, Y h:i A') }}</dd></div>
+                                @endif
                             </dl>
                         </td>
                     </tr>

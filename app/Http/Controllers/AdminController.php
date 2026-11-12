@@ -2033,14 +2033,9 @@ class AdminController extends Controller
         if ($paymentTableOnly) {
             return view('admin.partials.payment-directory', compact('vouchers', 'voucherSearch', 'voucherPageSize'));
         }
-        $redeemedVouchers = Voucher::with(['user', 'batch.courses'])
-            ->where('used', true)
-            ->orderBy('used_at', 'desc')
-            ->paginate(15, ['*'], 'redeemed_page')
-            ->withQueryString();
         $paymentBatches = $user->hasAdminAccess() ? CourseBatch::available()->has('courses')->orderBy('name')->get(['id', 'name', 'code']) : collect();
         $automaticPayments = $user->hasAdminAccess() && app(\App\Services\AutomaticPayments::class)->enabled();
-        return view('admin.vouchers.index', compact('vouchers', 'redeemedVouchers', 'paymentBatches', 'automaticPayments', 'voucherSearch', 'voucherPageSize'));
+        return view('admin.vouchers.index', compact('vouchers', 'paymentBatches', 'automaticPayments', 'voucherSearch', 'voucherPageSize'));
     }
 
     public function generateVouchers(Request $request)

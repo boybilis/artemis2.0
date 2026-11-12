@@ -48,7 +48,7 @@ class PaymongoPaymentTest extends TestCase
         Mail::assertSent(\App\Mail\AssignedEnrollmentVoucher::class, fn ($mail) => $mail->hasTo($learner->email));
         $this->assertSame($learner->id, (int) $voucher->assigned_to);
         $this->get('/admin/vouchers', ['X-Requested-With' => 'XMLHttpRequest', 'X-Admin-Table' => 'vouchers-table'])
-            ->assertOk()->assertSee($learner->email)->assertSee('Email sent');
+            ->assertOk()->assertSee($learner->email)->assertSee('Email sent')->assertSee('Active Code');
 
         $payload = ['code'=>$voucher->code, 'batch_id'=>$batch->id];
         $this->actingAs($other)->postJson('/api/voucher/verify', $payload)->assertForbidden();
@@ -62,6 +62,8 @@ class PaymongoPaymentTest extends TestCase
         $this->postJson('/api/voucher/redeem', $payload)->assertStatus(400);
         $this->assertDatabaseHas('course_enrollments', ['user_id'=>$learner->id, 'batch_id'=>$batch->id, 'voucher_id'=>$voucher->id]);
         $this->assertTrue($voucher->refresh()->used);
+        $this->actingAs($admin)->get('/admin/vouchers', ['X-Requested-With' => 'XMLHttpRequest', 'X-Admin-Table' => 'vouchers-table'])
+            ->assertOk()->assertSee('Redeemed / Enrolled')->assertSee('Redeemed date')->assertDontSee('Active Code');
         $this->actingAs($admin)->putJson('/admin/vouchers/payment-mode', ['enabled'=>true])->assertOk();
         $this->actingAs($learner)->getJson('/api/payments/status')->assertJsonPath('enabled', true);
     }
@@ -143,6 +145,9 @@ class PaymongoPaymentTest extends TestCase
         $voucher = Voucher::where('provider_checkout_id', 'cs_test_paid')->firstOrFail();
         $this->assertTrue($voucher->used);
         $this->assertSame('Paid / Enrolled', $voucher->statusLabel());
+        $this->actingAs(User::factory()->create(['role' => 'admin', 'is_admin' => true]))
+            ->get('/admin/vouchers', ['X-Requested-With' => 'XMLHttpRequest', 'X-Admin-Table' => 'vouchers-table'])
+            ->assertOk()->assertSee('Paid / Enrolled')->assertSee('Redeemed date')->assertDontSee('Redeemed / Enrolled');
         $this->assertDatabaseHas('course_enrollments', ['user_id' => $user->id, 'batch_id' => $batch->id, 'status' => 'active']);
         $this->assertSame(1, CourseEnrollment::where('user_id', $user->id)->count());
     }
