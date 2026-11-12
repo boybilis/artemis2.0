@@ -17,6 +17,7 @@ use App\Models\CourseEnrollment;
 use App\Models\CourseBatch;
 use App\Models\ReviewPackage;
 use App\Models\BatchZoomSession;
+use App\Models\Branch;
 
 use App\Models\QuizQuestion;
 use App\Models\UserProgress;
@@ -163,6 +164,7 @@ class AdminController extends Controller
         ];
 
         if (Auth::user()->hasAdminAccess()) {
+            $stats[] = ['label' => 'Total branches', 'value' => number_format(Branch::count()), 'note' => 'All registered branches'];
             $issuedVouchers = Voucher::where(fn ($query) => $query->where('used', true)
                 ->orWhere('status', 'active')->orWhereNull('status'));
             $paidRevenue = PaymentTransaction::where('status', 'paid')->where('currency', 'PHP')->sum('amount');

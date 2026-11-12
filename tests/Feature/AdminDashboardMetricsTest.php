@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\{AuditLog, Course, CourseBatch, PaymentTransaction, User, Voucher};
+use App\Models\{AuditLog, Branch, Course, CourseBatch, PaymentTransaction, User, Voucher};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -22,6 +22,7 @@ class AdminDashboardMetricsTest extends TestCase
         AuditLog::forceCreate(['user_id' => $inactive->id, 'action' => 'Login', 'description' => 'Older sign-in', 'created_at' => now()->startOfMonth()->subDay()]);
         $course = Course::create(['title' => 'Review course']);
         $batch = CourseBatch::create(['course_id' => $course->id, 'name' => 'Review batch', 'code' => 'REVIEW']);
+        Branch::create(['name' => 'Example Branch', 'slug' => 'example', 'description' => 'Example landing page', 'hero_path' => 'branches/example.png']);
         PaymentTransaction::create(['user_id' => $learner->id, 'batch_id' => $batch->id, 'reference' => 'PAID', 'amount' => 1000, 'provider_checkout_id' => 'paid-checkout', 'status' => 'paid']);
         PaymentTransaction::create(['user_id' => $learner->id, 'batch_id' => $batch->id, 'reference' => 'PENDING', 'amount' => 900, 'status' => 'pending_payment']);
         Voucher::create(['code' => 'MATCHED', 'price' => 1000, 'used' => true, 'payment_provider' => 'paymongo', 'provider_checkout_id' => 'paid-checkout']);
@@ -36,6 +37,7 @@ class AdminDashboardMetricsTest extends TestCase
                 'Total courses' => '2',
                 'Total class batches' => '1',
                 'Certificates issued' => '0',
+                'Total branches' => '1',
                 'Vouchers issued' => '3',
                 'Total revenue' => 'PHP 1,200.00',
             ], array_column($response->viewData('stats'), 'value', 'label'));
