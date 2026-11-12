@@ -8,7 +8,7 @@
         <div><button class="btn-ghost" type="submit">Search</button></div>
     </form>
     <div class="table-wrap payment-table-wrap">
-        <table class="data-table payments-directory-table">
+        <table class="data-table admin-compact-table payments-directory-table">
             <thead><tr><th scope="col">Reference</th><th scope="col" class="payment-secondary">Course / Batch</th><th scope="col">Status</th><th scope="col" class="payment-learner">Learner</th><th scope="col" class="payment-secondary">Method</th><th scope="col">Amount</th><th scope="col" class="payment-secondary">Date created</th></tr></thead>
             <tbody>
                 @if($vouchers === null)

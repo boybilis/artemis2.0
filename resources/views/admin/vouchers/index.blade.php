@@ -10,7 +10,7 @@
     body .data-table.payments-directory-table thead th { background:#48515f;color:#fff; }
     .payment-table-wrap { container-type:inline-size; }
     .data-table.payments-directory-table { min-width:0;table-layout:fixed; }
-    .payments-directory-table :is(th,td) { padding:.5rem .65rem;font-size:.75rem; }
+    .payments-directory-table :is(th,td) { padding:.5rem .65rem; }
     .payments-directory-table tbody td { background:var(--surface-solid); }
     .payments-directory-table .payment-record-alt td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
     .payments-directory-table .payment-cell { display:block;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }

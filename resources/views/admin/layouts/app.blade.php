@@ -126,6 +126,10 @@
         .data-table th { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); background: rgba(255,255,255,0.02); }
         body.light-mode .data-table th { background: rgba(0,0,0,0.02); }
         .data-table tr:last-child td { border-bottom: none; }
+        .data-table.admin-compact-table th { font-size:.82rem; }
+        .data-table.admin-compact-table td { font-size:.85rem; }
+        .admin-compact-table td .status { font-size:inherit; }
+        .admin-compact-table td dl { font-size:.875rem;line-height:1.45; }
         
         .status { display: inline-flex; align-items: center; padding: 0.35rem 0.75rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; background: rgba(255,255,255,0.05); }
         .status.success { color: var(--correct); background: rgba(16,185,129,0.12); }

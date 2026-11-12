@@ -18,7 +18,7 @@
 <style>
     .data-table.compact-question-bank { min-width:0; }
     body .data-table.compact-question-bank thead th { background:#48515f;color:#fff; }
-    .compact-question-bank :is(th,td) { padding:.45rem .65rem;font-size:.75rem; }
+    .compact-question-bank :is(th,td) { padding:.45rem .65rem; }
     .compact-question-bank tbody td { background:var(--surface-solid); }
     .compact-question-bank .question-bank-alt td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
     .question-bank-reference,.question-bank-actions { display:flex;align-items:center;gap:.35rem;flex-wrap:wrap; }
@@ -165,7 +165,7 @@
         </div>
     </div>
     <div class="table-wrap">
-        <table class="data-table compact-question-bank">
+        <table class="data-table admin-compact-table compact-question-bank">
             <thead><tr><th scope="col">Question</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
             <tbody>
                 @forelse ($quizzes as $question)
