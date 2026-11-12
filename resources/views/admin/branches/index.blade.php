@@ -5,6 +5,9 @@
 @section('content')
 <link rel="stylesheet" href="{{ asset('branch-landing.css') }}?v=6">
 <style>
+    body .data-table.branches-directory-table thead th { background:#48515f;color:#fff; }
+    .branches-directory-table tbody tr:nth-child(odd) td { background:var(--surface-solid); }
+    .branches-directory-table tbody tr:nth-child(even) td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
     .branch-admin-toolbar,.branch-admin-actions { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem; }
     .branch-admin-list { margin-top:1rem; }
     .branch-admin-domain { margin-bottom:1rem; }
@@ -30,7 +33,7 @@
 <section class="panel">
     <div class="branch-admin-toolbar"><h2 class="panel-title">Branches</h2><button class="btn-primary" id="branch-add" type="button">+ Add New Branch</button></div>
     <div class="branch-admin-list" data-ajax-table="branches">
-        <div class="table-wrap"><table class="data-table" aria-label="Branches">
+        <div class="table-wrap"><table class="data-table branches-directory-table" aria-label="Branches">
             <thead><tr><th scope="col">Branch</th><th scope="col">Landing Page</th><th scope="col">Subdomain</th><th scope="col">Actions</th></tr></thead>
             <tbody>
             @forelse($branches as $branch)
