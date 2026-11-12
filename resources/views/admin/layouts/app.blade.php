@@ -224,8 +224,13 @@
             </button>
             @include('components.gra-brand')
             <span aria-hidden="true">|</span>
-            <span class="admin-nav-identity" style="min-width:0;overflow-wrap:anywhere">
-                {{ $workspaceRole }}@if(filled(Auth::user()->name)) <span aria-hidden="true">|</span> {{ Auth::user()->name }}@endif
+            <span class="admin-nav-identity" style="display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere;line-height:1.2">
+                @if(filled(Auth::user()->name))
+                    <span>{{ Auth::user()->name }}</span>
+                    <small style="font-size:.68em;font-weight:500">{{ $workspaceRole }}</small>
+                @else
+                    <span>{{ $workspaceRole }}</span>
+                @endif
             </span>
         </div>
         <div class="nav-actions">
