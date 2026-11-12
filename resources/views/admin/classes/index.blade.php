@@ -77,7 +77,21 @@
             <div class="class-batch-courses"><strong>Included courses</strong>@foreach($batch->courses as $course)<span class="class-course-capsule">{{ $course->title }}@if($batch->includes_intensive_final_coaching && $course->subjects->contains('is_intensive_final_coaching', true))<em class="class-course-phase"><i data-lucide="badge-check"></i>Intensive Final Coaching Phase</em>@endif</span>@endforeach</div>
             <dl class="class-batch-detail-grid">
                 @php($formatTime = fn ($time) => $time ? \Carbon\Carbon::createFromFormat('!H:i', $time)->format('g:i A') : 'Not set')
-                <div><dt>Class sessions</dt><dd>@forelse($editor['class_sessions'] as $session)<div>{{ $session['day'] }} · {{ $formatTime($session['start_time']) }}{{ $session['end_time'] ? ' – '.$formatTime($session['end_time']) : '' }}</div>@empty{{ $formatTime($editor['start_time']) }}{{ $editor['end_time'] ? ' – '.$formatTime($editor['end_time']) : '' }}@endforelse</dd></div>
+                <div>
+                    <dt>Class sessions</dt>
+                    <dd>
+                        @if(count($editor['class_sessions']))
+                            <dl class="class-batch-weekly-schedule">
+                                @foreach($editor['class_sessions'] as $session)
+                                    <dt>{{ $session['day'] }}</dt>
+                                    <dd>{{ $formatTime($session['start_time']) }}{{ $session['end_time'] ? ' – '.$formatTime($session['end_time']) : '' }}</dd>
+                                @endforeach
+                            </dl>
+                        @else
+                            {{ $formatTime($editor['start_time']) }}{{ $editor['end_time'] ? ' – '.$formatTime($editor['end_time']) : '' }}
+                        @endif
+                    </dd>
+                </div>
                 <div><dt>Capacity</dt><dd>{{ $batch->capacity ?: 'Unlimited' }}</dd></div>
                 <div><dt>Price (PHP)</dt><dd>{{ $batch->price === null ? 'Not set' : '₱'.number_format($batch->price, 2) }}</dd></div>
                 @php($internationalPrice = $batch->internationalPrice())
@@ -145,8 +159,10 @@
     .class-batch-details .class-course-capsule { color:var(--text); }
     .class-batch-detail-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;margin:0; }
     .class-batch-detail-grid>div { border:1px solid var(--border);border-radius:10px;padding:.65rem; }
-    .class-batch-detail-grid dt { color:var(--text-muted);font-size:.75rem; }
-    .class-batch-detail-grid dd { margin:.25rem 0 0;font-size:.875rem;line-height:1.5;overflow-wrap:anywhere; }
+    .class-batch-detail-grid>div>dt { color:var(--text-muted);font-size:.75rem; }
+    .class-batch-detail-grid>div>dd { margin:.25rem 0 0;font-size:.875rem;line-height:1.5;overflow-wrap:anywhere; }
+    .class-batch-weekly-schedule { display:grid;grid-template-columns:fit-content(42%) minmax(0,1fr);gap:.2rem .65rem;align-items:baseline;margin:0; }
+    .class-batch-weekly-schedule dd { margin:0;font-variant-numeric:tabular-nums; }
     @media(max-width:1100px){[data-ajax-table="class-batches"]>.class-batch-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:680px){[data-ajax-table="class-batches"]>.class-batch-grid,.class-batch-detail-grid{grid-template-columns:1fr}}
 </style>
