@@ -22,6 +22,9 @@
     .compact-question-bank tbody td { background:var(--surface-solid); }
     .compact-question-bank .question-bank-alt td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
     .question-bank-reference,.question-bank-actions { display:flex;align-items:center;gap:.35rem;flex-wrap:wrap; }
+    .question-bank-reference { flex-wrap:nowrap; }
+    .question-bank-reference .question-bank-expand { flex:none; }
+    .question-bank-snippet { min-width:0;overflow-wrap:anywhere; }
     .question-bank-icon { display:inline-grid;place-items:center;width:2.25rem;height:2.25rem;padding:0;border:0;border-radius:6px;background:transparent;color:var(--text);cursor:pointer; }
     .question-bank-icon:hover { background:var(--border); }
     .question-bank-icon:focus-visible { outline:2px solid var(--brand-aqua); }
@@ -169,6 +172,7 @@
                     <tr class="{{ $loop->even ? 'question-bank-alt' : '' }}">
                         <td><div class="question-bank-reference">
                             <button type="button" class="question-bank-expand" aria-expanded="false" aria-controls="bank-question-details-{{ $question->id }}" aria-label="Toggle question details"><span aria-hidden="true">▸</span></button>
+                            <span class="question-bank-snippet">{{ \Illuminate\Support\Str::limit(\Illuminate\Support\Str::squish($question->question), 25, '...') }}</span>
                         </div></td>
                         <td>
                             @if($question->status === 'approved')
