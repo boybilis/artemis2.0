@@ -354,76 +354,59 @@ class AdminController extends Controller
         return view('admin.users.index', ['users' => $users, 'stats' => $stats]);
     }
 
-    public function showUser($id)
+    public function showUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
         if (strtolower((string) Auth::user()->role) === 'staff' && strtolower((string) $user->role) !== 'student') abort(404);
-        
-        $totalTopicsCount = Topic::count() ?: 1;
-        $completed = UserProgress::where('user_id', $user->id)->count();
-        $progressPct = round(($completed / $totalTopicsCount) * 100);
-        
-        $quizzesCount = QuizAttempt::where('user_id', $user->id)->whereNotNull('topic_id')->count();
-        $examsCount = QuizAttempt::where('user_id', $user->id)->whereNull('topic_id')->count();
-        
-        $cert = Certificate::where('user_id', $user->id)->first();
-        $certificateStatus = $cert ? 'Issued (' . $cert->code . ')' : 'Not issued — Mock Exam not passed';
 
+        $enrollments = CourseEnrollment::where('user_id', $user->id)->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()));
+
+        if ($request->ajax() && $request->header('X-Admin-Table') === 'user-subject-progress') {
+            $batch = (clone $enrollments)->where('batch_id', $request->integer('batch_id'))->firstOrFail()->batch;
+            abort_unless($batch, 404);
+            $subject = Subject::whereKey($request->integer('subject_id'))->where('status', 'approved')
+                ->whereIn('course_id', $batch->courses()->pluck('courses.id'))
+                ->tap(fn ($query) => $batch->filterSubjects($query))->firstOrFail();
+            $topics = Topic::where('subject_id', $subject->id)->where('course_id', $subject->course_id)->where('status', 'approved')
+                ->orderBy('sort_order')->orderBy('id')->paginate(10, ['id', 'title'], 'topics_page')->withQueryString();
+            $topicIds = $topics->getCollection()->pluck('id');
+            $attempts = QuizAttempt::where('user_id', $user->id)->where('course_id', $subject->course_id)->where('batch_id', $batch->id);
+            $bestAttempts = (clone $attempts)->whereIn('topic_id', $topicIds)
+                ->orderByDesc('score')->orderByDesc('id')->get(['id', 'topic_id', 'score', 'total'])->groupBy('topic_id');
+            $completedIds = UserProgress::where('user_id', $user->id)->where('course_id', $subject->course_id)
+                ->whereIn('topic_id', $topicIds)
+                ->whereNotIn('topic_id', app(\App\Services\SubjectPolicy::class)->unacceptedTopicIds($user->id, (int) $subject->course_id))
+                ->pluck('topic_id')->flip();
+            $examAttempts = $attempts->whereNull('topic_id')->whereNull('subtopic_id')->latest()->orderByDesc('id')
+                ->paginate(10, ['*'], 'exams_page')->withQueryString();
+            $vouchers = Voucher::where('used_by', $user->id)->where('batch_id', $batch->id)
+                ->latest()->orderByDesc('id')->paginate(10, ['*'], 'vouchers_page')->withQueryString();
+
+            return view('admin.partials.user-subject-progress', compact('subject', 'batch', 'topics', 'bestAttempts', 'completedIds', 'examAttempts', 'vouchers'));
+        }
+
+        $subjectGroups = (clone $enrollments)->with('batch.courses')->get()->flatMap(function (CourseEnrollment $enrollment) {
+            $batch = $enrollment->batch;
+            if (!$batch) return [];
+            $subjects = Subject::whereIn('course_id', $batch->courses->modelKeys())->where('status', 'approved')
+                ->tap(fn ($query) => $batch->filterSubjects($query))->orderBy('sort_order')->orderBy('title')->get()->groupBy('course_id');
+
+            return $batch->courses->map(fn ($course) => [
+                'batch_id' => $batch->id, 'label' => $course->title.' — '.$batch->name,
+                'subjects' => $subjects->get($course->id, collect()),
+            ])->filter(fn ($group) => $group['subjects']->isNotEmpty())->values();
+        });
+        $cert = Certificate::where('user_id', $user->id)->first();
         $userStats = [
             'id' => $user->id,
             'name' => $user->name,
-            'first_name' => $user->first_name,
-            'last_name' => $user->last_name,
-            'email' => $user->email,
-            'phone' => $user->phone ?: 'N/A',
-            'birthdate' => $user->birthdate ?: 'N/A',
-            'affiliation_type' => $user->affiliation_type ?: 'N/A',
-            'affiliation' => $user->affiliation_name ?: 'N/A',
-            'progress' => $progressPct,
-            'quizzes' => $quizzesCount,
-            'exams' => $examsCount,
-            'certificate' => $certificateStatus,
+            'certificate' => $cert ? 'Issued ('.$cert->code.')' : 'Not issued — Mock Exam not passed',
             'status' => $user->is_active ? 'Active' : 'Inactive',
-            'joined_at' => $user->created_at->format('M d, Y')
         ];
-
-        // Topic completion details
-        $topics = Topic::orderBy('sort_order')->get();
-        $topicsProgress = $topics->map(function ($topic) use ($user) {
-            $done = UserProgress::where('user_id', $user->id)->where('topic_id', $topic->id)->exists();
-            $bestAttempt = QuizAttempt::where('user_id', $user->id)->where('topic_id', $topic->id)->orderBy('score', 'desc')->first();
-            
-            return [
-                'id' => $topic->id,
-                'title' => $topic->title,
-                'completed' => $done ? 'Completed' : 'Locked/In-progress',
-                'score' => $bestAttempt ? $bestAttempt->score . '/' . $bestAttempt->total : 'No attempt'
-            ];
-        });
-
-        // Exam logs
-        $examAttempts = QuizAttempt::where('user_id', $user->id)->whereNull('topic_id')->orderBy('created_at', 'desc')->get();
-        $examLogs = $examAttempts->map(function ($attempt) {
-            return [
-                'date' => $attempt->created_at->format('M d, Y h:i A'),
-                'score' => $attempt->score . '/' . $attempt->total,
-                'status' => $attempt->passed ? 'Passed' : 'Failed'
-            ];
-        });
-
-        // Voucher log
-        $vouchers = Voucher::where('used_by', $user->id)->get();
-        $voucherLogs = $vouchers->map(function ($v) {
-            return [
-                'code' => $v->code,
-                'price' => '₱' . number_format($v->price, 2),
-                'status' => $v->statusLabel(),
-                'date' => $v->created_at->format('M d, Y')
-            ];
-        });
-
         $profile = $this->userProfileData($user);
-        return view('admin.users.show', compact('userStats', 'profile', 'topicsProgress', 'examLogs', 'voucherLogs'));
+
+        return view('admin.users.show', compact('userStats', 'profile', 'subjectGroups'));
     }
 
     public function toggleUserStatus($id, Request $request)

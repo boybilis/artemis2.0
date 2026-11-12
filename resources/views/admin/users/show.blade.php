@@ -23,6 +23,14 @@
     .user-profile-picture { display:grid;place-items:center;width:min(100%,13rem);aspect-ratio:1;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--surface-solid);color:var(--text-muted);font-size:.75rem; }
     .user-profile-picture img { width:100%;height:100%;object-fit:cover; }
     .user-profile-picture [hidden], #profile-picture-upload[hidden] { display:none !important; }
+    #user-progress-retry[hidden] { display:none !important; }
+    .user-subject-progress .data-table { min-width:0; }
+    body .user-subject-progress .data-table thead th { background:#48515f;color:#fff; }
+    .user-subject-progress .data-table :is(th,td) { padding:.55rem .65rem;overflow-wrap:anywhere; }
+    .user-subject-progress .data-table tbody tr:nth-child(odd) td { background:var(--surface-solid); }
+    .user-subject-progress .data-table tbody tr:nth-child(even) td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
+    .user-progress-table { margin-top:1rem; }
+    .user-progress-table nav { margin-top:.65rem; }
     @container (max-width:34rem) { .user-profile-fields { grid-template-columns:minmax(0,1fr); } }
 </style>
 <div class="split-grid">
@@ -117,11 +125,6 @@
                 <span class="status {{ $userStats['status'] === 'Active' ? 'success' : 'neutral' }}">{{ $userStats['status'] }}</span>
             </div>
             <div class="list-item">
-                <strong>Learning progress</strong>
-                <div class="progress-track"><div class="progress-fill" style="width: {{ $userStats['progress'] }}%;"></div></div>
-                <span class="muted">{{ $userStats['progress'] }}% complete</span>
-            </div>
-            <div class="list-item">
                 <strong>Verified Certification</strong>
                 <strong>{{ $userStats['certificate'] }}</strong>
             </div>
@@ -136,74 +139,85 @@
     </aside>
 </div>
 
-<div class="page-grid two" style="margin-top: 18px;">
-    <section class="panel">
-        <p class="panel-label">Progress</p>
-        <h2 class="panel-title">Topic Completion</h2>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead><tr><th>Topic</th><th>Status</th><th>Best quiz score</th></tr></thead>
-                <tbody>
-                    @foreach ($topicsProgress as $topic)
-                        <tr>
-                            <td><strong>{{ $topic['title'] }}</strong></td>
-                            <td><span class="status {{ $topic['completed'] === 'Completed' ? 'success' : 'neutral' }}">{{ $topic['completed'] }}</span></td>
-                            <td>{{ $topic['score'] }}</td>
-                        </tr>
+<section class="panel user-subject-progress" style="margin-top:1rem" aria-labelledby="user-subject-progress-title">
+    <p class="panel-label">Progress</p>
+    <h2 class="panel-title" id="user-subject-progress-title">Student Progress</h2>
+    <div class="field">
+        <label for="user-progress-subject">Enrolled subject</label>
+        <select id="user-progress-subject" data-progress-url="{{ route('admin.users.show', $userStats['id']) }}" @disabled($subjectGroups->isEmpty())>
+            <option value="">Select a subject</option>
+            @foreach($subjectGroups as $group)
+                <optgroup label="{{ $group['label'] }}">
+                    @foreach($group['subjects'] as $subject)
+                        <option value="{{ $group['batch_id'] }}:{{ $subject->id }}">{{ $subject->title }}</option>
                     @endforeach
-                </tbody>
-            </table>
-        </div>
-    </section>
-
-    <div class="list-stack">
-        <section class="panel" style="padding: 15px;">
-            <p class="panel-label">History</p>
-            <h2 class="panel-title">Final Exam Attempts</h2>
-            <div class="table-wrap">
-                <table class="data-table">
-                    <thead><tr><th>Date</th><th>Score</th><th>Result</th></tr></thead>
-                    <tbody>
-                        @forelse ($examLogs as $row)
-                            <tr>
-                                <td>{{ $row['date'] }}</td>
-                                <td>{{ $row['score'] }}</td>
-                                <td><span class="status {{ $row['status'] === 'Passed' ? 'success' : 'danger' }}">{{ $row['status'] }}</span></td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="muted">No final exam attempts recorded.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
-
-        <section class="panel" style="padding: 15px; margin-top: 10px;">
-            <p class="panel-label">Finances</p>
-            <h2 class="panel-title">Vouchers Purchased</h2>
-            <div class="table-wrap">
-                <table class="data-table">
-                    <thead><tr><th>Code</th><th>Price</th><th>Status</th></tr></thead>
-                    <tbody>
-                        @forelse ($voucherLogs as $v)
-                            <tr>
-                                <td><code>{{ $v['code'] }}</code></td>
-                                <td>{{ $v['price'] }}</td>
-                                <td><span class="status {{ $v['status'] === 'Redeemed' ? 'success' : 'info' }}">{{ $v['status'] }}</span></td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="muted">No vouchers purchased.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
+                </optgroup>
+            @endforeach
+        </select>
     </div>
-</div>
+    <p id="user-progress-message" class="muted" role="status">{{ $subjectGroups->isEmpty() ? 'No subjects are available through this account’s active enrollments.' : 'Select an enrolled subject to load progress.' }}</p>
+    <button type="button" class="btn-ghost" id="user-progress-retry" hidden>Retry</button>
+    <div id="user-progress-results"></div>
+</section>
+<script>
+(() => {
+    const subject = document.getElementById('user-progress-subject');
+    const results = document.getElementById('user-progress-results');
+    const message = document.getElementById('user-progress-message');
+    const retry = document.getElementById('user-progress-retry');
+    let pending, lastUrl;
+    const load = async url => {
+        pending?.abort();
+        const request = new AbortController();
+        pending = request;
+        lastUrl = url;
+        message.textContent = 'Loading progress…';
+        retry.hidden = true;
+        results.setAttribute('aria-busy', 'true');
+        try {
+            const response = await fetch(url, {
+                headers: {Accept:'text/html','X-Requested-With':'XMLHttpRequest','X-Admin-Table':'user-subject-progress'},
+                credentials: 'same-origin', signal: request.signal,
+            });
+            if (!response.ok) throw new Error();
+            const html = new DOMParser().parseFromString(await response.text(), 'text/html');
+            const fragment = html.querySelector('[data-user-progress-tables]');
+            if (!fragment) throw new Error();
+            if (request.signal.aborted) return;
+            results.replaceChildren(fragment);
+            message.textContent = '';
+        } catch {
+            if (!request.signal.aborted) {
+                message.textContent = 'Unable to load progress. Please try again.';
+                retry.hidden = false;
+            }
+        } finally {
+            if (!request.signal.aborted) results.removeAttribute('aria-busy');
+        }
+    };
+    subject.addEventListener('change', () => {
+        pending?.abort();
+        results.replaceChildren();
+        results.removeAttribute('aria-busy');
+        retry.hidden = true;
+        if (!subject.value) {
+            message.textContent = 'Select an enrolled subject to load progress.';
+            return;
+        }
+        const [batchId, subjectId] = subject.value.split(':');
+        const url = new URL(subject.dataset.progressUrl);
+        url.search = new URLSearchParams({batch_id:batchId,subject_id:subjectId});
+        load(url.href);
+    });
+    results.addEventListener('click', event => {
+        const link = event.target.closest('.pagination a');
+        if (!link) return;
+        event.preventDefault();
+        load(link.href);
+    });
+    retry.addEventListener('click', () => load(lastUrl));
+})();
+</script>
 @if($canEditProfile)
 <script>
 (() => {
