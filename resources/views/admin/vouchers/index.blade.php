@@ -94,6 +94,24 @@
 <script>
 (() => {
     let pending;
+    let columnObserver;
+    const fitPaymentColumns = panel => {
+        const table = panel.querySelector('.payments-directory-table');
+        const wrap = table.closest('.payment-table-wrap');
+        const sync = () => {
+            const count = [...table.tHead.rows[0].cells]
+                .filter(cell => getComputedStyle(cell).display !== 'none').length;
+            if (count) table.querySelectorAll('tbody td[colspan]').forEach(cell => {
+                if (cell.colSpan !== count) cell.colSpan = count;
+            });
+        };
+        columnObserver?.disconnect();
+        sync();
+        if ('ResizeObserver' in window) {
+            columnObserver = new ResizeObserver(sync);
+            columnObserver.observe(wrap);
+        }
+    };
     const load = async url => {
         const panel = document.querySelector('[data-ajax-table="vouchers-table"]');
         const message = panel.querySelector('.payment-list-message');
@@ -117,6 +135,7 @@
                 const focusId = panel.contains(focused) ? focused.id : '';
                 const wasPaging = focused?.hasAttribute('data-payment-page');
                 panel.replaceWith(next);
+                fitPaymentColumns(next);
                 if(focusId) document.getElementById(focusId)?.focus({preventScroll:true});
                 else if(wasPaging) next.querySelector('[data-payment-page]:not(:disabled)')?.focus({preventScroll:true});
             }
@@ -153,7 +172,9 @@
         if (button && !button.disabled) load(button.dataset.paymentPage);
     });
     document.addEventListener('payment-directory:refresh', () => reload(document.getElementById('voucher-table-filters')));
-    const initial = document.querySelector('[data-payment-directory-lazy]');
+    const directory = document.querySelector('[data-ajax-table="vouchers-table"]');
+    fitPaymentColumns(directory);
+    const initial = directory.hasAttribute('data-payment-directory-lazy') ? directory : null;
     if (initial && 'IntersectionObserver' in window) {
         const observer = new IntersectionObserver(entries => {
             if (entries.some(entry => entry.isIntersecting)) {
