@@ -1,4 +1,5 @@
-@extends('admin.layouts.app', ['pageTitle' => 'Class Management'])
+@extends('admin.layouts.app')
+@section('title', 'Class Management')
 @section('kicker', 'Batch Delivery')
 @php($isAdmin = Auth::user()->hasAdminAccess() || strtolower((string) Auth::user()->role) === 'staff')
 
