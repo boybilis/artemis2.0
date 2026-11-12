@@ -185,9 +185,24 @@ class AdminController extends Controller
                 $q->where('role', 'student')->orWhereNull('role');
             });
         }
+        $yearStart = $now->copy()->startOfYear();
+        $registrationsQuery = (clone $recentUsersQuery)->whereBetween('created_at', [$yearStart, $now]);
+        $monthlyRegistrations = [];
+        for ($i = 0; $i < $now->month; $i++) {
+            $month = $yearStart->copy()->addMonths($i);
+            $registrationsQuery->selectRaw("COUNT(CASE WHEN created_at >= ? AND created_at < ? THEN 1 END) AS month_{$i}", [
+                $month, $month->copy()->addMonth(),
+            ]);
+            $monthlyRegistrations[] = ['month' => $month->format('M'), 'label' => $month->format('F Y')];
+        }
+        $counts = $registrationsQuery->toBase()->first();
+        foreach ($monthlyRegistrations as $i => $registration) {
+            $monthlyRegistrations[$i]['count'] = (int) $counts->{"month_{$i}"};
+        }
+        $registrationYear = $now->year;
         $recentUsers = $recentUsersQuery->orderBy('created_at', 'desc')->paginate(10, ['*'], 'dashboard_page');
 
-        return view('admin.dashboard', compact('stats', 'recentUsers'));
+        return view('admin.dashboard', compact('stats', 'recentUsers', 'monthlyRegistrations', 'registrationYear'));
     }
 
     // ─── USER MANAGEMENT ─────────────────────────────────────────

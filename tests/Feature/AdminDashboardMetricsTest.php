@@ -10,6 +10,20 @@ class AdminDashboardMetricsTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_registration_chart_shows_january_through_current_month_including_zeroes(): void
+    {
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-04-15 12:00:00'));
+        $admin = User::factory()->create(['role' => 'admin']);
+        foreach (['2025-12-31', '2026-01-01', '2026-01-31', '2026-03-01', '2026-04-25', '2026-05-01'] as $date) {
+            User::factory()->create(['created_at' => $date.' 12:00:00']);
+        }
+
+        $response = $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()
+            ->assertSee('Monthly Registrations')->assertViewHas('registrationYear', 2026);
+        $this->assertSame(['Jan' => 2, 'Feb' => 0, 'Mar' => 1, 'Apr' => 1],
+            array_column($response->viewData('monthlyRegistrations'), 'count', 'month'));
+    }
+
     public function test_metrics_count_monthly_sign_ins_and_confirmed_revenue_without_duplicates(): void
     {
         $this->travelTo(now()->startOfMonth()->addDays(10));
