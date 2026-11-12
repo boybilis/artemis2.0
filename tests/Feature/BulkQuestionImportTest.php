@@ -25,7 +25,7 @@ class BulkQuestionImportTest extends TestCase
         $preTest = Subtopic::create(['topic_id'=>$topic->id, 'title'=>'Pre-Test', 'content_type'=>'pre_test', 'status'=>'approved']);
         $csv = implode("\n", [
             'question,option_a,option_b,option_c,option_d,option_e,option_f,option_g,option_h,correct_answer,category,rationale,maximum_points',
-            '"Which pulse should be assessed before digoxin?","Apical","Radial","Pedal","Carotid",,,,,"A","average","Assess the apical pulse.","1"',
+            '"Which pulse should be assessed before digoxin?","Apical","Radial","Pedal","Carotid",,,,,"A","general","Assess the apical pulse.","1"',
             '"Which finding requires follow-up?","Pulse 52","Pulse 78","BP 120/80","RR 18",,,,,"A","difficult","Bradycardia requires follow-up.","2"',
         ]);
 
@@ -37,6 +37,7 @@ class BulkQuestionImportTest extends TestCase
         $this->assertSame(2, QuizQuestion::count());
         $question = QuizQuestion::first();
         $this->assertSame('single', $question->response_type);
+        $this->assertSame('general', $question->category);
         $this->assertSame($preTest->id, $question->subtopic_id);
         $this->assertSame('pending', $question->status);
         $this->assertSame(['Apical','Radial','Pedal','Carotid'], $question->options);

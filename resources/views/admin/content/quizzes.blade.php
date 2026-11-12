@@ -381,6 +381,7 @@
                 <div class="field">
                     <label for="q_category">Question Category</label>
                     <select id="q_category" name="category" required>
+                        <option value="general">General</option>
                         <option value="easy">Easy</option>
                         <option value="average" selected>Average</option>
                         <option value="difficult">Difficult</option>

@@ -1669,7 +1669,7 @@ class AdminController extends Controller
         $data = $request->validate([
             'question_type' => 'required|in:quiz,midterm,final,subtopic_assessment,pre_test,post_test',
             'response_type' => 'required|in:single,sata,grid,cloze,highlight',
-            'category' => 'nullable|in:easy,average,difficult',
+            'category' => 'nullable|in:general,easy,average,difficult',
             'topic_id' => 'nullable|integer|exists:topics,id',
             'subject_id' => 'nullable|integer|exists:subjects,id',
             'subtopic_id' => 'nullable|integer|exists:subtopics,id',
@@ -1877,7 +1877,7 @@ class AdminController extends Controller
             if (count($options) < 2) $errors[] = 'at least option_a and option_b are required';
             if (collect($options)->contains(fn ($option) => mb_strlen($option) > 255)) $errors[] = 'each option must not exceed 255 characters';
             if ($correctIndex < 0 || $correctIndex >= count($options)) $errors[] = 'correct_answer must be the letter of a populated option';
-            if (!in_array($category, ['easy','average','difficult'], true)) $errors[] = 'category must be easy, average, or difficult';
+            if (!in_array($category, ['general','easy','average','difficult'], true)) $errors[] = 'category must be general, easy, average, or difficult';
             if (!is_numeric($points) || (float) $points < 0.01 || (float) $points > 9999) $errors[] = 'maximum_points must be between 0.01 and 9999';
             if (mb_strlen((string) ($row['rationale'] ?? '')) > 5000) $errors[] = 'rationale must not exceed 5,000 characters';
             if ($errors) {
