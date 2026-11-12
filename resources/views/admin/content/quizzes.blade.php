@@ -22,6 +22,10 @@
     .compact-question-bank tbody td { background:var(--surface-solid); }
     .compact-question-bank .question-bank-alt td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
     .question-bank-reference,.question-bank-actions { display:flex;align-items:center;gap:.35rem;flex-wrap:wrap; }
+    .question-bank-icon { display:inline-grid;place-items:center;width:2.25rem;height:2.25rem;padding:0;border:0;border-radius:6px;background:transparent;color:var(--text);cursor:pointer; }
+    .question-bank-icon:hover { background:var(--border); }
+    .question-bank-icon:focus-visible { outline:2px solid var(--brand-aqua); }
+    .question-bank-icon-delete { color:var(--wrong); }
     .question-bank-expand { display:grid;place-items:center;width:1.85rem;height:1.85rem;border:0;border-radius:6px;background:transparent;color:var(--text);cursor:pointer; }
     .question-bank-expand:hover { background:var(--border); }
     .question-bank-expand:focus-visible { outline:2px solid var(--brand-aqua); }
@@ -165,15 +169,6 @@
                     <tr class="{{ $loop->even ? 'question-bank-alt' : '' }}">
                         <td><div class="question-bank-reference">
                             <button type="button" class="question-bank-expand" aria-expanded="false" aria-controls="bank-question-details-{{ $question->id }}" aria-label="Toggle question details"><span aria-hidden="true">▸</span></button>
-                            <button type="button" class="btn-ghost preview-question-btn"
-                                    data-question="{{ $question->question }}"
-                                    data-assessment-title="{{ in_array($question->question_type, ['subtopic_assessment','pre_test','post_test']) ? ($question->subtopic?->title ?? 'Assessment') : ($question->question_type === 'final' ? 'Mock Exam' : ($question->question_type === 'midterm' ? 'Practice Test' : 'Topic Quiz')) }}"
-                                    data-response-type="{{ $question->response_type }}"
-                                    data-options="{{ base64_encode(json_encode($question->options)) }}"
-                                    data-response-config="{{ base64_encode(json_encode($question->response_config)) }}"
-                                    data-image-url="{{ $question->imageUrl() }}"
-                                    data-rationale="{{ base64_encode($question->rationale ?? '') }}"
-                                    style="padding:0.35rem 0.6rem;font-size:0.75rem">Preview</button>
                         </div></td>
                         <td>
                             @if($question->status === 'approved')
@@ -184,6 +179,15 @@
                         </td>
                         <td>
                             <div class="question-bank-actions">
+                                <button type="button" class="question-bank-icon preview-question-btn"
+                                        data-question="{{ $question->question }}"
+                                        data-assessment-title="{{ in_array($question->question_type, ['subtopic_assessment','pre_test','post_test']) ? ($question->subtopic?->title ?? 'Assessment') : ($question->question_type === 'final' ? 'Mock Exam' : ($question->question_type === 'midterm' ? 'Practice Test' : 'Topic Quiz')) }}"
+                                        data-response-type="{{ $question->response_type }}"
+                                        data-options="{{ base64_encode(json_encode($question->options)) }}"
+                                        data-response-config="{{ base64_encode(json_encode($question->response_config)) }}"
+                                        data-image-url="{{ $question->imageUrl() }}"
+                                        data-rationale="{{ base64_encode($question->rationale ?? '') }}"
+                                        aria-label="Preview question" title="Preview question"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
                                 @if($question->status === 'pending' && $isAdmin)
                                 <form action="{{ route('admin.content.quizzes.approve', ['course' => $course->id, 'quiz' => $question->id]) }}" method="POST" style="margin:0;">
                                     @csrf
@@ -192,7 +196,7 @@
                                 @endif
 
                                 @if(!($isAdmin && $question->status === 'pending'))
-                                    <button type="button" class="btn-ghost edit-question-btn"
+                                    <button type="button" class="question-bank-icon edit-question-btn"
                                             data-id="{{ $question->id }}"
                                             data-question="{{ $question->question }}"
                                             data-rationale="{{ base64_encode($question->rationale ?? '') }}"
@@ -208,14 +212,14 @@
                                             data-options="{{ json_encode($question->options) }}"
                                             data-answers="{{ json_encode($question->correct_answers ?: [$question->answer]) }}"
                                             data-image-url="{{ $question->imageUrl() }}"
-                                            style="padding: 0.35rem 0.6rem; font-size: 0.75rem;">
-                                        Edit
+                                            aria-label="Edit question" title="Edit question">
+                                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5L8 21H3v-5zM13 6l5 5"/></svg>
                                     </button>
                                 @endif
                                 <form action="{{ route('admin.content.quizzes.destroy', ['course' => $course->id, 'quiz' => $question->id]) }}" method="POST" onsubmit="return confirmDelete(event, 'Are you sure you want to delete this question?');" style="margin:0;">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn-ghost" style="padding: 0.35rem 0.6rem; font-size: 0.75rem; color: var(--wrong); border-color: var(--wrong);">Delete</button>
+                                    <button type="submit" class="question-bank-icon question-bank-icon-delete" aria-label="Delete question" title="Delete question"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V3h8v3m3 0-1 15H6L5 6m5 4v7m4-7v7"/></svg></button>
                                 </form>
                             </div>
                         </td>
