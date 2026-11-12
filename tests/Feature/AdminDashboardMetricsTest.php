@@ -17,15 +17,17 @@ class AdminDashboardMetricsTest extends TestCase
         foreach (['2025-12-31', '2026-01-01', '2026-01-31', '2026-03-01', '2026-04-25', '2026-05-01'] as $date) {
             User::factory()->create(['created_at' => $date.' 12:00:00']);
         }
+        User::factory()->count(5)->create(['name' => 'Older test account', 'created_at' => '2025-01-01 12:00:00']);
 
         $response = $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()
             ->assertSee('Monthly Registrations')->assertViewHas('registrationYear', 2026)
-            ->assertViewHas('recentUsers', fn ($users) => $users->perPage() === 5 && $users->count() === 5)
+            ->assertViewHas('recentUsers', fn ($users) => $users->perPage() === 5 && $users->count() === 5 && $users->total() === 10)
             ->assertDontSee('>Email</th>', false)->assertDontSee('>Joined</th>', false);
         $this->get(route('admin.dashboard', ['dashboard_page' => 2]), ['X-Requested-With' => 'XMLHttpRequest'])
             ->assertOk()->assertViewIs('admin.partials.dashboard-recent-users')
-            ->assertViewHas('recentUsers', fn ($users) => $users->currentPage() === 2 && $users->count() === 2)
-            ->assertSee('data-ajax-table="recent-users"', false)->assertDontSee('Monthly Registrations');
+            ->assertViewHas('recentUsers', fn ($users) => $users->currentPage() === 2 && $users->count() === 5 && !$users->hasMorePages())
+            ->assertSee('data-ajax-table="recent-users"', false)->assertSee('data-recent-users-page=', false)
+            ->assertDontSee('Monthly Registrations');
         $this->assertSame(['Jan' => 2, 'Feb' => 0, 'Mar' => 1, 'Apr' => 1],
             array_column($response->viewData('monthlyRegistrations'), 'count', 'month'));
     }

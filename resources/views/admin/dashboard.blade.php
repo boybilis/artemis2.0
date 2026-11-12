@@ -33,6 +33,7 @@
     body .admin-dashboard-recent .data-table thead th { background:#48515f;color:#fff; }
     .admin-dashboard-recent .data-table tbody tr:nth-child(odd) td { background:var(--surface-solid); }
     .admin-dashboard-recent .data-table tbody tr:nth-child(even) td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
+    .recent-users-pagination { display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:.6rem;margin-top:1rem; }
     .registration-chart-scroll { overflow-x:auto; }
     .registration-chart { display:grid;grid-auto-flow:column;grid-auto-columns:minmax(2rem,1fr);gap:.35rem;min-width:max-content;margin:0;padding:0;list-style:none; }
     .registration-month { min-width:0;display:grid;grid-template-rows:11rem auto;gap:.5rem;text-align:center;font-size:.72rem;color:var(--text); }
@@ -78,4 +79,32 @@
         </div>
     </section>
 </div>
+<script>
+document.addEventListener('click', async event => {
+    const button = event.target.closest('[data-recent-users-page]');
+    if (!button || button.disabled || !button.dataset.recentUsersPage) return;
+    const panel = button.closest('[data-ajax-table="recent-users"]');
+    if (panel.getAttribute('aria-busy') === 'true') return;
+    const errorMessage = panel.querySelector('.recent-users-error');
+    errorMessage.hidden = true;
+    panel.setAttribute('aria-busy', 'true');
+    try {
+        const response = await fetch(button.dataset.recentUsersPage, {
+            headers: {Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest'},
+            credentials: 'same-origin',
+        });
+        if (!response.ok) throw new Error();
+        const parsed = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const next = parsed.querySelector('[data-ajax-table="recent-users"]');
+        if (!next) throw new Error();
+        panel.replaceWith(next);
+        next.querySelector('[data-recent-users-page]:not(:disabled)')?.focus({preventScroll:true});
+    } catch {
+        errorMessage.textContent = 'Unable to load recent users. Please try again.';
+        errorMessage.hidden = false;
+    } finally {
+        panel.removeAttribute('aria-busy');
+    }
+});
+</script>
 @endsection

@@ -149,7 +149,9 @@ class AdminController extends Controller
         if (in_array(trim(strtolower(Auth::user()->role)), ['instructor', 'staff'], true) && !Auth::user()->is_admin) {
             $recentUsersQuery->where(fn ($query) => $query->where('role', 'student')->orWhereNull('role'));
         }
-        $recentUsers = (clone $recentUsersQuery)->latest()->orderByDesc('id')
+        $latestUsers = (clone $recentUsersQuery)->select('id', 'name', 'role', 'is_admin', 'created_at')
+            ->latest()->orderByDesc('id')->limit(10);
+        $recentUsers = User::query()->fromSub($latestUsers, 'users')->latest()->orderByDesc('id')
             ->paginate(5, ['id', 'name', 'role', 'is_admin'], 'dashboard_page');
         if ($request->ajax() && $request->has('dashboard_page')) {
             return view('admin.partials.dashboard-recent-users', compact('recentUsers'));

@@ -1,7 +1,7 @@
 <section class="panel admin-dashboard-recent" data-ajax-table="recent-users">
     <p class="panel-label">User Management</p>
     <h2 class="panel-title">Recent Users</h2>
-    <p class="panel-subtitle">Latest learners who joined the platform.</p>
+    <p class="panel-subtitle">The 10 latest accounts to join the platform.</p>
 
     <div class="table-wrap">
         <table class="data-table">
@@ -34,7 +34,12 @@
     </table>
     </div>
 
-    <div style="padding: 1.5rem; border-top: 1px solid var(--border);">
-        {{ $recentUsers->links('pagination::bootstrap-4') }}
-    </div>
+    @if($recentUsers->hasPages())
+        <nav class="recent-users-pagination" aria-label="Recent Users pagination">
+            <button type="button" class="btn-ghost" data-recent-users-page="{{ $recentUsers->previousPageUrl() }}" @disabled($recentUsers->onFirstPage())>Previous</button>
+            <span role="status">Page {{ $recentUsers->currentPage() }} of {{ $recentUsers->lastPage() }}</span>
+            <button type="button" class="btn-ghost" data-recent-users-page="{{ $recentUsers->nextPageUrl() }}" @disabled(!$recentUsers->hasMorePages())>Next</button>
+        </nav>
+    @endif
+    <p class="recent-users-error" role="alert" hidden></p>
 </section>
