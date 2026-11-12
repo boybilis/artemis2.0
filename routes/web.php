@@ -178,6 +178,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         // Users
+        Route::middleware(RoleMiddleware::class.':admin')->group(function () {
+            Route::get('/users/{user}/profile', [AdminController::class, 'userProfile'])->name('users.profile');
+            Route::patch('/users/{user}/profile', [AdminController::class, 'updateUserProfile'])->name('users.profile.update');
+        });
         Route::middleware(RoleMiddleware::class.':admin,staff')->group(function () {
             Route::get('/users', [AdminController::class, 'users'])->name('users.index');
             Route::get('/users/{user}', [AdminController::class, 'showUser'])->name('users.show');

@@ -183,6 +183,62 @@ class AdminController extends Controller
     }
 
     // ─── USER MANAGEMENT ─────────────────────────────────────────
+    private function userProfileData(User $user): array
+    {
+        $nameParts = preg_split('/\s+/', trim((string) $user->name), 2);
+
+        return [
+            'first_name' => $user->first_name ?: ($nameParts[0] ?? ''),
+            'last_name' => $user->first_name ? $user->last_name : ($nameParts[1] ?? ''),
+            'email' => $user->email,
+            'role' => $user->isAssistantAdmin() ? 'Asst. Admin' : ($user->hasAdminAccess() ? 'Admin' : ucfirst($user->role ?: 'student')),
+            'status' => $user->is_active ? 'Active' : 'Inactive',
+            'phone' => $user->phone,
+            'country_code' => $user->country_code,
+            'birthdate' => $user->birthdate ? substr((string) $user->birthdate, 0, 10) : null,
+            'affiliation_type' => $user->affiliation_type,
+            'affiliation_name' => $user->affiliation_name,
+        ];
+    }
+
+    public function userProfile(Request $request, User $user)
+    {
+        abort_unless($request->user()->hasAdminAccess(), 403);
+
+        return response()->json(['profile' => $this->userProfileData($user)])->header('Cache-Control', 'no-store');
+    }
+
+    public function updateUserProfile(Request $request, User $user)
+    {
+        abort_unless($request->user()->hasAdminAccess(), 403);
+        $data = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'present|nullable|string|max:255',
+            'phone' => 'present|nullable|string|max:50',
+            'country_code' => 'required|in:PH,INTL',
+            'birthdate' => 'present|nullable|date_format:Y-m-d|before_or_equal:today',
+            'affiliation_type' => 'present|nullable|string|max:255',
+            'affiliation_name' => 'present|nullable|string|max:255',
+            'email' => 'missing',
+            'password' => 'missing',
+            'role' => 'missing',
+        ]);
+        $data['name'] = trim($data['first_name'].' '.($data['last_name'] ?? ''));
+        if (mb_strlen($data['name']) > 255) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['first_name' => 'The full name may not exceed 255 characters.']);
+        }
+        $user->update($data);
+
+        AuditLog::create([
+            'user_id' => $request->user()->id,
+            'action' => 'User Profile Updated',
+            'description' => "Updated profile for user ID {$user->id}.",
+            'ip_address' => $request->ip(),
+        ]);
+
+        return response()->json(['message' => 'User profile updated.']);
+    }
+
     public function users(Request $request)
     {
         $query = User::query();
@@ -198,6 +254,7 @@ class AdminController extends Controller
                 'id'=>$u->id,'name'=>$u->name,'email'=>$u->email,'affiliation'=>$u->affiliation_name ?: 'N/A',
                 'role'=>$u->is_admin ? 'admin' : ($u->role ?: 'student'),'active'=>(bool)$u->is_active,
                 'toggleUrl'=>route('admin.users.toggle',$u),'roleUrl'=>route('admin.users.role',$u),
+                'profileUrl'=>Auth::user()->hasAdminAccess() ? route('admin.users.profile',$u) : null,
             ]),'canEditRoles'=>!Auth::user()->isAssistantAdmin() && Auth::user()->hasAdminAccess()]);
         }
         if ($request->filled('search')) {
