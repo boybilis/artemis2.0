@@ -263,7 +263,7 @@ class AdminController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
-        return response()->json(['message' => 'User profile updated.']);
+        return response()->json(['message' => 'User profile updated.', 'name' => $user->name]);
     }
 
     public function users(Request $request)
@@ -281,7 +281,7 @@ class AdminController extends Controller
                 'id'=>$u->id,'name'=>$u->name,'email'=>$u->email,'affiliation'=>$u->affiliation_name ?: 'N/A',
                 'role'=>$u->is_admin ? 'admin' : ($u->role ?: 'student'),'active'=>(bool)$u->is_active,
                 'toggleUrl'=>route('admin.users.toggle',$u),'roleUrl'=>route('admin.users.role',$u),
-                'profileUrl'=>Auth::user()->hasAdminAccess() ? route('admin.users.profile',$u) : null,
+                'profileUrl'=>Auth::user()->hasAdminAccess() ? route('admin.users.show',$u) : null,
             ]),'canEditRoles'=>!Auth::user()->isAssistantAdmin() && Auth::user()->hasAdminAccess()]);
         }
         if ($request->filled('search')) {
@@ -411,7 +411,8 @@ class AdminController extends Controller
             ];
         });
 
-        return view('admin.users.show', compact('userStats', 'topicsProgress', 'examLogs', 'voucherLogs'));
+        $profile = $this->userProfileData($user);
+        return view('admin.users.show', compact('userStats', 'profile', 'topicsProgress', 'examLogs', 'voucherLogs'));
     }
 
     public function toggleUserStatus($id, Request $request)

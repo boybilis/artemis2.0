@@ -5,46 +5,60 @@
 
 @section('header_actions')
     <a class="btn btn-muted" href="{{ route('admin.users.index') }}">Back to users</a>
-    <button class="btn btn-primary" type="button">Save changes</button>
+    @if(Auth::user()->hasAdminAccess())
+        <button class="btn btn-primary" type="submit" form="user-profile-form" id="user-profile-save">Save changes</button>
+    @endif
 @endsection
 
 @section('content')
+@php($canEditProfile = Auth::user()->hasAdminAccess())
 <div class="split-grid">
     <section class="panel">
         <p class="panel-label">Profile</p>
-        <h2 class="panel-title">{{ $userStats['name'] }}</h2>
+        <h2 class="panel-title" id="user-profile-name">{{ $userStats['name'] }}</h2>
         <p class="panel-subtitle">Learner account details and institutional affiliation.</p>
 
+        <form id="user-profile-form" method="post" action="{{ route('admin.users.profile.update', $userStats['id']) }}">
+        @csrf @method('PATCH')
         <div class="form-grid">
             <div class="field">
-                <label>First name</label>
-                <input type="text" readonly value="{{ $userStats['first_name'] }}">
+                <label for="profile-first-name">First name</label>
+                <input id="profile-first-name" name="first_name" maxlength="255" required @readonly(!$canEditProfile) value="{{ $profile['first_name'] }}">
             </div>
             <div class="field">
-                <label>Last name</label>
-                <input type="text" readonly value="{{ $userStats['last_name'] }}">
+                <label for="profile-last-name">Last name</label>
+                <input id="profile-last-name" name="last_name" maxlength="255" @readonly(!$canEditProfile) value="{{ $profile['last_name'] }}">
             </div>
             <div class="field">
-                <label>Email address</label>
-                <input type="email" readonly value="{{ $userStats['email'] }}">
+                <label for="profile-email">Email address (read only)</label>
+                <input id="profile-email" type="email" readonly value="{{ $profile['email'] }}">
             </div>
             <div class="field">
-                <label>Phone number</label>
-                <input type="text" readonly value="{{ $userStats['phone'] }}">
+                <label for="profile-phone">Phone number</label>
+                <input id="profile-phone" name="phone" type="tel" maxlength="50" @readonly(!$canEditProfile) value="{{ $profile['phone'] }}">
             </div>
             <div class="field">
-                <label>Birthdate</label>
-                <input type="text" readonly value="{{ $userStats['birthdate'] }}">
+                <label for="profile-birthdate">Birthdate</label>
+                <input id="profile-birthdate" name="birthdate" type="date" @readonly(!$canEditProfile) value="{{ $profile['birthdate'] }}">
             </div>
             <div class="field">
-                <label>Affiliation Type</label>
-                <input type="text" readonly value="{{ ucfirst($userStats['affiliation_type']) }}">
+                <label for="profile-country">Country / Pricing Region</label>
+                <select id="profile-country" name="country_code" required @disabled(!$canEditProfile)>
+                    <option value="PH" @selected($profile['country_code'] === 'PH')>Philippines</option>
+                    <option value="INTL" @selected($profile['country_code'] === 'INTL')>International</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="profile-affiliation-type">Affiliation type</label>
+                <input id="profile-affiliation-type" name="affiliation_type" maxlength="255" @readonly(!$canEditProfile) value="{{ $profile['affiliation_type'] }}">
             </div>
             <div class="field full">
-                <label>School / Institution / Company Name</label>
-                <input type="text" readonly value="{{ $userStats['affiliation'] }}">
+                <label for="profile-affiliation">School / Institution / Company Name</label>
+                <input id="profile-affiliation" name="affiliation_name" maxlength="255" @readonly(!$canEditProfile) value="{{ $profile['affiliation_name'] }}">
             </div>
         </div>
+        <p id="user-profile-error" role="alert" style="color:var(--wrong)" hidden></p>
+        </form>
     </section>
 
     <aside class="panel">
@@ -145,4 +159,37 @@
         </section>
     </div>
 </div>
+@if($canEditProfile)
+<script>
+document.getElementById('user-profile-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = document.getElementById('user-profile-save');
+    const error = document.getElementById('user-profile-error');
+    if (button.disabled) return;
+    const data = Object.fromEntries(new FormData(form));
+    const token = data._token;
+    delete data._token;
+    delete data._method;
+    button.disabled = true;
+    error.hidden = true;
+    try {
+        const response = await fetch(form.action, {
+            method: 'PATCH',
+            headers: {Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':token},
+            body: JSON.stringify(data),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(Object.values(result.errors || {}).flat().join(' ') || result.message);
+        document.getElementById('user-profile-name').textContent = result.name;
+        showAdminToast(result.message, 'success');
+    } catch (failure) {
+        error.textContent = failure.message || 'Unable to save the profile.';
+        error.hidden = false;
+    } finally {
+        button.disabled = false;
+    }
+});
+</script>
+@endif
 @endsection

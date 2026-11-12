@@ -611,7 +611,7 @@
             }
         });
     </script>
-<script src="{{ asset('admin-client-tables.js') }}?v=4"></script>
+<script src="{{ asset('admin-client-tables.js') }}?v=5"></script>
 @if($isAdmin || $role === 'instructor')
 <script>
 (() => {

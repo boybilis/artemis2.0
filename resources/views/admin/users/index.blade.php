@@ -17,10 +17,6 @@
     .user-profile-view { display:inline-grid;place-items:center;flex:none;width:44px;height:44px;border:0;border-radius:8px;background:transparent;color:inherit;cursor:pointer; }
     .user-profile-view:hover { background:rgba(25,52,79,.09); }
     .user-profile-view:focus-visible { outline:2px solid var(--brand-aqua); }
-    #userProfileDialog { width:min(38rem,calc(100% - 2rem));max-height:calc(100dvh - 2rem);margin:auto;padding:0;border:1px solid var(--border);border-radius:16px;background:var(--surface-solid);color:var(--text); }
-    #userProfileDialog::backdrop { background:rgba(9,26,43,.65); }
-    #userProfileForm { padding:1.25rem; }
-    #userProfileError { color:var(--wrong);margin-bottom:.75rem; }
     
     .floating-save-toast { position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 1.5rem; box-shadow: 0 20px 40px rgba(0,0,0,0.4); z-index: 100; transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .floating-save-toast.visible { bottom: 2rem; }
@@ -97,7 +93,7 @@
                         <td style="text-align: right;">
                             <div class="actions">
                                 @if(Auth::user()->hasAdminAccess())
-                                    <button type="button" class="user-profile-view" data-user-profile="{{ route('admin.users.profile', $user['id']) }}" aria-haspopup="dialog" aria-label="View user profile" title="View user profile"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                                    <a class="user-profile-view" href="{{ route('admin.users.show', $user['id']) }}" aria-label="View user profile" title="View user profile"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></a>
                                 @endif
                                 <form action="{{ route('admin.users.toggle', $user['id']) }}" method="POST" style="margin: 0;">
                                     @csrf
@@ -125,33 +121,6 @@
 </section>
 
 </div>
-@if(Auth::user()->hasAdminAccess())
-<dialog id="userProfileDialog" aria-labelledby="userProfileTitle">
-    <div class="admin-modal-header">
-        <h3 id="userProfileTitle" class="admin-modal-title">User Profile</h3>
-        <button type="button" class="admin-modal-close" aria-label="Close profile" id="userProfileClose" autofocus>&times;</button>
-    </div>
-    <form id="userProfileForm">
-        @csrf
-        <p id="userProfileError" role="status"></p>
-        <fieldset id="userProfileFields" style="border:0;padding:0;min-width:0">
-            <div class="form-grid">
-                <div class="field"><label for="profileFirstName">First name</label><input id="profileFirstName" name="first_name" maxlength="255" required></div>
-                <div class="field"><label for="profileLastName">Last name</label><input id="profileLastName" name="last_name" maxlength="255"></div>
-                <div class="field full"><label for="profileEmail">Email (read only)</label><input id="profileEmail" type="email" readonly></div>
-                <div class="field"><label for="profileRole">Role</label><input id="profileRole" readonly></div>
-                <div class="field"><label for="profileStatus">Account status</label><input id="profileStatus" readonly></div>
-                <div class="field"><label for="profilePhone">Phone</label><input id="profilePhone" name="phone" type="tel" maxlength="50"></div>
-                <div class="field"><label for="profileBirthdate">Birthdate</label><input id="profileBirthdate" name="birthdate" type="date"></div>
-                <div class="field"><label for="profileCountry">Country / Pricing Region</label><select id="profileCountry" name="country_code" required><option value="PH">Philippines</option><option value="INTL">International</option></select></div>
-                <div class="field"><label for="profileAffiliationType">Affiliation type</label><input id="profileAffiliationType" name="affiliation_type" maxlength="255"></div>
-                <div class="field full"><label for="profileAffiliationName">Affiliation name</label><input id="profileAffiliationName" name="affiliation_name" maxlength="255"></div>
-            </div>
-            <button type="submit" class="btn-primary">Save Profile</button>
-        </fieldset>
-    </form>
-</dialog>
-@endif
 <!-- Floating Save Toast -->
 <div class="floating-save-toast" id="saveToast">
     <div class="toast-message">You have unsaved role changes.</div>
@@ -164,44 +133,6 @@
 </div>
 
 <script>
-const profileDialog=document.getElementById('userProfileDialog');
-if(profileDialog){
- const form=document.getElementById('userProfileForm'), fields=document.getElementById('userProfileFields');
- const message=document.getElementById('userProfileError');
- let profileUrl, requestId=0;
- document.getElementById('userProfileClose').addEventListener('click',()=>profileDialog.close());
- profileDialog.addEventListener('close',()=>{requestId++;});
- document.addEventListener('click',async event=>{
-  const button=event.target.closest('[data-user-profile]');if(!button)return;
-  const id=++requestId;
-  profileUrl=button.dataset.userProfile;
-  form.reset();fields.disabled=true;message.textContent='Loading profile…';profileDialog.showModal();
-  try{
-   const response=await fetch(profileUrl,{headers:{Accept:'application/json'},cache:'no-store'});
-   if(!response.ok)throw new Error('Unable to load this profile.');
-   const {profile}=await response.json();
-   if(id!==requestId||!profileDialog.open)return;
-   for(const key of ['first_name','last_name','phone','birthdate','country_code','affiliation_type','affiliation_name'])form.elements.namedItem(key).value=profile[key]??'';
-   for(const [id,key] of [['profileEmail','email'],['profileRole','role'],['profileStatus','status']])document.getElementById(id).value=profile[key]??'';
-   fields.disabled=false;message.textContent='';
-  }catch(error){if(id===requestId&&profileDialog.open)message.textContent=error.message;}
- });
- form.addEventListener('submit',async event=>{
-  event.preventDefault();
-  if(fields.disabled)return;
-  const id=requestId, data=Object.fromEntries(new FormData(form));
-  delete data._token;
-  fields.disabled=true;message.textContent='Saving profile…';
-  try{
-   const response=await fetch(profileUrl,{method:'PATCH',headers:{Accept:'application/json','Content-Type':'application/json','X-CSRF-TOKEN':form.elements._token.value},body:JSON.stringify(data)});
-   const result=await response.json();
-   if(!response.ok)throw new Error(Object.values(result.errors||{}).flat().join(' ')||result.message||'Unable to save this profile.');
-   if(id===requestId&&profileDialog.open)profileDialog.close();
-   showAdminToast(result.message,'success');
-   await loadAdminTable('users',location.href,false);
-  }catch(error){if(id===requestId&&profileDialog.open){message.textContent=error.message;fields.disabled=false;}}
- });
-}
 let changedForms = new Set();
 const saveToast = document.getElementById('saveToast'), toastSaveBtn = document.getElementById('toastSaveBtn');
 function syncRoleToast(){saveToast.classList.toggle('visible',changedForms.size>0);}

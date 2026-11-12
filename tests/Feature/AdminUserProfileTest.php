@@ -23,6 +23,12 @@ class AdminUserProfileTest extends TestCase
 
         foreach (['admin', 'assistant_admin'] as $role) {
             $this->actingAs(User::factory()->create(['role' => $role, 'is_admin' => false]));
+            $page = route('admin.users.show', $user);
+            $this->get(route('admin.users.index'))->assertOk()->assertSee('href="'.$page.'"', false)
+                ->assertDontSee('userProfileDialog');
+            $this->getJson(route('admin.users.index', ['table_data' => 'users']))->assertOk()
+                ->assertJsonFragment(['profileUrl' => $page]);
+            $this->get($page)->assertOk()->assertSee('form="user-profile-form"', false);
             $this->getJson($url)->assertOk()->assertJsonPath('profile.email', $user->email)
                 ->assertJsonMissingPath('profile.password');
             $this->patchJson($url, $profile + [
