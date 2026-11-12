@@ -4,7 +4,7 @@
     <p class="panel-subtitle">The 10 latest accounts to join the platform.</p>
 
     <div class="table-wrap">
-        <table class="data-table">
+        <table class="data-table admin-compact-table">
             <thead>
                 <tr>
                     <th scope="col">Name</th>

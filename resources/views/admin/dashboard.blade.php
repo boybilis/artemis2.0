@@ -30,6 +30,8 @@
     body .admin-dashboard-insights .panel { min-width:0;background:var(--surface-solid);border-radius:16px;box-shadow:0 6px 18px rgba(25,52,79,.08); }
     .admin-dashboard-insights .panel::before,.admin-dashboard-insights .panel::after { content:none; }
     .admin-dashboard-recent .data-table { min-width:0; }
+    .admin-dashboard-recent .admin-compact-table :is(th,td) { padding:.45rem .65rem; }
+    .admin-dashboard-recent .admin-compact-table .status { padding:.22rem .55rem; }
     body .admin-dashboard-recent .data-table thead th { background:#48515f;color:#fff; }
     .admin-dashboard-recent .data-table tbody tr:nth-child(odd) td { background:var(--surface-solid); }
     .admin-dashboard-recent .data-table tbody tr:nth-child(even) td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
