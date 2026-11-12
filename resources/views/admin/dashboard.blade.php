@@ -10,7 +10,7 @@
     .admin-dashboard-metrics .metric-card {
         --dashboard-accent:var(--brand-aqua);
         min-width:0;display:flex;flex-direction:column;gap:.55rem;
-        border:1px solid var(--border);border-top:3px solid var(--dashboard-accent);
+        border:1px solid var(--border);
         border-radius:16px;padding:1.15rem;
         background:linear-gradient(145deg,var(--surface-solid),var(--brand-slate));
         box-shadow:0 6px 18px rgba(25,52,79,.08);
