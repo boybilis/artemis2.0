@@ -43,6 +43,7 @@
     .subject-progress-details[hidden] { display:none; }
     .subject-progress-toolbar { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.65rem; }
     .subject-progress-toolbar h3 { margin:0; }
+    .subject-progress-toolbar [data-subject-progress-toggle-all] { margin-inline-start:auto; }
     .subject-progress-details dl { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.75rem;margin:.25rem 0 .25rem clamp(1.25rem,4vw,2.5rem);padding:.25rem 0 .25rem .8rem;border-inline-start:2px solid var(--border); }
     .subject-progress-details dt { font-weight:700; }
     .subject-progress-details dd { margin:0; }
