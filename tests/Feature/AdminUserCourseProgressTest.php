@@ -26,7 +26,7 @@ class AdminUserCourseProgressTest extends TestCase
         }
         $topic = Topic::create(['course_id' => $course->id, 'subject_id' => $subject->id, 'title' => 'Individual learning activity', 'status' => 'approved']);
         Subtopic::create(['topic_id' => $topic->id, 'title' => 'Handout activity', 'content_type' => 'subtopic', 'status' => 'approved', 'documentation_path' => 'sample.pdf', 'sort_order' => 1]);
-        $pre = Subtopic::create(['topic_id' => $topic->id, 'title' => 'Diagnostic', 'content_type' => 'pre_test', 'status' => 'approved', 'sort_order' => 2]);
+        $pre = Subtopic::create(['topic_id' => $topic->id, 'title' => 'Pre Test', 'content_type' => 'pre_test', 'status' => 'approved', 'sort_order' => 2]);
         $post = Subtopic::create(['topic_id' => $topic->id, 'title' => 'Post assessment', 'content_type' => 'post_test', 'status' => 'approved', 'sort_order' => 3]);
         UserProgress::create(['user_id' => $learner->id, 'course_id' => $course->id, 'topic_id' => $topic->id, 'max_unlocked_index' => 2]);
         QuizAttempt::create(['user_id' => $learner->id, 'course_id' => $course->id, 'batch_id' => $batch->id, 'topic_id' => $topic->id, 'subtopic_id' => $pre->id, 'assessment_type' => 'pre_test', 'score' => 4, 'total' => 5, 'passed' => true]);
@@ -38,7 +38,7 @@ class AdminUserCourseProgressTest extends TestCase
         $selection = '?batch_id='.$batch->id.'&course_id='.$course->id;
         $this->get($url.$selection, $headers)->assertOk()
             ->assertViewHas('subjects', fn ($page) => $page->count() === 10 && $page->total() === 11)
-            ->assertSee('8/10')->assertSee('67%')->assertSee('4/5')->assertSee('Not taken')->assertSee('Not enabled')
+            ->assertSee('8/10')->assertSee('67%')->assertSee('4/5')->assertSee('Not taken')->assertSee('Not enabled')->assertDontSee('Pre Test')
             ->assertSee('Expand all')->assertSee('role="switch"', false)->assertSee('aria-expanded="false"', false)
             ->assertDontSee('Individual learning activity')->assertDontSee('Handout activity')->assertDontSee('Enrolled Subject 11');
         $this->get($url.$selection.'&subjects_page=2', $headers)->assertOk()->assertSee('Enrolled Subject 11');

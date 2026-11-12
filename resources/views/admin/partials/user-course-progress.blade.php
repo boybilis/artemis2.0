@@ -34,10 +34,15 @@
                                             <dt>{{ $label }}</dt>
                                             <dd>
                                                 @forelse($subject['results'][$type] as $result)
+                                                    @php
+                                                        $showTitle = preg_replace('/[\s_-]+/', '', strtolower($result['title'])) !== str_replace('-', '', strtolower($label));
+                                                    @endphp
                                                     <div class="subject-assessment-result">
-                                                        <span>{{ $result['title'] }}</span>
+                                                        @if($showTitle)
+                                                            <span>{{ $result['title'] }}</span>
+                                                        @endif
                                                         @if($result['attempts']->isEmpty())
-                                                            <span class="muted"> · Not taken</span>
+                                                            <span class="muted">{{ $showTitle ? ' · ' : '' }}Not taken</span>
                                                         @else
                                                             <ol class="subject-assessment-attempts" role="list">
                                                                 @foreach($result['attempts'] as $attempt)
