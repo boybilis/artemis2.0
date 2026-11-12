@@ -43,7 +43,12 @@
     .subject-progress-details[hidden] { display:none; }
     .subject-progress-toolbar { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.65rem; }
     .subject-progress-toolbar h3 { margin:0; }
-    .subject-progress-toolbar [data-subject-progress-toggle-all] { margin-inline-start:auto; }
+    .subject-progress-switch { position:relative;display:inline-flex;align-items:center;gap:.55rem;margin-inline-start:auto;min-height:44px;cursor:pointer;color:var(--text); }
+    .subject-progress-switch input { position:absolute;width:1px;height:1px;opacity:0; }
+    .subject-progress-switch-track { display:inline-flex;align-items:center;width:2.3rem;height:1.25rem;padding:2px;border-radius:999px;background:#64748b; }
+    .subject-progress-switch-track::after { content:"";width:1rem;height:1rem;border-radius:50%;background:#fff; }
+    .subject-progress-switch input:checked + .subject-progress-switch-track { justify-content:flex-end;background:var(--brand-aqua-strong); }
+    .subject-progress-switch input:focus-visible + .subject-progress-switch-track { outline:2px solid var(--brand-aqua);outline-offset:3px; }
     .subject-progress-details dl { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.75rem;margin:.25rem 0 .25rem clamp(1.25rem,4vw,2.5rem);padding:.25rem 0 .25rem .8rem;border-inline-start:2px solid var(--border); }
     .subject-progress-details dt { font-weight:700; }
     .subject-progress-details dd { margin:0; }
@@ -227,19 +232,19 @@
         details.hidden = !expanded;
         button.setAttribute('aria-expanded', String(expanded));
     };
+    const subjectControls = () => [...results.querySelectorAll('.subject-progress-expand')];
+    const isExpanded = button => button.getAttribute('aria-expanded') === 'true';
+    results.addEventListener('change', event => {
+        if (event.target.matches('[data-subject-progress-toggle-all]')) {
+            subjectControls().forEach(button => setSubjectExpanded(button, event.target.checked));
+        }
+    });
     results.addEventListener('click', event => {
         const expand = event.target.closest('.subject-progress-expand');
-        const toggleAll = event.target.closest('[data-subject-progress-toggle-all]');
-        if (expand || toggleAll) {
-            const controls = [...results.querySelectorAll('.subject-progress-expand')];
-            const isExpanded = button => button.getAttribute('aria-expanded') === 'true';
-            if (expand) setSubjectExpanded(expand, !isExpanded(expand));
-            else {
-                const expandAll = !controls.every(isExpanded);
-                controls.forEach(button => setSubjectExpanded(button, expandAll));
-            }
-            const allButton = results.querySelector('[data-subject-progress-toggle-all]');
-            if (allButton) allButton.textContent = controls.every(isExpanded) ? 'Collapse all' : 'Expand all';
+        if (expand) {
+            setSubjectExpanded(expand, !isExpanded(expand));
+            const toggleAll = results.querySelector('[data-subject-progress-toggle-all]');
+            if (toggleAll) toggleAll.checked = subjectControls().every(isExpanded);
             return;
         }
         const link = event.target.closest('.pagination a');

@@ -4,7 +4,11 @@
         <div class="subject-progress-toolbar">
             <h3 id="selected-subject-progress">Subject Progress</h3>
             @if($subjects->count())
-                <button type="button" class="btn-ghost" data-subject-progress-toggle-all aria-controls="subject-progress-rows">Expand all</button>
+                <label class="subject-progress-switch">
+                    <input type="checkbox" role="switch" data-subject-progress-toggle-all aria-controls="subject-progress-rows">
+                    <span class="subject-progress-switch-track" aria-hidden="true"></span>
+                    <span>Expand all</span>
+                </label>
             @endif
         </div>
         <div class="table-wrap">
