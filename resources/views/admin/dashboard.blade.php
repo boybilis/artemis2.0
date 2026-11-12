@@ -29,6 +29,10 @@
     .admin-dashboard-insights { display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:1rem;margin-top:1rem;align-items:start; }
     body .admin-dashboard-insights .panel { min-width:0;background:var(--surface-solid);border-radius:16px;box-shadow:0 6px 18px rgba(25,52,79,.08); }
     .admin-dashboard-insights .panel::before,.admin-dashboard-insights .panel::after { content:none; }
+    .admin-dashboard-recent .data-table { min-width:0; }
+    body .admin-dashboard-recent .data-table thead th { background:#48515f;color:#fff; }
+    .admin-dashboard-recent .data-table tbody tr:nth-child(odd) td { background:var(--surface-solid); }
+    .admin-dashboard-recent .data-table tbody tr:nth-child(even) td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
     .registration-chart-scroll { overflow-x:auto; }
     .registration-chart { display:grid;grid-auto-flow:column;grid-auto-columns:minmax(2rem,1fr);gap:.35rem;min-width:max-content;margin:0;padding:0;list-style:none; }
     .registration-month { min-width:0;display:grid;grid-template-rows:11rem auto;gap:.5rem;text-align:center;font-size:.72rem;color:var(--text); }
@@ -52,44 +56,7 @@
 </div>
 
 <div class="admin-dashboard-insights">
-    <section class="panel admin-dashboard-recent">
-        <p class="panel-label">User Management</p>
-        <h2 class="panel-title">Recent Users</h2>
-        <p class="panel-subtitle">Latest learners who joined the platform.</p>
-
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Role</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach ($recentUsers as $user)
-                        <tr>
-                            <td style="font-weight: 600;">{{ $user->name }}</td>
-                            <td>
-                                @if($user->isAssistantAdmin())
-                                    <span class="status warning">Asst. Admin</span>
-                                @elseif($user->role === 'admin' || $user->is_admin)
-                                    <span class="status warning">Admin</span>
-                                @elseif(strtolower($user->role) === 'instructor')
-                                    <span class="status info">Instructor</span>
-                                @else
-                                    <span class="status success">{{ ucfirst($user->role ?? 'student') }}</span>
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-        </table>
-        </div>
-        
-        <div style="padding: 1.5rem; border-top: 1px solid var(--border);">
-            {{ $recentUsers->links('pagination::bootstrap-4') }}
-        </div>
-    </section>
+    @include('admin.partials.dashboard-recent-users')
     <section class="panel" aria-labelledby="monthly-registrations-title">
         <p class="panel-label">{{ $registrationYear }} overview</p>
         <h2 class="panel-title" id="monthly-registrations-title">Monthly Registrations</h2>

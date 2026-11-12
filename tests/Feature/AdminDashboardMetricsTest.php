@@ -21,7 +21,11 @@ class AdminDashboardMetricsTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()
             ->assertSee('Monthly Registrations')->assertViewHas('registrationYear', 2026)
             ->assertViewHas('recentUsers', fn ($users) => $users->perPage() === 5 && $users->count() === 5)
-            ->assertDontSee('<th>Email</th>', false)->assertDontSee('<th>Joined</th>', false);
+            ->assertDontSee('>Email</th>', false)->assertDontSee('>Joined</th>', false);
+        $this->get(route('admin.dashboard', ['dashboard_page' => 2]), ['X-Requested-With' => 'XMLHttpRequest'])
+            ->assertOk()->assertViewIs('admin.partials.dashboard-recent-users')
+            ->assertViewHas('recentUsers', fn ($users) => $users->currentPage() === 2 && $users->count() === 2)
+            ->assertSee('data-ajax-table="recent-users"', false)->assertDontSee('Monthly Registrations');
         $this->assertSame(['Jan' => 2, 'Feb' => 0, 'Mar' => 1, 'Apr' => 1],
             array_column($response->viewData('monthlyRegistrations'), 'count', 'month'));
     }

@@ -3,15 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Course, Subject, TestBank, TestBankQuestion};
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\{Auth, DB};
 
 class ManagementDashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         if ($user->is_admin || strtolower(trim($user->role ?? '')) !== 'encoder') {
-            return app(AdminController::class)->dashboard();
+            return app(AdminController::class)->dashboard($request);
         }
         $courseCounts = TestBankQuestion::selectRaw('course_id, COUNT(*) as total, SUM(CASE WHEN status = ? THEN 1 ELSE 0 END) as active', ['active'])->groupBy('course_id')->get()->keyBy('course_id');
         $banks = TestBank::with('course:id,title')->orderBy('title')->paginate(10, ['*'], 'banks_page');

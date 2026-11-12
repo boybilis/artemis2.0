@@ -143,8 +143,18 @@ class AdminController extends Controller
     }
 
     // ─── DASHBOARD OVERVIEW ──────────────────────────────────────
-    public function dashboard()
+    public function dashboard(Request $request)
     {
+        $recentUsersQuery = User::query();
+        if (in_array(trim(strtolower(Auth::user()->role)), ['instructor', 'staff'], true) && !Auth::user()->is_admin) {
+            $recentUsersQuery->where(fn ($query) => $query->where('role', 'student')->orWhereNull('role'));
+        }
+        $recentUsers = (clone $recentUsersQuery)->latest()->orderByDesc('id')
+            ->paginate(5, ['id', 'name', 'role', 'is_admin'], 'dashboard_page');
+        if ($request->ajax() && $request->has('dashboard_page')) {
+            return view('admin.partials.dashboard-recent-users', compact('recentUsers'));
+        }
+
         $now = now();
         $monthStart = $now->copy()->startOfMonth();
         $totalUsers = User::count();
@@ -178,13 +188,6 @@ class AdminController extends Controller
             $stats[] = ['label' => 'Total revenue', 'value' => 'PHP ' . number_format($paidRevenue + $legacyRevenue, 2), 'note' => 'Lifetime confirmed payments'];
         }
 
-        // Recent Users for Dashboard
-        $recentUsersQuery = User::query();
-        if (in_array(trim(strtolower(Auth::user()->role)), ['instructor', 'staff'], true) && !Auth::user()->is_admin) {
-            $recentUsersQuery->where(function($q) {
-                $q->where('role', 'student')->orWhereNull('role');
-            });
-        }
         $yearStart = $now->copy()->startOfYear();
         $registrationsQuery = (clone $recentUsersQuery)->whereBetween('created_at', [$yearStart, $now]);
         $monthlyRegistrations = [];
@@ -200,8 +203,6 @@ class AdminController extends Controller
             $monthlyRegistrations[$i]['count'] = (int) $counts->{"month_{$i}"};
         }
         $registrationYear = $now->year;
-        $recentUsers = $recentUsersQuery->latest()->orderByDesc('id')
-            ->paginate(5, ['id', 'name', 'role', 'is_admin'], 'dashboard_page');
 
         return view('admin.dashboard', compact('stats', 'recentUsers', 'monthlyRegistrations', 'registrationYear'));
     }
