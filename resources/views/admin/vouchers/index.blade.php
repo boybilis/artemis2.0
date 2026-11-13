@@ -7,6 +7,20 @@
 
 @section('content')
 <style>
+    .paymongo-setup-panel { min-width:0;margin-bottom:1rem; }
+    .paymongo-setup-panel .panel-subtitle { margin-bottom:1rem; }
+    .paymongo-setup-guide { margin:0 0 1.5rem;max-width:75ch;line-height:1.55; }
+    #payment-setup-form .form-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem 1.5rem;margin-bottom:1.5rem; }
+    #payment-setup-form .field { min-width:0;margin:0; }
+    #payment-setup-form label { margin-bottom:.4rem; }
+    #payment-setup-form input { min-width:0;max-width:100%; }
+    #payment-setup-form small { display:block;margin-top:.45rem;line-height:1.45;overflow-wrap:anywhere;color:var(--text-muted); }
+    @media(max-width:900px) {
+        #payment-setup-form .form-grid { grid-template-columns:minmax(0,1fr);gap:1.05rem; }
+    }
+    @media(max-width:520px) {
+        #payment-setup-form button[type="submit"] { width:100%; }
+    }
     body .data-table.payments-directory-table thead th { background:#48515f;color:#fff; }
     .payment-table-wrap { container-type:inline-size; }
     .data-table.payments-directory-table { min-width:0;table-layout:fixed; }
@@ -33,10 +47,10 @@
 </style>
 @if(Auth::user()->hasAdminAccess())
     @unless(Auth::user()->isAssistantAdmin())
-        <section class="panel" style="margin-bottom:1rem">
+        <section class="panel paymongo-setup-panel">
             <h2 class="panel-title">PayMongo Setup</h2>
             <p id="paymongo-setup-status" class="panel-subtitle" role="status">{{ app(\App\Services\PaymongoCredentials::class)->status() }}</p>
-            <p class="muted">Pause automatic payments and resolve any open checkouts before switching accounts. Configure the webhook in the same PayMongo account and mode as the API key.</p>
+            <p class="muted paymongo-setup-guide">Pause automatic payments and resolve any open checkouts before switching accounts. Configure the webhook in the same PayMongo account and mode as the API key.</p>
             <form id="payment-setup-form" method="post" action="{{ route('admin.vouchers.payment-setup') }}" autocomplete="off">
                 @csrf @method('PUT')
                 <div class="form-grid">
