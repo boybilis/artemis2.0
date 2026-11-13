@@ -1,4 +1,8 @@
 <style>
+    .progress-student-picker { position:relative; }
+    .progress-student-options { position:absolute;inset:100% 0 auto;z-index:10;max-height:16rem;overflow:auto;margin:0;padding:.25rem;list-style:none;background:var(--surface-solid);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 20px rgba(25,52,79,.15); }
+    .progress-student-options li { padding:.55rem .75rem;cursor:pointer;overflow-wrap:anywhere; }
+    .progress-student-options li:hover,.progress-student-options [aria-selected="true"] { background:color-mix(in srgb,var(--brand-aqua) 18%,var(--surface-solid)); }
     #user-progress-retry[hidden] { display:none !important; }
     .user-subject-progress .data-table { min-width:0; }
     body .user-subject-progress .data-table thead th { background:#48515f;color:#fff; }
@@ -35,13 +39,10 @@
     <p class="panel-label">Progress</p>
     <h2 class="panel-title" id="user-subject-progress-title">Student Progress</h2>
     @if(isset($studentSearchUrl))
-        <div class="field">
+        <div class="field progress-student-picker">
             <label for="progress-student-search">Search student name</label>
-            <input id="progress-student-search" type="search" maxlength="120" autocomplete="off" data-search-url="{{ $studentSearchUrl }}">
-        </div>
-        <div class="field">
-            <label for="progress-student">Student</label>
-            <select id="progress-student" disabled><option value="">Select a student</option></select>
+            <input id="progress-student-search" type="search" maxlength="120" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="progress-student-options" aria-describedby="progress-student-message" data-search-url="{{ $studentSearchUrl }}">
+            <ul id="progress-student-options" class="progress-student-options" role="listbox" aria-label="Matching students" hidden></ul>
         </div>
         <p id="progress-student-message" class="muted" role="status"></p>
     @endif
@@ -64,7 +65,7 @@
     const results = document.getElementById('user-progress-results');
     const message = document.getElementById('user-progress-message');
     const retry = document.getElementById('user-progress-retry');
-    let pending, lastUrl;
+    let pending, lastUrl, learnerId;
     const load = async url => {
         pending?.abort();
         const request = new AbortController();
@@ -105,8 +106,7 @@
         }
         const [batchId, courseId] = course.value.split(':');
         const url = new URL(course.dataset.progressUrl);
-        const student = document.getElementById('progress-student');
-        if (student) url.searchParams.set('learner_id', student.value);
+        if (learnerId) url.searchParams.set('learner_id', learnerId);
         url.searchParams.set('batch_id', batchId);
         url.searchParams.set('course_id', courseId);
         load(url.href);
@@ -139,9 +139,19 @@
     });
     const search = document.getElementById('progress-student-search');
     if (search) {
-        const student = document.getElementById('progress-student');
+        const options = document.getElementById('progress-student-options');
         const status = document.getElementById('progress-student-message');
         let timer, searchRequest, courseRequest;
+        let matches = [], active = -1;
+        const showOptions = open => {
+            options.hidden = !open;
+            search.setAttribute('aria-expanded', String(open));
+            if (!open) {
+                active = -1;
+                search.removeAttribute('aria-activedescendant');
+                [...options.children].forEach(option => option.setAttribute('aria-selected', 'false'));
+            }
+        };
         const resetCourses = () => {
             courseRequest?.abort();
             course.replaceChildren(new Option('Select a course', ''));
@@ -156,8 +166,10 @@
         search.addEventListener('input', () => {
             clearTimeout(timer);
             searchRequest?.abort();
-            student.replaceChildren(new Option('Select a student', ''));
-            student.disabled = true;
+            learnerId = null;
+            matches = [];
+            options.replaceChildren();
+            showOptions(false);
             resetCourses();
             const name = search.value.trim();
             message.textContent = 'Select a student to load enrolled courses.';
@@ -170,23 +182,34 @@
                 try {
                     const {students, more} = await getJson(url, request.signal);
                     if (request.signal.aborted) return;
-                    students.forEach(row => student.add(new Option(row.label, row.id)));
-                    student.disabled = !students.length;
+                    matches = students;
+                    options.replaceChildren(...students.map((row, index) => {
+                        const option = document.createElement('li');
+                        option.id = 'progress-student-option-' + index;
+                        option.dataset.index = index;
+                        option.setAttribute('role', 'option');
+                        option.setAttribute('aria-selected', 'false');
+                        option.textContent = row.label;
+                        return option;
+                    }));
+                    showOptions(students.length > 0 && document.activeElement === search);
                     status.textContent = more ? 'Showing the first 20 matches. Refine your search for more.' : (students.length ? 'Choose a student from the results.' : 'No students found.');
                 } catch {
                     if (!request.signal.aborted) status.textContent = 'Unable to search. Try typing the name again.';
                 }
             }, 250);
         });
-        student.addEventListener('change', async () => {
+        const selectStudent = async index => {
+            const student = matches[index];
+            if (!student) return;
+            learnerId = student.id;
+            search.value = student.label;
+            showOptions(false);
+            status.textContent = '';
             resetCourses();
-            if (!student.value) {
-                message.textContent = 'Select a student to load enrolled courses.';
-                return;
-            }
             const request = courseRequest = new AbortController();
             const url = new URL(course.dataset.progressUrl);
-            url.searchParams.set('learner_id', student.value);
+            url.searchParams.set('learner_id', learnerId);
             message.textContent = 'Loading enrolled courses…';
             try {
                 const {courses} = await getJson(url, request.signal);
@@ -195,8 +218,37 @@
                 course.disabled = !courses.length;
                 message.textContent = courses.length ? 'Select an enrolled course to load progress.' : 'This learner has no active course enrollments.';
             } catch {
-                if (!request.signal.aborted) message.textContent = 'Unable to load enrolled courses. Select the student again.';
+                if (!request.signal.aborted) {
+                    learnerId = null;
+                    message.textContent = 'Unable to load enrolled courses. Select the student again.';
+                }
             }
+        };
+        options.addEventListener('mousedown', event => event.preventDefault());
+        options.addEventListener('click', event => {
+            const option = event.target.closest('[role="option"]');
+            if (option) selectStudent(Number(option.dataset.index));
+        });
+        search.addEventListener('focus', () => { if (matches.length && !learnerId) showOptions(true); });
+        search.addEventListener('blur', () => showOptions(false));
+        search.addEventListener('keydown', event => {
+            if (event.key === 'Escape') {
+                if (!options.hidden) { event.stopPropagation(); showOptions(false); }
+                return;
+            }
+            if (event.key === 'Enter' && !options.hidden && active >= 0) {
+                event.preventDefault();
+                selectStudent(active);
+                return;
+            }
+            if (!matches.length || learnerId || !['ArrowDown', 'ArrowUp'].includes(event.key)) return;
+            event.preventDefault();
+            showOptions(true);
+            active = active < 0 ? (event.key === 'ArrowDown' ? 0 : matches.length - 1)
+                : (active + (event.key === 'ArrowDown' ? 1 : -1) + matches.length) % matches.length;
+            [...options.children].forEach((option, index) => option.setAttribute('aria-selected', String(index === active)));
+            search.setAttribute('aria-activedescendant', options.children[active].id);
+            options.children[active].scrollIntoView({block:'nearest'});
         });
     }
     retry.addEventListener('click', () => load(lastUrl));

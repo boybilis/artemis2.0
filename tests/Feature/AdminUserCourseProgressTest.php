@@ -53,6 +53,8 @@ class AdminUserCourseProgressTest extends TestCase
 
         $progressUrl = route('admin.progress.index');
         $this->get($progressUrl)->assertOk()->assertSee('Search student name')
+            ->assertSee('role="combobox"', false)->assertSee('role="listbox"', false)
+            ->assertDontSee('id="progress-student"', false)
             ->assertDontSee('Enrolled Course')->assertDontSee('data-user-progress-tables>', false);
         $this->getJson(route('admin.progress.students', ['name' => $learner->name]))->assertOk()
             ->assertJsonFragment(['id' => $learner->id]);
