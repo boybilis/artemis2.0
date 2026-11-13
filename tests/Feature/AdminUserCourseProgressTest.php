@@ -50,5 +50,19 @@ class AdminUserCourseProgressTest extends TestCase
         Storage::disk('local')->put("course-gamification/{$course->id}.json", json_encode(['enabled' => true, 'points_enabled' => true, 'points' => ['content' => 25, 'assessment' => 100]]));
         $this->get($url.$selection, $headers)->assertOk()->assertViewHas('subjects', fn ($page) => $page->items()[0]['exp'] === 125);
         $this->get($url.'?batch_id='.$batch->id.'&course_id='.$other->id, $headers)->assertNotFound();
+
+        $progressUrl = route('admin.progress.index');
+        $this->get($progressUrl)->assertOk()->assertSee('Search student name')
+            ->assertDontSee('Enrolled Course')->assertDontSee('data-user-progress-tables>', false);
+        $this->getJson(route('admin.progress.students', ['name' => $learner->name]))->assertOk()
+            ->assertJsonFragment(['id' => $learner->id]);
+        $this->getJson($progressUrl.'?learner_id='.$learner->id)->assertOk()
+            ->assertJsonPath('courses.0.course_id', $course->id)->assertJsonCount(1, 'courses');
+        $this->get($progressUrl.$selection.'&learner_id='.$learner->id.'&subjects_page=2', $headers)
+            ->assertOk()->assertSee('Enrolled Subject 11')->assertSee('Vouchers Purchased');
+        $instructor = User::factory()->create(['role' => 'instructor', 'is_admin' => false]);
+        $this->actingAs($instructor)->get($progressUrl.$selection.'&learner_id='.$learner->id, $headers)
+            ->assertOk()->assertSee('Subject Progress')->assertDontSee('Vouchers Purchased');
+        $this->getJson($progressUrl.'?learner_id='.$admin->id)->assertNotFound();
     }
 }

@@ -109,6 +109,7 @@
         {{ $examAttempts->links('pagination::bootstrap-4') }}
     </section>
 
+    @if($vouchers !== null)
     <section class="user-progress-table" aria-labelledby="selected-vouchers">
         <h3 id="selected-vouchers">Vouchers Purchased</h3>
         <p class="muted">For this batch.</p>
@@ -130,4 +131,5 @@
         </div>
         {{ $vouchers->links('pagination::bootstrap-4') }}
     </section>
+    @endif
 </div>

@@ -42,8 +42,8 @@ class AdminAjaxPaginationTest extends TestCase
         $progress = $this->get('/admin/progress')->assertOk()
             ->assertSee('id="admin-mobile-menu"', false)
             ->assertSee('id="admin-sidebar"', false)
-            ->assertSee('data-ajax-table="attempts-table"', false);
-        $this->assertPaginator($progress->viewData('attempts'), 15, 'attempts_page');
+            ->assertSee('Search student name')
+            ->assertDontSee('data-user-progress-tables>', false);
 
         $vouchers = $this->get('/admin/vouchers')->assertOk()
             ->assertSee('data-ajax-table="vouchers-table"', false)

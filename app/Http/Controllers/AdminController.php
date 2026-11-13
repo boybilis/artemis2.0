@@ -359,30 +359,11 @@ class AdminController extends Controller
         $user = User::findOrFail($id);
         if (strtolower((string) Auth::user()->role) === 'staff' && strtolower((string) $user->role) !== 'student') abort(404);
 
-        $enrollments = CourseEnrollment::where('user_id', $user->id)->where('status', 'active')
-            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()));
-
         if ($request->ajax() && $request->header('X-Admin-Table') === 'user-course-progress') {
-            $batch = (clone $enrollments)->where('batch_id', $request->integer('batch_id'))->firstOrFail()->batch;
-            abort_unless($batch, 404);
-            $course = $batch->courses()->where('courses.id', $request->integer('course_id'))->firstOrFail();
-            $subjects = app(\App\Services\AdminSubjectProgress::class)->page($user, (int) $course->id, $batch);
-            $attempts = QuizAttempt::where('user_id', $user->id)->where('course_id', $course->id)->where('batch_id', $batch->id);
-            $examAttempts = $attempts->whereNull('topic_id')->whereNull('subtopic_id')->latest()->orderByDesc('id')
-                ->paginate(10, ['*'], 'exams_page')->withQueryString();
-            $vouchers = Voucher::where('used_by', $user->id)->where('batch_id', $batch->id)
-                ->latest()->orderByDesc('id')->paginate(10, ['*'], 'vouchers_page')->withQueryString();
-
-            return view('admin.partials.user-course-progress', compact('course', 'batch', 'subjects', 'examAttempts', 'vouchers'));
+            return $this->courseProgressReport($request, $user);
         }
 
-        $enrolledCourses = (clone $enrollments)->with('batch.courses')->get()->flatMap(function (CourseEnrollment $enrollment) {
-            $batch = $enrollment->batch;
-            if (!$batch) return [];
-            return $batch->courses->map(fn ($course) => [
-                'batch_id' => $batch->id, 'course_id' => $course->id, 'label' => $course->title.' — '.$batch->name,
-            ]);
-        })->sortBy('label')->values();
+        $enrolledCourses = $this->progressCourses($user);
         $cert = Certificate::where('user_id', $user->id)->first();
         $userStats = [
             'id' => $user->id,
@@ -1972,13 +1953,69 @@ class AdminController extends Controller
     }
 
     // ─── PROGRESS OVERVIEW ───────────────────────────────────────
-    public function progress()
+    private function activeProgressEnrollments(User $user)
     {
-        $attempts = QuizAttempt::with(['user', 'topic'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(15, ['*'], 'attempts_page')
-            ->withQueryString();
-        return view('admin.progress.index', compact('attempts'));
+        return CourseEnrollment::where('user_id', $user->id)->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()));
+    }
+
+    private function progressCourses(User $user)
+    {
+        return $this->activeProgressEnrollments($user)->with('batch.courses')->get()->flatMap(function (CourseEnrollment $enrollment) {
+            $batch = $enrollment->batch;
+            if (!$batch) return [];
+            return $batch->courses->map(fn ($course) => [
+                'batch_id' => $batch->id, 'course_id' => $course->id, 'label' => $course->title.' — '.$batch->name,
+            ]);
+        })->sortBy('label')->values();
+    }
+
+    private function courseProgressReport(Request $request, User $user, bool $includeVouchers = true)
+    {
+        $batch = $this->activeProgressEnrollments($user)->where('batch_id', $request->integer('batch_id'))->firstOrFail()->batch;
+        abort_unless($batch, 404);
+        $course = $batch->courses()->where('courses.id', $request->integer('course_id'))->firstOrFail();
+        $subjects = app(\App\Services\AdminSubjectProgress::class)->page($user, (int) $course->id, $batch);
+        $attempts = QuizAttempt::where('user_id', $user->id)->where('course_id', $course->id)->where('batch_id', $batch->id);
+        $examAttempts = $attempts->whereNull('topic_id')->whereNull('subtopic_id')->latest()->orderByDesc('id')
+            ->paginate(10, ['*'], 'exams_page')->withQueryString();
+        $vouchers = $includeVouchers ? Voucher::where('used_by', $user->id)->where('batch_id', $batch->id)
+            ->latest()->orderByDesc('id')->paginate(10, ['*'], 'vouchers_page')->withQueryString() : null;
+
+        return view('admin.partials.user-course-progress', compact('course', 'batch', 'subjects', 'examAttempts', 'vouchers'));
+    }
+
+    private function progressStudents()
+    {
+        return User::query()->where('is_admin', false)
+            ->where(fn ($query) => $query->where('role', 'student')->orWhereNull('role'));
+    }
+
+    public function progress(Request $request)
+    {
+        if ($request->filled('learner_id') && ($request->expectsJson() || $request->ajax())) {
+            $learner = $this->progressStudents()->findOrFail($request->integer('learner_id'));
+            if ($request->ajax() && $request->header('X-Admin-Table') === 'user-course-progress') {
+                return $this->courseProgressReport($request, $learner, $request->user()->hasAdminAccess());
+            }
+            if ($request->expectsJson()) {
+                return response()->json(['courses' => $this->progressCourses($learner)])->header('Cache-Control', 'no-store');
+            }
+        }
+
+        return view('admin.progress.index');
+    }
+
+    public function searchProgressStudents(Request $request)
+    {
+        $data = $request->validate(['name' => 'required|string|min:2|max:120']);
+        $students = $this->progressStudents()->where('name', 'like', '%'.trim($data['name']).'%')
+            ->orderBy('name')->orderBy('id')->limit(21)->get(['id', 'name', 'email']);
+
+        return response()->json([
+            'students' => $students->take(20)->map(fn ($user) => ['id' => $user->id, 'label' => $user->name.' — '.$user->email])->values(),
+            'more' => $students->count() > 20,
+        ])->header('Cache-Control', 'no-store');
     }
 
     // ─── VOUCHER MANAGEMENT ──────────────────────────────────────

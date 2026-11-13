@@ -23,37 +23,6 @@
     .user-profile-picture { display:grid;place-items:center;width:min(100%,13rem);aspect-ratio:1;overflow:hidden;border:1px solid var(--border);border-radius:16px;background:var(--surface-solid);color:var(--text-muted);font-size:.75rem; }
     .user-profile-picture img { width:100%;height:100%;object-fit:cover; }
     .user-profile-picture [hidden], #profile-picture-upload[hidden] { display:none !important; }
-    #user-progress-retry[hidden] { display:none !important; }
-    .user-subject-progress .data-table { min-width:0; }
-    body .user-subject-progress .data-table thead th { background:#48515f;color:#fff; }
-    .user-subject-progress .data-table :is(th,td) { padding:.55rem .65rem;overflow-wrap:anywhere; }
-    .user-subject-progress .data-table tbody tr:nth-child(odd) td { background:var(--surface-solid); }
-    .user-subject-progress .data-table tbody tr:nth-child(even) td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
-    .user-progress-table { margin-top:1rem; }
-    .user-progress-table nav { margin-top:.65rem; }
-    .user-subject-progress .subject-progress-table tbody td { background:var(--surface-solid); }
-    .user-subject-progress .subject-progress-table .subject-progress-alt td { background:color-mix(in srgb,var(--surface-solid) 92%,var(--text)); }
-    .subject-progress-name,.subject-progress-meter { display:flex;align-items:center;gap:.55rem; }
-    .subject-progress-meter progress { width:clamp(2.5rem,12vw,9rem);height:.55rem;accent-color:var(--brand-aqua-strong); }
-    .subject-progress-expand { flex:none;width:2rem;height:2rem;border:0;border-radius:6px;background:transparent;color:var(--text);cursor:pointer; }
-    .subject-progress-expand:hover { background:var(--border); }
-    .subject-progress-expand:focus-visible { outline:2px solid var(--brand-aqua); }
-    .subject-progress-expand span { display:inline-block; }
-    .subject-progress-expand[aria-expanded="true"] span { transform:rotate(90deg); }
-    .subject-progress-details[hidden] { display:none; }
-    .subject-progress-toolbar { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.65rem; }
-    .subject-progress-toolbar h3 { margin:0; }
-    .subject-progress-switch { position:relative;display:inline-flex;align-items:center;gap:.55rem;margin-inline-start:auto;min-height:44px;cursor:pointer;color:var(--text); }
-    .subject-progress-switch input { position:absolute;width:1px;height:1px;opacity:0; }
-    .subject-progress-switch-track { display:inline-flex;align-items:center;width:2.3rem;height:1.25rem;padding:2px;border-radius:999px;background:#64748b; }
-    .subject-progress-switch-track::after { content:"";width:1rem;height:1rem;border-radius:50%;background:#fff; }
-    .subject-progress-switch input:checked + .subject-progress-switch-track { justify-content:flex-end;background:var(--brand-aqua-strong); }
-    .subject-progress-switch input:focus-visible + .subject-progress-switch-track { outline:2px solid var(--brand-aqua);outline-offset:3px; }
-    .subject-progress-details dl { display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr));gap:.75rem;margin:.25rem 0 .25rem clamp(1.25rem,4vw,2.5rem);padding:.25rem 0 .25rem .8rem;border-inline-start:2px solid var(--border); }
-    .subject-progress-details dt { font-weight:700; }
-    .subject-progress-details dd { margin:0; }
-    .subject-assessment-result + .subject-assessment-result { margin-top:.55rem; }
-    .subject-assessment-attempts { display:grid;gap:.25rem;list-style:none;margin:.25rem 0 0;padding-inline-start:.55rem; }
     @container (max-width:34rem) { .user-profile-fields { grid-template-columns:minmax(0,1fr); } }
 </style>
 <div class="split-grid">
@@ -162,101 +131,7 @@
     </aside>
 </div>
 
-<section class="panel user-subject-progress" style="margin-top:1rem" aria-labelledby="user-subject-progress-title">
-    <p class="panel-label">Progress</p>
-    <h2 class="panel-title" id="user-subject-progress-title">Student Progress</h2>
-    <div class="field">
-        <label for="user-progress-course">Enrolled course</label>
-        <select id="user-progress-course" data-progress-url="{{ route('admin.users.show', $userStats['id']) }}" @disabled($enrolledCourses->isEmpty())>
-            <option value="">Select a course</option>
-            @foreach($enrolledCourses as $enrollment)
-                <option value="{{ $enrollment['batch_id'] }}:{{ $enrollment['course_id'] }}">{{ $enrollment['label'] }}</option>
-            @endforeach
-        </select>
-    </div>
-    <p id="user-progress-message" class="muted" role="status">{{ $enrolledCourses->isEmpty() ? 'This learner has no active course enrollments.' : 'Select an enrolled course to load progress.' }}</p>
-    <button type="button" class="btn-ghost" id="user-progress-retry" hidden>Retry</button>
-    <div id="user-progress-results"></div>
-</section>
-<script>
-(() => {
-    const course = document.getElementById('user-progress-course');
-    const results = document.getElementById('user-progress-results');
-    const message = document.getElementById('user-progress-message');
-    const retry = document.getElementById('user-progress-retry');
-    let pending, lastUrl;
-    const load = async url => {
-        pending?.abort();
-        const request = new AbortController();
-        pending = request;
-        lastUrl = url;
-        message.textContent = 'Loading progress…';
-        retry.hidden = true;
-        results.setAttribute('aria-busy', 'true');
-        try {
-            const response = await fetch(url, {
-                headers: {Accept:'text/html','X-Requested-With':'XMLHttpRequest','X-Admin-Table':'user-course-progress'},
-                credentials: 'same-origin', signal: request.signal,
-            });
-            if (!response.ok) throw new Error();
-            const html = new DOMParser().parseFromString(await response.text(), 'text/html');
-            const fragment = html.querySelector('[data-user-progress-tables]');
-            if (!fragment) throw new Error();
-            if (request.signal.aborted) return;
-            results.replaceChildren(fragment);
-            message.textContent = '';
-        } catch {
-            if (!request.signal.aborted) {
-                message.textContent = 'Unable to load progress. Please try again.';
-                retry.hidden = false;
-            }
-        } finally {
-            if (!request.signal.aborted) results.removeAttribute('aria-busy');
-        }
-    };
-    course.addEventListener('change', () => {
-        pending?.abort();
-        results.replaceChildren();
-        results.removeAttribute('aria-busy');
-        retry.hidden = true;
-        if (!course.value) {
-            message.textContent = 'Select an enrolled course to load progress.';
-            return;
-        }
-        const [batchId, courseId] = course.value.split(':');
-        const url = new URL(course.dataset.progressUrl);
-        url.search = new URLSearchParams({batch_id:batchId,course_id:courseId});
-        load(url.href);
-    });
-    const setSubjectExpanded = (button, expanded) => {
-        const details = document.getElementById(button.getAttribute('aria-controls'));
-        if (!details) return;
-        details.hidden = !expanded;
-        button.setAttribute('aria-expanded', String(expanded));
-    };
-    const subjectControls = () => [...results.querySelectorAll('.subject-progress-expand')];
-    const isExpanded = button => button.getAttribute('aria-expanded') === 'true';
-    results.addEventListener('change', event => {
-        if (event.target.matches('[data-subject-progress-toggle-all]')) {
-            subjectControls().forEach(button => setSubjectExpanded(button, event.target.checked));
-        }
-    });
-    results.addEventListener('click', event => {
-        const expand = event.target.closest('.subject-progress-expand');
-        if (expand) {
-            setSubjectExpanded(expand, !isExpanded(expand));
-            const toggleAll = results.querySelector('[data-subject-progress-toggle-all]');
-            if (toggleAll) toggleAll.checked = subjectControls().every(isExpanded);
-            return;
-        }
-        const link = event.target.closest('.pagination a');
-        if (!link) return;
-        event.preventDefault();
-        load(link.href);
-    });
-    retry.addEventListener('click', () => load(lastUrl));
-})();
-</script>
+@include('admin.partials.student-progress-card', ['progressUrl' => route('admin.users.show', $userStats['id'])])
 @if($canEditProfile)
 <script>
 (() => {

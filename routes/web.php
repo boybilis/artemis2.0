@@ -297,6 +297,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Activity Logs
         Route::get('/progress', [AdminController::class, 'progress'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('progress.index');
+        Route::get('/progress/students', [AdminController::class, 'searchProgressStudents'])->middleware([RoleMiddleware::class.':admin,instructor,staff', 'throttle:120,1'])->name('progress.students');
         Route::get('/vouchers', [AdminController::class, 'vouchers'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('vouchers.index');
         Route::middleware(RoleMiddleware::class.':admin')->group(function () {
             Route::put('/vouchers/payment-mode', [\App\Http\Controllers\PaymentSettingsController::class, 'update'])->name('vouchers.payment-mode');
