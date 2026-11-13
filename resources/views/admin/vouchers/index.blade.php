@@ -8,9 +8,10 @@
 @section('content')
 <style>
     .paymongo-setup-header { display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.8rem; }
-    #paymongo-setup-dialog { width:min(52rem,calc(100% - 2rem));max-height:calc(100dvh - 2rem);margin:auto;padding:clamp(1rem,3vw,1.5rem);border:1px solid var(--border);border-radius:16px;background:var(--surface-solid);color:var(--text); }
-    #paymongo-setup-dialog::backdrop { background:rgba(9,26,43,.65); }
-    .paymongo-setup-actions { display:flex;justify-content:flex-end;gap:.65rem;flex-wrap:wrap; }
+    #paymongo-setup-dialog { width:calc(100% - 2rem);max-width:800px;max-height:calc(100dvh - 2rem);margin:auto;padding:0;border:0;border-radius:16px;overflow:hidden;background:transparent;color:var(--text); }
+    #paymongo-setup-dialog:not([open]) { display:none; }
+    #paymongo-setup-dialog::backdrop { background:rgba(0,0,0,.6);backdrop-filter:blur(4px); }
+    #payment-setup-form { transform:none;max-height:calc(100dvh - 2rem); }
     .paymongo-setup-guide { margin:0 0 1.5rem;max-width:75ch;line-height:1.55; }
     #payment-setup-form .form-grid { grid-template-columns:repeat(2,minmax(0,1fr));gap:1.25rem 1.5rem;margin-bottom:1.5rem; }
     #payment-setup-form .field { min-width:0;margin:0; }
@@ -21,7 +22,7 @@
         #payment-setup-form .form-grid { grid-template-columns:minmax(0,1fr);gap:1.05rem; }
     }
     @media(max-width:520px) {
-        .paymongo-setup-actions button { width:100%; }
+        #payment-setup-form .admin-modal-footer button { width:100%;flex-basis:100%; }
     }
     body .data-table.payments-directory-table thead th { background:#48515f;color:#fff; }
     .payment-table-wrap { container-type:inline-size; }
@@ -50,9 +51,13 @@
 @if(Auth::user()->hasAdminAccess())
     @unless(Auth::user()->isAssistantAdmin())
         <dialog id="paymongo-setup-dialog" aria-labelledby="paymongo-setup-title">
-            <h2 id="paymongo-setup-title" class="panel-title">PayMongo Setup</h2>
+            <form id="payment-setup-form" class="admin-modal-content" method="post" action="{{ route('admin.vouchers.payment-setup') }}" autocomplete="off">
+                <div class="admin-modal-header">
+                    <h2 id="paymongo-setup-title" class="admin-modal-title">PayMongo Setup</h2>
+                    <button type="button" class="admin-modal-close" id="paymongo-setup-close" aria-label="Close PayMongo setup">&times;</button>
+                </div>
+                <div class="admin-modal-body">
             <p class="muted paymongo-setup-guide">Pause automatic payments and resolve any open checkouts before switching accounts. Configure the webhook in the same PayMongo account and mode as the API key.</p>
-            <form id="payment-setup-form" method="post" action="{{ route('admin.vouchers.payment-setup') }}" autocomplete="off">
                 @csrf @method('PUT')
                 <div class="form-grid">
                     <div class="field"><label for="paymongo-api-key">PayMongo secret API key</label><input id="paymongo-api-key" name="paymongo_secret_key" type="password" autocomplete="off" placeholder="sk_live_… or sk_test_…" maxlength="255" required></div>
@@ -61,7 +66,8 @@
                     <div class="field"><label for="paymongo-webhook-url">Webhook endpoint URL</label><input id="paymongo-webhook-url" readonly value="{{ route('payments.paymongo.webhook') }}"><small>Subscribe to checkout_session.payment.paid in PayMongo.</small></div>
                 </div>
                 <p id="paymongo-setup-error" role="alert" style="color:var(--wrong)" hidden></p>
-                <div class="paymongo-setup-actions">
+                </div>
+                <div class="admin-modal-footer">
                     <button type="button" class="btn-ghost" id="paymongo-setup-cancel" autofocus>Cancel</button>
                     <button type="submit" class="btn-primary">Save PayMongo Setup</button>
                 </div>
@@ -203,10 +209,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const setup = document.getElementById('payment-setup-form');
     const dialog = document.getElementById('paymongo-setup-dialog');
     const setupError = document.getElementById('paymongo-setup-error');
+    const setupClose = document.getElementById('paymongo-setup-close');
     if (dialog) {
         const cancel = document.getElementById('paymongo-setup-cancel');
         document.getElementById('paymongo-setup-open').addEventListener('click', () => dialog.showModal());
         cancel.addEventListener('click', () => dialog.close());
+        setupClose.addEventListener('click', () => dialog.close());
         dialog.addEventListener('cancel', event => { if (cancel.disabled) event.preventDefault(); });
         dialog.addEventListener('close', () => { setup.reset(); setupError.hidden = true; });
     }
@@ -216,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (button.disabled) return;
         button.disabled = true;
         const setupCancel = form === setup ? document.getElementById('paymongo-setup-cancel') : null;
-        if (setupCancel) { setupCancel.disabled = true; setupError.hidden = true; }
+        if (setupCancel) { setupCancel.disabled = setupClose.disabled = true; setupError.hidden = true; }
         const payload = new FormData(form);
         if (form === mode) payload.set('enabled', document.getElementById('automatic-payment-toggle').checked ? '1' : '0');
         try {
@@ -236,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (form === setup) { setupError.textContent = error.message; setupError.hidden = false; }
             else showAdminToast(error.message, 'error');
         }
-        finally { button.disabled = false; if (setupCancel) setupCancel.disabled = false; }
+        finally { button.disabled = false; if (setupCancel) setupCancel.disabled = setupClose.disabled = false; }
     });
 });
 </script>
