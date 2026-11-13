@@ -18,5 +18,5 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->dontFlash(['paymongo_secret_key', 'paymongo_webhook_secret']);
     })->create();

@@ -70,7 +70,7 @@ class VoucherController extends Controller
             'status' => 'pending_payment',
         ]);
 
-        $secretKey = config('services.paymongo.secret_key');
+        $secretKey = app(\App\Services\PaymongoCredentials::class)->get()['secret_key'];
         if (!$secretKey) {
             $transaction->update(['status' => 'payment_configuration_error']);
             return response()->json(['success' => false, 'message' => 'Online payment is not configured yet.'], 503);
@@ -168,7 +168,7 @@ class VoucherController extends Controller
             return redirect('/?voucher_success=' . urlencode($code));
         }
 
-        $secretKey = config('services.paymongo.secret_key');
+        $secretKey = app(\App\Services\PaymongoCredentials::class)->get()['secret_key'];
         $checkoutId = $transaction?->provider_checkout_id ?: $legacyVoucher?->provider_checkout_id;
         if (!$secretKey || !$checkoutId) {
             return redirect('/?error=payment_not_completed');
@@ -245,7 +245,8 @@ class VoucherController extends Controller
 
     private function validPaymongoSignature(string $payload, string $header): bool
     {
-        $secret = (string) config('services.paymongo.webhook_secret');
+        $credentials = app(\App\Services\PaymongoCredentials::class)->get();
+        $secret = (string) $credentials['webhook_secret'];
         if ($secret === '' || $header === '') return false;
 
         $parts = [];
@@ -257,7 +258,7 @@ class VoucherController extends Controller
         $timestamp = isset($parts['t']) ? (int) $parts['t'] : 0;
         if (!$timestamp || abs(time() - $timestamp) > config('services.paymongo.webhook_tolerance', 300)) return false;
 
-        $signatureKey = str_starts_with((string) config('services.paymongo.secret_key'), 'sk_live_') ? 'li' : 'te';
+        $signatureKey = str_starts_with((string) $credentials['secret_key'], 'sk_live_') ? 'li' : 'te';
         $signature = $parts[$signatureKey] ?? null;
         return $signature && hash_equals(hash_hmac('sha256', $timestamp . '.' . $payload, $secret), $signature);
     }

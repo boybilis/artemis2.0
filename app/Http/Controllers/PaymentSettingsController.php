@@ -8,12 +8,35 @@ use App\Models\CourseBatch;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Services\AutomaticPayments;
+use App\Services\PaymongoCredentials;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class PaymentSettingsController extends Controller
 {
+    public function credentials(Request $request, AutomaticPayments $payments, PaymongoCredentials $credentials)
+    {
+        abort_unless($request->user()->hasAdminAccess() && !$request->user()->isAssistantAdmin(), 403);
+        if ($payments->enabled()) {
+            return response()->json(['message' => 'Pause automatic payments before replacing PayMongo credentials.'], 409);
+        }
+        $validator = Validator::make($request->all(), [
+            'paymongo_secret_key' => ['required', 'string', 'max:255', 'regex:/^sk_(test|live)_[a-zA-Z0-9_-]+$/D'],
+            'paymongo_webhook_secret' => ['required', 'string', 'max:255', 'regex:/^whsk_[a-zA-Z0-9_-]+$/D'],
+            'current_password' => ['required', 'string', 'current_password'],
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Check the PayMongo key formats and your current LMS password.'], 422);
+        }
+        $data = $validator->validated();
+        $credentials->save($data['paymongo_secret_key'], $data['paymongo_webhook_secret']);
+        $this->audit($request, 'PayMongo Credentials Updated', 'Replaced both PayMongo credentials.');
+
+        return response()->json(['success' => true, 'message' => 'PayMongo credentials saved. Automatic payments remain paused.', 'status' => $credentials->status()]);
+    }
+
     public function update(Request $request, AutomaticPayments $payments)
     {
         $request->validate(['enabled'=>'required|boolean']);

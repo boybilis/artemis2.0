@@ -111,7 +111,7 @@ class TestBankController extends Controller
             'status' => 'pending_payment',
         ]);
 
-        $secretKey = config('services.paymongo.secret_key');
+        $secretKey = app(\App\Services\PaymongoCredentials::class)->get()['secret_key'];
         if (!$secretKey) {
             $transaction->update(['status' => 'payment_configuration_error']);
             return response()->json(['success' => false, 'message' => 'Online payment is not configured yet.'], 503);

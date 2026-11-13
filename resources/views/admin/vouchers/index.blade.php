@@ -32,6 +32,23 @@
     .payment-pages { display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-top:.65rem; }
 </style>
 @if(Auth::user()->hasAdminAccess())
+    @unless(Auth::user()->isAssistantAdmin())
+        <section class="panel" style="margin-bottom:1rem">
+            <h2 class="panel-title">PayMongo Setup</h2>
+            <p id="paymongo-setup-status" class="panel-subtitle" role="status">{{ app(\App\Services\PaymongoCredentials::class)->status() }}</p>
+            <p class="muted">Pause automatic payments and resolve any open checkouts before switching accounts. Configure the webhook in the same PayMongo account and mode as the API key.</p>
+            <form id="payment-setup-form" method="post" action="{{ route('admin.vouchers.payment-setup') }}" autocomplete="off">
+                @csrf @method('PUT')
+                <div class="form-grid">
+                    <div class="field"><label for="paymongo-api-key">PayMongo secret API key</label><input id="paymongo-api-key" name="paymongo_secret_key" type="password" autocomplete="off" placeholder="sk_live_… or sk_test_…" maxlength="255" required></div>
+                    <div class="field"><label for="paymongo-webhook-secret">Webhook signing secret</label><input id="paymongo-webhook-secret" name="paymongo_webhook_secret" type="password" autocomplete="off" placeholder="whsk_…" maxlength="255" required></div>
+                    <div class="field"><label for="paymongo-setup-password">Your current LMS password</label><input id="paymongo-setup-password" name="current_password" type="password" autocomplete="current-password" required></div>
+                    <div class="field"><label for="paymongo-webhook-url">Webhook endpoint URL</label><input id="paymongo-webhook-url" readonly value="{{ route('payments.paymongo.webhook') }}"><small>Subscribe to checkout_session.payment.paid in PayMongo.</small></div>
+                </div>
+                <button type="submit" class="btn-primary">Save PayMongo Setup</button>
+            </form>
+        </section>
+    @endunless
     <section class="panel" style="margin-bottom:1rem">
         <h2 class="panel-title">Automatic Payments</h2>
         <p class="panel-subtitle">Pause new PayMongo checkouts for maintenance. Existing payments can still be verified, and enrollment codes remain usable.</p>
@@ -156,7 +173,8 @@
 document.addEventListener('DOMContentLoaded', () => {
     const mode = document.getElementById('payment-mode-form');
     const issue = document.getElementById('assigned-voucher-form');
-    for (const form of [mode, issue]) form.addEventListener('submit', async event => {
+    const setup = document.getElementById('payment-setup-form');
+    for (const form of [mode, issue, setup].filter(Boolean)) form.addEventListener('submit', async event => {
         event.preventDefault();
         const button = form.querySelector('[type=submit]');
         if (button.disabled) return;
@@ -166,11 +184,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(form.action, {method:'POST', body:payload, headers:{Accept:'application/json','X-Requested-With':'XMLHttpRequest'}});
             const data = await response.json().catch(() => null);
-            if (!response.ok || !data?.success) throw new Error(Object.values(data?.errors || {}).flat()[0] || 'Unable to save. Please try again.');
+            if (!response.ok || !data?.success) throw new Error(Object.values(data?.errors || {}).flat()[0] || data?.message || 'Unable to save. Please try again.');
             showAdminToast(data.message, data.emailed === false ? 'info' : 'success');
             if (form === issue) {
                 form.reset();
                 document.dispatchEvent(new Event('payment-directory:refresh'));
+            }
+            if (form === setup) {
+                form.reset();
+                document.getElementById('paymongo-setup-status').textContent = data.status;
             }
         } catch (error) { showAdminToast(error.message, 'error'); }
         finally { button.disabled = false; }

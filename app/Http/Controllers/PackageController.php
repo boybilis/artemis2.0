@@ -64,7 +64,7 @@ class PackageController extends Controller
             'user_id' => $user->id, 'batch_id'=>$batch->id, 'review_package_id' => $package->id, 'reference' => $reference,
             'amount' => $package->price, 'currency' => 'PHP', 'provider' => 'paymongo', 'status' => 'pending_payment',
         ]);
-        $secretKey = config('services.paymongo.secret_key');
+        $secretKey = app(\App\Services\PaymongoCredentials::class)->get()['secret_key'];
         if (!$secretKey) {
             $transaction->update(['status' => 'payment_configuration_error']);
             return response()->json(['success' => false, 'message' => 'Online payment is not configured yet.'], 503);

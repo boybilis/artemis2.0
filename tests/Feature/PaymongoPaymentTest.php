@@ -18,6 +18,39 @@ class PaymongoPaymentTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_paymongo_setup_requires_full_admin_password_and_paused_checkout(): void
+    {
+        Storage::fake('local');
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+        config()->set('services.paymongo.secret_key', 'sk_test_environment');
+        $credentials = app(\App\Services\PaymongoCredentials::class);
+        $this->assertSame('sk_test_environment', $credentials->get()['secret_key']);
+        $admin = User::factory()->create(['role'=>'admin', 'password'=>\Illuminate\Support\Facades\Hash::make('admin-password')]);
+        $assistant = User::factory()->create(['role'=>'assistant_admin']);
+        $url = route('admin.vouchers.payment-setup');
+        $data = ['paymongo_secret_key'=>'sk_test_saved', 'paymongo_webhook_secret'=>'whsk_saved', 'current_password'=>'admin-password'];
+
+        $this->actingAs($assistant)->get('/admin/vouchers')->assertOk()->assertDontSee('Save PayMongo Setup');
+        $this->putJson($url, $data)->assertForbidden();
+        $this->actingAs($admin)->putJson($url, $data)->assertConflict();
+        $this->putJson('/admin/vouchers/payment-mode', ['enabled'=>false])->assertOk();
+        $this->putJson($url, array_replace($data, ['current_password'=>'wrong']))->assertUnprocessable();
+        $this->putJson($url, $data)->assertOk()->assertJsonPath('status', 'Test credentials configured');
+        $this->assertSame('sk_test_saved', $credentials->get()['secret_key']);
+        $encrypted = \Illuminate\Support\Facades\DB::table('payment_credentials')->where('provider', 'paymongo')->value('encrypted_credentials');
+        $this->assertNotEmpty($encrypted);
+        $this->assertStringNotContainsString('whsk_saved', $encrypted);
+        $this->assertStringNotContainsString('sk_test_saved', $encrypted);
+        $this->get('/admin/vouchers')->assertOk()->assertSee('Test credentials configured')->assertDontSee('sk_test_saved')->assertDontSee('whsk_saved');
+        $this->assertFalse(app(\App\Services\AutomaticPayments::class)->enabled());
+        $body = json_encode(['data'=>['attributes'=>['type'=>'payment.failed']]]);
+        $timestamp = time();
+        $signature = hash_hmac('sha256', $timestamp.'.'.$body, 'whsk_saved');
+        $this->call('POST', '/api/payments/paymongo/webhook', [], [], [], [
+            'CONTENT_TYPE'=>'application/json', 'HTTP_PAYMONGO_SIGNATURE'=>"t={$timestamp},te={$signature}",
+        ], $body)->assertOk();
+    }
+
     public function test_admin_payment_table_defaults_to_five_and_filters_across_pages(): void
     {
         foreach (range(1, 6) as $index) Voucher::create(['code'=>'TEST-CODE-'.$index]);

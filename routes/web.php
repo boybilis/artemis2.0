@@ -301,6 +301,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/vouchers', [AdminController::class, 'vouchers'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('vouchers.index');
         Route::middleware(RoleMiddleware::class.':admin')->group(function () {
             Route::put('/vouchers/payment-mode', [\App\Http\Controllers\PaymentSettingsController::class, 'update'])->name('vouchers.payment-mode');
+            Route::put('/vouchers/payment-setup', [\App\Http\Controllers\PaymentSettingsController::class, 'credentials'])->middleware('throttle:6,1')->name('vouchers.payment-setup');
             Route::post('/vouchers/assign', [\App\Http\Controllers\PaymentSettingsController::class, 'issue'])->name('vouchers.assign');
         });
         Route::post('/vouchers/generate', [AdminController::class, 'generateVouchers'])->middleware(RoleMiddleware::class.':admin,instructor,staff')->name('vouchers.generate');
