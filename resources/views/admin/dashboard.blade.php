@@ -6,6 +6,19 @@
 
 @section('content')
 <style>
+    .dashboard-registration-stack { display:grid;gap:1rem;min-width:0; }
+    .active-batch-chart { display:grid;gap:.8rem;margin:0;padding:0;list-style:none; }
+    .active-batch-chart li { --batch-bar:#184b7a;min-width:0; }
+    .active-batch-chart [data-family="nclex"] { --batch-bar:var(--brand-aqua); }
+    .active-batch-chart [data-family="pnle"] { --batch-bar:#e6b628; }
+    .active-batch-chart [data-family="prometric"] { --batch-bar:#28945f; }
+    .active-batch-chart [data-family="cse"] { --batch-bar:var(--brand-slate); }
+    .active-batch-label { display:flex;justify-content:space-between;align-items:baseline;gap:.65rem;overflow-wrap:anywhere; }
+    .active-batch-label span { font-variant-numeric:tabular-nums;flex:none; }
+    .active-batch-chart small { display:block;color:var(--text-muted);overflow-wrap:anywhere; }
+    .active-batch-track { margin-top:.35rem;height:.55rem;border-radius:99px;background:var(--border);overflow:hidden; }
+    .active-batch-track span { display:block;height:100%;border-radius:inherit;background:var(--batch-bar); }
+    body:not(.light-mode) .active-batch-track span { background:color-mix(in srgb,var(--batch-bar) 65%,white); }
     .admin-dashboard-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem; }
     body .admin-dashboard-metrics .metric-card {
         --metric-ink:var(--brand-ice);
@@ -60,6 +73,7 @@
 
 <div class="admin-dashboard-insights">
     @include('admin.partials.dashboard-recent-users')
+    <div class="dashboard-registration-stack">
     <section class="panel" aria-labelledby="monthly-registrations-title">
         <p class="panel-label">{{ $registrationYear }} overview</p>
         <h2 class="panel-title" id="monthly-registrations-title">Monthly Registrations</h2>
@@ -80,8 +94,48 @@
             </ol>
         </div>
     </section>
+    @if($activeBatches !== null)
+        @include('admin.partials.dashboard-active-batches')
+    @endif
+    </div>
 </div>
 <script>
+(() => {
+    let chart = document.querySelector('[data-active-batches]');
+    if (!chart) return;
+    let pending = false;
+    const refresh = async (url, paging = false) => {
+        if (pending) return;
+        pending = true;
+        if (paging) chart.setAttribute('aria-busy', 'true');
+        const error = chart.querySelector('[data-active-batches-error]');
+        try {
+            const response = await fetch(url, {
+                headers:{Accept:'text/html','X-Requested-With':'XMLHttpRequest','X-Admin-Table':'active-batches'},
+                credentials:'same-origin', cache:'no-store',
+            });
+            if (!response.ok) throw new Error();
+            const next = new DOMParser().parseFromString(await response.text(), 'text/html').querySelector('[data-active-batches]');
+            if (!next) throw new Error();
+            const focused = chart.contains(document.activeElement);
+            chart.replaceWith(next);
+            chart = next;
+            if (focused) (chart.querySelector('[data-active-batches-page]:not(:disabled)') || chart.querySelector('h2')).focus({preventScroll:true});
+        } catch {
+            error.textContent = 'Unable to refresh active batches. Showing the last loaded counts.';
+            error.hidden = false;
+        } finally {
+            pending = false;
+            chart.removeAttribute('aria-busy');
+        }
+    };
+    document.addEventListener('click', event => {
+        const button = event.target.closest('[data-active-batches-page]');
+        if (button?.dataset.activeBatchesPage && !button.disabled) refresh(button.dataset.activeBatchesPage, true);
+    });
+    setInterval(() => { if (!document.hidden) refresh(chart.dataset.pageUrl); }, 5 * 60 * 1000);
+})();
+
 document.addEventListener('click', async event => {
     const button = event.target.closest('[data-recent-users-page]');
     if (!button || button.disabled || !button.dataset.recentUsersPage) return;

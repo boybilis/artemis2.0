@@ -145,6 +145,13 @@ class AdminController extends Controller
     // ─── DASHBOARD OVERVIEW ──────────────────────────────────────
     public function dashboard(Request $request)
     {
+        if ($request->ajax() && $request->header('X-Admin-Table') === 'active-batches') {
+            abort_unless($request->user()->hasAdminAccess(), 403);
+
+            return response()->view('admin.partials.dashboard-active-batches', ['activeBatches' => $this->dashboardActiveBatches()])
+                ->header('Cache-Control', 'private, no-store');
+        }
+
         $recentUsersQuery = User::query();
         if (in_array(trim(strtolower(Auth::user()->role)), ['instructor', 'staff'], true) && !Auth::user()->is_admin) {
             $recentUsersQuery->where(fn ($query) => $query->where('role', 'student')->orWhereNull('role'));
@@ -206,7 +213,33 @@ class AdminController extends Controller
         }
         $registrationYear = $now->year;
 
-        return view('admin.dashboard', compact('stats', 'recentUsers', 'monthlyRegistrations', 'registrationYear'));
+        $activeBatches = Auth::user()->hasAdminAccess() ? $this->dashboardActiveBatches() : null;
+        return view('admin.dashboard', compact('stats', 'recentUsers', 'monthlyRegistrations', 'registrationYear', 'activeBatches'));
+    }
+
+    private function dashboardActiveBatches()
+    {
+        $now = now();
+        return CourseBatch::where('status', 'open')
+            ->where(fn ($query) => $query->whereNull('starts_at')->orWhere('starts_at', '<=', $now))
+            ->where(fn ($query) => $query->whereNull('ends_at')->orWhere('ends_at', '>', $now))
+            ->with(['courses' => fn ($query) => $query->select('courses.id', 'courses.title')->orderBy('courses.id')])
+            ->withCount(['enrollments as current_enrollment_count' => fn ($query) => $query->where('status', 'active')
+                ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', $now))])
+            ->orderByDesc('starts_at')->orderByDesc('id')->paginate(10, ['*'], 'active_batches_page')
+            ->through(function ($batch) {
+                $family = null;
+                foreach ($batch->courses->pluck('title')->push($batch->name.' '.$batch->code) as $label) {
+                    foreach (['nclex', 'pnle', 'prometric', 'cse'] as $candidate) {
+                        if (preg_match('/\b'.$candidate.'\b/i', $label)) {
+                            $family = $candidate;
+                            break 2;
+                        }
+                    }
+                }
+                return ['name' => $batch->name, 'courses' => $batch->courses->pluck('title')->join(' · '),
+                    'family' => $family ?? 'default', 'count' => (int) $batch->current_enrollment_count];
+            });
     }
 
     // ─── USER MANAGEMENT ─────────────────────────────────────────

@@ -2,13 +2,38 @@
 
 namespace Tests\Feature;
 
-use App\Models\{AuditLog, Branch, Course, CourseBatch, PaymentTransaction, User, Voucher};
+use App\Models\{AuditLog, Branch, Course, CourseBatch, CourseEnrollment, PaymentTransaction, User, Voucher};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class AdminDashboardMetricsTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_active_batches_chart_paginates_and_excludes_expired_enrollments(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $course = Course::create(['title' => 'NCLEX Review']);
+        foreach (range(1, 11) as $i) {
+            $batch = CourseBatch::create(['course_id' => $course->id, 'name' => 'Open batch '.$i,
+                'code' => 'OPEN-'.$i, 'status' => 'open', 'starts_at' => now()->subDay(), 'ends_at' => now()->addDay()]);
+        }
+        CourseBatch::create(['name' => 'Future batch', 'code' => 'FUTURE', 'status' => 'open', 'starts_at' => now()->addDay()]);
+        CourseBatch::create(['name' => 'Closed batch', 'code' => 'CLOSED', 'status' => 'closed']);
+        foreach ([null, now()->subHour()] as $expiry) {
+            CourseEnrollment::create(['user_id' => User::factory()->create()->id, 'batch_id' => $batch->id,
+                'status' => 'active', 'expires_at' => $expiry]);
+        }
+        $url = route('admin.dashboard');
+        $headers = ['X-Requested-With' => 'XMLHttpRequest', 'X-Admin-Table' => 'active-batches'];
+        $this->actingAs($admin)->get($url, $headers)->assertOk()
+            ->assertViewIs('admin.partials.dashboard-active-batches')
+            ->assertViewHas('activeBatches', fn ($page) => $page->count() === 10 && $page->total() === 11
+                && $page->items()[0]['count'] === 1 && $page->items()[0]['family'] === 'nclex')
+            ->assertDontSee('Future batch')->assertDontSee('Closed batch')->assertDontSee('Monthly Registrations');
+        $this->get($url.'?active_batches_page=2', $headers)->assertOk()
+            ->assertViewHas('activeBatches', fn ($page) => $page->count() === 1);
+    }
 
     public function test_registration_chart_shows_january_through_current_month_including_zeroes(): void
     {
