@@ -7,16 +7,19 @@
 @section('content')
 <style>
     .dashboard-registration-stack { display:grid;gap:1rem;min-width:0; }
-    .active-batch-chart { display:grid;gap:.8rem;margin:0;padding:0;list-style:none; }
+    .dashboard-active-batches.panel { padding:clamp(1.25rem,2.5vw,1.9rem); }
+    .dashboard-active-batches .panel-subtitle { line-height:1.55;margin-bottom:1.45rem; }
+    .active-batch-chart { display:grid;gap:1.15rem;margin:0;padding:0;list-style:none; }
     .active-batch-chart li { --batch-bar:#184b7a;min-width:0; }
+    .active-batch-chart li + li { padding-top:1.15rem;border-top:1px solid var(--border); }
     .active-batch-chart [data-family="nclex"] { --batch-bar:var(--brand-aqua); }
     .active-batch-chart [data-family="pnle"] { --batch-bar:#e6b628; }
     .active-batch-chart [data-family="prometric"] { --batch-bar:#28945f; }
     .active-batch-chart [data-family="cse"] { --batch-bar:var(--brand-slate); }
-    .active-batch-label { display:flex;justify-content:space-between;align-items:baseline;gap:.65rem;overflow-wrap:anywhere; }
+    .active-batch-label { display:flex;justify-content:space-between;align-items:baseline;gap:1rem;line-height:1.4;overflow-wrap:anywhere; }
     .active-batch-label span { font-variant-numeric:tabular-nums;flex:none; }
-    .active-batch-chart small { display:block;color:var(--text-muted);overflow-wrap:anywhere; }
-    .active-batch-track { margin-top:.35rem;height:.55rem;border-radius:99px;background:var(--border);overflow:hidden; }
+    .active-batch-chart small { display:block;margin-top:.3rem;font-size:.8rem;line-height:1.5;color:var(--text-muted);overflow-wrap:anywhere; }
+    .active-batch-track { margin-top:.65rem;height:.55rem;border-radius:99px;background:var(--border);overflow:hidden; }
     .active-batch-track span { display:block;height:100%;border-radius:inherit;background:var(--batch-bar); }
     body:not(.light-mode) .active-batch-track span { background:color-mix(in srgb,var(--batch-bar) 65%,white); }
     .admin-dashboard-metrics { display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1rem; }
