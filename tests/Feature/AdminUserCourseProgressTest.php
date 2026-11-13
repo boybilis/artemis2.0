@@ -61,7 +61,8 @@ class AdminUserCourseProgressTest extends TestCase
         $this->getJson($progressUrl.'?learner_id='.$learner->id)->assertOk()
             ->assertJsonPath('courses.0.course_id', $course->id)->assertJsonCount(1, 'courses');
         $this->get($progressUrl.$selection.'&learner_id='.$learner->id.'&subjects_page=2', $headers)
-            ->assertOk()->assertSee('Enrolled Subject 11')->assertSee('Vouchers Purchased');
+            ->assertOk()->assertSee('Enrolled Subject 11')->assertDontSee('Vouchers Purchased');
+        $this->get($url.$selection, $headers)->assertOk()->assertSee('Vouchers Purchased');
         $instructor = User::factory()->create(['role' => 'instructor', 'is_admin' => false]);
         $this->actingAs($instructor)->get($progressUrl.$selection.'&learner_id='.$learner->id, $headers)
             ->assertOk()->assertSee('Subject Progress')->assertDontSee('Vouchers Purchased');

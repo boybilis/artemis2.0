@@ -1996,7 +1996,7 @@ class AdminController extends Controller
         if ($request->filled('learner_id') && ($request->expectsJson() || $request->ajax())) {
             $learner = $this->progressStudents()->findOrFail($request->integer('learner_id'));
             if ($request->ajax() && $request->header('X-Admin-Table') === 'user-course-progress') {
-                return $this->courseProgressReport($request, $learner, $request->user()->hasAdminAccess());
+                return $this->courseProgressReport($request, $learner, includeVouchers: false);
             }
             if ($request->expectsJson()) {
                 return response()->json(['courses' => $this->progressCourses($learner)])->header('Cache-Control', 'no-store');
