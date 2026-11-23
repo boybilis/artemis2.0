@@ -30,6 +30,25 @@ class AssistantAdminAccessTest extends TestCase
         $this->assertDatabaseMissing('subjects', ['id'=>$subject->id]);
     }
     use RefreshDatabase;
+    public function test_assistant_without_admin_flag_can_delete_uploaded_subtopic_files(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $course = \App\Models\Course::create(['title' => 'Course']);
+        $topic = \App\Models\Topic::create(['course_id' => $course->id, 'title' => 'Videos']);
+        $subtopic = \App\Models\Subtopic::create([
+            'topic_id' => $topic->id, 'title' => 'Uploaded lesson',
+            'video_path' => 'videos/lesson.mp4', 'documentation_path' => '/storage/documents/lesson.pdf',
+        ]);
+        $disk = \Illuminate\Support\Facades\Storage::disk('public');
+        $disk->put('videos/lesson.mp4', 'test video');
+        $disk->put('documents/lesson.pdf', 'test document');
+        $this->actingAs(User::factory()->create(['role' => 'assistant_admin', 'is_admin' => false]))
+            ->delete(route('admin.content.subtopics.destroy', ['course' => $course->id, 'subtopic' => $subtopic->id]))
+            ->assertRedirect();
+        $this->assertDatabaseMissing('subtopics', ['id' => $subtopic->id]);
+        $disk->assertMissing('videos/lesson.mp4');
+        $disk->assertMissing('documents/lesson.pdf');
+    }
     protected function setUp(): void
     {
         parent::setUp();
