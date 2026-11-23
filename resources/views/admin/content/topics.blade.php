@@ -319,7 +319,7 @@
                                         data-sort="{{ $sub->sort_order }}">
                                         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 5 5L8 21H3v-5zM13 6l5 5"/></svg>
                                     </button>
-                                    <form data-assistant-content-delete action="{{ route('admin.content.subtopics.destroy', ['course' => $course->id, 'subtopic' => $sub->id]) }}" method="POST" onsubmit="return confirmDelete(event, 'Delete this subtopic?');" style="margin:0;">
+                                    <form data-ajax-subtopic-delete data-assistant-content-delete action="{{ route('admin.content.subtopics.destroy', ['course' => $course->id, 'subtopic' => $sub->id]) }}" method="POST" onsubmit="return confirmDelete(event, 'Delete this subtopic?');" style="margin:0;">
                                         @csrf
                                         @method('DELETE')
                                         <button class="subtopic-action-icon subtopic-action-delete" type="submit" aria-label="Delete subtopic" title="Delete subtopic"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V3h8v3m3 0-1 15H6L5 6m5 4v7m4-7v7"/></svg></button>
@@ -657,8 +657,9 @@
     }
 
     // ─── Edit Subtopic Bindings ──────────────────────────────────
-    document.querySelectorAll('.edit-subtopic-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+    document.addEventListener('click', event => {
+        const btn = event.target.closest('.edit-subtopic-btn');
+        if (!btn) return;
             const id    = btn.dataset.id;
             const title = btn.dataset.title;
             const video = btn.dataset.video;
@@ -688,6 +689,7 @@
             document.getElementById('edit_sub_zoom_ends_at').value = btn.dataset.zoomEndsAt || '';
             syncSubtopicFields('edit');
             document.getElementById('editSubtopicForm').action = `/admin/content/courses/{{ $course->id }}/subtopics/${id}`;
+            document.getElementById('editSubtopicForm').dataset.topicId = btn.closest('.topic-card').dataset.id;
 
             const docInfo = document.getElementById('current_sub_doc_info');
             if (doc) {
@@ -697,7 +699,6 @@
                 docInfo.style.display = 'none';
             }
             openModal('editSubtopicModal');
-        });
     });
 
     function syncSubtopicFields(prefix) {
@@ -753,12 +754,52 @@
         });
     });
 
+    async function refreshSubtopics(topicId) {
+        try {
+            const response = await fetch(window.location.href, {headers: {'Accept': 'text/html'}, cache: 'no-store'});
+            if (!response.ok || response.redirected) throw new Error('Unable to refresh');
+            const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+            const panel = document.getElementById('subtopics-panel-' + topicId);
+            const updated = page.getElementById('subtopics-panel-' + topicId);
+            if (!panel || !updated) throw new Error('Missing subtopics');
+            panel.innerHTML = updated.innerHTML;
+            const card = panel.closest('.topic-card');
+            const updatedStats = updated.closest('.topic-card').querySelector('.topic-stats');
+            card.querySelector('.topic-stats').innerHTML = updatedStats.innerHTML;
+        } catch (_) {
+            showAdminToast('Your change was saved, but the list could not update. Please refresh to see it.', 'error');
+        }
+    }
+
+    document.addEventListener('admin:delete-confirmed', async event => {
+        const form = event.target.closest('[data-ajax-subtopic-delete]');
+        if (!form) return;
+        event.preventDefault();
+        const topicId = form.closest('.topic-card').dataset.id;
+        const submit = form.querySelector('button[type="submit"]');
+        if (submit.disabled) return;
+        submit.disabled = true;
+        closeDeleteModal();
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST', body: new FormData(form),
+                headers: {'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest'}
+            });
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.message || 'Unable to delete the subtopic.');
+            showAdminToast(result.message, 'success');
+            await refreshSubtopics(topicId);
+        } catch (error) {
+            showAdminToast(error.message || 'Unable to delete the subtopic. Please try again.', 'error');
+        } finally {
+            submit.disabled = false;
+        }
+    });
+
     function bindSubtopicUploadProgress(formId, progressId) {
         const form = document.getElementById(formId);
         const progress = document.getElementById(progressId);
         form.addEventListener('submit', event => {
-            const videoInput = form.querySelector('input[name="video_file"]');
-            if (!videoInput?.files?.length) return;
             event.preventDefault();
             const xhr = new XMLHttpRequest();
             const bar = progress.querySelector('.upload-progress-bar');
@@ -770,12 +811,23 @@
                 const value = Math.round((upload.loaded / upload.total) * 100);
                 bar.style.width = value + '%'; percent.textContent = value + '%';
             });
-            xhr.addEventListener('load', () => {
-                if (xhr.status >= 200 && xhr.status < 400) window.location.reload();
-                else { submit.disabled = false; alert(xhr.status === 413 ? 'The video exceeds the server upload limit.' : 'Upload failed. Please check the video format and size.'); }
+            xhr.addEventListener('load', async () => {
+                submit.disabled = false;
+                let result;
+                try { result = JSON.parse(xhr.responseText); } catch (_) { result = {}; }
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const topicId = formId === 'addSubtopicForm' ? document.getElementById('add_sub_topic_id').value : form.dataset.topicId;
+                    closeModal(form.closest('.admin-modal').id);
+                    showAdminToast(result.message || 'Subtopic saved.', 'success');
+                    await refreshSubtopics(topicId);
+                } else {
+                    const errors = Object.values(result.errors || {}).flat().join(' ');
+                    showAdminToast(errors || result.message || (xhr.status === 413 ? 'The upload exceeds the server upload limit.' : 'Unable to save the subtopic. Please try again.'), 'error');
+                }
+                progress.style.display = 'none';
             });
             xhr.addEventListener('error', () => { submit.disabled = false; alert('Upload failed because the connection was interrupted.'); });
-            xhr.open('POST', form.action); xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); xhr.send(new FormData(form));
+            xhr.open('POST', form.action); xhr.setRequestHeader('Accept', 'application/json'); xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest'); xhr.send(new FormData(form));
         });
     }
     bindSubtopicUploadProgress('addSubtopicForm', 'add_sub_upload_progress');

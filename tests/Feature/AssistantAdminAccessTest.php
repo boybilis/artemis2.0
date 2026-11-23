@@ -43,8 +43,9 @@ class AssistantAdminAccessTest extends TestCase
         $disk->put('videos/lesson.mp4', 'test video');
         $disk->put('documents/lesson.pdf', 'test document');
         $this->actingAs(User::factory()->create(['role' => 'assistant_admin', 'is_admin' => false]))
-            ->delete(route('admin.content.subtopics.destroy', ['course' => $course->id, 'subtopic' => $subtopic->id]))
-            ->assertRedirect();
+            ->deleteJson(route('admin.content.subtopics.destroy', ['course' => $course->id, 'subtopic' => $subtopic->id]))
+            ->assertOk()
+            ->assertJson(['message' => 'Subtopic deleted successfully.']);
         $this->assertDatabaseMissing('subtopics', ['id' => $subtopic->id]);
         $disk->assertMissing('videos/lesson.mp4');
         $disk->assertMissing('documents/lesson.pdf');

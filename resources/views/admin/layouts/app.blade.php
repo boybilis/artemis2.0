@@ -442,7 +442,9 @@
 
         document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
             if (formToSubmit) {
-                formToSubmit.submit();
+                if (formToSubmit.dispatchEvent(new CustomEvent('admin:delete-confirmed', {bubbles: true, cancelable: true}))) {
+                    formToSubmit.submit();
+                }
             }
         });
 

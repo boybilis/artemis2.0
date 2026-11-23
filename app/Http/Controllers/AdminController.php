@@ -1533,6 +1533,9 @@ class AdminController extends Controller
             'ip_address'  => $request->ip()
         ]);
 
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Subtopic created successfully.']);
+        }
         return back()->with('success', 'Subtopic created successfully.');
     }
 
@@ -1609,6 +1612,9 @@ class AdminController extends Controller
             'ip_address'  => $request->ip()
         ]);
 
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Subtopic updated successfully.']);
+        }
         return back()->with('success', 'Subtopic updated successfully.');
     }
 
@@ -1644,6 +1650,9 @@ class AdminController extends Controller
             'ip_address'  => $request->ip()
         ]);
 
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Subtopic deleted successfully.']);
+        }
         return back()->with('success', 'Subtopic deleted successfully.');
     }
 

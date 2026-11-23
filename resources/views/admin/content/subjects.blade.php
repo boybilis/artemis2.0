@@ -10,6 +10,9 @@
     .subject-row-actions { display:inline-flex;align-items:stretch;gap:.25rem;vertical-align:middle; }
     .subject-row-actions form { display:flex;margin:0; }
     .subject-row-actions .btn-primary { display:inline-flex;align-items:center;padding:.45rem .75rem;text-decoration:none; }
+    .subject-row-actions .btn-ghost { display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:.5rem;border:0;background:transparent;box-shadow:none;color:#19344f;text-decoration:none; }
+    .subject-row-actions .btn-ghost:hover { background:transparent;box-shadow:none; }
+    .subject-row-actions .btn-ghost:focus-visible { outline:2px solid #11a7c0;outline-offset:2px; }
 .subjects-catalog-table{--text:#19344f;--text-muted:#526b7a;--border:#cbd5e1}
 body .subjects-catalog-table thead th,body.light-mode .subjects-catalog-table thead th{background:#19344f;color:#fff}
 .subjects-catalog-table tbody tr:nth-child(odd) td{background:#fff;color:#19344f}
