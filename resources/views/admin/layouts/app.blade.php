@@ -213,7 +213,7 @@
 </head>
 <body class="light-mode admin-form-controls">
     @if(Auth::user()->isAssistantAdmin())
-    <script src="{{ asset('assistant-admin.js') }}?v=2" defer></script>
+    <script src="{{ asset('assistant-admin.js') }}?v=3" defer></script>
     @endif
     <script>
         (function () {

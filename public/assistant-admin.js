@@ -11,6 +11,9 @@
             }
         });
         document.querySelectorAll('button,a').forEach(control => {
+            // The shared confirmation button is outside the permitted content form.
+            // Its target is still checked by the server-side deletion permissions.
+            if (control.id === 'confirmDeleteBtn') return;
             if (control.closest('form[data-assistant-content-delete]')) return;
             const label = control.textContent.trim();
             if (/^(?:Delete(?:\s|$)|Reset Attempts?$|Unenroll$)/i.test(label) || /\/audit-logs(?:\?|$)/.test(control.getAttribute('href') || '')) {
